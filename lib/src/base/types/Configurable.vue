@@ -141,22 +141,12 @@
 </template>
 
 <script>
-import "quill/dist/quill.core.css";
-import "quill/dist/quill.snow.css";
-import "quill/dist/quill.bubble.css";
-
 import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload} from "../../utils";
-// import { quillEditor } from "vue-quill-editor";
-let quillEditor
-if (process.client) {
-  quillEditor = require("vue-quill-editor");
-}
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 
 export default {
   components: {
-    quillEditor,
     loadingCircle,
     CloseIcon
   },

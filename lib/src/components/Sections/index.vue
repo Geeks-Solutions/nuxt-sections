@@ -615,7 +615,8 @@ export default {
       selectedSectionRequirements: [],
       sectionsPageLastUpdated: null,
       requirementsInputs: {},
-      allSections: {}
+      allSections: {},
+      sectionsError: ""
     }
   },
   computed: {
@@ -654,8 +655,14 @@ export default {
       },
     },
   },
+  mounted() {
+    if(this.sectionsError !== "") {
+      this.showToast("Error", "error", "Couldn't load the page: " + this.sectionsError);
+    }
+  },
   async fetch() {
     this.loading = true;
+    this.sectionsError = ""
     this.checkToken();
     // We check if this is running in the browser or not
     // because during SSR no cors preflight request is sent
@@ -761,9 +768,9 @@ export default {
           this.sectionsPageLastUpdated = res.data.last_updated;
         } catch (error) {
           if(error.response.data.error) {
-            this.showToast("Error", "error", "Couldn't load the page: " + error.response.data.error);
+            this.sectionsError = error.response.data.error
           } else {
-            this.showToast("Error", "error", "Couldn't load the page: " + error.response.data.message);
+            this.sectionsError = error.response.data.message
           }
           this.loading = false;
           this.pageNotFound = true;
@@ -1657,6 +1664,7 @@ button svg {
 
 .section-delete-icon {
   cursor: pointer;
+  margin-top: 3px;
 }
 
 .trash-icon-style {
