@@ -462,7 +462,7 @@ export default {
         this.$sections.serverUrl +
         `/project/${this.$sections.projectId}/section/render`;
 
-      this.axios
+      this.$axios
         .post(URL, variables, config)
         .then((res) => {
           this.$emit("load", false);
