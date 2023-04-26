@@ -16,11 +16,7 @@
   "description": "A NuxtJS module to interface with Sections Serverless Page Building and rendering engine",
   "license": "ISC",
   "homepage": "https://sections.geeks.solutions",
-  "contributors": [
-    {
-      "name": "Hussein Mahfouz <h.mahfouz@eweev.com>"
-    }
-  ],
+  "contributors": [],
   "files": [
     "lib"
   ],

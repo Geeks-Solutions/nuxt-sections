@@ -1,7 +1,4 @@
 <template>
-  <!--  <div>-->
-  <!--    <component :is="getComponentForm" :section="sectionSettings" />-->
-  <!--  </div>-->
   <div class="sections-config justify-center">
     <div v-if="!pageNotFound">
       <!-- page buttons part 1-->
@@ -734,7 +731,6 @@ export default {
     } else {
       const optionsRes = await this.$axios.options(URL, config)
       if (optionsRes.status === 200) {
-        console.log(`Options API Call success`)
         try {
           const res = await this.$axios.post(URL, payload, config)
           const sections = res.data.sections;
@@ -825,7 +821,7 @@ export default {
         this.showToast(
           "Warning",
           "warning",
-          "Import sections only works for empty pages"
+          this.$t('importSections')
         );
       } else {
         this.$refs.jsonFilePick.click();
@@ -856,7 +852,7 @@ export default {
         this.showToast(
           "Success",
           "info",
-          `Successfully imported ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
+          `${this.$t('successImported')} ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
         );
       }
     },
@@ -944,7 +940,7 @@ export default {
           this.showToast(
             "Success",
             "success",
-            "Congratulations on successfully creating a new page on sections. Start adding some content to it."
+            this.$t('createPageSuccess')
           );
         })
         .catch((err) => {

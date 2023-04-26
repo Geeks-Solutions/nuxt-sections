@@ -28,10 +28,13 @@ And configure the library, the possible configurations are as follow:
 - `projectUrl`: _to use only if you intend to run sections in SSR_ set it to the project url you defined in your project interface on sections back office.
 - `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages.
 
-> For the module to work properly the following packages are required to be installed `cookie-universal-nuxt`
+> The following packages are installed by the module:
+`cookie-universal-nuxt`
 `@nuxtjs/axios`
 `@nuxtjs/i18n`
-`vue-toastification/nuxt` and they should be added to the modules inside `nuxt.config.js` like below:
+`vue-toastification/nuxt` 
+>
+> For the module to work properly, they should be added to the modules inside `nuxt.config.js` like below:
 
 ```js
 {
@@ -146,7 +149,7 @@ If you now want to move on and start providing local and static sections for you
 # How it works
 
 Sections server comes with a Wysiwyg and any public sections out of the box.
-The Wysiwg can be added to any page and will display of the box thanks to internal components, yet if you wish to override anything (the view, the icon or the form) you can do so be redeclaring any (or all) component(s) in your project.
+The Wysiwg can be added to any page and will display of the box thanks to internal components, yet if you wish to override anything (the view, the icon or the form) you can do so by redeclaring any (or all) component(s) in your project.
 
 You can also define your own local and static section types and you have the ability to control the way any section will display on your website.
 
@@ -173,7 +176,7 @@ The configurations folder follows the following structure:
 In case you are trying to use a section that you haven't properly declared on your project, a warning will display in the console indicating where sections is epxecting the component to be located according to your configuration.
 
 
-- `addNewStaticType(sectionTypeName)` a helper function that takes a string of sectionTypeName that help to declare ready to use section types
+- `addNewStaticType(sectionTypeName)` a helper function that takes a string of sectionTypeName that matches you component name created inside the configurations folder mentioned above which will be used then to add this section type to your page
 
 ###Example on how to use the function:
 
@@ -250,4 +253,4 @@ async removeImage() {
 
 ## For Contributors
 
-If you wish to contribute to this project, head to this [wiki](https://github.com/Geeks-Solutions/vue-sections/wiki) and follow the instructions there.
+If you wish to contribute to this project, head to this [wiki](https://github.com/Geeks-Solutions/nuxt-sections/wiki) and follow the instructions there.

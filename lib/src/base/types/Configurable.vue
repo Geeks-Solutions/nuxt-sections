@@ -10,6 +10,8 @@
           <div class="text-capitalize ">{{ formatName(props.name) }}</div>
         </div>
       </div>
+<!--  The below div element adds an extra tab to the configurable section. -->
+<!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
       <div v-if="showCustomFormTab === true" class="bg-info px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'bg-info' : 'bg-light border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
         <div
             class="font-light mt-2 mb-2"
@@ -120,11 +122,11 @@
           </div>
           <div class="text-right" v-if="props.multiple || savedView.multiple">
             <button type="button" @click="addAnother()" class="btn btn-primary">
-              Add another
+              {{ $t('Add another') }}
             </button>
           </div>
           <button class="flex items-center justify-center form-control bg-Blue text-white border-Blue border hover:text-Blue px-3.5 h-53px py-3.5 rounded-xl hover:bg-white mt-4 mb-4" type="button" @click="addConfigurable()">
-            Submit data
+            {{ $t('Submit data') }}
           </button>
         </form>
       </div>
