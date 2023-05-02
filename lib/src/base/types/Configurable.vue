@@ -21,7 +21,7 @@
         </div>
       </div>
     </div>
-
+    <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
       <div class="text-danger">
         {{ errorMessage }}
@@ -37,12 +37,6 @@
                 v-for="(field, idx) in props.fields"
                 :class="getType(field.type) !== 'file' ? '' : ''"
             >
-              <!-- <div v-if="field.type === 'file' && options[idx][fields[idx]['name']]" class="file-text">
-                Selected file :
-                <a class="text-light-blue" :href="options[idx][fields[idx]['name']]">
-                {{formatFileName(options[idx][fields[idx]['name']])}}
-                </a>
-              </div> -->
               <div
                   v-if="field.name && field.type !== 'hidden'"
                   class="text-capitalize text-left"
@@ -131,7 +125,7 @@
         </form>
       </div>
     </div>
-
+    <!--  The below div element is the custom form tab and its loaded from the host project using the computed getComponentForm() property that relies on the configurable section name -->
     <div v-show="currentTab === 'custom'" class="sub-types">
       <div>
         <div class="text-video d-flex content-wrapper" v-show="formatName(props.name)">
@@ -205,6 +199,7 @@ export default {
       }
       return null;
     },
+    // This property is to import the custom form from the host project if it exists and if it has the same name as the configurable section type
     getComponentForm() {
       let path = "";
       if (this.props.name.includes(":")) {
@@ -216,7 +211,7 @@ export default {
     },
   },
   mounted() {
-    // edit
+    // Load the configurable section type options
     if (this.savedView.fields) {
       const options = [];
       const fields = [];
@@ -371,6 +366,7 @@ export default {
       }
     },
     formatName,
+    // Compute the element tag name based on the field value
     getTag(type, name) {
       switch (type) {
         case "integer":
@@ -409,6 +405,7 @@ export default {
           return "textarea";
       }
     },
+    // Compute the element type based on the type value
     getType(type) {
       switch (type) {
         case "file":
@@ -434,7 +431,7 @@ export default {
         const fields = this.props.fields[i];
         if (!this.options[0][key] || this.options[0][key][fields.key] === "no-value") {
           errorMessage =
-              "You must fill your required fields before submitting.";
+              this.$t('fillRequiredFields');
         }
       });
       if (errorMessage) {
@@ -491,7 +488,7 @@ export default {
           this.$emit('errorAddingSection', {
               closeModal: false,
               title: "Error adding "+ this.props.name,
-              message: "We couldn't save your changes, try again later"
+              message: this.$t('saveConfigSectionError')
             })
         });
     },

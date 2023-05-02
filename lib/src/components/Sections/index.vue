@@ -1,7 +1,7 @@
 <template>
   <div class="sections-config justify-center">
     <div v-if="!pageNotFound">
-      <!-- page buttons part 1-->
+      <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
       <button
         @click="openEditMode()"
         v-if="admin"
@@ -11,7 +11,7 @@
       </button>
       <div class="bg-light-grey-hp hide-mobile section-wrapper">
         <div v-if="admin && editMode" class="p-3 text-center mainmsg pt-3">
-          Your changes will be published when the page is saved.
+          {{ $t('changesPublished') }}
         </div>
 
         <div
@@ -75,7 +75,6 @@
           </div>
         </div>
       </div>
-      <!-- page buttons part 2-->
       <div
         class="bg-light-grey-hp p-3 flex flex-row justify-center part2 hide-mobile"
         v-if="admin && editMode"
@@ -111,7 +110,7 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- page section types popup 'edit' -->
+      <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
       <div v-if="isModalOpen" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl">
@@ -151,13 +150,13 @@
                   />
                 </div>
                 <div v-if="type.type !== 'configurable'" class="flex pl-2 pb-1" style="font-size: 10px;">
-                  {{ 'By ' + type.application }}
+                  {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
                   <div class="section-delete-icon" @click="openAuthConfigurableSectionTypeModal(type.application_id, index, type.requirements, type.name, type.application)">
                     <div class="flex justify-between items-end">
                       <div v-if="type.type === 'configurable'" class="flex pl-2 pb-1" style="font-size: 8px;">
-                        {{ 'By ' + type.application }}
+                        {{ $t('by') + type.application }}
                       </div>
                       <LockedIcon class="trash-icon-style p-1" />
                     </div>
@@ -167,7 +166,7 @@
                   <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
                     <div class="flex justify-between items-end">
                       <div class="flex pl-2 pb-1" style="font-size: 8px;">
-                        {{ 'By ' + type.application }}
+                        {{ $t('by') + type.application }}
                       </div>
                       <UnlockedIcon class="trash-icon-style p-1" />
                     </div>
@@ -215,10 +214,9 @@
         </div>
       </div>
 
-
       <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- page section types popup 'delete' -->
+      <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
       <div v-show="isDeleteModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
@@ -249,7 +247,7 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- Authorize configurable section types popup -->
+      <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
       <div v-show="isAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
@@ -292,9 +290,7 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- ------------------------------------------------------------------------------------------- -->
-
-      <!-- UnAuthorize configurable section types popup -->
+      <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
       <div v-show="isUnAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
@@ -329,7 +325,7 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- views rendered in homepage -->
+      <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
       <div class="views">
         <draggable
           v-model="currentViews"
@@ -371,9 +367,7 @@
                 />
                 <div v-else>
                   <div v-if="admin" class="error-section-loaded">
-                    Some sections could not be loaded correctly, saving the page
-                    will delete these sections from your page, unless you are
-                    happy with the page you see now, do not save it
+                    {{ $t('sectionsNotLoadedCorrectly') }}
                   </div>
                 </div>
               </div>
@@ -382,6 +376,10 @@
           <!-- </transition-group> -->
         </draggable>
       </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
+      <!-- This is the popup to create a new static section type     -->
       <div v-show="staticModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
@@ -402,6 +400,23 @@
                     type="text"
                     v-model="sectionTypeName"
                   />
+                  <div style="margin-bottom: 10px;" class="mt-2">
+                    {{ $t("fieldNames") }}
+                  </div>
+                  <div v-for="(field,k) in fieldsInputs" :key="k" class="flex flex-col mb-4">
+                    <div class="flex">
+                      <input
+                        v-model="field.name"
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        :placeholder="`${$t('field')} #${k+1}`"
+                      />
+                      <span class="flex flex-row pl-2 items-center">
+                        <span v-show="k || ( !k && fieldsInputs.length > 1)" class="cursor-pointer text-3xl" @click="removeField(k)">-</span>
+                        <span v-show="k === fieldsInputs.length - 1" class="cursor-pointer text-3xl pl-3" @click="addField(k)">+</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="footer">
@@ -416,6 +431,10 @@
           </div>
         </div>
       </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
+      <!-- This is popup to show the successfully created new static section message      -->
       <div v-show="staticSuccess" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
@@ -464,9 +483,13 @@
           </div>
         </div>
       </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <Loading :loading="loading" />
     </div>
     <div v-else>
+      <!-- This is to show the create a new page button when the page requested is not found     -->
       <button v-if="admin" class="hp-button" @click="createNewPage">
         {{ $t("Create New Page") }}
       </button>
@@ -613,7 +636,13 @@ export default {
       sectionsPageLastUpdated: null,
       requirementsInputs: {},
       allSections: {},
-      sectionsError: ""
+      sectionsError: "",
+      fieldsInputs: [
+        {
+          type: "image",
+          name: ""
+        }
+      ]
     }
   },
   computed: {
@@ -654,7 +683,7 @@ export default {
   },
   mounted() {
     if(this.sectionsError !== "") {
-      this.showToast("Error", "error", "Couldn't load the page: " + this.sectionsError);
+      this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError);
     }
   },
   async fetch() {
@@ -702,7 +731,7 @@ export default {
             section.nameID = section.name;
             section.name = section.name.split(":")[1];
           } else if (section.settings) {
-            section.settings = JSON.parse(section.settings);
+            section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
           }
           if (section.id) {
             views[section.id] = section;
@@ -720,9 +749,9 @@ export default {
         this.sectionsPageLastUpdated = res.data.last_updated;
       } catch (error) {
         if(error.response.data.error) {
-          this.showToast("Error", "error", "Couldn't load the page: " + error.response.data.error);
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
         } else {
-          this.showToast("Error", "error", "Couldn't load the page: " + error.response.data.message);
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message);
         }
         this.loading = false;
         this.pageNotFound = true;
@@ -746,7 +775,7 @@ export default {
               section.nameID = section.name;
               section.name = section.name.split(":")[1];
             } else if (section.settings) {
-              section.settings = JSON.parse(section.settings);
+              section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
             }
             if (section.id) {
               views[section.id] = section;
@@ -786,6 +815,12 @@ export default {
     }
   },
   methods: {
+    addField(index) {
+      this.fieldsInputs.push({ type: "image", name: "" });
+    },
+    removeField(index) {
+      this.fieldsInputs.splice(index, 1);
+    },
     checkToken() {
       const auth_code = this.$route.query.auth_code;
       if (auth_code) {
@@ -843,7 +878,7 @@ export default {
               this.showToast(
                 "Warning",
                 "warning",
-                `Make sure to activate the configurable section ${section.name} for your project`
+                `${this.$t('activateConfigSections')} ${section.name} ${this.$t('forProject')}`
               );
             }
           }
@@ -873,18 +908,26 @@ export default {
         const URL =
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section-types/${this.sectionTypeName}`;
         this.loading = true;
-        this.$axios.post(URL, {}, config).then(() => {
+        this.$axios.post(URL, {
+          "fields": this.fieldsInputs
+        }, config).then(() => {
           this.types = [];
           this.getSectionTypes();
           this.staticSuccess = true;
+          this.fieldsInputs = [
+            {
+              type: "image",
+              name: ""
+            }
+          ]
           this.loading = false;
         })
           .catch((error) => {
-            this.showToast("Error", "error", "Couldn't create the new section type: " + error.response.data.message);
+            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message);
             this.loading = false;
           });
       } else {
-        this.showToast("Error", "error", "Please enter the name of the section");
+        this.showToast("Error", "error", this.$t('enterSectionTypeName'));
       }
     },
     openStaticSection() {
@@ -948,7 +991,7 @@ export default {
           this.showToast(
             "Error creating page",
             "error",
-            "We are unable to create a new sections page for " + this.pageName + "\n" + err.response.data.message
+            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message
           );
         });
     },
@@ -1017,7 +1060,7 @@ export default {
         external_path = `@/sections/views`;
       } catch (error) {
         throw new Error(
-          "vue-sections: Your project contains no @/sections folder"
+          this.$t('noSectionsFolder')
         );
       }
       staticTypes = this.build_comp(
@@ -1064,7 +1107,7 @@ export default {
         } else {
           if (fileName.includes(".vue")) {
             console.error(
-              `vue-sections: ${fileName} in ${path} can't be registered! You should follow the naming convention of any registered component '{Section Name}_{Section Type}.vue'`
+              `nuxt-sections: ${fileName} ${this.$t('in')} ${path} ${this.$t('cannotRegisterComp')}`
             );
           }
         }
@@ -1112,7 +1155,7 @@ export default {
             this.showToast(
               "Warning",
               "warning",
-              "The version of the page you have is an old one, please refresh your page before doing any modification"
+              this.$t('oldPageVersion')
             );
           }
         })
@@ -1176,7 +1219,7 @@ export default {
       try {
         if (this.savedView.linkedTo) {
           const confirmed = window.confirm(
-            "This section is linked to a main section, editing it will break the link, are you sure you want to proceed ?"
+            this.$t('linkedSection')
           );
           if (!confirmed) {
             return;
@@ -1223,14 +1266,14 @@ export default {
           this.showToast(
             "Success",
             "info",
-            "This sections was successfully added to your page but is now only visible to you."
+            this.$t('successAddedSection')
           );
         }
       } catch (e) {
         this.showToast(
           "Error",
           "error",
-          "We are unable to preview your section, try again later"
+          this.$t('previewSectionError')
         );
       }
     },
@@ -1255,7 +1298,7 @@ export default {
             });
             refactorView.options = options;
           } else if (view.settings) {
-            refactorView.options = JSON.stringify(view.settings);
+            refactorView.options = view.settings;
           }
           if (refactorView.id.startsWith("id-")) {
             delete refactorView.id;
@@ -1292,7 +1335,7 @@ export default {
           this.showToast(
             "Success",
             "success",
-            "You have successfully saved your changes and they are now visible to your visitors"
+            this.$t('successPageChanges')
           );
         })
         .catch((error) => {
@@ -1344,7 +1387,7 @@ export default {
       this.showToast(
         "Revert Successful",
         "info",
-        "You have successfully reverted your page to how it is currently showing to your visitors"
+        this.$t('revertPageSuccess')
       );
     },
     deleteView(id) {
@@ -1368,7 +1411,7 @@ export default {
       this.showToast(
         "Deleted",
         "info",
-        "Your section has been removed, save your page to display this change to your visitors"
+        this.$t('sectionRemoved')
       );
     },
     copyAnchor(anchor) {
@@ -1401,7 +1444,7 @@ export default {
           this.$emit("load", false);
         })
         .catch((error) => {
-          this.showToast("Error", "error", "Couldn't delete section type: " + error.response.data.message);
+          this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
           this.loading = false
           this.$emit("load", false);
         });
@@ -1440,7 +1483,7 @@ export default {
           this.$emit("load", false);
         })
         .catch((error) => {
-          this.showToast("Error", "error", `Couldn't authorize sections from ${this.selectedAppName}: ` + error.response.data.message);
+          this.showToast("Error", "error", `${this.$t('authorizeError')} ${this.selectedAppName}: ` + error.response.data.message);
           this.loading = false
           this.$emit("load", false);
         });
@@ -1478,7 +1521,7 @@ export default {
           this.$emit("load", false);
         })
         .catch((error) => {
-          this.showToast("Error", "error", `Couldn't un-authorize sections from ${this.selectedAppName}: ` + error.response.data.message);
+          this.showToast("Error", "error", `${this.$t('unAuthorizeError')} ${this.selectedAppName}: ` + error.response.data.message);
           this.loading = false
           this.$emit("load", false);
         });

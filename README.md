@@ -176,7 +176,7 @@ The configurations folder follows the following structure:
 In case you are trying to use a section that you haven't properly declared on your project, a warning will display in the console indicating where sections is epxecting the component to be located according to your configuration.
 
 
-- `addNewStaticType(sectionTypeName)` a helper function that takes a string of sectionTypeName that matches you component name created inside the configurations folder mentioned above which will be used then to add this section type to your page
+- `addNewStaticType(sectionTypeName)` a helper function that takes a string of sectionTypeName that matches your component name created inside the configurations folder mentioned above which will be used then to add this section type to your page
 
 ###Example on how to use the function:
 
@@ -253,4 +253,4 @@ async removeImage() {
 
 ## For Contributors
 
-If you wish to contribute to this project, head to this [wiki](https://github.com/Geeks-Solutions/nuxt-sections/wiki) and follow the instructions there.
+If you wish to contribute to this project, head to this [wiki](https://github.com/Geeks-Solutions/nuxt-sections/wiki/Contributions) and follow the instructions there.

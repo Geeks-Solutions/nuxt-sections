@@ -7,3 +7,5 @@
 ---
 
  - Launch of nuxt-sections module migrated from vue-sections library
+
+ - Library updates needed after the backend fixes done on media #93
