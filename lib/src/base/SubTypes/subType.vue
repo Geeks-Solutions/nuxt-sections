@@ -11,7 +11,7 @@
       @click="sendJsonData"
       :class="{ withTabs }"
     >
-      Submit data
+      {{ $t('Submit data') }}
     </button>
   </div>
 </template>

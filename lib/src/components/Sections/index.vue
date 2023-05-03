@@ -46,7 +46,7 @@
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              data-toggle="tooltip" data-placement="top" title="Export sections"
+              data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
               @click="exportSections"
             >
               <ImportIcon />
@@ -55,7 +55,7 @@
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              data-toggle="tooltip" data-placement="top" title="Import sections"
+              data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
               @click="initImportSections"
             >
               <ExportIcon />
@@ -914,6 +914,7 @@ export default {
           this.types = [];
           this.getSectionTypes();
           this.staticSuccess = true;
+          this.sectionTypeName = "";
           this.fieldsInputs = [
             {
               type: "image",
@@ -1887,7 +1888,6 @@ span.handle {
   margin-bottom: 10px;
 }
 .section-modal-wrapper .body {
-  width: 60%;
   margin: 20px auto;
 }
 .section-modal-wrapper .subtitle {
@@ -1905,6 +1905,7 @@ span.handle {
 }
 .section-modal-wrapper .dot {
   color: #31a9db;
+  margin-top: 8px;
   margin-right: 10px;
 }
 .section-modal-wrapper .header {
