@@ -57,10 +57,10 @@
                 />
               </div>
               <div v-else class="w-full justify-start">
-                <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].files && optionsData[field.key].files[0].url !== ''" class="py-4 flex align-items-center">
+                <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
                   <img
-                      v-if="optionsData[field.key].files[0].url"
-                      :src="optionsData[field.key].files[0].url"
+                      v-if="optionsData[field.key][0].url"
+                      :src="optionsData[field.key][0].url"
                       alt="image"
                       class="w-95px h-63px object-contain"
                   />
@@ -82,7 +82,7 @@
                   <loadingCircle />
                 </div>
                 <component
-                    v-show="field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && optionsData[field.key].files && optionsData[field.key].files[0].url === '')))"
+                    v-show="field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"
                     :value="optionsData[field.key]"
                     :class="field.type !== 'media' ? 'd-input py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
                     :id="field.key"
@@ -307,24 +307,22 @@ export default {
     },
     async mediaUpload(e, idx, name) {
       this.isInProgress = true
-      const media = {
-        id: "",
-        files: [
-          {
-            filename: "",
-            url: ""
-          }
-        ]
-      };
+      const media = [
+        {
+          media_id: "",
+          url: "",
+          fielname: ""
+        }
+      ];
       this.mediaError = ''
       await globalFileUpload(e.target.files[0]).then(
           (result) => {
             if(result.success) {
               this.isInProgress = false
-              media.files[0].url = result.data.files[0].url;
-              media.files[0].filename = result.data.files[0].filename;
-              media.id = result.data.id;
-              this.previewMedia = media.files[0].url;
+              media[0].url = result.data.files[0].url;
+              media[0].filename = result.data.files[0].filename;
+              media[0].media_id = result.data.id;
+              this.previewMedia = media[0].url;
               this.options[0][name] = media;
             } else {
               this.isInProgress = false
@@ -334,13 +332,9 @@ export default {
       )
     },
     async removeImage(name) {
-      if(this.options[0][name]) {
-        await deleteMedia(this.options[0][name].id)
-      }
       this.previewMedia = ''
-      this.options[0][name].files[0].url = ''
-      this.options[0][name].id = null
-      this.options[0][name] = null
+      this.optionsData[name][0].url = ""
+      this.options[0][name] = []
     },
     onEditorChange({ quill, html, text }, idx, fieldname) {
       this.options[0][fieldname] = html;
