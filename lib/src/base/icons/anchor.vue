@@ -14,3 +14,18 @@
 </g>
 </svg>
 </template>
+
+<script>
+export default {
+  props: {
+    title: {
+      type: String,
+      default: 'Anchor'
+    }
+  }
+}
+</script>
+
+<style scoped>
+
+</style>

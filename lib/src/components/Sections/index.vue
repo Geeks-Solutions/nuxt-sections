@@ -355,7 +355,7 @@
                   <TrashIcon class="trash-icon" />
                 </div>
                 <div @click="copyAnchor(`#${view.name}-${view.id}`)">
-                  <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, click to copy`" class="edit-icon" />
+                  <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
               <div class="view-component" :style="{ background: viewsBgColor }">
