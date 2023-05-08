@@ -1571,6 +1571,7 @@ export default {
   position: absolute !important;
   right: 10px !important;
   top: 10px;
+  z-index: 40 !important;
 }
 .section-view .controls svg {
   cursor: pointer;
