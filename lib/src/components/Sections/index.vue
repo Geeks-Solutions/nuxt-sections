@@ -384,7 +384,7 @@
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
-              <div class="text-center h4 header" v-if="!currentSection">
+              <div class="text-center h4 header">
                 <div class="title">{{ $t("section-title") }}:</div>
                 <div class="closeIcon" @click="staticModal = false">
                   <CloseIcon />
