@@ -1,0 +1,61 @@
+{
+  "name": "@geeks.solutions/nuxt-sections",
+  "version": "1.0.0",
+  "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Geeks-Solutions/nuxt-sections.git"
+  },
+  "keywords": [
+    "page speed",
+    "ssr render",
+    "page building",
+    "A/B testing",
+    "Content authoring"
+  ],
+  "description": "A NuxtJS module to interface with Sections Serverless Page Building and rendering engine",
+  "license": "ISC",
+  "homepage": "https://sections.geeks.solutions",
+  "contributors": [],
+  "files": [
+    "lib"
+  ],
+  "main": "lib/module.js",
+  "sideEffects": false,
+  "scripts": {
+    "dev": "nuxt example",
+    "build": "nuxt build",
+    "lint": "eslint --ext .js,.vue .",
+    "release": "yarn test && standard-version && git push --follow-tags && npm publish",
+    "test": "yarn lint && jest"
+  },
+  "devDependencies": {
+    "@babel/core": "latest",
+    "@babel/preset-env": "latest",
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
+    "@nuxtjs/eslint-config": "latest",
+    "@nuxtjs/module-test-utils": "latest",
+    "babel-eslint": "latest",
+    "babel-jest": "latest",
+    "eslint": "latest",
+    "husky": "latest",
+    "jest": "latest",
+    "nuxt-edge": "latest",
+    "standard-version": "latest",
+    "@nuxtjs/tailwindcss": "^6.4.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "@nuxtjs/axios": "^5.13.6",
+    "cookie-universal-nuxt": "^2.2.2",
+    "@nuxtjs/i18n": "^7.3.1",
+    "tailwindcss-pixel-dimensions": "^1.0.2",
+    "vue-toastification": "^1.7.14",
+    "vuedraggable": "^2.24.3",
+    "vue-quill-editor": "^3.0.6"
+  }
+}
