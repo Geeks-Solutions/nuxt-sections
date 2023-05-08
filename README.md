@@ -200,6 +200,8 @@ await addNewStaticType(sectionTypeName).then((res) => {
 - The static wysiwyg component uses the globalFileUpload function of media by default.
 - To use the globalFileUpload function of media, you need to call the function and pass the base64 file to it and the old media ID.
 - Import globalFileUpload from "@geeks.solutions/nuxt-sections/lib/src/utils"
+- To link the uploaded media to your content settings must be sent as an array and the media key which is `media` in the below example should match the field name that is set when creating your static section type
+- media should also be sent as an array, and it is required to have `media_id` key and its value coming from id returned by the globalFileUpload function
 
 ````js
 import {globalFileUpload} from "@geeks.solutions/nuxt-sections/lib/src/utils";
@@ -209,17 +211,64 @@ It is an async function that returns an object of the function result.
 ###Example on how to use the function:
 
 ````js
-async onFileSelected(e) {
 
-this.file = this.$refs.imagePick.files[0] //your uploaded file
-
-await globalFileUpload(this.file, oldMediaID).then(
-   (result) => {
-     this.settings.url = result.data.files[0].url //assign the result url to the settings object to be able to read that value in $section.settings in you static component
-   }
- )
- 
+data() {
+  return {
+    settings: [
+      {
+        en: {
+          title: '',
+          text: '',
+        },
+        fr: {
+          title: '',
+          text: '',
+        },
+        media: [
+          {
+            media_id: "",
+            url: "",
+            files: [
+              {
+                filename: "",
+                url: ""
+              }
+            ]
+          }
+        ],
+      }
+    ],
+    previewMedia: '',
+    file: '',
+  }
 },
+
+async onFileSelected(e) {
+    
+  this.file = this.$refs.imagePick.files[0] //your uploaded file
+
+  const media = {
+    media_id: "",
+    files: [
+      {
+        filename: "",
+        url: ""
+      }
+    ]
+  };
+
+  await globalFileUpload(this.file).then(
+    (result) => {
+      media.files[0].url = result.data.files[0].url;
+      media.files[0].filename = result.data.files[0].filename;
+      media.media_id = result.data.id;
+      this.settings[0].media = []
+      this.settings[0].media.push(media);
+      this.previewImage = result.data.files[0].url
+    }
+  )
+  
+}
 ````
 
 - `deleteMedia` A function helper to remove media.
