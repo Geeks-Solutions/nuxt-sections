@@ -3,6 +3,7 @@
     :admin="admin"
     :pageName="pageName"
     :lang="lang"
+    :_sections-options="_sectionsOptions"
     @load="loaded"
   />
 </template>
@@ -26,6 +27,9 @@ export default {
       type: Boolean,
       default: false,
     },
+    _sectionsOptions: {
+      type: Object
+    }
   },
   components: {
     SectionsMain,

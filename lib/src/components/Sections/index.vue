@@ -591,6 +591,9 @@ export default {
       type: String,
       default: "transparent",
     },
+    _sectionsOptions: {
+      type: Object
+    }
   },
   data() {
     return {
@@ -637,6 +640,7 @@ export default {
       requirementsInputs: {},
       allSections: {},
       sectionsError: "",
+      sectionsAdminError: "",
       fieldsInputs: [
         {
           type: "image",
@@ -684,6 +688,8 @@ export default {
   mounted() {
     if(this.sectionsError !== "") {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError);
+    } else if (this.sectionsAdminError !== "") {
+      this.showToast("Error", "error", this.sectionsAdminError);
     }
   },
   async fetch() {
@@ -725,6 +731,9 @@ export default {
           this.trackSectionComp(section.name, section.type);
 
           if (section.type === "configurable") {
+            if (!Array.isArray(section.render_data[0].settings.image)) {
+              section.render_data[0].settings.image = []
+            }
             section.settings = section.render_data[0].settings;
             // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
             // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
@@ -769,6 +778,9 @@ export default {
             this.trackSectionComp(section.name, section.type);
 
             if (section.type === "configurable") {
+              if (!Array.isArray(section.render_data[0].settings.image)) {
+                section.render_data[0].settings.image = []
+              }
               section.settings = section.render_data[0].settings;
               // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
               // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
@@ -835,12 +847,14 @@ export default {
             const token = res.data.token;
             const date = new Date();
             date.setDate(date.getDate() + 7);
-            this.$cookies.set("sections-auth-token", token, {expires: date});
+            this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {expires: date});
             this.$nuxt.context.redirect(this.$route.path)
             this.loading = false;
           })
           .catch((err) => {
+            console.log(err)
             this.loading = false;
+            this.sectionsAdminError = err.response.data.token
           });
       }
     },
