@@ -756,6 +756,7 @@ export default {
         description: ""
       },
       sectionsError: "",
+      sectionsErrorOptions: null,
       sectionsAdminError: "",
       fieldsInputs: [
         {
@@ -803,7 +804,7 @@ export default {
   },
   mounted() {
     if(this.sectionsError !== "") {
-      this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError);
+      this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
     } else if (this.sectionsAdminError !== "") {
       this.showToast("Error", "error", this.sectionsAdminError);
     }
@@ -884,7 +885,7 @@ export default {
         if(error.response.data.error) {
           this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
         } else {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message);
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
         }
         this.loading = false;
         this.pageNotFound = true;
@@ -940,6 +941,7 @@ export default {
             this.sectionsError = error.response.data.error
           } else {
             this.sectionsError = error.response.data.message
+            this.sectionsErrorOptions = error.response.data.options
           }
           this.loading = false;
           this.pageNotFound = true;
@@ -1078,7 +1080,7 @@ export default {
           this.loading = false;
         })
           .catch((error) => {
-            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message);
+            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
             this.loading = false;
           });
       } else {
@@ -1149,15 +1151,16 @@ export default {
           this.showToast(
             "Error creating page",
             "error",
-            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message
+            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message,
+            err.response.data.options
           );
         });
     },
-    showToast(title, variant, message) {
+    showToast(title, variant, message, options) {
       this.$toast[variant](message, {
         position: "top-right",
         timeout: 5000,
-        closeOnClick: true,
+        closeOnClick: false,
         pauseOnFocusLoss: true,
         pauseOnHover: true,
         draggable: true,
@@ -1166,7 +1169,8 @@ export default {
         hideProgressBar: false,
         closeButton: "button",
         icon: false,
-        rtl: false
+        rtl: false,
+        onClick: () => options ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
       });
     },
     getSectionTypes() {
@@ -1517,7 +1521,8 @@ export default {
             this.showToast(
               "Error saving your changes",
               "error",
-              error.response.data.message
+              error.response.data.message,
+              error.response.data.options
             );
             this.loading = false;
           });
