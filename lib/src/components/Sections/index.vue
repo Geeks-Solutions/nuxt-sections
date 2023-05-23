@@ -38,11 +38,23 @@
             <div class="btn-icon check-icon"><CheckIcon /></div>
             <div class="btn-text">{{ $t("Save") }}</div>
           </button>
+          <button class="hp-button danger" @click="isDeletePageModalOpen = true">
+            <div class="btn-icon"><TrashIcon class="trash-icon-style" /></div>
+            <div class="btn-text">{{ $t("deletePage") }}</div>
+          </button>
           <button class="hp-button grey" @click="restoreVariations">
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
           <div class="flex control-button" style="right: 0px; left: auto;">
+            <button
+              class="hp-button "
+              :class="selectedVariation === pageName ? 'danger' : 'grey'"
+              data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+              @click="metadataModal = true"
+            >
+              <SettingsIcon />
+            </button>
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -247,6 +259,43 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
+      <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
+      <div v-show="isDeletePageModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+            <div class="flex flex-row justify-center items-center">
+              <AlertIcon />
+              <div class="text-center h4 my-3 pb-3 deletePageLabel">
+                {{ $t("deletePage") }}
+              </div>
+            </div>
+            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+              {{ $t("delete-section-page") }}
+            </div>
+            <div class="flex flex-row justify-center">
+              <button
+                class="hp-button danger"
+                @click="deleteSectionPage()"
+              >
+                <div class="btn-text">
+                  {{ $t("Confirm") }}
+                </div>
+              </button>
+              <button
+                class="hp-button"
+                @click="isDeletePageModalOpen = false"
+              >
+                <div class="btn-text">
+                  {{ $t("Cancel") }}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
       <div v-show="isAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -434,6 +483,60 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
+      <!-- This is the popup to updatethe page metadata     -->
+      <div v-show="metadataModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+            <div class="section-modal-wrapper">
+              <div class="text-center h4 header">
+                <div class="title">{{ $t("Metadata") }}</div>
+                <div class="closeIcon" @click="metadataModal = false">
+                  <CloseIcon />
+                </div>
+              </div>
+              <div class="flex w-full justify-center">
+                <div class="body metadataFieldsContainer">
+                  <div style="margin-bottom: 10px;">
+                    {{ $t("pageUrl") }}
+                  </div>
+                  <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                    type="text"
+                    v-model="pagePath"
+                  />
+                  <div style="margin-bottom: 10px;" class="mt-2">
+                    {{ $t("pageTitle") }}
+                  </div>
+                  <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                    type="text"
+                    v-model="pageMetadata.title"
+                  />
+                  <div style="margin-bottom: 10px;" class="mt-2">
+                    {{ $t("pageSeoDesc") }}
+                  </div>
+                  <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                    type="text"
+                    v-model="pageMetadata.description"
+                  />
+                </div>
+              </div>
+              <div class="footer">
+                <button class="hp-button" @click="updatePageMetaData">
+                  <div class="btn-icon check-icon"></div>
+                  <div class="btn-text">
+                    {{ $t("Continue") }}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <!-- This is popup to show the successfully created new static section message      -->
       <div v-show="staticSuccess" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -526,6 +629,8 @@ import AnchorIcon from "../../base/icons/anchor.vue";
 import CreateIcon from "../../base/icons/create.vue";
 import DotIcon from "../../base/icons/dot.vue";
 import CelebrateIcon from "../../base/icons/celebrate.vue";
+import AlertIcon from "../../base/icons/alert.vue";
+import SettingsIcon from "../../base/icons/settings.vue";
 
 import SectionItem from "../../base/SubTypes/sectionItem.vue";
 
@@ -558,7 +663,9 @@ export default {
     AnchorIcon,
     CreateIcon,
     DotIcon,
-    CelebrateIcon
+    CelebrateIcon,
+    AlertIcon,
+    SettingsIcon
   },
   props: {
     pageName: {
@@ -603,6 +710,7 @@ export default {
       staticSuccess: false,
       sectionTypeName: "",
       staticModal: false,
+      metadataModal: false,
       sectionInPage: [],
       pageNotFound: false,
       dismissCountDown: 0,
@@ -619,6 +727,7 @@ export default {
       currentSection: null,
       isModalOpen: false,
       isDeleteModalOpen: false,
+      isDeletePageModalOpen: false,
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
       synched: false,
@@ -639,6 +748,13 @@ export default {
       sectionsPageLastUpdated: null,
       requirementsInputs: {},
       allSections: {},
+      pageId: "",
+      pagePath: "",
+      sectionsPageName: "",
+      pageMetadata: {
+        title: "",
+        description: ""
+      },
       sectionsError: "",
       sectionsAdminError: "",
       fieldsInputs: [
@@ -726,6 +842,11 @@ export default {
         const res = await this.$axios.post(URL, payload, config)
         const sections = res.data.sections;
         this.allSections = res.data.sections;
+        this.pageId = res.data.id;
+        this.pagePath = res.data.path;
+        this.sectionsPageName = res.data.page;
+        if (res.data.metadata && res.data.metadata.title) this.pageMetadata.title = res.data.metadata.title;
+        if (res.data.metadata && res.data.metadata.description) this.pageMetadata.description = res.data.metadata.description;
         const views = {};
         sections.map((section) => {
           this.trackSectionComp(section.name, section.type);
@@ -776,6 +897,11 @@ export default {
           const res = await this.$axios.post(URL, payload, config)
           const sections = res.data.sections;
           this.allSections = res.data.sections;
+          this.pageId = res.data.id;
+          this.pagePath = res.data.path;
+          this.sectionsPageName = res.data.page;
+          if (res.data.metadata && res.data.metadata.title) this.pageMetadata.title = res.data.metadata.title;
+          if (res.data.metadata && res.data.metadata.description) this.pageMetadata.description = res.data.metadata.description;
           const views = {};
           sections.map((section) => {
             this.trackSectionComp(section.name, section.type);
@@ -833,6 +959,14 @@ export default {
     }
   },
   methods: {
+    updatePageMetaData() {
+      this.metadataModal = false
+      this.showToast(
+        "Success",
+        "info",
+        this.$t('savePageSettings')
+      );
+    },
     addField(index) {
       this.fieldsInputs.push({ type: "image", name: "" });
     },
@@ -1001,6 +1135,9 @@ export default {
         .then((res) => {
           this.loading = false
           this.pageNotFound = false;
+          this.sectionsPageLastUpdated = res.data.last_updated;
+          this.pageId = res.data.id;
+          this.pagePath = res.data.path;
           this.showToast(
             "Success",
             "success",
@@ -1302,6 +1439,7 @@ export default {
       const sections = [];
       let views = this.displayVariations[variationName].views;
       views = Object.values(views);
+      let formatValdiation = true
       views.map((view) => {
         if(!view.error) {
           const refactorView = {
@@ -1315,6 +1453,15 @@ export default {
             refactorView.name = view.nameID;
             const options = [];
             view.render_data.map((rData) => {
+              if (!Array.isArray(rData.settings.image)) {
+                formatValdiation = false
+                this.showToast(
+                  "",
+                  "error",
+                  this.$t('imageFieldValidation') + view.name
+                );
+                return;
+              }
               options.push(rData.settings);
             });
             refactorView.options = options;
@@ -1337,36 +1484,44 @@ export default {
       };
 
       const variables = {
-        page: variationName,
+        page: this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName,
+        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+        metadata: this.pageMetadata,
         variations: [],
         sections,
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${variationName}`;
-      this.$axios
-        .put(URL, variables, config)
-        .then((res) => {
-          if (res.data && res.data.error) {
-            this.showToast("error", "error", res.data.error);
-            return;
-          }
-          this.sectionsPageLastUpdated = res.data.last_updated
-          this.displayVariations[variationName].altered = false;
-          this.loading = false;
-          this.showToast(
-            "Success",
-            "success",
-            this.$t('successPageChanges')
-          );
-        })
-        .catch((error) => {
-          this.showToast(
-            "Error saving your changes",
-            "error",
-            error.response.data.message
-          );
-          this.loading = false;
-        });
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName}`;
+
+      if (formatValdiation === true) {
+        this.$axios
+          .put(URL, variables, config)
+          .then((res) => {
+            if (res.data && res.data.error) {
+              this.showToast("error", "error", res.data.error);
+              return;
+            }
+            this.sectionsPageLastUpdated = res.data.last_updated
+            this.displayVariations[variationName].altered = false;
+            this.loading = false;
+            this.showToast(
+              "Success",
+              "success",
+              this.$t('successPageChanges')
+            );
+            if (this.pagePath !== this.pageName) {
+              this.$nuxt.context.redirect(this.pagePath)
+            }
+          })
+          .catch((error) => {
+            this.showToast(
+              "Error saving your changes",
+              "error",
+              error.response.data.message
+            );
+            this.loading = false;
+          });
+      } else this.loading = false;
     },
     saveVariation() {
       this.loading = true;
@@ -1466,6 +1621,34 @@ export default {
         })
         .catch((error) => {
           this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
+          this.loading = false
+          this.$emit("load", false);
+        });
+    },
+    deleteSectionPage() {
+      this.isDeletePageModalOpen = false
+      this.loading = true
+      this.$emit("load", true);
+      const token = this.$cookies.get("sections-auth-token");
+      const config = {
+        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageId}`;
+      this.$axios
+        .delete(URL, config)
+        .then((res) => {
+          this.showToast(
+            "Success",
+            "info",
+            res.data.message
+          );
+          this.loading = false
+          this.$emit("load", false);
+          setTimeout(() => window.location.reload(), 1000)
+        })
+        .catch((error) => {
+          this.showToast("Error", "error", this.$t('deleteSectionPageError') + error.response.data.message);
           this.loading = false
           this.$emit("load", false);
         });
@@ -1973,6 +2156,15 @@ span.handle {
 .content-wrapper {
   overflow-y: scroll;
   height: 550px;
+}
+.deletePageLabel {
+  size: 20px;
+}
+.deletePageConfirmation {
+  margin: 20px 0 20px 0;
+}
+.metadataFieldsContainer {
+  width: 500px;
 }
 @media only screen and (max-height: 800px) {
   .content-wrapper {
