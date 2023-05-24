@@ -1514,7 +1514,7 @@ export default {
               this.$t('successPageChanges')
             );
             if (this.pagePath !== this.pageName) {
-              this.$nuxt.context.redirect(this.pagePath)
+              this.$nuxt.context.redirect(`${this.$sections.pathToDynamicPage}/${this.pagePath}`)
             }
           })
           .catch((error) => {

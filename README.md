@@ -27,6 +27,7 @@ And configure the library, the possible configurations are as follow:
 - `environment`: _to use only for development purposes_ set it to "testing" if you want your requests to be directed to sections test server
 - `projectUrl`: _to use only if you intend to run sections in SSR_ set it to the project url you defined in your project interface on sections back office.
 - `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages.
+- `pathToDynamicPage`: _to use only if you intend to have a path for the dynamic pages set to the path you want ex. `/landing`. Then you can access your page with `/landing/YOUR_PAGE_NAME`
 
 > The following packages are installed by the module:
 `cookie-universal-nuxt`
@@ -102,7 +103,8 @@ publicRuntimeConfig: {
       projectId: '62ff7827628cfa00099de9e1',
       projectUrl: 'http://localhost:3000',
       environment: 'testing',
-      queryStringSupport: "enabled"
+      queryStringSupport: "enabled",
+      pathToDynamicPage: ""
     }
 }
 ````

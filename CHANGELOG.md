@@ -20,3 +20,5 @@
  - Support for cookie-universal-nuxt alias to dynamically read the alias used by the host project
  
  - SEO metadata management #101
+
+ - New feature implementation of having default support for dynamic pages
