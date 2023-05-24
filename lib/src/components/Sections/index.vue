@@ -2177,4 +2177,8 @@ span.handle {
     height: 450px;
   }
 }
+
+.Vue-Toastification__toast-body {
+  cursor: pointer;
+}
 </style>
