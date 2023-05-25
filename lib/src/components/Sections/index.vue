@@ -38,23 +38,11 @@
             <div class="btn-icon check-icon"><CheckIcon /></div>
             <div class="btn-text">{{ $t("Save") }}</div>
           </button>
-          <button class="hp-button danger" @click="isDeletePageModalOpen = true">
-            <div class="btn-icon"><TrashIcon class="trash-icon-style" /></div>
-            <div class="btn-text">{{ $t("deletePage") }}</div>
-          </button>
           <button class="hp-button grey" @click="restoreVariations">
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
           <div class="flex control-button" style="right: 0px; left: auto;">
-            <button
-              class="hp-button "
-              :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-              @click="metadataModal = true"
-            >
-              <SettingsIcon />
-            </button>
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -71,6 +59,20 @@
               @click="initImportSections"
             >
               <ExportIcon />
+            </button>
+            <button
+              class="hp-button danger"
+              data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+              @click="isDeletePageModalOpen = true">
+              <TrashIcon class="trash-icon-style" />
+            </button>
+            <button
+              class="hp-button "
+              :class="selectedVariation === pageName ? 'danger' : 'grey'"
+              data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+              @click="metadataModal = true"
+            >
+              <SettingsIcon />
             </button>
             <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none" />
             <button
@@ -504,22 +506,46 @@
                     type="text"
                     v-model="pagePath"
                   />
-                  <div style="margin-bottom: 10px;" class="mt-2">
-                    {{ $t("pageTitle") }}
+                  <span class="pagePathRequiredStyle" v-show="pagePathRequired !== ''">{{ pagePathRequired }}</span>
+                  <div class="flex metadataFields">
+                    <div class="metadataColumns">
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageTitle") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.en.title"
+                      />
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageSeoDesc") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.en.description"
+                      />
+                    </div>
+                    <div class="metadataColumns">
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageTitleFr") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.fr.title"
+                      />
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageSeoDescFr") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.fr.description"
+                      />
+                    </div>
                   </div>
-                  <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    type="text"
-                    v-model="pageMetadata.title"
-                  />
-                  <div style="margin-bottom: 10px;" class="mt-2">
-                    {{ $t("pageSeoDesc") }}
-                  </div>
-                  <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    type="text"
-                    v-model="pageMetadata.description"
-                  />
+
                 </div>
               </div>
               <div class="footer">
@@ -702,6 +728,12 @@ export default {
       type: Object
     }
   },
+  head() {
+    return {
+      title: this.pageMetadata[this.lang].title,
+      description: this.pageMetadata[this.lang].description
+    }
+  },
   data() {
     return {
       sectionSettings: {
@@ -750,10 +782,17 @@ export default {
       allSections: {},
       pageId: "",
       pagePath: "",
+      pagePathRequired: "",
       sectionsPageName: "",
       pageMetadata: {
-        title: "",
-        description: ""
+        en: {
+          title: "",
+          description: ""
+        },
+        fr: {
+          title: "",
+          description: ""
+        }
       },
       sectionsError: "",
       sectionsErrorOptions: null,
@@ -846,8 +885,10 @@ export default {
         this.pageId = res.data.id;
         this.pagePath = res.data.path;
         this.sectionsPageName = res.data.page;
-        if (res.data.metadata && res.data.metadata.title) this.pageMetadata.title = res.data.metadata.title;
-        if (res.data.metadata && res.data.metadata.description) this.pageMetadata.description = res.data.metadata.description;
+        for (const lang of ['en', 'fr']) {
+          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+        }
         const views = {};
         sections.map((section) => {
           this.trackSectionComp(section.name, section.type);
@@ -901,8 +942,10 @@ export default {
           this.pageId = res.data.id;
           this.pagePath = res.data.path;
           this.sectionsPageName = res.data.page;
-          if (res.data.metadata && res.data.metadata.title) this.pageMetadata.title = res.data.metadata.title;
-          if (res.data.metadata && res.data.metadata.description) this.pageMetadata.description = res.data.metadata.description;
+          for (const lang of ['en', 'fr']) {
+            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+          }
           const views = {};
           sections.map((section) => {
             this.trackSectionComp(section.name, section.type);
@@ -962,12 +1005,17 @@ export default {
   },
   methods: {
     updatePageMetaData() {
-      this.metadataModal = false
-      this.showToast(
-        "Success",
-        "info",
-        this.$t('savePageSettings')
-      );
+      this.pagePathRequired = ''
+      if (this.pagePath.trim() !== '') {
+        this.metadataModal = false
+        this.showToast(
+          "Success",
+          "info",
+          this.$t('savePageSettings')
+        );
+      } else {
+        this.pagePathRequired = this.$t('pagePathRequired')
+      }
     },
     addField(index) {
       this.fieldsInputs.push({ type: "image", name: "" });
@@ -1157,7 +1205,7 @@ export default {
         });
     },
     showToast(title, variant, message, options) {
-      this.$toast[variant](message, {
+      this.$toast[variant](options && Object.keys(options).length > 0 ? '🔗 ' + message : message, {
         position: "top-right",
         timeout: 5000,
         closeOnClick: false,
@@ -1170,7 +1218,7 @@ export default {
         closeButton: "button",
         icon: false,
         rtl: false,
-        onClick: () => options ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
+        onClick: () => options && Object.keys(options).length > 0 ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
       });
     },
     getSectionTypes() {
@@ -2180,5 +2228,16 @@ span.handle {
 
 .Vue-Toastification__toast-body {
   cursor: pointer;
+}
+
+.metadataFields {
+  justify-content: space-between;
+}
+.metadataColumns {
+  width: 100%;
+  padding: 4px;
+}
+.pagePathRequiredStyle {
+  color: red;
 }
 </style>
