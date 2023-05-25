@@ -731,7 +731,13 @@ export default {
   head() {
     return {
       title: this.pageMetadata[this.lang].title,
-      description: this.pageMetadata[this.lang].description
+      meta: [
+        {
+          hid: 'description',
+          name: 'description',
+          content: this.pageMetadata[this.lang].description
+        }
+      ]
     }
   },
   data() {
@@ -1562,7 +1568,7 @@ export default {
               this.$t('successPageChanges')
             );
             if (this.pagePath !== this.pageName) {
-              this.$nuxt.context.redirect(`${this.$sections.pathToDynamicPage}/${this.pagePath}`)
+              this.$nuxt.context.redirect(this.pagePath)
             }
           })
           .catch((error) => {
