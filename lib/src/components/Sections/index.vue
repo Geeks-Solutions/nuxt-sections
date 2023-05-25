@@ -505,6 +505,8 @@
                     class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                     type="text"
                     v-model="pagePath"
+                    @input="validatePath"
+                    @keydown="preventSlash"
                   />
                   <span class="pagePathRequiredStyle" v-show="pagePathRequired !== ''">{{ pagePathRequired }}</span>
                   <div class="flex metadataFields">
@@ -1010,6 +1012,16 @@ export default {
     }
   },
   methods: {
+    validatePath() {
+      if (this.pagePath.includes('/')) {
+        this.pagePath.replace('/', '')
+      }
+    },
+    preventSlash(event) {
+      if (event.key === '/') {
+        event.preventDefault()
+      }
+    },
     updatePageMetaData() {
       this.pagePathRequired = ''
       if (this.pagePath.trim() !== '') {
