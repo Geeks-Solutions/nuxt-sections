@@ -60,6 +60,20 @@
             >
               <ExportIcon />
             </button>
+            <button
+              class="hp-button danger"
+              data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+              @click="isDeletePageModalOpen = true">
+              <TrashIcon class="trash-icon-style" />
+            </button>
+            <button
+              class="hp-button "
+              :class="selectedVariation === pageName ? 'danger' : 'grey'"
+              data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+              @click="metadataModal = true"
+            >
+              <SettingsIcon />
+            </button>
             <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none" />
             <button
               @click="$cookies.remove('sections-auth-token'), (admin = false)"
@@ -235,6 +249,43 @@
               <button
                 class="hp-button"
                 @click="isDeleteModalOpen = false"
+              >
+                <div class="btn-text">
+                  {{ $t("Cancel") }}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
+      <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
+      <div v-show="isDeletePageModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+            <div class="flex flex-row justify-center items-center">
+              <AlertIcon />
+              <div class="text-center h4 my-3 pb-3 deletePageLabel">
+                {{ $t("deletePage") }}
+              </div>
+            </div>
+            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+              {{ $t("delete-section-page") }}
+            </div>
+            <div class="flex flex-row justify-center">
+              <button
+                class="hp-button danger"
+                @click="deleteSectionPage()"
+              >
+                <div class="btn-text">
+                  {{ $t("Confirm") }}
+                </div>
+              </button>
+              <button
+                class="hp-button"
+                @click="isDeletePageModalOpen = false"
               >
                 <div class="btn-text">
                   {{ $t("Cancel") }}
@@ -434,6 +485,86 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
+      <!-- This is the popup to updatethe page metadata     -->
+      <div v-show="metadataModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+            <div class="section-modal-wrapper">
+              <div class="text-center h4 header">
+                <div class="title">{{ $t("Metadata") }}</div>
+                <div class="closeIcon" @click="metadataModal = false">
+                  <CloseIcon />
+                </div>
+              </div>
+              <div class="flex w-full justify-center">
+                <div class="body metadataFieldsContainer">
+                  <div style="margin-bottom: 10px;">
+                    {{ $t("pageUrl") }}
+                  </div>
+                  <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                    type="text"
+                    v-model="pagePath"
+                    @input="validatePath"
+                    @keydown="preventSlash"
+                  />
+                  <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+                  <div class="flex metadataFields">
+                    <div class="metadataColumns">
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageTitle") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.en.title"
+                      />
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageSeoDesc") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.en.description"
+                      />
+                    </div>
+                    <div class="metadataColumns">
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageTitleFr") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.fr.title"
+                      />
+                      <div style="margin-bottom: 10px;" class="mt-2">
+                        {{ $t("pageSeoDescFr") }}
+                      </div>
+                      <input
+                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        type="text"
+                        v-model="pageMetadata.fr.description"
+                      />
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <div class="footer">
+                <button class="hp-button" @click="updatePageMetaData">
+                  <div class="btn-icon check-icon"></div>
+                  <div class="btn-text">
+                    {{ $t("Continue") }}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <!-- This is popup to show the successfully created new static section message      -->
       <div v-show="staticSuccess" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -526,6 +657,8 @@ import AnchorIcon from "../../base/icons/anchor.vue";
 import CreateIcon from "../../base/icons/create.vue";
 import DotIcon from "../../base/icons/dot.vue";
 import CelebrateIcon from "../../base/icons/celebrate.vue";
+import AlertIcon from "../../base/icons/alert.vue";
+import SettingsIcon from "../../base/icons/settings.vue";
 
 import SectionItem from "../../base/SubTypes/sectionItem.vue";
 
@@ -558,7 +691,9 @@ export default {
     AnchorIcon,
     CreateIcon,
     DotIcon,
-    CelebrateIcon
+    CelebrateIcon,
+    AlertIcon,
+    SettingsIcon
   },
   props: {
     pageName: {
@@ -591,6 +726,21 @@ export default {
       type: String,
       default: "transparent",
     },
+    _sectionsOptions: {
+      type: Object
+    }
+  },
+  head() {
+    return {
+      title: this.pageMetadata[this.lang].title,
+      meta: [
+        {
+          hid: 'description',
+          name: 'description',
+          content: this.pageMetadata[this.lang].description
+        }
+      ]
+    }
   },
   data() {
     return {
@@ -600,6 +750,7 @@ export default {
       staticSuccess: false,
       sectionTypeName: "",
       staticModal: false,
+      metadataModal: false,
       sectionInPage: [],
       pageNotFound: false,
       dismissCountDown: 0,
@@ -616,6 +767,7 @@ export default {
       currentSection: null,
       isModalOpen: false,
       isDeleteModalOpen: false,
+      isDeletePageModalOpen: false,
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
       synched: false,
@@ -636,7 +788,25 @@ export default {
       sectionsPageLastUpdated: null,
       requirementsInputs: {},
       allSections: {},
+      pageId: "",
+      pagePath: "",
+      sectionsPageName: "",
+      pageMetadata: {
+        en: {
+          title: "",
+          description: ""
+        },
+        fr: {
+          title: "",
+          description: ""
+        }
+      },
+      metadataErrors: {
+        path: [""]
+      },
       sectionsError: "",
+      sectionsErrorOptions: null,
+      sectionsAdminError: "",
       fieldsInputs: [
         {
           type: "image",
@@ -683,7 +853,9 @@ export default {
   },
   mounted() {
     if(this.sectionsError !== "") {
-      this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError);
+      this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
+    } else if (this.sectionsAdminError !== "") {
+      this.showToast("Error", "error", this.sectionsAdminError);
     }
   },
   async fetch() {
@@ -720,11 +892,24 @@ export default {
         const res = await this.$axios.post(URL, payload, config)
         const sections = res.data.sections;
         this.allSections = res.data.sections;
+        this.pageId = res.data.id;
+        this.pagePath = res.data.path;
+        this.sectionsPageName = res.data.page;
+        for (const lang of ['en', 'fr']) {
+          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+        }
         const views = {};
         sections.map((section) => {
           this.trackSectionComp(section.name, section.type);
 
           if (section.type === "configurable") {
+            // The below condition is set to replace old image fields in settings that were saved as objects,
+            // which was causing the section using this field to be discarded and no more saved to the page
+            // after the media content linking update on sections server that requires image field to be an array
+            if (!Array.isArray(section.render_data[0].settings.image)) {
+              section.render_data[0].settings.image = []
+            }
             section.settings = section.render_data[0].settings;
             // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
             // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
@@ -751,7 +936,7 @@ export default {
         if(error.response.data.error) {
           this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
         } else {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message);
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
         }
         this.loading = false;
         this.pageNotFound = true;
@@ -764,11 +949,24 @@ export default {
           const res = await this.$axios.post(URL, payload, config)
           const sections = res.data.sections;
           this.allSections = res.data.sections;
+          this.pageId = res.data.id;
+          this.pagePath = res.data.path;
+          this.sectionsPageName = res.data.page;
+          for (const lang of ['en', 'fr']) {
+            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+          }
           const views = {};
           sections.map((section) => {
             this.trackSectionComp(section.name, section.type);
 
             if (section.type === "configurable") {
+              // The below condition is set to replace old image fields in settings that were saved as objects,
+              // which was causing the section using this field to be discarded and no more saved to the page
+              // after the media content linking update on sections server that requires image field to be an array
+              if (!Array.isArray(section.render_data[0].settings.image)) {
+                section.render_data[0].settings.image = []
+              }
               section.settings = section.render_data[0].settings;
               // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
               // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
@@ -796,6 +994,7 @@ export default {
             this.sectionsError = error.response.data.error
           } else {
             this.sectionsError = error.response.data.message
+            this.sectionsErrorOptions = error.response.data.options
           }
           this.loading = false;
           this.pageNotFound = true;
@@ -815,6 +1014,101 @@ export default {
     }
   },
   methods: {
+    validatePath() {
+      if (this.pagePath.includes('/')) {
+        this.pagePath.replace('/', '')
+      }
+    },
+    preventSlash(event) {
+      if (event.key === '/') {
+        event.preventDefault()
+      }
+    },
+    updatePageMetaData() {
+      this.loading = true
+      this.metadataErrors.path[0] = ''
+
+      const sections = [];
+      let views = this.allSections;
+
+      views.forEach((view) => {
+        if(!view.error) {
+          const refactorView = {
+            id: view.id,
+            weight: view.weight,
+            name: view.name,
+            type: view.type,
+            linkedTo: view.linkedTo,
+          };
+          if (view.settings && view.type === "configurable") {
+            refactorView.name = view.nameID;
+            const options = [];
+            view.render_data.map((rData) => {
+              options.push(rData.settings);
+            });
+            refactorView.options = options;
+          } else if (view.settings) {
+            refactorView.options = view.settings;
+          }
+          if (refactorView.id.startsWith("id-")) {
+            delete refactorView.id;
+          }
+          sections.push({ ...refactorView });
+        }
+      });
+
+      const token = this.$cookies.get("sections-auth-token");
+      const header = {
+        token,
+      };
+      const config = {
+        headers: sectionHeader(header),
+      };
+
+      const variables = {
+        page: this.sectionsPageName,
+        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+        metadata: this.pageMetadata,
+        variations: [],
+        sections
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName}`;
+
+      this.$axios
+        .put(URL, variables, config)
+        .then((res) => {
+          this.loading = false
+          if (res.data && res.data.error) {
+            this.showToast("error", "error", res.data.error);
+            return;
+          }
+          this.sectionsPageLastUpdated = res.data.last_updated
+          this.metadataModal = false
+          this.showToast(
+            "Success",
+            "success",
+            this.$t('successPageChanges')
+          );
+          if (this.pagePath !== this.pageName) {
+            this.$nuxt.context.redirect(this.pagePath)
+          }
+        })
+        .catch((error) => {
+          this.loading = false
+          if(error.response.data.errors) {
+            this.metadataErrors = error.response.data.errors
+          } else {
+            this.showToast(
+              "Error saving your changes",
+              "error",
+              error.response.data.message,
+              error.response.data.options
+            );
+          }
+        });
+
+    },
     addField(index) {
       this.fieldsInputs.push({ type: "image", name: "" });
     },
@@ -835,12 +1129,14 @@ export default {
             const token = res.data.token;
             const date = new Date();
             date.setDate(date.getDate() + 7);
-            this.$cookies.set("sections-auth-token", token, {expires: date});
+            this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {expires: date});
             this.$nuxt.context.redirect(this.$route.path)
             this.loading = false;
           })
           .catch((err) => {
+            console.log(err)
             this.loading = false;
+            this.sectionsAdminError = err.response.data.token
           });
       }
     },
@@ -924,7 +1220,7 @@ export default {
           this.loading = false;
         })
           .catch((error) => {
-            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message);
+            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
             this.loading = false;
           });
       } else {
@@ -981,6 +1277,11 @@ export default {
         .then((res) => {
           this.loading = false
           this.pageNotFound = false;
+          this.sectionsPageLastUpdated = res.data.last_updated;
+          this.pageId = res.data.id;
+          this.sectionsPageName = res.data.page;
+          this.pagePath = res.data.path;
+          this.allSections = []
           this.showToast(
             "Success",
             "success",
@@ -992,15 +1293,16 @@ export default {
           this.showToast(
             "Error creating page",
             "error",
-            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message
+            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message,
+            err.response.data.options
           );
         });
     },
-    showToast(title, variant, message) {
-      this.$toast[variant](message, {
+    showToast(title, variant, message, options) {
+      this.$toast[variant](options && Object.keys(options).length > 0 ? '🔗 ' + message : message, {
         position: "top-right",
         timeout: 5000,
-        closeOnClick: true,
+        closeOnClick: false,
         pauseOnFocusLoss: true,
         pauseOnHover: true,
         draggable: true,
@@ -1009,7 +1311,8 @@ export default {
         hideProgressBar: false,
         closeButton: "button",
         icon: false,
-        rtl: false
+        rtl: false,
+        onClick: () => options && Object.keys(options).length > 0 ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
       });
     },
     getSectionTypes() {
@@ -1282,6 +1585,7 @@ export default {
       const sections = [];
       let views = this.displayVariations[variationName].views;
       views = Object.values(views);
+      let formatValdiation = true
       views.map((view) => {
         if(!view.error) {
           const refactorView = {
@@ -1295,6 +1599,15 @@ export default {
             refactorView.name = view.nameID;
             const options = [];
             view.render_data.map((rData) => {
+              if (!Array.isArray(rData.settings.image)) {
+                formatValdiation = false
+                this.showToast(
+                  "",
+                  "error",
+                  this.$t('imageFieldValidation') + view.name
+                );
+                return;
+              }
               options.push(rData.settings);
             });
             refactorView.options = options;
@@ -1317,36 +1630,49 @@ export default {
       };
 
       const variables = {
-        page: variationName,
+        page: this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName,
+        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+        metadata: this.pageMetadata,
         variations: [],
         sections,
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${variationName}`;
-      this.$axios
-        .put(URL, variables, config)
-        .then((res) => {
-          if (res.data && res.data.error) {
-            this.showToast("error", "error", res.data.error);
-            return;
-          }
-          this.sectionsPageLastUpdated = res.data.last_updated
-          this.displayVariations[variationName].altered = false;
-          this.loading = false;
-          this.showToast(
-            "Success",
-            "success",
-            this.$t('successPageChanges')
-          );
-        })
-        .catch((error) => {
-          this.showToast(
-            "Error saving your changes",
-            "error",
-            error.response.data.message
-          );
-          this.loading = false;
-        });
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName}`;
+
+      if (formatValdiation === true) {
+        this.$axios
+          .put(URL, variables, config)
+          .then((res) => {
+            if (res.data && res.data.error) {
+              this.showToast("error", "error", res.data.error);
+              return;
+            }
+            this.sectionsPageLastUpdated = res.data.last_updated
+            this.displayVariations[variationName].altered = false;
+            this.loading = false;
+            this.showToast(
+              "Success",
+              "success",
+              this.$t('successPageChanges')
+            );
+            if (this.pagePath !== this.pageName) {
+              this.$nuxt.context.redirect(this.pagePath)
+            }
+          })
+          .catch((error) => {
+            if(error.response.data.errors) {
+              this.metadataErrors = error.response.data.errors
+            } else {
+              this.showToast(
+                "Error saving your changes",
+                "error",
+                error.response.data.message,
+                error.response.data.options
+              );
+            }
+            this.loading = false;
+          });
+      } else this.loading = false;
     },
     saveVariation() {
       this.loading = true;
@@ -1446,6 +1772,34 @@ export default {
         })
         .catch((error) => {
           this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
+          this.loading = false
+          this.$emit("load", false);
+        });
+    },
+    deleteSectionPage() {
+      this.isDeletePageModalOpen = false
+      this.loading = true
+      this.$emit("load", true);
+      const token = this.$cookies.get("sections-auth-token");
+      const config = {
+        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageId}`;
+      this.$axios
+        .delete(URL, config)
+        .then((res) => {
+          this.showToast(
+            "Success",
+            "info",
+            res.data.message
+          );
+          this.loading = false
+          this.$emit("load", false);
+          setTimeout(() => window.location.reload(), 1000)
+        })
+        .catch((error) => {
+          this.showToast("Error", "error", this.$t('deleteSectionPageError') + error.response.data.message);
           this.loading = false
           this.$emit("load", false);
         });
@@ -1954,10 +2308,34 @@ span.handle {
   overflow-y: scroll;
   height: 550px;
 }
+.deletePageLabel {
+  size: 20px;
+}
+.deletePageConfirmation {
+  margin: 20px 0 20px 0;
+}
+.metadataFieldsContainer {
+  width: 500px;
+}
 @media only screen and (max-height: 800px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;
   }
+}
+
+.Vue-Toastification__toast-body {
+  cursor: pointer;
+}
+
+.metadataFields {
+  justify-content: space-between;
+}
+.metadataColumns {
+  width: 100%;
+  padding: 4px;
+}
+.pagePathRequiredStyle {
+  color: red;
 }
 </style>
