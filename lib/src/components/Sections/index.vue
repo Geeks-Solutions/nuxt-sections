@@ -1025,6 +1025,7 @@ export default {
       }
     },
     updatePageMetaData() {
+      this.loading = true
       this.metadataErrors.path[0] = ''
 
       const sections = [];
@@ -1077,6 +1078,7 @@ export default {
       this.$axios
         .put(URL, variables, config)
         .then((res) => {
+          this.loading = false
           if (res.data && res.data.error) {
             this.showToast("error", "error", res.data.error);
             return;
@@ -1093,6 +1095,7 @@ export default {
           }
         })
         .catch((error) => {
+          this.loading = false
           if(error.response.data.errors) {
             this.metadataErrors = error.response.data.errors
           } else {
@@ -1103,7 +1106,6 @@ export default {
               error.response.data.options
             );
           }
-          this.loading = false;
         });
 
     },
@@ -1277,7 +1279,9 @@ export default {
           this.pageNotFound = false;
           this.sectionsPageLastUpdated = res.data.last_updated;
           this.pageId = res.data.id;
+          this.sectionsPageName = res.data.page;
           this.pagePath = res.data.path;
+          this.allSections = []
           this.showToast(
             "Success",
             "success",
