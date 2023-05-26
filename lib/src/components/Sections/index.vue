@@ -508,7 +508,7 @@
                     @input="validatePath"
                     @keydown="preventSlash"
                   />
-                  <span class="pagePathRequiredStyle" v-show="pagePathRequired !== ''">{{ pagePathRequired }}</span>
+                  <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
                   <div class="flex metadataFields">
                     <div class="metadataColumns">
                       <div style="margin-bottom: 10px;" class="mt-2">
@@ -790,7 +790,6 @@ export default {
       allSections: {},
       pageId: "",
       pagePath: "",
-      pagePathRequired: "",
       sectionsPageName: "",
       pageMetadata: {
         en: {
@@ -801,6 +800,9 @@ export default {
           title: "",
           description: ""
         }
+      },
+      metadataErrors: {
+        path: [""]
       },
       sectionsError: "",
       sectionsErrorOptions: null,
@@ -1023,17 +1025,87 @@ export default {
       }
     },
     updatePageMetaData() {
-      this.pagePathRequired = ''
-      if (this.pagePath.trim() !== '') {
-        this.metadataModal = false
-        this.showToast(
-          "Success",
-          "info",
-          this.$t('savePageSettings')
-        );
-      } else {
-        this.pagePathRequired = this.$t('pagePathRequired')
-      }
+      this.metadataErrors.path[0] = ''
+
+      const sections = [];
+      let views = this.allSections;
+
+      views.forEach((view) => {
+        if(!view.error) {
+          const refactorView = {
+            id: view.id,
+            weight: view.weight,
+            name: view.name,
+            type: view.type,
+            linkedTo: view.linkedTo,
+          };
+          if (view.settings && view.type === "configurable") {
+            refactorView.name = view.nameID;
+            const options = [];
+            view.render_data.map((rData) => {
+              options.push(rData.settings);
+            });
+            refactorView.options = options;
+          } else if (view.settings) {
+            refactorView.options = view.settings;
+          }
+          if (refactorView.id.startsWith("id-")) {
+            delete refactorView.id;
+          }
+          sections.push({ ...refactorView });
+        }
+      });
+
+      const token = this.$cookies.get("sections-auth-token");
+      const header = {
+        token,
+      };
+      const config = {
+        headers: sectionHeader(header),
+      };
+
+      const variables = {
+        page: this.sectionsPageName,
+        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+        metadata: this.pageMetadata,
+        variations: [],
+        sections
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName}`;
+
+      this.$axios
+        .put(URL, variables, config)
+        .then((res) => {
+          if (res.data && res.data.error) {
+            this.showToast("error", "error", res.data.error);
+            return;
+          }
+          this.sectionsPageLastUpdated = res.data.last_updated
+          this.metadataModal = false
+          this.showToast(
+            "Success",
+            "success",
+            this.$t('successPageChanges')
+          );
+          if (this.pagePath !== this.pageName) {
+            this.$nuxt.context.redirect(this.pagePath)
+          }
+        })
+        .catch((error) => {
+          if(error.response.data.errors) {
+            this.metadataErrors = error.response.data.errors
+          } else {
+            this.showToast(
+              "Error saving your changes",
+              "error",
+              error.response.data.message,
+              error.response.data.options
+            );
+          }
+          this.loading = false;
+        });
+
     },
     addField(index) {
       this.fieldsInputs.push({ type: "image", name: "" });
@@ -1584,12 +1656,16 @@ export default {
             }
           })
           .catch((error) => {
-            this.showToast(
-              "Error saving your changes",
-              "error",
-              error.response.data.message,
-              error.response.data.options
-            );
+            if(error.response.data.errors) {
+              this.metadataErrors = error.response.data.errors
+            } else {
+              this.showToast(
+                "Error saving your changes",
+                "error",
+                error.response.data.message,
+                error.response.data.options
+              );
+            }
             this.loading = false;
           });
       } else this.loading = false;
