@@ -435,14 +435,14 @@
         <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
-              <div class="text-center h4 header">
+              <div class="text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("section-title") }}:</div>
                 <div class="closeIcon" @click="staticModal = false">
                   <CloseIcon />
                 </div>
               </div>
               <div class="flex w-full justify-center">
-                <div class="body">
+                <div class="body" style="text-align: start;">
                   <div style="margin-bottom: 10px;">
                     {{ $t("section-input-title") }}
                   </div>
@@ -453,6 +453,9 @@
                   />
                   <div style="margin-bottom: 10px;" class="mt-2">
                     {{ $t("fieldNames") }}
+                  </div>
+                  <div style="margin-bottom: 10px;" class="mt-2 fieldsDescription">
+                    {{ $t("fieldDesc") }}
                   </div>
                   <div v-for="(field,k) in fieldsInputs" :key="k" class="flex flex-col mb-4">
                     <div class="flex">
@@ -1110,7 +1113,9 @@ export default {
 
     },
     addField(index) {
-      this.fieldsInputs.push({ type: "image", name: "" });
+      if (this.fieldsInputs[index].name.trim() !== '') {
+        this.fieldsInputs.push({ type: "image", name: "" });
+      }
     },
     removeField(index) {
       this.fieldsInputs.splice(index, 1);
@@ -1204,8 +1209,12 @@ export default {
         const URL =
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section-types/${this.sectionTypeName}`;
         this.loading = true;
+
+        let fieldsDeclaration = this.fieldsInputs
+        fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
+
         this.$axios.post(URL, {
-          "fields": this.fieldsInputs
+          "fields": fieldsDeclaration
         }, config).then(() => {
           this.types = [];
           this.getSectionTypes();
@@ -2268,6 +2277,10 @@ span.handle {
   display: flex;
   justify-content: center;
 }
+.section-modal-wrapper .sectionTypeHeader {
+  display: flex;
+  justify-content: center;
+}
 .section-modal-wrapper .title {
   width: 75%;
 }
@@ -2337,5 +2350,10 @@ span.handle {
 }
 .pagePathRequiredStyle {
   color: red;
+}
+.fieldsDescription {
+  font-weight: lighter;
+  font-size: 12px;
+  color: gray;
 }
 </style>

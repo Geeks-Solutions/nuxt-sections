@@ -22,3 +22,10 @@
  - SEO metadata management #101
 
  - New feature implementation of having default support for dynamic pages
+
+
+### v1.0.2 (29/5/2023)
+
+---
+
+ - Bug fixes for create new static section type to prevent sending empty name fields
