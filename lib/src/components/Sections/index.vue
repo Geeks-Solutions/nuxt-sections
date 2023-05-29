@@ -1656,6 +1656,7 @@ export default {
               this.showToast("error", "error", res.data.error);
               return;
             }
+            this.allSections = res.data.sections
             this.sectionsPageLastUpdated = res.data.last_updated
             this.displayVariations[variationName].altered = false;
             this.loading = false;
