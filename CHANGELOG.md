@@ -36,3 +36,12 @@
 ---
 
  - Bug fix for the problem of loosing sections when saving settings after updating a page with new sections added
+
+
+### v1.0.4 (30/5/2023)
+
+---
+
+ - Bug fix for the problem of sending updated sections that were not saved when saving settings
+
+ - Update success message when saving a page settings

@@ -557,7 +557,7 @@
                 <button class="hp-button" @click="updatePageMetaData">
                   <div class="btn-icon check-icon"></div>
                   <div class="btn-text">
-                    {{ $t("Continue") }}
+                    {{ $t("Save") }}
                   </div>
                 </button>
               </div>
@@ -1032,8 +1032,8 @@ export default {
       this.metadataErrors.path[0] = ''
 
       const sections = [];
-      let views = this.allSections;
-
+      let views = this.originalVariations[this.pageName].views;
+      views = Object.values(views);
       views.forEach((view) => {
         if(!view.error) {
           const refactorView = {
@@ -1091,7 +1091,7 @@ export default {
           this.showToast(
             "Success",
             "success",
-            this.$t('successPageChanges')
+            this.$t('successSettingsChanges')
           );
           if (this.pagePath !== this.pageName) {
             this.$nuxt.context.redirect(this.pagePath)
@@ -1110,7 +1110,6 @@ export default {
             );
           }
         });
-
     },
     addField(index) {
       if (this.fieldsInputs[index].name.trim() !== '') {
@@ -1659,6 +1658,9 @@ export default {
             this.allSections = res.data.sections
             this.sectionsPageLastUpdated = res.data.last_updated
             this.displayVariations[variationName].altered = false;
+            this.originalVariations = JSON.parse(
+              JSON.stringify(this.displayVariations)
+            );
             this.loading = false;
             this.showToast(
               "Success",
