@@ -5,7 +5,7 @@
       <button
         @click="openEditMode()"
         v-if="admin"
-        class="bg-blue control-button hide-mobile"
+        class="bg-blue control-button hide-mobile btn-text"
       >
         {{ !editMode ? $t("Edit page") : $t("View page") }}
       </button>
@@ -15,7 +15,7 @@
         </div>
 
         <div
-          class="pb-4 flex flex-row justify-center hide-mobile"
+          class="pb-4 flexSections flex-row justify-center hide-mobile"
           v-if="admin && editMode"
         >
           <button
@@ -42,7 +42,7 @@
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
-          <div class="flex control-button" style="right: 0px; left: auto;">
+          <div class="flexSections control-button" style="right: 0px; left: auto;">
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -90,7 +90,7 @@
         </div>
       </div>
       <div
-        class="bg-light-grey-hp p-3 flex flex-row justify-center part2 hide-mobile"
+        class="bg-light-grey-hp p-3 flexSections flex-row justify-center part2 hide-mobile"
         v-if="admin && editMode"
       >
         <button
@@ -112,7 +112,7 @@
             <div class="btn-text">{{ v.name }}</div>
           </button>
           <div
-            class="sync flex flex-row p-4 justify-center"
+            class="sync flexSections flex-row p-4 justify-center"
             v-if="selectedVariation === v.pageName"
             @click="synch()"
           >
@@ -126,9 +126,9 @@
 
       <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
       <div v-if="isModalOpen" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl">
-            <div class="flex flex-row relative justify-center">
+        <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
+            <div class="flexSections flex-row relativeSections justify-center">
               <div class="text-center h4 my-3 pb-6" v-if="!currentSection">
                 {{ $t("Add") }}
               </div>
@@ -163,13 +163,13 @@
                     :icon="type.name"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable'" class="flex pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
                   <div class="section-delete-icon" @click="openAuthConfigurableSectionTypeModal(type.application_id, index, type.requirements, type.name, type.application)">
-                    <div class="flex justify-between items-end">
-                      <div v-if="type.type === 'configurable'" class="flex pl-2 pb-1" style="font-size: 8px;">
+                    <div class="flexSections justify-between items-end">
+                      <div v-if="type.type === 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 8px;">
                         {{ $t('by') + type.application }}
                       </div>
                       <LockedIcon class="trash-icon-style p-1" />
@@ -178,8 +178,8 @@
                 </div>
                 <div v-else-if="type.type === 'configurable'" class="section-delete">
                   <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
-                    <div class="flex justify-between items-end">
-                      <div class="flex pl-2 pb-1" style="font-size: 8px;">
+                    <div class="flexSections justify-between items-end">
+                      <div class="flexSections pl-2 pb-1" style="font-size: 8px;">
                         {{ $t('by') + type.application }}
                       </div>
                       <UnlockedIcon class="trash-icon-style p-1" />
@@ -188,7 +188,7 @@
                 </div>
               </div>
             </div>
-            <div v-else class="flex">
+            <div v-else class="flexSections">
               <div class="component-view">
                 <!-- we can use this short hand too -->
                 <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
@@ -232,12 +232,12 @@
 
       <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
       <div v-show="isDeleteModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
               {{ $t("delete-section-type") + selectedSectionTypeName}}
             </div>
-            <div class="flex flex-row">
+            <div class="flexSections flex-row">
               <button
                 class="hp-button"
                 @click="deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
@@ -263,9 +263,9 @@
 
       <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
       <div v-show="isDeletePageModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
-            <div class="flex flex-row justify-center items-center">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+            <div class="flexSections flex-row justify-center items-center">
               <AlertIcon />
               <div class="text-center h4 my-3 pb-3 deletePageLabel">
                 {{ $t("deletePage") }}
@@ -274,7 +274,7 @@
             <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
               {{ $t("delete-section-page") }}
             </div>
-            <div class="flex flex-row justify-center">
+            <div class="flexSections flex-row justify-center">
               <button
                 class="hp-button danger"
                 @click="deleteSectionPage()"
@@ -300,12 +300,12 @@
 
       <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
       <div v-show="isAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3 pb-4">
               {{ $t("authorize-section-type") + selectedAppName}}
             </div>
-            <div class="flex flex-col gap-4">
+            <div class="flexSections flex-col gap-4">
               <div v-for="requiredInput in selectedSectionRequirements">
                 <input
                   class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
@@ -315,7 +315,7 @@
                 />
               </div>
 
-              <div class="flex flex-row">
+              <div class="flexSections flex-row">
                 <button
                   class="hp-button"
                   @click="authorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
@@ -343,14 +343,14 @@
 
       <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
       <div v-show="isUnAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
               {{ $t("un-authorize-section-type") + selectedAppName }}
             </div>
-            <div class="flex flex-col gap-4">
+            <div class="flexSections flex-col gap-4">
 
-              <div class="flex flex-row">
+              <div class="flexSections flex-row">
                 <button
                   class="hp-button"
                   @click="unAuthorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
@@ -392,9 +392,9 @@
             :id="`${view.name}-${view.id}`"
             :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
           >
-            <div class="section-view relative">
+            <div class="section-view relativeSections">
               <div
-                class="controls flex flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                 v-if="admin && editMode"
               >
                 <LinkIcon v-if="view.linkedTo" />
@@ -432,8 +432,8 @@
 
       <!-- This is the popup to create a new static section type     -->
       <div v-show="staticModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
               <div class="text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("section-title") }}:</div>
@@ -441,7 +441,7 @@
                   <CloseIcon />
                 </div>
               </div>
-              <div class="flex w-full justify-center">
+              <div class="flexSections w-full justify-center">
                 <div class="body" style="text-align: start;">
                   <div style="margin-bottom: 10px;">
                     {{ $t("section-input-title") }}
@@ -457,15 +457,15 @@
                   <div style="margin-bottom: 10px;" class="mt-2 fieldsDescription">
                     {{ $t("fieldDesc") }}
                   </div>
-                  <div v-for="(field,k) in fieldsInputs" :key="k" class="flex flex-col mb-4">
-                    <div class="flex">
+                  <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections flex-col mb-4">
+                    <div class="flexSections">
                       <input
                         v-model="field.name"
                         class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                         type="text"
                         :placeholder="`${$t('field')} #${k+1}`"
                       />
-                      <span class="flex flex-row pl-2 items-center">
+                      <span class="flexSections flex-row pl-2 items-center">
                         <span v-show="k || ( !k && fieldsInputs.length > 1)" class="cursor-pointer text-3xl" @click="removeField(k)">-</span>
                         <span v-show="k === fieldsInputs.length - 1" class="cursor-pointer text-3xl pl-3" @click="addField(k)">+</span>
                       </span>
@@ -490,16 +490,16 @@
 
       <!-- This is the popup to updatethe page metadata     -->
       <div v-show="metadataModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
-              <div class="text-center h4 header">
+              <div class="text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("Metadata") }}</div>
                 <div class="closeIcon" @click="metadataModal = false">
                   <CloseIcon />
                 </div>
               </div>
-              <div class="flex w-full justify-center">
+              <div class="flexSections w-full justify-center">
                 <div class="body metadataFieldsContainer">
                   <div style="margin-bottom: 10px;">
                     {{ $t("pageUrl") }}
@@ -512,7 +512,7 @@
                     @keydown="preventSlash"
                   />
                   <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
-                  <div class="flex metadataFields">
+                  <div class="flexSections metadataFields">
                     <div class="metadataColumns">
                       <div style="margin-bottom: 10px;" class="mt-2">
                         {{ $t("pageTitle") }}
@@ -525,8 +525,8 @@
                       <div style="margin-bottom: 10px;" class="mt-2">
                         {{ $t("pageSeoDesc") }}
                       </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                      <textarea
+                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
                         type="text"
                         v-model="pageMetadata.en.description"
                       />
@@ -543,8 +543,8 @@
                       <div style="margin-bottom: 10px;" class="mt-2">
                         {{ $t("pageSeoDescFr") }}
                       </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                      <textarea
+                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
                         type="text"
                         v-model="pageMetadata.fr.description"
                       />
@@ -557,7 +557,7 @@
                 <button class="hp-button" @click="updatePageMetaData">
                   <div class="btn-icon check-icon"></div>
                   <div class="btn-text">
-                    {{ $t("Continue") }}
+                    {{ $t("Save") }}
                   </div>
                 </button>
               </div>
@@ -570,8 +570,8 @@
 
       <!-- This is popup to show the successfully created new static section message      -->
       <div v-show="staticSuccess" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex h-full items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relative shadow rounded-xl overflow-scroll">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper success-section-type">
               <div class="text-center h4 header">
                 <div class="icon-head">
@@ -584,7 +584,7 @@
                   <CloseIcon />
                 </div>
               </div>
-              <div class="flex w-full justify-center">
+              <div class="flexSections w-full justify-center">
                 <div class="body">
                   <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
                   <div class="section-list">
@@ -624,7 +624,7 @@
     </div>
     <div v-else>
       <!-- This is to show the create a new page button when the page requested is not found     -->
-      <button v-if="admin" class="hp-button" @click="createNewPage">
+      <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
         {{ $t("Create New Page") }}
       </button>
     </div>
@@ -1032,8 +1032,8 @@ export default {
       this.metadataErrors.path[0] = ''
 
       const sections = [];
-      let views = this.allSections;
-
+      let views = this.originalVariations[this.pageName].views;
+      views = Object.values(views);
       views.forEach((view) => {
         if(!view.error) {
           const refactorView = {
@@ -1091,7 +1091,7 @@ export default {
           this.showToast(
             "Success",
             "success",
-            this.$t('successPageChanges')
+            this.$t('successSettingsChanges')
           );
           if (this.pagePath !== this.pageName) {
             this.$nuxt.context.redirect(this.pagePath)
@@ -1110,7 +1110,6 @@ export default {
             );
           }
         });
-
     },
     addField(index) {
       if (this.fieldsInputs[index].name.trim() !== '') {
@@ -1656,8 +1655,12 @@ export default {
               this.showToast("error", "error", res.data.error);
               return;
             }
+            this.allSections = res.data.sections
             this.sectionsPageLastUpdated = res.data.last_updated
             this.displayVariations[variationName].altered = false;
+            this.originalVariations = JSON.parse(
+              JSON.stringify(this.displayVariations)
+            );
             this.loading = false;
             this.showToast(
               "Success",
@@ -2045,6 +2048,9 @@ button svg {
 .section-wrapper .create-static-section .btn-text {
   padding-right: 10px;
 }
+.btn-text {
+  font-size: 16px;
+}
 .danger {
   color: white;
 }
@@ -2286,7 +2292,7 @@ span.handle {
 }
 .section-modal-wrapper .closeIcon {
   position: absolute;
-  top: 10px;
+  top: 25px;
   right: 10px;
 }
 .section-modal-wrapper .closeIcon svg {
@@ -2311,8 +2317,14 @@ span.handle {
 .section-modal-wrapper .footer .hp-button {
   width: 200px;
 }
-.flex {
+.flexSections {
   display: flex !important;
+}
+.relativeSections {
+  position: relative !important;
+}
+.fullHeightSections {
+  height: 100%;
 }
 .justify-between {
   justify-content: space-between;
@@ -2328,7 +2340,20 @@ span.handle {
   margin: 20px 0 20px 0;
 }
 .metadataFieldsContainer {
-  width: 500px;
+  width: 780px
+}
+.metadataFieldsContainer input {
+  font-size: 16px;
+  padding-left: 16px;
+}
+.metadataFieldsContainer textarea {
+  font-size: 16px;
+  padding-left: 16px;
+  max-height: 150px;
+}
+.section-modal-wrapper .body input {
+  font-size: 16px;
+  padding-left: 16px;
 }
 @media only screen and (max-height: 800px) {
   .content-wrapper {
@@ -2355,5 +2380,11 @@ span.handle {
   font-weight: lighter;
   font-size: 12px;
   color: gray;
+}
+.view-component {
+  overflow: auto;
+}
+.rounded-xl {
+  border-radius: 0.75rem !important;
 }
 </style>
