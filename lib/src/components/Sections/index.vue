@@ -525,8 +525,8 @@
                       <div style="margin-bottom: 10px;" class="mt-2">
                         {{ $t("pageSeoDesc") }}
                       </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                      <textarea
+                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
                         type="text"
                         v-model="pageMetadata.en.description"
                       />
@@ -543,8 +543,8 @@
                       <div style="margin-bottom: 10px;" class="mt-2">
                         {{ $t("pageSeoDescFr") }}
                       </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                      <textarea
+                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
                         type="text"
                         v-model="pageMetadata.fr.description"
                       />
@@ -2345,6 +2345,11 @@ span.handle {
 .metadataFieldsContainer input {
   font-size: 16px;
   padding-left: 16px;
+}
+.metadataFieldsContainer textarea {
+  font-size: 16px;
+  padding-left: 16px;
+  max-height: 150px;
 }
 .section-modal-wrapper .body input {
   font-size: 16px;
