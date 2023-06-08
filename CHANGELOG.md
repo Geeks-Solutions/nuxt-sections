@@ -40,3 +40,10 @@
  - Bug fix for the problem of sending updated sections that were not saved when saving settings
 
  - Update success message when saving a page settings
+
+
+### v1.0.4 (8/6/2023)
+
+---
+
+ - Dynamic page path implementation

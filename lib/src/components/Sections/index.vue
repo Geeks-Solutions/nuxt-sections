@@ -508,8 +508,6 @@
                     class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                     type="text"
                     v-model="pagePath"
-                    @input="validatePath"
-                    @keydown="preventSlash"
                   />
                   <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
                   <div class="flexSections metadataFields">
@@ -880,7 +878,7 @@ export default {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageName}`;
+    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
 
     let payload = {}
 
@@ -1017,16 +1015,6 @@ export default {
     }
   },
   methods: {
-    validatePath() {
-      if (this.pagePath.includes('/')) {
-        this.pagePath.replace('/', '')
-      }
-    },
-    preventSlash(event) {
-      if (event.key === '/') {
-        event.preventDefault()
-      }
-    },
     updatePageMetaData() {
       this.loading = true
       this.metadataErrors.path[0] = ''
@@ -1068,15 +1056,24 @@ export default {
         headers: sectionHeader(header),
       };
 
+      let pagePath = this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined;
+
+      if (pagePath[0] && pagePath[0] === '/') {
+        pagePath = pagePath.replace(/^\/+/, '')
+      }
+      while (pagePath.endsWith('//')) {
+        pagePath = pagePath.slice(0, -1);
+      }
+
       const variables = {
         page: this.sectionsPageName,
-        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+        path: pagePath,
         metadata: this.pageMetadata,
         variations: [],
         sections
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
 
       this.$axios
         .put(URL, variables, config)
@@ -1093,8 +1090,9 @@ export default {
             "success",
             this.$t('successSettingsChanges')
           );
-          if (this.pagePath !== this.pageName) {
-            this.$nuxt.context.redirect(this.pagePath)
+          if (pagePath !== this.pageName) {
+            const baseURL = window.location.origin;
+            window.location.replace(`${baseURL}/${pagePath}`);
           }
         })
         .catch((error) => {
@@ -1138,7 +1136,6 @@ export default {
             this.loading = false;
           })
           .catch((err) => {
-            console.log(err)
             this.loading = false;
             this.sectionsAdminError = err.response.data.token
           });
@@ -1272,7 +1269,7 @@ export default {
       const config = {
         headers: sectionHeader(header),
       };
-      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageName}`;
+      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
       this.$axios
         .put(
           URL,
@@ -1451,7 +1448,7 @@ export default {
         }
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageName}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
 
         let payload = {}
 
@@ -1638,14 +1635,14 @@ export default {
       };
 
       const variables = {
-        page: this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName,
+        page: this.sectionsPageName,
         path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
         metadata: this.pageMetadata,
         variations: [],
         sections,
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
 
       if (formatValdiation === true) {
         this.$axios
