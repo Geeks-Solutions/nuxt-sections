@@ -42,7 +42,7 @@
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
-          <div class="flexSections control-button" style="right: 0px; left: auto;">
+          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto;">
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -125,7 +125,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
-      <div v-if="isModalOpen" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isModalOpen && admin && editMode" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
             <div class="flexSections flex-row relativeSections justify-center">
@@ -231,7 +231,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
-      <div v-show="isDeleteModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
@@ -262,7 +262,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
-      <div v-show="isDeletePageModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="flexSections flex-row justify-center items-center">
@@ -299,7 +299,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
-      <div v-show="isAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3 pb-4">
@@ -342,7 +342,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
-      <div v-show="isUnAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
@@ -431,7 +431,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to create a new static section type     -->
-      <div v-show="staticModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
@@ -489,7 +489,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to updatethe page metadata     -->
-      <div v-show="metadataModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
@@ -567,7 +567,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is popup to show the successfully created new static section message      -->
-      <div v-show="staticSuccess" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper success-section-type">
@@ -1923,8 +1923,14 @@ export default {
 .sections-config {
   min-height: 100vh;
 }
-.sections-config .control-button {
+.sections-config .control-button.config-buttons {
   position: absolute;
+  z-index: 999;
+  left: 0;
+  top: 60px;
+}
+.sections-config .control-button {
+  position: fixed;
   z-index: 999;
   left: 0;
   top: 60px;
