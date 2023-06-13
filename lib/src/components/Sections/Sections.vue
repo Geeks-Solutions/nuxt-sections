@@ -3,6 +3,8 @@
     :admin="admin"
     :pageName="pageName"
     :lang="lang"
+    :variations="variations"
+    :viewsBgColor="viewsBgColor"
     :_sections-options="_sectionsOptions"
     @load="loaded"
   />
@@ -26,6 +28,14 @@ export default {
     admin: {
       type: Boolean,
       default: false,
+    },
+    variations: {
+      type: Array,
+      default: () => [],
+    },
+    viewsBgColor: {
+      type: String,
+      default: "transparent",
     },
     _sectionsOptions: {
       type: Object

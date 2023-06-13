@@ -105,8 +105,8 @@
             class="hp-button"
             :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
             @click="
-              if (displayVariations[pageName].altered) dismissCountDown = 4;
-              else selectedVariation = v.pageName;
+              displayVariations[pageName].altered ? dismissCountDown = 4 :
+              selectedVariation = v.pageName
             "
           >
             <div class="btn-text">{{ v.name }}</div>
