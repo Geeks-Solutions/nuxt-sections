@@ -1058,11 +1058,23 @@ export default {
 
       let pagePath = this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined;
 
-      if (pagePath[0] && pagePath[0] === '/') {
-        pagePath = pagePath.replace(/^\/+/, '')
-      }
-      while (pagePath.endsWith('//')) {
-        pagePath = pagePath.slice(0, -1);
+      if(pagePath !== '/') {
+
+        // Split the URL into individual path segments
+        const pathSegments = pagePath.split('/');
+
+        // Filter out empty segments and remove duplicates
+        const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1]);
+
+        // Reconstruct the URL with the unique path segments
+        pagePath = pagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/');
+        
+        if (pagePath[0] && pagePath[0] === '/') {
+          pagePath = pagePath.replace(/^\/+/, '')
+        }
+        while (pagePath.endsWith('//')) {
+          pagePath = pagePath.slice(0, -1);
+        }
       }
 
       const variables = {
@@ -1091,7 +1103,14 @@ export default {
             this.$t('successSettingsChanges')
           );
           if (pagePath !== this.pageName) {
-            const baseURL = window.location.origin;
+            let baseURL = window.location.origin;
+            let routerBase = this.$router.options.base
+            if(routerBase) {
+              while (routerBase.endsWith('/')) {
+                routerBase = routerBase.slice(0, -1);
+              }
+              baseURL = baseURL + routerBase
+            }
             window.location.replace(`${baseURL}/${pagePath}`);
           }
         })
