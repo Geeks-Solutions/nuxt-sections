@@ -4,7 +4,7 @@
       <h3>{{ formatName(props.name, " / ") }}</h3>
       <form>
         <div>
-          <subType :name="props.name" @addStatic="addStatic" ref="viewSaved">
+          <subType :name="props.name" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport">
             <slot />
           </subType>
         </div>
@@ -32,6 +32,16 @@ export default {
       type: Object,
       default: () => {},
     },
+    locales: {
+      type: Array,
+      default() {
+        return ['en', 'fr']
+      }
+    },
+    translationComponentSupport: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {

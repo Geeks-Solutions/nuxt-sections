@@ -17,6 +17,10 @@ export default {
       type: Object,
       default: () => {},
     },
+    lang: {
+      type: String,
+      default: "en"
+    }
   },
   data() {
     return {
@@ -28,7 +32,9 @@ export default {
   computed: {
     html() {
       if (this.section.settings) {
-        return this.section.settings;
+        if(this.section.settings[this.lang]) {
+          return this.section.settings[this.lang];
+        } else return this.section.settings
       }
       return "not found";
     },

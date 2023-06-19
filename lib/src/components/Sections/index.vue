@@ -197,6 +197,8 @@
                   :props="currentSection"
                   @addSectionType="addSectionType"
                   :savedView="savedView"
+                  :locales="locales"
+                  :translation-component-support="translationComponentSupport"
                 />
                 <Dynamic
                   v-if="currentSection.type === 'dynamic'"
@@ -415,6 +417,8 @@
                   :is="getComponent(view.name, view.type)"
                   :section="view"
                   :lang="lang"
+                  :locales="locales"
+                  :editor-options="editorOptions"
                 />
                 <div v-else>
                   <div v-if="admin" class="error-section-loaded">
@@ -499,6 +503,7 @@
                   <CloseIcon />
                 </div>
               </div>
+              <TranslationComponent :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
               <div class="flexSections w-full justify-center">
                 <div class="body metadataFieldsContainer">
                   <div style="margin-bottom: 10px;">
@@ -518,7 +523,7 @@
                       <input
                         class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata.en.title"
+                        v-model="pageMetadata[metadataFormLang].title"
                       />
                       <div style="margin-bottom: 10px;" class="mt-2">
                         {{ $t("pageSeoDesc") }}
@@ -526,25 +531,7 @@
                       <textarea
                         class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata.en.description"
-                      />
-                    </div>
-                    <div class="metadataColumns">
-                      <div style="margin-bottom: 10px;" class="mt-2">
-                        {{ $t("pageTitleFr") }}
-                      </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata.fr.title"
-                      />
-                      <div style="margin-bottom: 10px;" class="mt-2">
-                        {{ $t("pageSeoDescFr") }}
-                      </div>
-                      <textarea
-                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata.fr.description"
+                        v-model="pageMetadata[metadataFormLang].description"
                       />
                     </div>
                   </div>
@@ -666,6 +653,8 @@ import SectionItem from "../../base/SubTypes/sectionItem.vue";
 import camelCase from "lodash/camelCase";
 import upperFirst from "lodash/upperFirst";
 
+import TranslationComponent from "../../components/Translations/TranslationComponent";
+
 export default {
   name: "Sections",
   components: {
@@ -694,7 +683,8 @@ export default {
     DotIcon,
     CelebrateIcon,
     AlertIcon,
-    SettingsIcon
+    SettingsIcon,
+    TranslationComponent
   },
   props: {
     pageName: {
@@ -723,12 +713,51 @@ export default {
       type: String,
       default: "en",
     },
+    locales: {
+      type: Array,
+      default() {
+        return ['en', 'fr']
+      }
+    },
+    editorOptions: {
+      type: Object,
+      default() {
+        return {
+          modules: {
+            toolbar: [
+              ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+              ['link'],
+              ['blockquote', 'code-block'],
+
+              [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+              [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+              [{ 'direction': 'rtl' }],                         // text direction
+
+              [{ 'size': ['small', false, 'large', 'huge' , '26px', '50px', '90px'] }],  // custom dropdown
+              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+              [{ 'color': ['#03B1C7', '#61035B', '#fff', '#868686', '#00131F'] }, { 'background': [] }],          // dropdown with defaults from theme
+              [{ 'font': [] }],
+              [{ 'align': [] }],
+
+              ['clean']                                         // remove formatting button
+            ]
+          }
+        }
+      }
+    },
     viewsBgColor: {
       type: String,
       default: "transparent",
     },
     _sectionsOptions: {
       type: Object
+    },
+    translationComponentSupport: {
+      type: Boolean,
+      default: false
     }
   },
   head() {
@@ -792,16 +821,7 @@ export default {
       pageId: "",
       pagePath: "",
       sectionsPageName: "",
-      pageMetadata: {
-        en: {
-          title: "",
-          description: ""
-        },
-        fr: {
-          title: "",
-          description: ""
-        }
-      },
+      pageMetadata: {},
       metadataErrors: {
         path: [""]
       },
@@ -813,7 +833,8 @@ export default {
           type: "image",
           name: ""
         }
-      ]
+      ],
+      metadataFormLang: this.locales[0]
     }
   },
   computed: {
@@ -851,6 +872,14 @@ export default {
         }
       },
     },
+  },
+  created() {
+    this.locales.forEach(lang => {
+      this.pageMetadata[lang] = {
+        title: "",
+        description: ""
+      }
+    })
   },
   mounted() {
     if(this.sectionsError !== "") {
@@ -896,7 +925,7 @@ export default {
         this.pageId = res.data.id;
         this.pagePath = res.data.path;
         this.sectionsPageName = res.data.page;
-        for (const lang of ['en', 'fr']) {
+        for (const lang of this.locales) {
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
         }
@@ -953,7 +982,7 @@ export default {
           this.pageId = res.data.id;
           this.pagePath = res.data.path;
           this.sectionsPageName = res.data.page;
-          for (const lang of ['en', 'fr']) {
+          for (const lang of this.locales) {
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
           }
@@ -1068,7 +1097,7 @@ export default {
 
         // Reconstruct the URL with the unique path segments
         pagePath = pagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/');
-        
+
         if (pagePath[0] && pagePath[0] === '/') {
           pagePath = pagePath.replace(/^\/+/, '')
         }
@@ -1314,10 +1343,14 @@ export default {
         })
         .catch((err) => {
           this.loading = false
+          let error = err.response.data.message
+          if (err.response.data.errors && err.response.data.errors.path) {
+            error = `${this.$t('pageUrl')} ${err.response.data.errors.path[0]}`
+          }
           this.showToast(
             "Error creating page",
             "error",
-            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message,
+            this.$t('createPageError') + this.pageName + "\n" + error,
             err.response.data.options
           );
         });

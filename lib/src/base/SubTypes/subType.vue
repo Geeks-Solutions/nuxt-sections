@@ -2,7 +2,8 @@
   <div class="sub-types">
     <div>
       <div class="text-video content-wrapper d-flex" v-show="name">
-        <component :is="getComponentForm" :ref="name" />
+        <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
+        <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" />
       </div>
     </div>
     <button
@@ -18,17 +19,32 @@
 
 <script>
 import { importComp } from "../../utils";
+import TranslationComponent from "../../components/Translations/TranslationComponent";
 
 export default {
+  components: {
+    TranslationComponent
+  },
   props: {
     name: {
       type: String,
       default: "",
     },
+    locales: {
+      type: Array,
+      default() {
+        return ['en', 'fr']
+      }
+    },
+    translationComponentSupport: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {
       withTabs: false,
+      formLang: this.locales[0]
     };
   },
   computed: {

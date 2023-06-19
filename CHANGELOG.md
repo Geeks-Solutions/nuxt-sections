@@ -49,3 +49,5 @@
  - Dynamic page path implementation
 
  - Issue 48 about performance by only loading the necessary views when rendering the page. All admin related html/JS codes will only show for admin users and in the edit mode 
+
+ - Library must manage language supported #110
