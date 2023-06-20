@@ -5,8 +5,6 @@
       :page-name="pageName"
       :lang="lang"
       :editor-options="editorOptions"
-      :locales="locales"
-      :translation-component-support="translationComponentSupport"
       :variations="[]"
     />
   </div>
@@ -19,7 +17,6 @@ export default {
   data() {
     return {
       pageName: this.$route.params.pathMatch ? this.$route.params.pathMatch : '/',
-      locales: ['en', 'fr'],
       editorOptions: {
         modules: {
           toolbar: [
@@ -43,10 +40,6 @@ export default {
             ['clean']                                         // remove formatting button
           ]
         }
-      },
-      translationComponentSupport: {
-        type: Boolean,
-        default: false
       }
     }
   },

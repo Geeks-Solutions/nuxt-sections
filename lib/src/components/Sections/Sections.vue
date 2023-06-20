@@ -6,8 +6,6 @@
     :variations="variations"
     :viewsBgColor="viewsBgColor"
     :editor-options="editorOptions"
-    :locales="locales"
-    :translation-component-support="translationComponentSupport"
     :_sections-options="_sectionsOptions"
     @load="loaded"
   />
@@ -27,12 +25,6 @@ export default {
     lang: {
       type: String,
       default: "en",
-    },
-    locales: {
-      type: Array,
-      default() {
-        return ['en', 'fr']
-      }
     },
     editorOptions: {
       type: Object,
@@ -62,10 +54,6 @@ export default {
           }
         }
       }
-    },
-    translationComponentSupport: {
-      type: Boolean,
-      default: false
     },
     admin: {
       type: Boolean,

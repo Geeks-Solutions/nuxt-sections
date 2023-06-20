@@ -499,11 +499,11 @@
             <div class="section-modal-wrapper">
               <div class="text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("Metadata") }}</div>
-                <div class="closeIcon" @click="metadataModal = false">
+                <div class="closeIcon" @click="metadataModal = false; metadataFormLang = locales[0]">
                   <CloseIcon />
                 </div>
               </div>
-              <TranslationComponent :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
+              <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
               <div class="flexSections w-full justify-center">
                 <div class="body metadataFieldsContainer">
                   <div style="margin-bottom: 10px;">
@@ -713,12 +713,6 @@ export default {
       type: String,
       default: "en",
     },
-    locales: {
-      type: Array,
-      default() {
-        return ['en', 'fr']
-      }
-    },
     editorOptions: {
       type: Object,
       default() {
@@ -754,26 +748,24 @@ export default {
     },
     _sectionsOptions: {
       type: Object
-    },
-    translationComponentSupport: {
-      type: Boolean,
-      default: false
     }
   },
   head() {
     return {
-      title: this.pageMetadata[this.lang].title,
+      title: this.computedTitle,
       meta: [
         {
           hid: 'description',
           name: 'description',
-          content: this.pageMetadata[this.lang].description
+          content: this.computedDescription
         }
       ]
     }
   },
   data() {
     return {
+      locales: ['en', 'fr'],
+      translationComponentSupport: false,
       sectionSettings: {
         settings: {}
       },
@@ -834,7 +826,9 @@ export default {
           name: ""
         }
       ],
-      metadataFormLang: this.locales[0]
+      metadataFormLang: '',
+      computedTitle: '',
+      computedDescription: ''
     }
   },
   computed: {
@@ -871,15 +865,7 @@ export default {
           );
         }
       },
-    },
-  },
-  created() {
-    this.locales.forEach(lang => {
-      this.pageMetadata[lang] = {
-        title: "",
-        description: ""
-      }
-    })
+    }
   },
   mounted() {
     if(this.sectionsError !== "") {
@@ -889,6 +875,25 @@ export default {
     }
   },
   async fetch() {
+    this.metadataFormLang = this.locales[0]
+    this.locales.forEach(lang => {
+      this.pageMetadata[lang] = {
+        title: "",
+        description: ""
+      }
+    })
+    if(this.$sections.projectLocales && this.$sections.projectLocales !== '' && this.$sections.projectLocales.includes(',')) {
+      this.translationComponentSupport = true
+      this.locales = []
+      this.locales = this.$sections.projectLocales.split(',')
+      this.metadataFormLang = this.locales[0]
+      this.locales.forEach(lang => {
+        this.pageMetadata[lang] = {
+          title: "",
+          description: ""
+        }
+      })
+    }
     this.loading = true;
     this.sectionsError = ""
     this.checkToken();
@@ -929,6 +934,8 @@ export default {
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
         }
+        this.computedTitle = this.pageMetadata[this.lang].title
+        this.computedDescription = this.pageMetadata[this.lang].description
         const views = {};
         sections.map((section) => {
           this.trackSectionComp(section.name, section.type);
@@ -986,6 +993,8 @@ export default {
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
           }
+          this.computedTitle = this.pageMetadata[this.lang].title
+          this.computedDescription = this.pageMetadata[this.lang].description
           const views = {};
           sections.map((section) => {
             this.trackSectionComp(section.name, section.type);
@@ -1085,7 +1094,7 @@ export default {
         headers: sectionHeader(header),
       };
 
-      let pagePath = this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined;
+      let pagePath = this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : "";
 
       if(pagePath !== '/') {
 
@@ -1126,6 +1135,7 @@ export default {
           }
           this.sectionsPageLastUpdated = res.data.last_updated
           this.metadataModal = false
+          this.metadataFormLang = this.locales[0]
           this.showToast(
             "Success",
             "success",
