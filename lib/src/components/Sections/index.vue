@@ -447,7 +447,7 @@
               </div>
               <div class="flexSections w-full justify-center">
                 <div class="body" style="text-align: start;">
-                  <div style="margin-bottom: 10px;">
+                  <div class="sectionsFieldsLabels">
                     {{ $t("section-input-title") }}
                   </div>
                   <input
@@ -455,10 +455,10 @@
                     type="text"
                     v-model="sectionTypeName"
                   />
-                  <div style="margin-bottom: 10px;" class="mt-2">
+                  <div class="mt-2 sectionsFieldsLabels">
                     {{ $t("fieldNames") }}
                   </div>
-                  <div style="margin-bottom: 10px;" class="mt-2 fieldsDescription">
+                  <div class="fieldsDescription">
                     {{ $t("fieldDesc") }}
                   </div>
                   <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections flex-col mb-4">
@@ -506,8 +506,11 @@
               <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
               <div class="flexSections w-full justify-center">
                 <div class="body metadataFieldsContainer">
-                  <div style="margin-bottom: 10px;">
+                  <div class="sectionsFieldsLabels">
                     {{ $t("pageUrl") }}
+                  </div>
+                  <div class="fieldsDescription">
+                    {{ $t("pathFieldDesc") }}
                   </div>
                   <input
                     class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
@@ -517,7 +520,7 @@
                   <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
                   <div class="flexSections metadataFields">
                     <div class="metadataColumns">
-                      <div style="margin-bottom: 10px;" class="mt-2">
+                      <div class="mt-2 sectionsFieldsLabels">
                         {{ $t("pageTitle") }}
                       </div>
                       <input
@@ -525,7 +528,7 @@
                         type="text"
                         v-model="pageMetadata[metadataFormLang].title"
                       />
-                      <div style="margin-bottom: 10px;" class="mt-2">
+                      <div class="mt-2 sectionsFieldsLabels">
                         {{ $t("pageSeoDesc") }}
                       </div>
                       <textarea
@@ -2445,11 +2448,18 @@ span.handle {
   font-weight: lighter;
   font-size: 12px;
   color: gray;
+  margin-bottom: 10px;
+  text-align: start;
 }
 .view-component {
   overflow: auto;
 }
 .rounded-xl {
   border-radius: 0.75rem !important;
+}
+.sectionsFieldsLabels {
+  margin-bottom: 5px;
+  text-align: start;
+  font-weight: 700;
 }
 </style>
