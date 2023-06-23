@@ -831,7 +831,8 @@ export default {
       ],
       metadataFormLang: '',
       computedTitle: '',
-      computedDescription: ''
+      computedDescription: '',
+      sectionsUserId: ''
     }
   },
   computed: {
@@ -900,6 +901,7 @@ export default {
     this.loading = true;
     this.sectionsError = ""
     this.checkToken();
+    this.getUserData();
     // We check if this is running in the browser or not
     // because during SSR no cors preflight request is sent
     const inBrowser = typeof window !== 'undefined';
@@ -1201,6 +1203,22 @@ export default {
             this.sectionsAdminError = err.response.data.token
           });
       }
+    },
+    getUserData() {
+      const config = {
+        headers: sectionHeader({token: this.$cookies.get("sections-auth-token")}),
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/user`;
+      this.$axios
+        .get(URL, config)
+        .then((res) => {
+          this.sectionsUserId = res.data.id
+          this.loading = false;
+        })
+        .catch((err) => {
+          this.loading = false;
+        });
     },
     exportSections() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.allSections));
