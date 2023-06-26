@@ -199,6 +199,7 @@
                   :savedView="savedView"
                   :locales="locales"
                   :translation-component-support="translationComponentSupport"
+                  :sections-user-id="sectionsUserId"
                 />
                 <Dynamic
                   v-if="currentSection.type === 'dynamic'"
@@ -901,7 +902,6 @@ export default {
     this.loading = true;
     this.sectionsError = ""
     this.checkToken();
-    this.getUserData();
     // We check if this is running in the browser or not
     // because during SSR no cors preflight request is sent
     const inBrowser = typeof window !== 'undefined';
@@ -1551,6 +1551,7 @@ export default {
             );
           }
         })
+        this.getUserData();
       }
 
     },

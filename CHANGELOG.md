@@ -53,3 +53,5 @@
  - Library must manage language supported #110
 
  - Adjustment to be done in the Library #109
+
+ - Library update to support media #92

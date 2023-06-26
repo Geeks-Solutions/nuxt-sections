@@ -4,7 +4,7 @@
       <h3>{{ formatName(props.name, " / ") }}</h3>
       <form>
         <div>
-          <subType :name="props.name" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport">
+          <subType :name="props.name" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
             <slot />
           </subType>
         </div>
@@ -41,6 +41,10 @@ export default {
     translationComponentSupport: {
       type: Boolean,
       default: false
+    },
+    sectionsUserId: {
+      type: String,
+      default: ''
     }
   },
   data() {
