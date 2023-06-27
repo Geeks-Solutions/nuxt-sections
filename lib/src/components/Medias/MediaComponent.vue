@@ -2,13 +2,7 @@
   <div v-if="isOpen" class="section-module-modal-overlay" @click="handleOverlayClick">
     <div class="section-module-modal">
       <div class="section-module-modal-close-icon" @click="isOpen = false">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round"
-             class="feather feather-x">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
+        <CloseIcon />
       </div>
       <div class="section-module-modal-content">
         <div>
@@ -21,9 +15,11 @@
 
 <script>
 import { sectionHeader } from "../../utils";
+import CloseIcon from "../../base/icons/close.vue";
 
 export default {
   name: "Medias",
+  components: { CloseIcon },
   props: {
     sectionsUserId: {
       type: String,
@@ -85,7 +81,9 @@ export default {
 .section-module-modal {
   background-color: #fff;
   padding: 20px;
-  border-radius: 12px 4px 4px 12px;
+  border-radius: 4px 4px 4px 4px;
+  height: 98%;
+  width: 96%;
   max-width: 96%;
   max-height: 98%;
   overflow-y: auto;
@@ -106,6 +104,10 @@ export default {
   margin: 4px;
   cursor: pointer;
   z-index: 1;
+}
+
+.section-module-modal-close-icon svg {
+  color: #31a9db;
 }
 
 /* Scrollbar Styles */
