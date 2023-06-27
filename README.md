@@ -27,6 +27,7 @@ And configure the library, the possible configurations are as follow:
 - `environment`: _to use only for development purposes_ set it to "testing" if you want your requests to be directed to sections test server
 - `projectUrl`: _to use only if you intend to run sections in SSR_ set it to the project url you defined in your project interface on sections back office.
 - `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages.
+- `projectLocales`: _to use only if you intend to have multiple supported languages for your website. Its value must be a string of language code separated by comma and with no spaces ex.: `en,fr,it,es`. See Language Support section below for more details on how to use this feature
 
 > The following packages are installed by the module:
 `cookie-universal-nuxt`
@@ -102,7 +103,8 @@ publicRuntimeConfig: {
       projectId: '62ff7827628cfa00099de9e1',
       projectUrl: 'http://localhost:3000',
       environment: 'testing',
-      queryStringSupport: "enabled"
+      queryStringSupport: "enabled", 
+      projectLocales: 'en,fr'
     }
 }
 ````
@@ -292,6 +294,106 @@ async removeImage() {
       )
     },
 ````
+
+# Language Support
+
+This feature is enabled by add the supported languages as a string separated by comma with no spaces `en,fr,it,es` to the sections object inside publicRuntimeConfig as mentioned in a previous section. 
+
+#### How it works ?
+
+Setting the supported languages above will enable by default a Translation Component that will show on each section form you (the ones you create inside sections/forms directory).
+In order to track the update of language selected from the Translation Component, you should add a `selectedLang` prop with a default value and an empty `locales` prop Array ie.: 
+
+````js
+    props: {
+      selectedLang: {
+        type: String,
+      default: 'en'
+      },
+      locales: {
+        type: Array,
+      default() {
+          return []
+        }
+      }
+    }   
+````
+
+* The `selectedLang` prop will hold the value of the selected language inside the Translation Component which will allow you to set the correct translation of you content inside you settings object.
+
+* The `locales` Array will have the value of the supported languages allowing you to have more control on the feature
+
+# Media Meta Component
+
+* The module expose the media management component and show it as a mini BO that allow the user to create/edit/delete and select Medias from within the section forms.
+
+* The meta component is exposed by default and to show it, you just need to call this function `this.$emit('openMediaModal')` which will open the media meta component in a popup where you can do all the management of your medias.
+
+* To select a media from the meta component, a `Select media` button is displayed next to `Save` media button in the media details section.
+When selecting a media, the data of it are emitted to a `selectedMedia` prop that you should define inside props of your form section ie:
+````js
+props: {
+  selectedMedia: {}
+}
+````
+
+Then you can watch for the changes of this prop and handle the data returned:
+````js
+settings: [
+  {
+    en: {
+      title: '',
+      text: '',
+    },
+    fr: {
+      title: '',
+      text: '',
+    },
+    media: [
+      {
+        media_id: "",
+        url: "",
+        files: [
+          {
+            filename: "",
+            url: ""
+          }
+        ]
+      }
+    ],
+  }
+],
+watch: {
+  selectedMedia(mediaObject) {
+    const media = {
+      media_id: "",
+      url: "",
+      files: [
+        {
+          filename: "",
+          url: ""
+        }
+      ],
+      headers: {}
+    };
+    media.files[0].url = mediaObject.files[0].url;
+    media.files[0].filename = mediaObject.files[0].filename;
+    media.media_id = mediaObject.id;
+    media.url = mediaObject.files[0].url;
+    if (mediaObject.files[0].headers) {
+      media.headers = mediaObject.files[0].headers
+    }
+    this.settings[0].media = []
+    this.settings[0].media.push(media);
+    this.$emit('closeMediaModal')
+  }
+}
+````
+
+* Keep in mind that `media` of `this.settings[0].media` in the above example should be the value set for the media field when creating the section type in use.
+So for the example used, media is the media filed value that was set when creating the section type
+
+* To close the component popup after selection, you can call this method `this.$emit('closeMediaModal')` which is also used in the example above
 
 
 ## Development
