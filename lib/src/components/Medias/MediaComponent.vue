@@ -97,7 +97,7 @@ export default {
 
 .section-module-modal-close-icon {
   position: absolute;
-  top: 20px;
+  top: 10px;
   right: 1%;
   height: 20px;
   width: 20px;
