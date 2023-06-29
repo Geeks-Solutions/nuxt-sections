@@ -55,3 +55,5 @@
  - Adjustment to be done in the Library #109
 
  - Library update to support media #92
+
+ - Proper 404 page when the page does not exist eweev/geeks/section-website#67

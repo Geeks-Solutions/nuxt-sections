@@ -49,7 +49,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@eweev/apps-bo-public": "https://github.com/mahfouzhseineweev/vue-components#dev",
+    "@geeks.solutions/vue-components": "^1.0.1",
     "lodash": "^4.17.21",
     "@nuxtjs/axios": "^5.13.6",
     "cookie-universal-nuxt": "^2.2.2",

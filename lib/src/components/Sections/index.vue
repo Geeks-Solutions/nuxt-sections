@@ -1034,6 +1034,9 @@ export default {
           this.$emit("load", true);
           this.sectionsPageLastUpdated = res.data.last_updated;
         } catch (error) {
+          if (error.response.status === 404) {
+            this.$nuxt.context.res.statusCode = 404
+          }
           if(error.response.data.error) {
             this.sectionsError = error.response.data.error
           } else {
