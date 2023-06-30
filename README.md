@@ -327,7 +327,32 @@ In order to track the update of language selected from the Translation Component
 
 * The module expose the media management component and show it as a mini BO that allow the user to create/edit/delete and select Medias from within the section forms.
 
-* The meta component is exposed by default and to show it, you just need to call this function `this.$emit('openMediaModal')` which will open the media meta component in a popup where you can do all the management of your medias.
+* The meta component is exposed by default and to show it, you just need to call this function `this.$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)` which will open the media meta component in a popup where you can do all the management of your medias.
+
+* You can benefit from the UploadMedia component provided by Sections module:
+
+````html
+<template>
+  <UploadMedia :media-label="$t('Media')" :upload-text="$t('Upload')" :change-text="$t('Change')" :seo-tag="$t('seoTag')" :media="settings[0].media" @uploadContainerClicked="$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)" @removeUploadedImage="removeImage" />
+</template>
+
+<script>
+  import UploadMedia from "@geeks.solutions/nuxt-sections/lib/src/components/Medias/UploadMedia.vue";
+  export default {
+    components: {
+      UploadMedia
+    },
+    methods: {
+      removeImage() {
+        this.settings[0].media = []
+        this.previewMedia = ''
+        this.file = ''
+      },
+    }
+    ...
+}
+</script>
+````
 
 * To select a media from the meta component, a `Select media` button is displayed next to `Save` media button in the media details section.
 When selecting a media, the data of it are emitted to a `selectedMedia` prop that you should define inside props of your form section ie:
@@ -445,12 +470,14 @@ So for the example used, media is the media filed value that was set when creati
 
 ### How to display an already selected media in the sections edit form ?
 
-* After selecting your media, as shown in the example above you media Object/Array inside your settings will have the URL of the selected media.
-So you can use `this.settings[0].media.url` inside an img tag in your form to preview it `<img :src="this.settings[0].media.url" :alt="this.settings[0].media.files[0].filename" />`
+* After selecting your media, as shown in the example above your media Object/Array inside your settings will have the URL of the selected media.
+So it will be displayed automatically if you are using the UploadMedia component or you can use `this.settings[0].media.url` inside an img tag in your form to preview it `<img :src="this.settings[0].media.url" :alt="this.settings[0].media.files[0].filename" />`
 
 ### How to edit an already selected media from the sections edit form ?
 
-* In the img tag you added above, add `@click` event on it that will that will call the function to open the media meta component popup `@click="$emit('openMediaModal')"`.
+* In the img tag you added above, add `@click` event on it that will that will call the function to open the media meta component popup and provide it with the media_id value `@click="$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)"`. This way the media meta component will directly open the media for the id you sent, 
+so you can make the updates press on the save button and the changes will directly show in your sections form.
+Or if you are using the UploadMedia component just click in the image preview and the media meta component will open.
 Then from the media meta component, select the media you want to edit, apply your changes and save the form
 
 ## Development

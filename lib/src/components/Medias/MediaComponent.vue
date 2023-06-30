@@ -6,7 +6,7 @@
       </div>
       <div class="section-module-modal-content">
         <div>
-          <gMedia :components-prefix="'g'" :show-create-media-button="true" :media-translation-prefix="'mediaComponent.'" :media-uri-prop="mediasUri" :authors-uri-prop="authorsUri" :project-id-prop="projectId" :auth-token="$cookies.get('sections-auth-token')" :media-by-id-uri-prop="mediaByIdUri" :media-id-prop="selectedMediaId" :sections-user-id-prop="sectionsUserId" :with-select-media-button="true" :nuxt-sections="true" @getSelectedMedia="emitMedia" />
+          <gMedia :components-prefix="'g'" :show-create-media-button="true" :media-translation-prefix="'mediaComponent.'" :media-uri-prop="mediasUri" :authors-uri-prop="authorsUri" :project-id-prop="projectId" :auth-token="$cookies.get('sections-auth-token')" :media-by-id-uri-prop="mediaByIdUri" :media-id-prop="selectedMediaId" :sections-user-id-prop="sectionsUserId" :with-select-media-button="true" :nuxt-sections="true" :media-id-editing="mediaIdEditing" @getSelectedMedia="emitMedia" />
         </div>
       </div>
     </div>
@@ -34,7 +34,8 @@ export default {
       mediaByIdUri: '',
       selectedMediaId: this.$route.query.id,
       loading: false,
-      isOpen: false
+      isOpen: false,
+      mediaIdEditing: ''
     }
   },
   created() {
@@ -46,7 +47,12 @@ export default {
     emitMedia(media) {
       this.$emit('emittedMedia', media)
     },
-    openModal() {
+    openModal(mediaId) {
+      if (mediaId && mediaId !== '') {
+        this.mediaIdEditing = mediaId
+      } else {
+        this.mediaIdEditing = null
+      }
       this.isOpen = true;
     },
     closeModal() {
@@ -96,9 +102,9 @@ export default {
 }
 
 .section-module-modal-close-icon {
-  position: absolute;
-  top: 10px;
-  right: 1%;
+  position: fixed;
+  top: 20px;
+  right: 60px;
   height: 20px;
   width: 20px;
   margin: 4px;
