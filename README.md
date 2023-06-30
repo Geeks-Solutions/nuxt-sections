@@ -297,29 +297,29 @@ async removeImage() {
 
 # Language Support
 
-This feature is enabled by add the supported languages as a string separated by comma with no spaces `en,fr,it,es` to the sections object inside publicRuntimeConfig as mentioned in a previous section. 
+This feature is enabled by adding the supported languages as a string separated by comma with no spaces `en,fr,it,es` to the sections object inside publicRuntimeConfig as mentioned in a previous section. 
 
 #### How it works ?
 
-Setting the supported languages above will enable by default a Translation Component that will show on each section form you (the ones you create inside sections/forms directory).
+Setting the supported languages above will enable by default a Translation Component that will show on each section form you have (the ones you create inside sections/forms directory).
 In order to track the update of language selected from the Translation Component, you should add a `selectedLang` prop with a default value and an empty `locales` prop Array ie.: 
 
 ````js
     props: {
       selectedLang: {
         type: String,
-      default: 'en'
+        default: 'en'
       },
       locales: {
         type: Array,
-      default() {
+        default() {
           return []
         }
       }
     }   
 ````
 
-* The `selectedLang` prop will hold the value of the selected language inside the Translation Component which will allow you to set the correct translation of you content inside you settings object.
+* The `selectedLang` prop will hold the value of the selected language inside the Translation Component which will allow you to set the correct translation of your content inside your settings object.
 
 * The `locales` Array will have the value of the supported languages allowing you to have more control on the feature
 
@@ -390,11 +390,68 @@ watch: {
 }
 ````
 
+* Example of the complete mediaObject that you will have when watching the selectedMedia prop above: 
+
+````js
+{
+  "type": "image",
+  "title": "title",
+  "tags": null,
+  "seo_tag": "seo tag",
+  "private_status": "public",
+  "number_of_contents": 0,
+  "namespace": "6489123456e624000881676f",
+  "meta": {
+    "content": [],
+    "author": "Admin"
+  },
+  "locked_status": "unlocked",
+  "id": "6489c71234564800073f0241",
+  "files": [
+    {
+      "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2FJacool_Create_a_square_icon_for_a_recurring_billing_software._T_76460ddc-9a5a-4619-b817-6cfb6bf77c69b6fa613c624042c789c90d8be6a6432a.png",
+      "type": "image/png",
+      "thumbnail_url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2FJacool_Create_a_square_icon_for_a_recurring_billing_software._T_76460ddc-9a5a-4619-b817-6cfb6bf77c69b6fa613c624042c789c90d8be6a6432a_thumbnail.png",
+      "size": 405812,
+      "platform_id": "6116112345998615afb99c29",
+      "platform": {
+        "width": 1000,
+        "updated_at": 1628836063,
+        "number_of_medias": 0,
+        "namespace": "sections_app",
+        "name": "Global Platform",
+        "inserted_at": 1628836063,
+        "id": "6116112345998615afb99c29",
+        "height": 1000,
+        "description": "This is the only platform used for sections"
+      },
+      "metadata": {
+        "width": 1024,
+        "height": 1024
+      },
+      "filename": "sections/Jacool_Create_a_square_icon_for_a_recurring_billing_software._T_76460ddc-9a5a-4619-b817-6cfb6bf77c69b6fa613c624042c789c90d8be6a6432a.png",
+      "file_id": "a0a538123453f74786c2579610a1b80b-12fbc2"
+    }
+  ],
+  "creation_date": 1686751251,
+  "author": "648912345821000007cfe256"
+}
+````
+
 * Keep in mind that `media` of `this.settings[0].media` in the above example should be the value set for the media field when creating the section type in use.
 So for the example used, media is the media filed value that was set when creating the section type
 
 * To close the component popup after selection, you can call this method `this.$emit('closeMediaModal')` which is also used in the example above
 
+### How to display an already selected media in the sections edit form ?
+
+* After selecting your media, as shown in the example above you media Object/Array inside your settings will have the URL of the selected media.
+So you can use `this.settings[0].media.url` inside an img tag in your form to preview it `<img :src="this.settings[0].media.url" :alt="this.settings[0].media.files[0].filename" />`
+
+### How to edit an already selected media from the sections edit form ?
+
+* In the img tag you added above, add `@click` event on it that will that will call the function to open the media meta component popup `@click="$emit('openMediaModal')"`.
+Then from the media meta component, select the media you want to edit, apply your changes and save the form
 
 ## Development
 
