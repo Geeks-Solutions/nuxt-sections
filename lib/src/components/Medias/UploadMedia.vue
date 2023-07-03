@@ -113,6 +113,7 @@ export default {
   border-color: rgba(238, 238, 238, var(--tw-border-opacity));
   border-width: 1px;
   cursor: pointer;
+  margin: 0 0 10px 0;
 }
 
 .section-module-upload-media-image {
@@ -124,6 +125,7 @@ export default {
   font-size: 0.75rem;
   line-height: 1rem;
   padding-top: 0.25rem;
+  width: 200px;
 }
 
 .section-module-upload-media-upload-text {
@@ -141,5 +143,6 @@ export default {
 
 .section-module-upload-media-cross {
   padding-left: 0.5rem;
+  cursor: pointer;
 }
 </style>
