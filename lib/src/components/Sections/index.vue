@@ -42,7 +42,7 @@
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
-          <div class="flexSections control-button" style="right: 0px; left: auto;">
+          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto;">
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -105,8 +105,8 @@
             class="hp-button"
             :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
             @click="
-              if (displayVariations[pageName].altered) dismissCountDown = 4;
-              else selectedVariation = v.pageName;
+              displayVariations[pageName].altered ? dismissCountDown = 4 :
+              selectedVariation = v.pageName
             "
           >
             <div class="btn-text">{{ v.name }}</div>
@@ -125,7 +125,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
-      <div v-if="isModalOpen" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isModalOpen && admin && editMode" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
             <div class="flexSections flex-row relativeSections justify-center">
@@ -197,6 +197,9 @@
                   :props="currentSection"
                   @addSectionType="addSectionType"
                   :savedView="savedView"
+                  :locales="locales"
+                  :translation-component-support="translationComponentSupport"
+                  :sections-user-id="sectionsUserId"
                 />
                 <Dynamic
                   v-if="currentSection.type === 'dynamic'"
@@ -231,7 +234,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
-      <div v-show="isDeleteModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
@@ -262,7 +265,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
-      <div v-show="isDeletePageModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="flexSections flex-row justify-center items-center">
@@ -299,7 +302,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
-      <div v-show="isAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3 pb-4">
@@ -342,7 +345,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
-      <div v-show="isUnAuthModalOpen" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
@@ -415,6 +418,8 @@
                   :is="getComponent(view.name, view.type)"
                   :section="view"
                   :lang="lang"
+                  :locales="locales"
+                  :editor-options="editorOptions"
                 />
                 <div v-else>
                   <div v-if="admin" class="error-section-loaded">
@@ -431,7 +436,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to create a new static section type     -->
-      <div v-show="staticModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
@@ -443,7 +448,7 @@
               </div>
               <div class="flexSections w-full justify-center">
                 <div class="body" style="text-align: start;">
-                  <div style="margin-bottom: 10px;">
+                  <div class="sectionsFieldsLabels">
                     {{ $t("section-input-title") }}
                   </div>
                   <input
@@ -451,10 +456,10 @@
                     type="text"
                     v-model="sectionTypeName"
                   />
-                  <div style="margin-bottom: 10px;" class="mt-2">
+                  <div class="mt-2 sectionsFieldsLabels">
                     {{ $t("fieldNames") }}
                   </div>
-                  <div style="margin-bottom: 10px;" class="mt-2 fieldsDescription">
+                  <div class="fieldsDescription">
                     {{ $t("fieldDesc") }}
                   </div>
                   <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections flex-col mb-4">
@@ -489,64 +494,48 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to updatethe page metadata     -->
-      <div v-show="metadataModal" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper">
               <div class="text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("Metadata") }}</div>
-                <div class="closeIcon" @click="metadataModal = false">
+                <div class="closeIcon" @click="metadataModal = false; metadataFormLang = locales[0]">
                   <CloseIcon />
                 </div>
               </div>
+              <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
               <div class="flexSections w-full justify-center">
                 <div class="body metadataFieldsContainer">
-                  <div style="margin-bottom: 10px;">
+                  <div class="sectionsFieldsLabels">
                     {{ $t("pageUrl") }}
+                  </div>
+                  <div class="fieldsDescription">
+                    {{ $t("pathFieldDesc") }}
                   </div>
                   <input
                     class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                     type="text"
                     v-model="pagePath"
-                    @input="validatePath"
-                    @keydown="preventSlash"
                   />
                   <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
                   <div class="flexSections metadataFields">
                     <div class="metadataColumns">
-                      <div style="margin-bottom: 10px;" class="mt-2">
+                      <div class="mt-2 sectionsFieldsLabels">
                         {{ $t("pageTitle") }}
                       </div>
                       <input
                         class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata.en.title"
+                        v-model="pageMetadata[metadataFormLang].title"
                       />
-                      <div style="margin-bottom: 10px;" class="mt-2">
+                      <div class="mt-2 sectionsFieldsLabels">
                         {{ $t("pageSeoDesc") }}
                       </div>
                       <textarea
                         class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata.en.description"
-                      />
-                    </div>
-                    <div class="metadataColumns">
-                      <div style="margin-bottom: 10px;" class="mt-2">
-                        {{ $t("pageTitleFr") }}
-                      </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata.fr.title"
-                      />
-                      <div style="margin-bottom: 10px;" class="mt-2">
-                        {{ $t("pageSeoDescFr") }}
-                      </div>
-                      <textarea
-                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata.fr.description"
+                        v-model="pageMetadata[metadataFormLang].description"
                       />
                     </div>
                   </div>
@@ -569,7 +558,7 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is popup to show the successfully created new static section message      -->
-      <div v-show="staticSuccess" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="section-modal-wrapper success-section-type">
@@ -668,6 +657,8 @@ import SectionItem from "../../base/SubTypes/sectionItem.vue";
 import camelCase from "lodash/camelCase";
 import upperFirst from "lodash/upperFirst";
 
+import TranslationComponent from "../../components/Translations/TranslationComponent";
+
 export default {
   name: "Sections",
   components: {
@@ -696,7 +687,8 @@ export default {
     DotIcon,
     CelebrateIcon,
     AlertIcon,
-    SettingsIcon
+    SettingsIcon,
+    TranslationComponent
   },
   props: {
     pageName: {
@@ -725,6 +717,12 @@ export default {
       type: String,
       default: "en",
     },
+    editorOptions: {
+      type: Object,
+      default() {
+        return {}
+      }
+    },
     viewsBgColor: {
       type: String,
       default: "transparent",
@@ -735,18 +733,20 @@ export default {
   },
   head() {
     return {
-      title: this.pageMetadata[this.lang].title,
+      title: this.computedTitle,
       meta: [
         {
           hid: 'description',
           name: 'description',
-          content: this.pageMetadata[this.lang].description
+          content: this.computedDescription
         }
       ]
     }
   },
   data() {
     return {
+      locales: ['en', 'fr'],
+      translationComponentSupport: false,
       sectionSettings: {
         settings: {}
       },
@@ -794,16 +794,7 @@ export default {
       pageId: "",
       pagePath: "",
       sectionsPageName: "",
-      pageMetadata: {
-        en: {
-          title: "",
-          description: ""
-        },
-        fr: {
-          title: "",
-          description: ""
-        }
-      },
+      pageMetadata: {},
       metadataErrors: {
         path: [""]
       },
@@ -815,7 +806,11 @@ export default {
           type: "image",
           name: ""
         }
-      ]
+      ],
+      metadataFormLang: '',
+      computedTitle: '',
+      computedDescription: '',
+      sectionsUserId: ''
     }
   },
   computed: {
@@ -852,7 +847,7 @@ export default {
           );
         }
       },
-    },
+    }
   },
   mounted() {
     if(this.sectionsError !== "") {
@@ -862,6 +857,25 @@ export default {
     }
   },
   async fetch() {
+    this.metadataFormLang = this.locales[0]
+    this.locales.forEach(lang => {
+      this.pageMetadata[lang] = {
+        title: "",
+        description: ""
+      }
+    })
+    if(this.$sections.projectLocales && this.$sections.projectLocales !== '' && this.$sections.projectLocales.includes(',')) {
+      this.translationComponentSupport = true
+      this.locales = []
+      this.locales = this.$sections.projectLocales.split(',')
+      this.metadataFormLang = this.locales[0]
+      this.locales.forEach(lang => {
+        this.pageMetadata[lang] = {
+          title: "",
+          description: ""
+        }
+      })
+    }
     this.loading = true;
     this.sectionsError = ""
     this.checkToken();
@@ -880,7 +894,7 @@ export default {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageName}`;
+    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
 
     let payload = {}
 
@@ -898,10 +912,12 @@ export default {
         this.pageId = res.data.id;
         this.pagePath = res.data.path;
         this.sectionsPageName = res.data.page;
-        for (const lang of ['en', 'fr']) {
+        for (const lang of this.locales) {
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
         }
+        this.computedTitle = this.pageMetadata[this.lang].title
+        this.computedDescription = this.pageMetadata[this.lang].description
         const views = {};
         sections.map((section) => {
           this.trackSectionComp(section.name, section.type);
@@ -955,10 +971,12 @@ export default {
           this.pageId = res.data.id;
           this.pagePath = res.data.path;
           this.sectionsPageName = res.data.page;
-          for (const lang of ['en', 'fr']) {
+          for (const lang of this.locales) {
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
           }
+          this.computedTitle = this.pageMetadata[this.lang].title
+          this.computedDescription = this.pageMetadata[this.lang].description
           const views = {};
           sections.map((section) => {
             this.trackSectionComp(section.name, section.type);
@@ -993,6 +1011,9 @@ export default {
           this.$emit("load", true);
           this.sectionsPageLastUpdated = res.data.last_updated;
         } catch (error) {
+          if (error.response.status === 404) {
+            this.$nuxt.context.res.statusCode = 404
+          }
           if(error.response.data.error) {
             this.sectionsError = error.response.data.error
           } else {
@@ -1017,16 +1038,6 @@ export default {
     }
   },
   methods: {
-    validatePath() {
-      if (this.pagePath.includes('/')) {
-        this.pagePath.replace('/', '')
-      }
-    },
-    preventSlash(event) {
-      if (event.key === '/') {
-        event.preventDefault()
-      }
-    },
     updatePageMetaData() {
       this.loading = true
       this.metadataErrors.path[0] = ''
@@ -1068,15 +1079,36 @@ export default {
         headers: sectionHeader(header),
       };
 
+      let pagePath = this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : "";
+
+      if(pagePath !== '/') {
+
+        // Split the URL into individual path segments
+        const pathSegments = pagePath.split('/');
+
+        // Filter out empty segments and remove duplicates
+        const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1]);
+
+        // Reconstruct the URL with the unique path segments
+        pagePath = pagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/');
+
+        if (pagePath[0] && pagePath[0] === '/') {
+          pagePath = pagePath.replace(/^\/+/, '')
+        }
+        while (pagePath.endsWith('//')) {
+          pagePath = pagePath.slice(0, -1);
+        }
+      }
+
       const variables = {
         page: this.sectionsPageName,
-        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+        path: pagePath,
         metadata: this.pageMetadata,
         variations: [],
         sections
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
 
       this.$axios
         .put(URL, variables, config)
@@ -1088,13 +1120,22 @@ export default {
           }
           this.sectionsPageLastUpdated = res.data.last_updated
           this.metadataModal = false
+          this.metadataFormLang = this.locales[0]
           this.showToast(
             "Success",
             "success",
             this.$t('successSettingsChanges')
           );
-          if (this.pagePath !== this.pageName) {
-            this.$nuxt.context.redirect(this.pagePath)
+          if (pagePath !== this.pageName) {
+            let baseURL = window.location.origin;
+            let routerBase = this.$router.options.base
+            if(routerBase) {
+              while (routerBase.endsWith('/')) {
+                routerBase = routerBase.slice(0, -1);
+              }
+              baseURL = baseURL + routerBase
+            }
+            window.location.replace(`${baseURL}/${pagePath}`);
           }
         })
         .catch((error) => {
@@ -1138,11 +1179,26 @@ export default {
             this.loading = false;
           })
           .catch((err) => {
-            console.log(err)
             this.loading = false;
             this.sectionsAdminError = err.response.data.token
           });
       }
+    },
+    getUserData() {
+      const config = {
+        headers: sectionHeader({token: this.$cookies.get("sections-auth-token")}),
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/user`;
+      this.$axios
+        .get(URL, config)
+        .then((res) => {
+          this.sectionsUserId = res.data.id
+          this.loading = false;
+        })
+        .catch((err) => {
+          this.loading = false;
+        });
     },
     exportSections() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.allSections));
@@ -1272,7 +1328,7 @@ export default {
       const config = {
         headers: sectionHeader(header),
       };
-      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageName}`;
+      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
       this.$axios
         .put(
           URL,
@@ -1298,10 +1354,14 @@ export default {
         })
         .catch((err) => {
           this.loading = false
+          let error = err.response.data.message
+          if (err.response.data.errors && err.response.data.errors.path) {
+            error = `${this.$t('pageUrl')} ${err.response.data.errors.path[0]}`
+          }
           this.showToast(
             "Error creating page",
             "error",
-            this.$t('createPageError') + this.pageName + "\n" + err.response.data.message,
+            this.$t('createPageError') + this.pageName + "\n" + error,
             err.response.data.options
           );
         });
@@ -1451,7 +1511,7 @@ export default {
         }
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageName}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
 
         let payload = {}
 
@@ -1471,6 +1531,7 @@ export default {
             );
           }
         })
+        this.getUserData();
       }
 
     },
@@ -1638,14 +1699,14 @@ export default {
       };
 
       const variables = {
-        page: this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName,
+        page: this.sectionsPageName,
         path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
         metadata: this.pageMetadata,
         variations: [],
         sections,
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.sectionsPageName && this.sectionsPageName !== '' ? this.sectionsPageName : variationName}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
 
       if (formatValdiation === true) {
         this.$axios
@@ -1926,8 +1987,14 @@ export default {
 .sections-config {
   min-height: 100vh;
 }
-.sections-config .control-button {
+.sections-config .control-button.config-buttons {
   position: absolute;
+  z-index: 999;
+  left: 0;
+  top: 60px;
+}
+.sections-config .control-button {
+  position: fixed;
   z-index: 999;
   left: 0;
   top: 60px;
@@ -2380,11 +2447,18 @@ span.handle {
   font-weight: lighter;
   font-size: 12px;
   color: gray;
+  margin-bottom: 10px;
+  text-align: start;
 }
 .view-component {
   overflow: auto;
 }
 .rounded-xl {
   border-radius: 0.75rem !important;
+}
+.sectionsFieldsLabels {
+  margin-bottom: 5px;
+  text-align: start;
+  font-weight: 700;
 }
 </style>

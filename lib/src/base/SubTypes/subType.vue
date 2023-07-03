@@ -2,7 +2,9 @@
   <div class="sub-types">
     <div>
       <div class="text-video content-wrapper d-flex" v-show="name">
-        <component :is="getComponentForm" :ref="name" />
+        <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
+        <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" :selected-media="selectedMedia" @openMediaModal="(mediaId) => $refs.sectionsMediaComponent.openModal(mediaId)" @closeMediaModal="$refs.sectionsMediaComponent.closeModal()" />
+        <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
       </div>
     </div>
     <button
@@ -18,17 +20,39 @@
 
 <script>
 import { importComp } from "../../utils";
+import TranslationComponent from "../../components/Translations/TranslationComponent";
+import MediaComponent from "../../components/Medias/MediaComponent.vue";
 
 export default {
+  components: {
+    MediaComponent,
+    TranslationComponent
+  },
   props: {
     name: {
       type: String,
       default: "",
     },
+    locales: {
+      type: Array,
+      default() {
+        return ['en', 'fr']
+      }
+    },
+    translationComponentSupport: {
+      type: Boolean,
+      default: false
+    },
+    sectionsUserId: {
+      type: String,
+      default: ''
+    }
   },
   data() {
     return {
       withTabs: false,
+      formLang: this.locales[0],
+      selectedMedia: null
     };
   },
   computed: {

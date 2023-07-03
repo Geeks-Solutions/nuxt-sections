@@ -27,6 +27,7 @@ And configure the library, the possible configurations are as follow:
 - `environment`: _to use only for development purposes_ set it to "testing" if you want your requests to be directed to sections test server
 - `projectUrl`: _to use only if you intend to run sections in SSR_ set it to the project url you defined in your project interface on sections back office.
 - `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages.
+- `projectLocales`: _to use only if you intend to have multiple supported languages for your website. Its value must be a string of language code separated by comma and with no spaces ex.: `en,fr,it,es`. See Language Support section below for more details on how to use this feature
 
 > The following packages are installed by the module:
 `cookie-universal-nuxt`
@@ -102,7 +103,8 @@ publicRuntimeConfig: {
       projectId: '62ff7827628cfa00099de9e1',
       projectUrl: 'http://localhost:3000',
       environment: 'testing',
-      queryStringSupport: "enabled"
+      queryStringSupport: "enabled", 
+      projectLocales: 'en,fr'
     }
 }
 ````
@@ -293,6 +295,190 @@ async removeImage() {
     },
 ````
 
+# Language Support
+
+This feature is enabled by adding the supported languages as a string separated by comma with no spaces `en,fr,it,es` to the sections object inside publicRuntimeConfig as mentioned in a previous section. 
+
+#### How it works ?
+
+Setting the supported languages above will enable by default a Translation Component that will show on each section form you have (the ones you create inside sections/forms directory).
+In order to track the update of language selected from the Translation Component, you should add a `selectedLang` prop with a default value and an empty `locales` prop Array ie.: 
+
+````js
+    props: {
+      selectedLang: {
+        type: String,
+        default: 'en'
+      },
+      locales: {
+        type: Array,
+        default() {
+          return []
+        }
+      }
+    }   
+````
+
+* The `selectedLang` prop will hold the value of the selected language inside the Translation Component which will allow you to set the correct translation of your content inside your settings object.
+
+* The `locales` Array will have the value of the supported languages allowing you to have more control on the feature
+
+# Media Meta Component
+
+* The module expose the media management component and show it as a mini BO that allow the user to create/edit/delete and select Medias from within the section forms.
+
+* The meta component is exposed by default and to show it, you just need to call this function `this.$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)` which will open the media meta component in a popup where you can do all the management of your medias.
+
+* You can benefit from the UploadMedia component provided by Sections module:
+
+````html
+<template>
+  <UploadMedia :media-label="$t('Media')" :upload-text="$t('Upload')" :change-text="$t('Change')" :seo-tag="$t('seoTag')" :media="settings[0].media" @uploadContainerClicked="$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)" @removeUploadedImage="removeImage" />
+</template>
+
+<script>
+  import UploadMedia from "@geeks.solutions/nuxt-sections/lib/src/components/Medias/UploadMedia.vue";
+  export default {
+    components: {
+      UploadMedia
+    },
+    methods: {
+      removeImage() {
+        this.settings[0].media = []
+        this.previewMedia = ''
+        this.file = ''
+      },
+    }
+    ...
+}
+</script>
+````
+
+* To select a media from the meta component, a `Select media` button is displayed next to `Save` media button in the media details section.
+When selecting a media, the data of it are emitted to a `selectedMedia` prop that you should define inside props of your form section ie:
+````js
+props: {
+  selectedMedia: {}
+}
+````
+
+Then you can watch for the changes of this prop and handle the data returned:
+````js
+settings: [
+  {
+    en: {
+      title: '',
+      text: '',
+    },
+    fr: {
+      title: '',
+      text: '',
+    },
+    media: [
+      {
+        media_id: "",
+        url: "",
+        files: [
+          {
+            filename: "",
+            url: ""
+          }
+        ]
+      }
+    ],
+  }
+],
+watch: {
+  selectedMedia(mediaObject) {
+    const media = {
+      media_id: "",
+      url: "",
+      files: [
+        {
+          filename: "",
+          url: ""
+        }
+      ],
+      headers: {}
+    };
+    media.files[0].url = mediaObject.files[0].url;
+    media.files[0].filename = mediaObject.files[0].filename;
+    media.media_id = mediaObject.id;
+    media.url = mediaObject.files[0].url;
+    if (mediaObject.files[0].headers) {
+      media.headers = mediaObject.files[0].headers
+    }
+    this.settings[0].media = []
+    this.settings[0].media.push(media);
+    this.$emit('closeMediaModal')
+  }
+}
+````
+
+* Example of the complete mediaObject that you will have when watching the selectedMedia prop above: 
+
+````js
+{
+  "type": "image",
+  "title": "title",
+  "tags": null,
+  "seo_tag": "seo tag",
+  "private_status": "public",
+  "number_of_contents": 0,
+  "namespace": "6489123456e624000881676f",
+  "meta": {
+    "content": [],
+    "author": "Admin"
+  },
+  "locked_status": "unlocked",
+  "id": "6489c71234564800073f0241",
+  "files": [
+    {
+      "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2FJacool_Create_a_square_icon_for_a_recurring_billing_software._T_76460ddc-9a5a-4619-b817-6cfb6bf77c69b6fa613c624042c789c90d8be6a6432a.png",
+      "type": "image/png",
+      "thumbnail_url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2FJacool_Create_a_square_icon_for_a_recurring_billing_software._T_76460ddc-9a5a-4619-b817-6cfb6bf77c69b6fa613c624042c789c90d8be6a6432a_thumbnail.png",
+      "size": 405812,
+      "platform_id": "6116112345998615afb99c29",
+      "platform": {
+        "width": 1000,
+        "updated_at": 1628836063,
+        "number_of_medias": 0,
+        "namespace": "sections_app",
+        "name": "Global Platform",
+        "inserted_at": 1628836063,
+        "id": "6116112345998615afb99c29",
+        "height": 1000,
+        "description": "This is the only platform used for sections"
+      },
+      "metadata": {
+        "width": 1024,
+        "height": 1024
+      },
+      "filename": "sections/Jacool_Create_a_square_icon_for_a_recurring_billing_software._T_76460ddc-9a5a-4619-b817-6cfb6bf77c69b6fa613c624042c789c90d8be6a6432a.png",
+      "file_id": "a0a538123453f74786c2579610a1b80b-12fbc2"
+    }
+  ],
+  "creation_date": 1686751251,
+  "author": "648912345821000007cfe256"
+}
+````
+
+* Keep in mind that `media` of `this.settings[0].media` in the above example should be the value set for the media field when creating the section type in use.
+So for the example used, media is the media filed value that was set when creating the section type
+
+* To close the component popup after selection, you can call this method `this.$emit('closeMediaModal')` which is also used in the example above
+
+### How to display an already selected media in the sections edit form ?
+
+* After selecting your media, as shown in the example above your media Object/Array inside your settings will have the URL of the selected media.
+So it will be displayed automatically if you are using the UploadMedia component or you can use `this.settings[0].media.url` inside an img tag in your form to preview it `<img :src="this.settings[0].media.url" :alt="this.settings[0].media.files[0].filename" />`
+
+### How to edit an already selected media from the sections edit form ?
+
+* In the img tag you added above, add `@click` event on it that will that will call the function to open the media meta component popup and provide it with the media_id value `@click="$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)"`. This way the media meta component will directly open the media for the id you sent, 
+so you can make the updates press on the save button and the changes will directly show in your sections form.
+Or if you are using the UploadMedia component just click in the image preview and the media meta component will open.
+Then from the media meta component, select the media you want to edit, apply your changes and save the form
 
 ## Development
 
