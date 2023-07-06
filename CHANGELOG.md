@@ -57,3 +57,10 @@
  - Library update to support media #92
 
  - Proper 404 page when the page does not exist eweev/geeks/section-website#67
+
+
+### v1.0.5 (6/7/2023)
+
+---
+
+ - Verifying the integrity of the options the user wants to save for a section #9
