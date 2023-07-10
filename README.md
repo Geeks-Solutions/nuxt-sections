@@ -468,6 +468,8 @@ So for the example used, media is the media filed value that was set when creati
 
 * To close the component popup after selection, you can call this method `this.$emit('closeMediaModal')` which is also used in the example above
 
+* To unlink a media from the content, if your media field is an array, then send it empty in your settings and if it is an object, remove media field from your settings
+
 ### How to display an already selected media in the sections edit form ?
 
 * After selecting your media, as shown in the example above your media Object/Array inside your settings will have the URL of the selected media.

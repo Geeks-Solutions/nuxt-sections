@@ -1717,7 +1717,7 @@ export default {
                               );
                             }
                           } else if (typeof option[field.name] === 'object') {
-                            if ((!option[field.name].media_id || !option[field.name].url) && Object.keys(option[field.name]).length !== 0) {
+                            if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
                               integrityCheck = false
                               this.loading = false;
                               this.showToast(
