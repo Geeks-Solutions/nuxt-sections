@@ -412,9 +412,9 @@
                   <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
-              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                <div v-if="admin && editMode && invalidSectionsErrors[view.name]" class="error-section-loaded">
-                  {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name] }}
+              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                <div v-if="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight" class="error-section-loaded">
+                  {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name].error }}
                 </div>
                 <component
                   v-if="view.settings || view.type == 'local'"
@@ -1787,7 +1787,10 @@ export default {
                   this.$t('someSectionsNotSaved')
                 );
                 res.data.invalid_sections.forEach(section => {
-                  this.invalidSectionsErrors[section.name] = section.error
+                  this.invalidSectionsErrors[section.name] = {
+                    error: section.error,
+                    weight: section.weight
+                  }
                 })
               } else {
                 this.showToast(
