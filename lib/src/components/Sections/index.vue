@@ -412,7 +412,10 @@
                   <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
-              <div class="view-component" :style="{ background: viewsBgColor }">
+              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                <div v-if="admin && editMode && invalidSectionsErrors[view.name]" class="error-section-loaded">
+                  {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name] }}
+                </div>
                 <component
                   v-if="view.settings || view.type == 'local'"
                   :is="getComponent(view.name, view.type)"
@@ -810,7 +813,8 @@ export default {
       metadataFormLang: '',
       computedTitle: '',
       computedDescription: '',
-      sectionsUserId: ''
+      sectionsUserId: '',
+      invalidSectionsErrors: {}
     }
   },
   computed: {
@@ -1651,6 +1655,7 @@ export default {
       }
     },
     mutateVariation(variationName) {
+      this.invalidSectionsErrors = {}
       const sections = [];
       let views = this.displayVariations[variationName].views;
       views = Object.values(views);
@@ -1702,7 +1707,7 @@ export default {
                       if (Object.keys(option).includes(field.name)) {
                         if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object')) {
                           if (Array.isArray(option[field.name])) {
-                            if (!option[field.name][0].media_id && !option[field.name][0].url && option[field.name].length !== 0) {
+                            if ((!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
                               integrityCheck = false
                               this.loading = false;
                               this.showToast(
@@ -1712,7 +1717,7 @@ export default {
                               );
                             }
                           } else if (typeof option[field.name] === 'object') {
-                            if (!option[field.name].media_id && !option[field.name].url && Object.keys(option[field.name]).length !== 0) {
+                            if ((!option[field.name].media_id || !option[field.name].url) && Object.keys(option[field.name]).length !== 0) {
                               integrityCheck = false
                               this.loading = false;
                               this.showToast(
@@ -1775,11 +1780,22 @@ export default {
                 JSON.stringify(this.displayVariations)
               );
               this.loading = false;
-              this.showToast(
-                "Success",
-                "success",
-                this.$t('successPageChanges')
-              );
+              if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
+                this.showToast(
+                  "Error",
+                  "error",
+                  this.$t('someSectionsNotSaved')
+                );
+                res.data.invalid_sections.forEach(section => {
+                  this.invalidSectionsErrors[section.name] = section.error
+                })
+              } else {
+                this.showToast(
+                  "Success",
+                  "success",
+                  this.$t('successPageChanges')
+                );
+              }
               if (this.pagePath !== this.pageName) {
                 this.$nuxt.context.redirect(this.pagePath)
               }
@@ -2513,5 +2529,11 @@ span.handle {
   margin-bottom: 5px;
   text-align: start;
   font-weight: 700;
+}
+
+.invalidSection {
+  border: solid 2px red;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 </style>

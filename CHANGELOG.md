@@ -64,3 +64,5 @@
 ---
 
  - Verifying the integrity of the options the user wants to save for a section #9
+
+ - Global gestion of the errors if a page is saved and a sections is invalid, from the Library #12
