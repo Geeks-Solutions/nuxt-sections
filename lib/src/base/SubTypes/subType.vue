@@ -3,7 +3,7 @@
     <div>
       <div class="text-video content-wrapper d-flex" v-show="name">
         <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
-        <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" :selected-media="selectedMedia" @openMediaModal="(mediaId) => $refs.sectionsMediaComponent.openModal(mediaId)" @closeMediaModal="$refs.sectionsMediaComponent.closeModal()" />
+        <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" :selected-media="selectedMedia" @openMediaModal="(mediaId, category) => $refs.sectionsMediaComponent.openModal(mediaId, category)" @closeMediaModal="$refs.sectionsMediaComponent.closeModal()" />
         <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
       </div>
     </div>
