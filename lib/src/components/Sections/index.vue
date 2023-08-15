@@ -412,7 +412,10 @@
                   <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
-              <div class="view-component" :style="{ background: viewsBgColor }">
+              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                <div v-if="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight" class="error-section-loaded">
+                  {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name].error }}
+                </div>
                 <component
                   v-if="view.settings || view.type == 'local'"
                   :is="getComponent(view.name, view.type)"
@@ -810,7 +813,8 @@ export default {
       metadataFormLang: '',
       computedTitle: '',
       computedDescription: '',
-      sectionsUserId: ''
+      sectionsUserId: '',
+      invalidSectionsErrors: {}
     }
   },
   computed: {
@@ -1651,6 +1655,7 @@ export default {
       }
     },
     mutateVariation(variationName) {
+      this.invalidSectionsErrors = {}
       const sections = [];
       let views = this.displayVariations[variationName].views;
       views = Object.values(views);
@@ -1690,62 +1695,129 @@ export default {
         }
       });
 
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
+      let integrityCheck = true
+      if (sections.length > 0) {
+        this.types.forEach(type => {
+          if (type.fields && Array.isArray(type.fields) && type.fields.length > 0) {
+            sections.forEach(section => {
+              if (section.name === type.name) {
+                if (Array.isArray(section.options)) {
+                  type.fields.forEach(field => {
+                    section.options.forEach(option => {
+                      if (Object.keys(option).includes(field.name)) {
+                        if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object')) {
+                          if (Array.isArray(option[field.name])) {
+                            if ((!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
+                              integrityCheck = false
+                              this.loading = false;
+                              this.showToast(
+                                "Error saving your changes",
+                                "error",
+                                `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
+                              );
+                            }
+                          } else if (typeof option[field.name] === 'object') {
+                            if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
+                              integrityCheck = false
+                              this.loading = false;
+                              this.showToast(
+                                "Error saving your changes",
+                                "error",
+                                `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
+                              );
+                            }
+                          }
+                        }
+                      }
+                    })
+                  })
+                } else {
+                  integrityCheck = false
+                  this.loading = false;
+                  this.showToast(
+                    "Error saving your changes",
+                    "error",
+                    `${this.$t('optionsFormat')} \`${section.name}\``
+                  );
+                }
+              }
+            })
+          }
+        })
+      }
 
-      const variables = {
-        page: this.sectionsPageName,
-        path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
-        metadata: this.pageMetadata,
-        variations: [],
-        sections,
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
+      if (integrityCheck === true) {
+        const token = this.$cookies.get("sections-auth-token");
+        const header = {
+          token,
+        };
+        const config = {
+          headers: sectionHeader(header),
+        };
 
-      if (formatValdiation === true) {
-        this.$axios
-          .put(URL, variables, config)
-          .then((res) => {
-            if (res.data && res.data.error) {
-              this.showToast("error", "error", res.data.error);
-              return;
-            }
-            this.allSections = res.data.sections
-            this.sectionsPageLastUpdated = res.data.last_updated
-            this.displayVariations[variationName].altered = false;
-            this.originalVariations = JSON.parse(
-              JSON.stringify(this.displayVariations)
-            );
-            this.loading = false;
-            this.showToast(
-              "Success",
-              "success",
-              this.$t('successPageChanges')
-            );
-            if (this.pagePath !== this.pageName) {
-              this.$nuxt.context.redirect(this.pagePath)
-            }
-          })
-          .catch((error) => {
-            if(error.response.data.errors) {
-              this.metadataErrors = error.response.data.errors
-            } else {
-              this.showToast(
-                "Error saving your changes",
-                "error",
-                error.response.data.message,
-                error.response.data.options
+        const variables = {
+          page: this.sectionsPageName,
+          path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
+          metadata: this.pageMetadata,
+          variations: [],
+          sections,
+        };
+        const URL =
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
+
+        if (formatValdiation === true) {
+          this.$axios
+            .put(URL, variables, config)
+            .then((res) => {
+              if (res.data && res.data.error) {
+                this.showToast("error", "error", res.data.error);
+                return;
+              }
+              this.allSections = res.data.sections
+              this.sectionsPageLastUpdated = res.data.last_updated
+              this.displayVariations[variationName].altered = false;
+              this.originalVariations = JSON.parse(
+                JSON.stringify(this.displayVariations)
               );
-            }
-            this.loading = false;
-          });
-      } else this.loading = false;
+              this.loading = false;
+              if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
+                this.showToast(
+                  "Error",
+                  "error",
+                  this.$t('someSectionsNotSaved')
+                );
+                res.data.invalid_sections.forEach(section => {
+                  this.invalidSectionsErrors[section.name] = {
+                    error: section.error,
+                    weight: section.weight
+                  }
+                })
+              } else {
+                this.showToast(
+                  "Success",
+                  "success",
+                  this.$t('successPageChanges')
+                );
+              }
+              if (this.pagePath !== this.pageName) {
+                this.$nuxt.context.redirect(this.pagePath)
+              }
+            })
+            .catch((error) => {
+              if(error.response.data.errors) {
+                this.metadataErrors = error.response.data.errors
+              } else {
+                this.showToast(
+                  "Error saving your changes",
+                  "error",
+                  error.response.data.message,
+                  error.response.data.options
+                );
+              }
+              this.loading = false;
+            });
+        } else this.loading = false;
+      }
     },
     saveVariation() {
       this.loading = true;
@@ -2460,5 +2532,11 @@ span.handle {
   margin-bottom: 5px;
   text-align: start;
   font-weight: 700;
+}
+
+.invalidSection {
+  border: solid 2px red;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 </style>

@@ -57,3 +57,14 @@
  - Library update to support media #92
 
  - Proper 404 page when the page does not exist eweev/geeks/section-website#67
+
+
+### v1.0.5 (6/7/2023)
+
+---
+
+ - Verifying the integrity of the options the user wants to save for a section #9
+
+ - Global management of the errors if a page is saved and a sections is invalid, from the Library #12
+
+ - Have an icon showing in the language switcher when editing a section, to show in which language the site is opened #13
