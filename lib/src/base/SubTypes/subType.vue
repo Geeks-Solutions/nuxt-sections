@@ -2,7 +2,7 @@
   <div class="sub-types">
     <div>
       <div class="text-video content-wrapper d-flex" v-show="name">
-        <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
+        <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
         <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" :selected-media="selectedMedia" @openMediaModal="(mediaId, category) => $refs.sectionsMediaComponent.openModal(mediaId, category)" @closeMediaModal="$refs.sectionsMediaComponent.closeModal()" />
         <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
       </div>
@@ -79,7 +79,7 @@ export default {
 };
 </script>
 <style>
-.submit-btn {
+.sub-types button.submit-btn {
   border: none;
   font-size: 24px;
 

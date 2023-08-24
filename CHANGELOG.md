@@ -68,3 +68,12 @@
  - Global management of the errors if a page is saved and a sections is invalid, from the Library #12
 
  - Have an icon showing in the language switcher when editing a section, to show in which language the site is opened #13
+
+
+### v1.0.6 (8/21/2023)
+
+---
+
+- Added cname website domain support issue Using Cname for section project eweev/geeks/kms#44
+
+- Meta data form needs css as additonal field #15

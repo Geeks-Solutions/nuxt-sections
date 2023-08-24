@@ -111,7 +111,7 @@ export default {
   min-width: 0;
   max-width: 1000px;
 }
-h3 {
+.element-type h3 {
   font-size: 29px;
 }
 </style>

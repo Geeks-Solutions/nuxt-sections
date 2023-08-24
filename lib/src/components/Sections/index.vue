@@ -1,5 +1,5 @@
 <template>
-  <div class="sections-config justify-center">
+  <div class="sections-config sections-justify-center">
     <div v-if="!pageNotFound">
       <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
       <button
@@ -10,12 +10,12 @@
         {{ !editMode ? $t("Edit page") : $t("View page") }}
       </button>
       <div class="bg-light-grey-hp hide-mobile section-wrapper">
-        <div v-if="admin && editMode" class="p-3 text-center mainmsg pt-3">
+        <div v-if="admin && editMode" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
           {{ $t('changesPublished') }}
         </div>
 
         <div
-          class="pb-4 flexSections flex-row justify-center hide-mobile"
+          class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
           v-if="admin && editMode"
         >
           <button
@@ -90,7 +90,7 @@
         </div>
       </div>
       <div
-        class="bg-light-grey-hp p-3 flexSections flex-row justify-center part2 hide-mobile"
+        class="bg-light-grey-hp sections-p-3 flexSections sections-flex-row sections-justify-center part2 hide-mobile"
         v-if="admin && editMode"
       >
         <button
@@ -112,7 +112,7 @@
             <div class="btn-text">{{ v.name }}</div>
           </button>
           <div
-            class="sync flexSections flex-row p-4 justify-center"
+            class="sync flexSections sections-flex-row sections-p-4 sections-justify-center"
             v-if="selectedVariation === v.pageName"
             @click="synch()"
           >
@@ -125,11 +125,11 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
-      <div v-if="isModalOpen && admin && editMode" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
-            <div class="flexSections flex-row relativeSections justify-center">
-              <div class="text-center h4 my-3 pb-6" v-if="!currentSection">
+      <div v-if="isModalOpen && admin && editMode" ref="modal" class="sections-fixed section-modal-content sections-z-50 bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl">
+            <div class="flexSections sections-flex-row relativeSections sections-justify-center">
+              <div class="sections-text-center h4 sections-my-3 sections-pb-6" v-if="!currentSection">
                 {{ $t("Add") }}
               </div>
               <div class="closeIcon" @click="isModalOpen = false">
@@ -144,7 +144,7 @@
               <BackIcon />
             </div>
 
-            <div v-if="!currentSection" class="m-1 p-1 type-items content-wrapper">
+            <div v-if="!currentSection" class="sections-m-1 sections-p-1 type-items content-wrapper">
               <div
                 class="section-item section-item-box bg-blue"
                 v-for="(type, index) in types"
@@ -163,26 +163,26 @@
                     :icon="type.name"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable'" class="flexSections sections-pl-2 sections-pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
                   <div class="section-delete-icon" @click="openAuthConfigurableSectionTypeModal(type.application_id, index, type.requirements, type.name, type.application)">
-                    <div class="flexSections justify-between items-end">
-                      <div v-if="type.type === 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 8px;">
+                    <div class="flexSections justify-between sections-items-end">
+                      <div v-if="type.type === 'configurable'" class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
                         {{ $t('by') + type.application }}
                       </div>
-                      <LockedIcon class="trash-icon-style p-1" />
+                      <LockedIcon class="trash-icon-style sections-p-1" />
                     </div>
                   </div>
                 </div>
                 <div v-else-if="type.type === 'configurable'" class="section-delete">
                   <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
-                    <div class="flexSections justify-between items-end">
-                      <div class="flexSections pl-2 pb-1" style="font-size: 8px;">
+                    <div class="flexSections justify-between sections-items-end">
+                      <div class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
                         {{ $t('by') + type.application }}
                       </div>
-                      <UnlockedIcon class="trash-icon-style p-1" />
+                      <UnlockedIcon class="trash-icon-style sections-p-1" />
                     </div>
                   </div>
                 </div>
@@ -234,13 +234,13 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
-      <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center h4 my-3  pb-3">
+      <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+            <div class="sections-text-center h4 sections-my-3  sections-pb-3">
               {{ $t("delete-section-type") + selectedSectionTypeName}}
             </div>
-            <div class="flexSections flex-row">
+            <div class="flexSections sections-flex-row">
               <button
                 class="hp-button"
                 @click="deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
@@ -265,19 +265,19 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
-      <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="flexSections flex-row justify-center items-center">
+      <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+            <div class="flexSections sections-flex-row sections-justify-center sections-items-center">
               <AlertIcon />
-              <div class="text-center h4 my-3 pb-3 deletePageLabel">
+              <div class="sections-text-center h4 sections-my-3 sections-pb-3 deletePageLabel">
                 {{ $t("deletePage") }}
               </div>
             </div>
-            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+            <div class="sections-text-center h4 sections-my-3  sections-pb-3 deletePageConfirmation">
               {{ $t("delete-section-page") }}
             </div>
-            <div class="flexSections flex-row justify-center">
+            <div class="flexSections sections-flex-row sections-justify-center">
               <button
                 class="hp-button danger"
                 @click="deleteSectionPage()"
@@ -302,23 +302,23 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
-      <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center h4 my-3 pb-4">
+      <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+            <div class="sections-text-center h4 sections-my-3 sections-pb-4">
               {{ $t("authorize-section-type") + selectedAppName}}
             </div>
-            <div class="flexSections flex-col gap-4">
+            <div class="flexSections sections-flex-col sections-gap-4">
               <div v-for="requiredInput in selectedSectionRequirements">
                 <input
-                  class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                  class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                   type="text"
                   :placeholder="requiredInput"
                   v-model="requirementsInputs[requiredInput]"
                 />
               </div>
 
-              <div class="flexSections flex-row">
+              <div class="flexSections sections-flex-row">
                 <button
                   class="hp-button"
                   @click="authorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
@@ -345,15 +345,15 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
-      <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center h4 my-3  pb-3">
+      <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+            <div class="sections-text-center h4 sections-my-3  sections-pb-3">
               {{ $t("un-authorize-section-type") + selectedAppName }}
             </div>
-            <div class="flexSections flex-col gap-4">
+            <div class="flexSections sections-flex-col sections-gap-4">
 
-              <div class="flexSections flex-row">
+              <div class="flexSections sections-flex-row">
                 <button
                   class="hp-button"
                   @click="unAuthorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
@@ -397,7 +397,7 @@
           >
             <div class="section-view relativeSections">
               <div
-                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+                class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
                 v-if="admin && editMode"
               >
                 <LinkIcon v-if="view.linkedTo" />
@@ -439,43 +439,43 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to create a new static section type     -->
-      <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+      <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
             <div class="section-modal-wrapper">
-              <div class="text-center h4 sectionTypeHeader">
+              <div class="sections-text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("section-title") }}:</div>
                 <div class="closeIcon" @click="staticModal = false">
                   <CloseIcon />
                 </div>
               </div>
-              <div class="flexSections w-full justify-center">
+              <div class="flexSections sections-w-full sections-justify-center">
                 <div class="body" style="text-align: start;">
                   <div class="sectionsFieldsLabels">
                     {{ $t("section-input-title") }}
                   </div>
                   <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                    class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                     type="text"
                     v-model="sectionTypeName"
                   />
-                  <div class="mt-2 sectionsFieldsLabels">
+                  <div class="sections-mt-2 sectionsFieldsLabels">
                     {{ $t("fieldNames") }}
                   </div>
                   <div class="fieldsDescription">
                     {{ $t("fieldDesc") }}
                   </div>
-                  <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections flex-col mb-4">
+                  <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections sections-flex-col sections-mb-4">
                     <div class="flexSections">
                       <input
                         v-model="field.name"
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                         type="text"
                         :placeholder="`${$t('field')} #${k+1}`"
                       />
-                      <span class="flexSections flex-row pl-2 items-center">
-                        <span v-show="k || ( !k && fieldsInputs.length > 1)" class="cursor-pointer text-3xl" @click="removeField(k)">-</span>
-                        <span v-show="k === fieldsInputs.length - 1" class="cursor-pointer text-3xl pl-3" @click="addField(k)">+</span>
+                      <span class="flexSections sections-flex-row sections-pl-2 sections-items-center">
+                        <span v-show="k || ( !k && fieldsInputs.length > 1)" class="sections-cursor-pointer sections-text-3xl" @click="removeField(k)">-</span>
+                        <span v-show="k === fieldsInputs.length - 1" class="sections-cursor-pointer sections-text-3xl sections-pl-3" @click="addField(k)">+</span>
                       </span>
                     </div>
                   </div>
@@ -497,52 +497,94 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to updatethe page metadata     -->
-      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
             <div class="section-modal-wrapper">
-              <div class="text-center h4 sectionTypeHeader">
+              <div class="sections-text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("Metadata") }}</div>
                 <div class="closeIcon" @click="metadataModal = false; metadataFormLang = locales[0]">
                   <CloseIcon />
                 </div>
               </div>
-              <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
-              <div class="flexSections w-full justify-center">
+              <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
+              <div class="flexSections sections-w-full sections-justify-center sections-page-settings">
                 <div class="body metadataFieldsContainer">
-                  <div class="sectionsFieldsLabels">
-                    {{ $t("pageUrl") }}
-                  </div>
-                  <div class="fieldsDescription">
-                    {{ $t("pathFieldDesc") }}
-                  </div>
-                  <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    type="text"
-                    v-model="pagePath"
-                  />
-                  <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
-                  <div class="flexSections metadataFields">
-                    <div class="metadataColumns">
-                      <div class="mt-2 sectionsFieldsLabels">
-                        {{ $t("pageTitle") }}
+                  <div class="flexSections sections-flex-row sections-gap-4">
+                    <div>
+                      <div class="sectionsFieldsLabels">
+                        {{ $t("pageUrl") }}
+                      </div>
+                      <div class="fieldsDescription">
+                        {{ $t("pathFieldDesc") }}
                       </div>
                       <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                        class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata[metadataFormLang].title"
+                        v-model="pagePath"
                       />
-                      <div class="mt-2 sectionsFieldsLabels">
-                        {{ $t("pageSeoDesc") }}
+                      <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+                      <div class="flexSections metadataFields">
+                        <div class="metadataColumns">
+                          <div class="sections-mt-2 sectionsFieldsLabels">
+                            {{ $t("pageTitle") }}
+                          </div>
+                          <input
+                            class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                            type="text"
+                            v-model="pageMetadata[metadataFormLang].title"
+                          />
+                          <div class="sections-mt-2 sectionsFieldsLabels">
+                            {{ $t("pageSeoDesc") }}
+                          </div>
+                          <textarea
+                            class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none"
+                            type="text"
+                            v-model="pageMetadata[metadataFormLang].description"
+                          />
+                          <div class="sections-mt-2 sectionsFieldsLabels">
+                            {{ $t("sectionsLanguages") }}
+                          </div>
+                          <div class="sections-border sections-border-FieldGray rounded-xl overflow-y-scroll overflow-visible sections-mt-2">
+                            <div v-for="(language, i) in supportedLanguages" :key="language.id">
+                              <div :class="[isSelectedLang(language.id) ? 'sections-bg-FieldGray sections-pl-4 sections-p-2 sections-cursor-pointer' : 'sections-pl-4 sections-p-2 sections-cursor-pointer', i === 0 ? 'sections-borders-top' : 'sections-borders-bottom']" @click="toggleLanguageSelection(language.id)">{{ language.label }}</div>
+                            </div>
+                          </div>
+                          <div class="flexSections sections-mt-2 sections-flex-row">
+                            <div class="sections-mt-2 sections-pr-3 sectionsFieldsLabels">
+                              {{ $t("activateCookieControl") }}
+                            </div>
+                            <input
+                              class="sections-checkbox"
+                              type="checkbox"
+                              v-model="pageMetadata['activateCookieControl']"
+                            />
+                          </div>
+                          <div v-if="pageMetadata['activateCookieControl'] === true">
+                            <div class="sections-mt-2 sectionsFieldsLabels">
+                              {{ $t("gtmId")+'*' }}
+                            </div>
+                            <input
+                              class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                              type="text"
+                              v-model="pageMetadata['gtmId']"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <textarea
-                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata[metadataFormLang].description"
-                      />
+                    </div>
+                    <div>
+                      <div class="sections-mt-2 sectionsFieldsLabels">
+                        {{ $t("mediaComponent.media") }}
+                      </div>
+                      <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []" @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')" @removeUploadedImage="removeMedia('media')" />
+                      <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+                      <div class="sections-mt-2 sectionsFieldsLabels">
+                        {{ $t("mediaComponent.favicon") }}
+                      </div>
+                      <UploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['favicon'] && Object.keys(pageMetadata['favicon']).length > 0 ? [pageMetadata['favicon']] : []" @uploadContainerClicked="selectedMediaType = 'favicon'; $refs.sectionsMediaComponent.openModal(pageMetadata['favicon'] && Object.keys(pageMetadata['favicon']).length > 0 ? pageMetadata['favicon'].media_id : null)" @removeUploadedImage="removeMedia('favicon')" />
                     </div>
                   </div>
-
                 </div>
               </div>
               <div class="footer">
@@ -561,11 +603,11 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is popup to show the successfully created new static section message      -->
-      <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+      <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
             <div class="section-modal-wrapper success-section-type">
-              <div class="text-center h4 header">
+              <div class="sections-text-center h4 header">
                 <div class="icon-head">
                   <CelebrateIcon />
                 </div>
@@ -576,7 +618,7 @@
                   <CloseIcon />
                 </div>
               </div>
-              <div class="flexSections w-full justify-center">
+              <div class="flexSections sections-w-full sections-justify-center">
                 <div class="body">
                   <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
                   <div class="section-list">
@@ -661,6 +703,8 @@ import camelCase from "lodash/camelCase";
 import upperFirst from "lodash/upperFirst";
 
 import TranslationComponent from "../../components/Translations/TranslationComponent";
+import UploadMedia from "../../components/Medias/UploadMedia";
+import MediaComponent from "../../components/Medias/MediaComponent";
 
 export default {
   name: "Sections",
@@ -691,7 +735,9 @@ export default {
     CelebrateIcon,
     AlertIcon,
     SettingsIcon,
-    TranslationComponent
+    TranslationComponent,
+    UploadMedia,
+    MediaComponent
   },
   props: {
     pageName: {
@@ -743,13 +789,17 @@ export default {
           name: 'description',
           content: this.computedDescription
         }
+      ],
+      link: [
+        this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
+        this.pageMetadata['favicon'] && this.pageMetadata['favicon'].url ? { rel: 'icon', type: 'image/png', href: this.pageMetadata['favicon'].url } : {},
       ]
     }
   },
   data() {
     return {
       locales: ['en', 'fr'],
-      translationComponentSupport: false,
+      translationComponentSupport: true,
       sectionSettings: {
         settings: {}
       },
@@ -814,7 +864,13 @@ export default {
       computedTitle: '',
       computedDescription: '',
       sectionsUserId: '',
-      invalidSectionsErrors: {}
+      invalidSectionsErrors: {},
+      supportedLanguages: [
+        { id: 'fr', label: 'French (fr)', selected: false },
+        { id: 'en', label: 'English (en)', selected: false }
+      ],
+      selectedLanguages: [],
+      selectedMediaType: 'media'
     }
   },
   computed: {
@@ -859,6 +915,21 @@ export default {
     } else if (this.sectionsAdminError !== "") {
       this.showToast("Error", "error", this.sectionsAdminError);
     }
+    if (this.$sections.cname === "active" && this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
+      this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
+    }
+
+    if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
+      // Dynamically add the CSS file to the DOM after the component is mounted to insure the imported css styles override all other css styles
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = this.pageMetadata['media'].url;
+      document.head.appendChild(link);
+    }
+
+    if (this.pageMetadata['activateCookieControl'] === true) {
+      this.$nuxt.$emit('activateCookieControl', this.pageMetadata['gtmId'], true)
+    }
   },
   async fetch() {
     this.metadataFormLang = this.locales[0]
@@ -894,11 +965,27 @@ export default {
       })
     }
 
+    let websiteDomain = ""
+    const isServer = process.server;
+    const scheme = isServer ? this.$nuxt.context.req.headers['x-forwarded-proto'] || 'http' : window.location.protocol.replace(':', '');
+
+    if (inBrowser) {
+      websiteDomain = window.location.host
+    } else {
+      websiteDomain = this.$nuxt.context.req.headers.host
+    }
+
+    this.$sections.projectUrl = websiteDomain
+
     const config = {
-      headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
+      headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+    let URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+
+    if (this.$sections.cname === "active") {
+      URL = `${this.$sections.serverUrl}/project/${websiteDomain}/page/${encodeURIComponent(this.pageName)}`;
+    }
 
     let payload = {}
 
@@ -919,6 +1006,20 @@ export default {
         for (const lang of this.locales) {
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+        }
+        if (res.data.metadata.media) {
+          this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+        }
+        if (res.data.metadata.favicon) {
+          this.$set(this.pageMetadata, 'favicon', res.data.metadata.favicon)
+        }
+        if (res.data.metadata.languages) {
+          this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
+          this.selectedLanguages = res.data.metadata.languages
+        }
+        if (res.data.metadata.activateCookieControl === true) {
+          this.$set(this.pageMetadata, 'activateCookieControl', res.data.metadata.activateCookieControl, true)
+          this.$set(this.pageMetadata, 'gtmId', res.data.metadata.gtmId)
         }
         this.computedTitle = this.pageMetadata[this.lang].title
         this.computedDescription = this.pageMetadata[this.lang].description
@@ -979,6 +1080,20 @@ export default {
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
           }
+          if (res.data.metadata.media) {
+            this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+          }
+          if (res.data.metadata.favicon) {
+            this.$set(this.pageMetadata, 'favicon', res.data.metadata.favicon)
+          }
+          if (res.data.metadata.languages) {
+            this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
+            this.selectedLanguages = res.data.metadata.languages
+          }
+          if (res.data.metadata.activateCookieControl === true) {
+            this.$set(this.pageMetadata, 'activateCookieControl', res.data.metadata.activateCookieControl, true)
+            this.$set(this.pageMetadata, 'gtmId', res.data.metadata.gtmId)
+          }
           this.computedTitle = this.pageMetadata[this.lang].title
           this.computedDescription = this.pageMetadata[this.lang].description
           const views = {};
@@ -1030,6 +1145,15 @@ export default {
         }
       }
     }
+
+    if (this.pageMetadata['languages'] && this.pageMetadata['languages'].length > 0) {
+      this.locales = []
+      this.locales = this.pageMetadata['languages']
+    } else {
+      this.pageMetadata['languages'] = this.locales
+      this.selectedLanguages = Array.from(this.locales)
+    }
+
   },
   watch: {
     isModalOpen(value) {
@@ -1042,7 +1166,49 @@ export default {
     }
   },
   methods: {
+    isSelectedLang(id) {
+      const index = this.selectedLanguages.indexOf(id)
+      return index !== -1;
+    },
+    toggleLanguageSelection(id) {
+      const index = this.selectedLanguages.indexOf(id)
+      if(index === -1) {
+        this.selectedLanguages.push(id)
+      } else if (this.selectedLanguages.length > 1) {
+        this.selectedLanguages.splice(index, 1)
+      }
+    },
+    selectedCSS(mediaObject, mediaFieldName) {
+      const media = {
+        media_id: "",
+        url: "",
+        seo_tag: "",
+        filename: "",
+        headers: {}
+      };
+      media.filename = mediaObject.files[0].filename;
+      media.media_id = mediaObject.id;
+      media.url = mediaObject.files[0].url;
+      media.seo_tag = mediaObject.seo_tag;
+      if (mediaObject.files[0].headers) {
+        media.headers = mediaObject.files[0].headers
+      }
+      this.$set(this.pageMetadata, mediaFieldName, media);
+      this.$refs.sectionsMediaComponent.closeModal()
+    },
+    removeMedia(media) {
+      this.pageMetadata[media] = {}
+    },
     updatePageMetaData() {
+      if (this.pageMetadata['activateCookieControl'] === true && (!this.pageMetadata['gtmId'] || this.pageMetadata['gtmId'] === '')) {
+        this.showToast(
+          "Error saving your changes",
+          "error",
+          this.$t('gtmIdRequired')
+        );
+        return;
+      }
+
       this.loading = true
       this.metadataErrors.path[0] = ''
 
@@ -1107,7 +1273,7 @@ export default {
       const variables = {
         page: this.sectionsPageName,
         path: pagePath,
-        metadata: this.pageMetadata,
+        metadata: {...this.pageMetadata, languages: this.selectedLanguages},
         variations: [],
         sections
       };
@@ -1125,6 +1291,20 @@ export default {
           this.sectionsPageLastUpdated = res.data.last_updated
           this.metadataModal = false
           this.metadataFormLang = this.locales[0]
+          if (res.data.metadata.languages) {
+            this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
+          }
+          if (res.data.metadata.activateCookieControl === true) {
+            this.$nuxt.$emit('activateCookieControl', res.data.metadata.gtmId, true)
+          } else {
+            this.$nuxt.$emit('activateCookieControl', res.data.metadata.gtmId, false)
+          }
+          if (this.pageMetadata['languages'] && this.pageMetadata['languages'].length > 0) {
+            this.locales = []
+            this.locales = this.pageMetadata['languages']
+          } else {
+            this.pageMetadata['languages'] = this.locales
+          }
           this.showToast(
             "Success",
             "success",
@@ -1166,6 +1346,15 @@ export default {
     },
     checkToken() {
       const auth_code = this.$route.query.auth_code;
+      if (this.$sections.cname === "active") {
+        if (this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
+          this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
+        } else {
+          const project_id = this.$route.query.project_id;
+          this.$sections.projectId = project_id
+          this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-project-id", project_id);
+        }
+      }
       if (auth_code) {
         const config = {
           headers: sectionHeader({}),
@@ -1696,6 +1885,7 @@ export default {
       });
 
       let integrityCheck = true
+
       if (sections.length > 0) {
         this.types.forEach(type => {
           if (type.fields && Array.isArray(type.fields) && type.fields.length > 0) {
@@ -2096,7 +2286,7 @@ export default {
   background: #0881b3;
   transition: 0.2s;
 }
-button {
+.sections-config button {
   max-height: 64px;
   width: auto;
   min-width: auto;
@@ -2383,7 +2573,7 @@ span.handle {
 .widthSpace {
   width: 45px;
 }
-.z-50 {
+.sections-z-50 {
   z-index: 2000 !important;
 }
 .section-modal-wrapper {
@@ -2539,4 +2729,226 @@ span.handle {
   margin-top: 5px;
   margin-bottom: 5px;
 }
+
+.sections-justify-center {
+  justify-content: center;
+}
+
+.sections-items-center {
+  align-items: center;
+}
+
+.sections-flex-row {
+  flex-direction: row;
+}
+
+.sections-text-center {
+  text-align: center;
+}
+
+.sections-text-3xl {
+  font-size: 30px;
+}
+
+.sections-cursor-pointer {
+  cursor: pointer;
+}
+
+.sections-pt-3 {
+  padding-top: 12px;
+}
+
+.sections-pt-4 {
+  padding-top: 16px;
+}
+
+.sections-pb-1 {
+  padding-bottom: 4px;
+}
+
+.sections-pb-3 {
+  padding-bottom: 12px;
+}
+
+.sections-pb-4 {
+  padding-bottom: 16px;
+}
+
+.sections-pb-6 {
+  padding-bottom: 24px;
+}
+
+.sections-pb-20 {
+  padding-bottom: 80px;
+}
+
+.sections-pl-2 {
+  padding-left: 8px;
+}
+
+.sections-pl-3 {
+  padding-left: 12px;
+}
+
+.sections-pr-3 {
+  padding-right: 12px;
+}
+
+.sections-pl-4 {
+ padding-left: 16px;
+}
+
+.sections-p-2 {
+ padding: 8px;
+}
+
+.sections-pl-6 {
+  padding-left: 24px;
+}
+
+.sections-p-1 {
+  padding: 4px;
+}
+
+.sections-p-3 {
+  padding: 12px;
+}
+
+.sections-p-4 {
+  padding: 16px;
+}
+
+.sections-p-8 {
+  padding: 32px;
+}
+
+.sections-m-1 {
+  margin: 4px;
+}
+
+.sections-mt-2 {
+  margin-top: 8px;
+}
+
+.sections-mb-4 {
+  margin-bottom: 16px;
+}
+
+.sections-bg-white {
+  background-color: white;
+}
+
+.sections-px-4 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.sections-py-4 {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.sections-my-3 {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.sections-bg-opacity-25 {
+  --tw-bg-opacity: 0.25;
+}
+
+.sections-inset-0 {
+  inset: 0px;
+}
+
+.sections-fixed {
+  position: fixed;
+}
+
+.sections-absolute {
+  position: absolute;;
+}
+
+.sections-shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.sections-overflow-hidden {
+  overflow: hidden;
+}
+
+.sections-overflow-y-auto {
+  overflow-y: auto;
+}
+
+.sections-overflow-scroll {
+  overflow: scroll;
+}
+
+.sections-top-0 {
+  top: 0px;
+}
+
+.sections-right-2 {
+  right: 8px;
+}
+
+.sections-items-end {
+  align-items: end;
+}
+
+.sections-flex-col {
+  flex-direction: column;
+}
+
+.sections-gap-4 {
+  gap: 16px;
+}
+
+.sections-border {
+  border-width: 1px;
+}
+
+.sections-border-FieldGray {
+  border-color: #C2C2C2;
+}
+
+.sections-bg-FieldGray {
+  background-color: #C2C2C2;
+}
+
+.sections-h-48px {
+  height: 48px;
+}
+
+.sections-w-full {
+  width: 100%;
+}
+
+.sections-borders-bottom {
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.sections-borders-top {
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.sections-checkbox {
+  width: 20px;
+}
+
+.gtmError {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  color: rgb(216, 42, 42);
+}
+
+@media only screen and (max-height: 800px) {
+  .sections-page-settings {
+    overflow: scroll;
+    max-height: 320px;
+  }
+}
+
 </style>

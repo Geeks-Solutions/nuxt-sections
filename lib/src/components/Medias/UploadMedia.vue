@@ -13,8 +13,15 @@
                           alt="empty"
                           class="section-module-upload-media-image"/>
               <div v-if="media.length > 0 && media[0].url !== ''">
+                <div v-if="isDocument">
+                  <div class="section-module-upload-media-document">
+                    <div class="section-module-upload-media-document-inner">
+                      <MediaDocument />
+                    </div>
+                  </div>
+                </div>
                 <img
-                  v-if="media.length > 0 && media[0].url !== ''"
+                  v-else-if="media.length > 0 && media[0].url !== ''"
                   :src="media[0].url"
                   :alt="media[0].seo_tag"
                   class="section-module-upload-media-image"
@@ -43,11 +50,13 @@
 <script>
 import EmptyImage from "../../base/icons/EmptyImage.vue";
 import Cross from "../../base/icons/cross.vue";
+import MediaDocument from "../../base/icons/mediaDocument.vue";
 
 export default {
   name: 'UploadMedia',
   components: {
     Cross,
+    MediaDocument,
     EmptyImage
   },
   props: {
@@ -66,6 +75,10 @@ export default {
     seoTag: {
       type: String,
       default: 'SEO tag: '
+    },
+    isDocument: {
+      type: Boolean,
+      default: false
     },
     media: {
       type: Array,
@@ -144,5 +157,24 @@ export default {
 .section-module-upload-media-cross {
   padding-left: 0.5rem;
   cursor: pointer;
+}
+
+.section-module-upload-media-document {
+  background: #61035B;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  height: 200px;
+  justify-content: center;
+  align-items: center;
+  object-fit: cover;
+  position: relative;
+}
+
+.section-module-upload-media-document-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
 }
 </style>
