@@ -75,3 +75,12 @@
 ---
 
  - Add support for all sections errors by showing an alert icon near the edit/drag/delete option to indicate the sections that has error and display them in a popup when the button is clicked  
+
+
+### v1.0.7 (10/12/2023)
+
+---
+
+ - Layout and region integration #103  
+
+
