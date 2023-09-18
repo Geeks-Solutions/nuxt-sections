@@ -56,6 +56,11 @@
               </div>
             </div>
           </div>
+          <div class="custom-checkbox">
+            <span class="mainmsg">{{ $t('Highlight regions') }}</span>
+            <input type="checkbox" id="highlightRegions" v-model="highlightRegions" />
+            <label for="highlightRegions"></label>
+          </div>
           <div class="flexSections control-button config-buttons" style="right: 0px; left: auto;">
             <button
               class="hp-button "
@@ -315,6 +320,43 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
+      <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
+      <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+            <div class="flexSections flex-row justify-center items-center">
+              <AlertIcon />
+              <div class="text-center h4 my-3 pb-3 deletePageLabel">
+                {{ $t("deleteSection") }}
+              </div>
+            </div>
+            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+              {{ $t("delete-section") }}
+            </div>
+            <div class="flexSections flex-row justify-center">
+              <button
+                class="hp-button danger"
+                @click="deleteView(deletedSectionId)"
+              >
+                <div class="btn-text">
+                  {{ $t("Confirm") }}
+                </div>
+              </button>
+              <button
+                class="hp-button"
+                @click="isDeleteSectionModalOpen = false"
+              >
+                <div class="btn-text">
+                  {{ $t("Cancel") }}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
       <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -413,7 +455,20 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
-      <div v-if="selectedLayout === 'standard'" class="views">
+      <div v-if="errorInLayout === true && admin && editMode" class="views">
+        <div class="flexSections not-found-error">
+          <div class="flexSections not-found-error-column">
+            <ErrorIcon class="error-icon" />
+            <div v-for="(error, index) in sectionsMainErrors" :key="`layout-error-${index}`" class="mainmsg not-found-error-column">
+              {{ error }}
+            </div>
+            <div v-for="(layoutError, layoutIndex) in sectionsLayoutErrors" :key="`layout-region-error-${layoutIndex}`" class="mainmsg not-found-error-column">
+              {{ layoutError }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else-if="selectedLayout === 'standard'" class="views">
         <draggable
           v-model="currentViews"
           group="people"
@@ -441,7 +496,7 @@
                   <EditIcon class="edit-icon" />
                 </div>
                 <DragIcon class="drag-icon handle" />
-                <div @click="deleteView(view.id)">
+                <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
                   <TrashIcon class="trash-icon" />
                 </div>
                 <div @click="copyAnchor(`#${view.name}-${view.id}`)">
@@ -474,24 +529,31 @@
       <div v-else>
         <component :is="getSelectedLayout()">
           <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
-            <button
-              v-if="admin && editMode"
-              class="hp-button"
-              @click.stop.prevent="
+            <!-- Empty div injected to verify the slots              -->
+            <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
+            <div v-if="admin && editMode" class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
+              <button
+                class="hp-button"
+                @click.stop.prevent="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName)
             "
-            >
-              <div class="btn-icon plus-icon"><PlusIcon /></div>
-              <div class="btn-text">{{ $t("Add") }}</div>
-            </button>
+              >
+                <div class="btn-icon plus-icon"><PlusIcon /></div>
+                <div class="btn-text">{{ $t("Add") }}</div>
+              </button>
+              <div class="slot-name">
+                {{ $t(slotName.toUpperCase()) }}
+              </div>
+            </div>
             <div class="views">
               <draggable
                 v-model="viewsPerRegions[slotName]"
                 group="people"
-                @start="drag = true"
-                @end="drag = false"
+                @start="drag = true; highlightRegions = true;"
+                @end="drag = false; highlightRegions = false;"
                 @change="logDrag"
                 handle=".handle"
+                :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
               >
                 <!-- <transition-group> -->
                 <section
@@ -499,7 +561,7 @@
                   v-if="view.region[selectedLayout].slot === slotName"
                   :key="index"
                   :id="`${view.name}-${view.id}`"
-                  :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
+                  :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
                 >
                   <div class="section-view relativeSections">
                     <div
@@ -514,7 +576,7 @@
                         <EditIcon class="edit-icon" />
                       </div>
                       <DragIcon class="drag-icon handle" />
-                      <div @click="deleteView(view.id)">
+                      <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
                         <TrashIcon class="trash-icon" />
                       </div>
                       <div @click="copyAnchor(`#${view.name}-${view.id}`)">
@@ -731,12 +793,20 @@
       <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
         {{ $t("Create New Page") }}
       </button>
+      <div class="flexSections not-found-error">
+        <div class="flexSections not-found-error-column">
+          <ErrorIcon class="error-icon" />
+          <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
+            {{ error }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { formatName, sectionHeader, importComp } from "../../utils";
+import {formatName, sectionHeader, importComp} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -766,6 +836,7 @@ import DotIcon from "../../base/icons/dot.vue";
 import CelebrateIcon from "../../base/icons/celebrate.vue";
 import AlertIcon from "../../base/icons/alert.vue";
 import SettingsIcon from "../../base/icons/settings.vue";
+import ErrorIcon from "../../base/icons/error.vue";
 
 import SectionItem from "../../base/SubTypes/sectionItem.vue";
 
@@ -803,7 +874,8 @@ export default {
     CelebrateIcon,
     AlertIcon,
     SettingsIcon,
-    TranslationComponent
+    TranslationComponent,
+    ErrorIcon
   },
   props: {
     pageName: {
@@ -886,6 +958,8 @@ export default {
       isModalOpen: false,
       isDeleteModalOpen: false,
       isDeletePageModalOpen: false,
+      isDeleteSectionModalOpen: false,
+      deletedSectionId: null,
       isErrorsFormatModalOpen: false,
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
@@ -935,7 +1009,11 @@ export default {
       selectedLayout: 'standard',
       viewsPerRegions: {},
       sectionslayout: 'standard',
-      selectedSlotRegion: ''
+      selectedSlotRegion: '',
+      errorInLayout: false,
+      highlightRegions: false,
+      sectionsMainErrors: [],
+      sectionsLayoutErrors: []
     }
   },
   computed: {
@@ -983,6 +1061,7 @@ export default {
   },
   async fetch() {
     this.getAvailableLayouts()
+    this.sectionsMainErrors = []
     this.metadataFormLang = this.locales[0]
     this.locales.forEach(lang => {
       this.pageMetadata[lang] = {
@@ -1087,6 +1166,7 @@ export default {
         }
         this.loading = false;
         this.pageNotFound = true;
+        this.sectionsMainErrors.push(this.$t('404NotFound'));
         this.$emit("load", false);
       }
     } else {
@@ -1152,6 +1232,7 @@ export default {
           }
           this.loading = false;
           this.pageNotFound = true;
+          this.sectionsMainErrors.push(this.$t('404NotFound'));
           this.$emit("load", false);
         }
       }
@@ -1472,11 +1553,45 @@ export default {
       } else return importComp(path);
     },
     computeLayoutData() {
+      const slotNameExample = 'i.e. slotNames: { type: Array, default() { return [\'region1\'] }}';
+      this.errorInLayout = false;
       if (this.selectedLayout !== 'standard') {
+        this.sectionsMainErrors = [];
+        this.sectionsLayoutErrors = [];
         let path = "";
         path = `/layouts/${this.selectedLayout}`;
-        this.layoutSlotNames = []
-        this.layoutSlotNames = [...importComp(path).props.slotNames.default()]
+        this.layoutSlotNames = [];
+        let layoutComp = importComp(path);
+        if (!layoutComp.props) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.missingComp'))
+          return;
+        } else if (!layoutComp.props.slotNames) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.missingProp'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        } else if (!layoutComp.props.slotNames.type || layoutComp.props.slotNames.type !== Array || !layoutComp.props.slotNames.default) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        }
+        try {
+          this.layoutSlotNames = [...importComp(path).props.slotNames.default()]
+        } catch {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        }
+
+        if (!layoutComp.props.slotNames.default()[0]) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        }
 
         let views = [];
         views = Object.values(
@@ -1502,7 +1617,25 @@ export default {
             return a.region[selectedLay].weight - b.region[selectedLay].weight;
           });
         })
+        if (this.admin && this.editMode){
+          this.verifySlots();
+        }
       }
+    },
+    verifySlots() {
+      this.$nextTick(() => {
+        if (this.selectedLayout !== 'standard') {
+          this.sectionsLayoutErrors = [];
+          this.layoutSlotNames.forEach(slotName => {
+            if(!document.getElementById(`sections-slot-region-${this.selectedLayout}-${slotName}`)) {
+              this.errorInLayout = true;
+              this.sectionsLayoutErrors.push(this.$t(slotName + ' ' + 'layoutErrors.regionNotConfigured'))
+              this.sectionsLayoutErrors.push(`<slot name=\"${slotName}\"></slot> ${this.$t('layoutErrors.layoutTemp')}`)
+              return;
+            }
+          })
+        }
+      })
     },
     logDrag(evt) {
       Object.keys(this.viewsPerRegions).forEach(slotName => {
@@ -1538,6 +1671,7 @@ export default {
         .then((res) => {
           this.loading = false
           this.pageNotFound = false;
+          this.sectionsMainErrors = []
           this.sectionsPageLastUpdated = res.data.last_updated;
           this.pageId = res.data.id;
           this.sectionsPageName = res.data.page;
@@ -1729,6 +1863,7 @@ export default {
           }
         })
         this.getUserData();
+        this.verifySlots();
       }
 
     },
@@ -2092,6 +2227,7 @@ export default {
       }
       // Then we remove the variation we want to delete
       this.$delete(this.displayVariations[this.selectedVariation].views, id);
+      this.isDeleteSectionModalOpen = false;
       this.showToast(
         "Deleted",
         "info",
@@ -2459,6 +2595,11 @@ span.handle {
   z-index: 9;
   position: relative;
 }
+.part3 {
+  margin-top: 3px;
+  z-index: 40;
+  position: relative;
+}
 .section-modal-content {
   padding: 2rem;
 }
@@ -2803,4 +2944,50 @@ span.handle {
   height: 1rem;
   width: 1rem;
 }
+
+.slot-name {
+  align-self: center;
+  color: #31a9db;
+}
+
+.custom-checkbox {
+  align-self: center;
+  display: flex;
+  margin-left: 10px;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 5px;
+}
+
+.highlited-regions {
+  border: solid 1.5px #31a9db;
+  margin: 2px;
+}
+
+.highlited-regions-plus {
+  width: 100%;
+  min-height: 20px;
+  border: solid 1.5px #31a9db;
+  margin: 2px 0 2px 0;
+}
+
+.not-found-error {
+  width: 100%;
+  justify-content: center;
+  margin-top: 100px;
+}
+
+.not-found-error-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.error-icon {
+  width: 200px;
+}
+
 </style>
