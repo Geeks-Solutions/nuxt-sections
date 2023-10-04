@@ -666,6 +666,7 @@
 </template>
 
 <script>
+import Vue from "vue";
 import { formatName, sectionHeader, importComp } from "../../utils";
 import draggable from "vuedraggable";
 
@@ -1502,13 +1503,34 @@ export default {
       }
     },
     getComponent(sectionName, sectionType) {
-      let path = "";
-      if (sectionName.includes(":")) {
-        path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-        this.$options.components[sectionName.split(":")[1]] = importComp(path);
+      if (this.$sections.cname === "active") {
+        let path = "";
+        if (sectionName.includes(":")) {
+          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+          if (process.client) {
+            Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
+              extends: importComp(path)
+            })
+          }
+          return `${sectionName.split(":")[1]}_${sectionType}`;
+        } else {
+          path = `/views/${sectionName}_${sectionType}`;
+          if (process.client) {
+            Vue.component(`${sectionName}_${sectionType}`, {
+              extends: importComp(path)
+            })
+          }
+          return `${sectionName}_${sectionType}`;
+        }
       } else {
-        path = `/views/${sectionName}_${sectionType}`;
-        return importComp(path);
+        let path = "";
+        if (sectionName.includes(":")) {
+          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+          this.$options.components[sectionName.split(":")[1]] = importComp(path);
+        } else {
+          path = `/views/${sectionName}_${sectionType}`;
+          return importComp(path);
+        }
       }
     },
     createNewPage() {
