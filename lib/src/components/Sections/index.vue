@@ -1629,7 +1629,7 @@ export default {
           this.layoutSlotNames.forEach(slotName => {
             if(!document.getElementById(`sections-slot-region-${this.selectedLayout}-${slotName}`)) {
               this.errorInLayout = true;
-              this.sectionsLayoutErrors.push(this.$t(slotName + ' ' + 'layoutErrors.regionNotConfigured'))
+              this.sectionsLayoutErrors.push(slotName + ' ' + this.$t('layoutErrors.regionNotConfigured'))
               this.sectionsLayoutErrors.push(`<slot name=\"${slotName}\"></slot> ${this.$t('layoutErrors.layoutTemp')}`)
               return;
             }
