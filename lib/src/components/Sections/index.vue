@@ -2090,7 +2090,7 @@ export default {
         })
       }
 
-      if (integrityCheck === true) {
+      if (integrityCheck === true && this.errorInLayout !== true) {
         const token = this.$cookies.get("sections-auth-token");
         const header = {
           token,
@@ -2162,7 +2162,7 @@ export default {
               this.loading = false;
             });
         } else this.loading = false;
-      }
+      } else this.loading = false;
     },
     saveVariation() {
       this.loading = true;
