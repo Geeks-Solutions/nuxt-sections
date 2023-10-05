@@ -68,3 +68,10 @@
  - Global management of the errors if a page is saved and a sections is invalid, from the Library #12
 
  - Have an icon showing in the language switcher when editing a section, to show in which language the site is opened #13
+
+
+### v1.0.6 (8/28/2023)
+
+---
+
+ - Add support for all sections errors by showing an alert icon near the edit/drag/delete option to indicate the sections that has error and display them in a popup when the button is clicked  

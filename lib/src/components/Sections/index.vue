@@ -301,6 +301,25 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
+      <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
+      <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+            <div class="text-center flexSections h4 sectionTypeHeader">
+              <AlertIcon />
+              <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
+                <CloseIcon />
+              </div>
+            </div>
+            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+              {{ displayedErrorFormat }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
       <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -400,6 +419,9 @@
                 class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                 v-if="admin && editMode"
               >
+                <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                  <AlertIcon />
+                </div>
                 <LinkIcon v-if="view.linkedTo" />
                 <div @click="edit(view)" v-if="editable(view.type)">
                   <EditIcon class="edit-icon" />
@@ -774,6 +796,7 @@ export default {
       isModalOpen: false,
       isDeleteModalOpen: false,
       isDeletePageModalOpen: false,
+      isErrorsFormatModalOpen: false,
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
       synched: false,
@@ -814,7 +837,9 @@ export default {
       computedTitle: '',
       computedDescription: '',
       sectionsUserId: '',
-      invalidSectionsErrors: {}
+      displayedErrorFormat: '',
+      invalidSectionsErrors: {},
+      sectionsFormatErrors: {}
     }
   },
   computed: {
@@ -1656,6 +1681,7 @@ export default {
     },
     mutateVariation(variationName) {
       this.invalidSectionsErrors = {}
+      this.sectionsFormatErrors = {}
       const sections = [];
       let views = this.displayVariations[variationName].views;
       views = Object.values(views);
@@ -1715,6 +1741,7 @@ export default {
                                 "error",
                                 `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
                               );
+                              this.sectionsFormatErrors[section.weight] = `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
                             }
                           } else if (typeof option[field.name] === 'object') {
                             if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
@@ -1725,6 +1752,7 @@ export default {
                                 "error",
                                 `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
                               );
+                              this.sectionsFormatErrors[section.weight] = `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
                             }
                           }
                         }
@@ -1739,6 +1767,7 @@ export default {
                     "error",
                     `${this.$t('optionsFormat')} \`${section.name}\``
                   );
+                  this.sectionsFormatErrors[section.weight] = `${this.$t('optionsFormat')} \`${section.name}\``
                 }
               }
             })
