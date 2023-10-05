@@ -1,7 +1,7 @@
 <template>
   <div
     class="wys-wrapper view-section-component"
-    :class="'mtitle' + html.charAt(2)"
+    :class="html && html.length > 2 ? 'mtitle' + html.charAt(2) : 'mtitle'"
     v-view="viewHandler"
   >
     <div class="ql-editor ql-snow" :class="{ 'slide-up': isVisible }">
