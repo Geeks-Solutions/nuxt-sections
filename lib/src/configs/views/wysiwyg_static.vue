@@ -34,7 +34,9 @@ export default {
       if (this.section.settings) {
         if(this.section.settings[this.lang]) {
           return this.section.settings[this.lang];
-        } else return this.section.settings
+        } else if (typeof this.section.settings !== 'object') {
+          return this.section.settings
+        } else return ''
       }
       return "not found";
     },

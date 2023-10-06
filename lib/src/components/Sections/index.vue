@@ -19,12 +19,33 @@
           v-if="admin && editMode"
         >
           <button
-            class="hp-button create-static-section"
-            @click="openStaticSection"
+            class="hp-button"
+            @click="layoutMode = !layoutMode"
           >
-            <div class="btn-icon check-icon"><CreateIcon /></div>
-            <div class="btn-text">{{ $t("Create static section") }}</div>
+            <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
           </button>
+          <div v-if="layoutMode === true" class="layoutSelect-container">
+            <div class="layoutSelect-select-wrapper">
+              <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select" @change="computeLayoutData">
+                <option disabled value="">-- Select layout --</option>
+                <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+              </select>
+              <div class="layoutSelect-arrow-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M10 12L5 7h10l-5 5z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div v-if="layoutMode === true" class="custom-checkbox">
+            <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+            <label class="switch">
+              <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+              <span class="slider round"></span>
+            </label>
+            <!--            <input type="checkbox" id="highlightRegions" v-model="highlightRegions" />-->
+            <label for="highlightRegions"></label>
+          </div>
           <button
             v-if="selectedLayout === 'standard'"
             class="hp-button"
@@ -43,25 +64,7 @@
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
-          <div class="layoutSelect-container">
-            <div class="layoutSelect-select-wrapper">
-              <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select" @change="computeLayoutData">
-                <option disabled value="">-- Select layout --</option>
-                <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-              </select>
-              <div class="layoutSelect-arrow-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M10 12L5 7h10l-5 5z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div class="custom-checkbox">
-            <span class="mainmsg">{{ $t('Highlight regions') }}</span>
-            <input type="checkbox" id="highlightRegions" v-model="highlightRegions" />
-            <label for="highlightRegions"></label>
-          </div>
-          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto;">
+          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -112,6 +115,13 @@
         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part2 hide-mobile"
         v-if="admin && editMode"
       >
+        <button
+          class="hp-button create-static-section"
+          @click="openStaticSection"
+        >
+          <div class="btn-icon check-icon"><CreateIcon /></div>
+          <div class="btn-text">{{ $t("Create static section") }}</div>
+        </button>
         <button
           class="hp-button "
           :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -503,9 +513,9 @@
                   <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
-              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                <div v-if="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight" class="error-section-loaded">
-                  {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name].error }}
+              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+                  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                 </div>
                 <component
                   v-if="view.settings || view.type == 'local'"
@@ -583,9 +593,9 @@
                         <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                       </div>
                     </div>
-                    <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                      <div v-if="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight" class="error-section-loaded">
-                        {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name].error }}
+                    <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                      <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+                        {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                       </div>
                       <component
                         v-if="view.settings || view.type == 'local'"
@@ -1010,6 +1020,7 @@ export default {
       viewsPerRegions: {},
       sectionslayout: 'standard',
       selectedSlotRegion: '',
+      layoutMode: false,
       errorInLayout: false,
       highlightRegions: false,
       sectionsMainErrors: [],
@@ -2124,6 +2135,7 @@ export default {
               this.originalVariations = JSON.parse(
                 JSON.stringify(this.displayVariations)
               );
+              this.sectionslayout = res.data.layout;
               this.loading = false;
               if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
                 this.showToast(
@@ -2132,7 +2144,7 @@ export default {
                   this.$t('someSectionsNotSaved')
                 );
                 res.data.invalid_sections.forEach(section => {
-                  this.invalidSectionsErrors[section.name] = {
+                  this.invalidSectionsErrors[`${section.name}-${section.weight}`] = {
                     error: section.error,
                     weight: section.weight
                   }
@@ -2143,6 +2155,7 @@ export default {
                   "success",
                   this.$t('successPageChanges')
                 );
+                this.layoutMode = false;
               }
               if (this.pagePath !== this.pageName) {
                 this.$nuxt.context.redirect(this.pagePath)
@@ -2503,29 +2516,28 @@ button svg {
 .section-wrapper {
   position: relative;
 }
-.section-wrapper .create-static-section {
+.part2 .create-static-section {
   border-color: #257596;
   color: #257596;
   background: white;
   position: absolute;
-  top: 50px;
   left: 0;
   padding: 0;
   display: flex;
   border-width: 2px;
   border: 2px solid #257596;
 }
-.section-wrapper .create-static-section:hover {
+.part2 .create-static-section:hover {
   background: #257596;
   color: white;
 }
-.section-wrapper .create-static-section:hover .btn-icon {
+.part2 .create-static-section:hover .btn-icon {
   background: white;
 }
-.section-wrapper .create-static-section:hover svg {
+.part2 .create-static-section:hover svg {
   color: #257596;
 }
-.section-wrapper .create-static-section .btn-icon {
+.part2 .create-static-section .btn-icon {
   background: #257596;
   color: white;
   width: 48px;
@@ -2533,7 +2545,7 @@ button svg {
   border-top-left-radius: 14px;
   border-bottom-left-radius: 14px;
 }
-.section-wrapper .create-static-section .btn-text {
+.part2 .create-static-section .btn-text {
   padding-right: 10px;
 }
 .btn-text {
@@ -2960,6 +2972,67 @@ span.handle {
   width: 15px;
   height: 15px;
   margin: 5px;
+}
+
+.custom-checkbox .switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  margin-left: 10px;
+}
+
+.custom-checkbox .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom-checkbox .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.custom-checkbox .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.custom-checkbox input:checked + .slider {
+  background-color: #31a9db;
+}
+
+.custom-checkbox input:focus + .slider {
+  box-shadow: 0 0 1px #31a9db;
+}
+
+.custom-checkbox input:checked + .slider:before {
+  -webkit-transform: translateX(16px);
+  -ms-transform: translateX(16px);
+  transform: translateX(16px);
+}
+
+/* Rounded sliders */
+.custom-checkbox .slider.round {
+  border-radius: 34px;
+}
+
+.custom-checkbox .slider.round:before {
+  border-radius: 50%;
 }
 
 .highlited-regions {

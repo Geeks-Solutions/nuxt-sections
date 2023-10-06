@@ -71,7 +71,7 @@ export default {
           this.locales.forEach(lang => {
             this.settings[lang] = ""
           })
-          this.settings['en'] = val
+          this.settings[lang] = val
         }
       }
     }
