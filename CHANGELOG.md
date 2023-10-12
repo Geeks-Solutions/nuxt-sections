@@ -81,6 +81,7 @@
 
 ---
 
- - Layout and region integration #103  
+ - Layout and region integration #103
+ - Library should declare path /health #114
 
 
