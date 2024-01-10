@@ -115,13 +115,13 @@
         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part2 hide-mobile"
         v-if="admin && editMode"
       >
-        <button
-          class="hp-button create-static-section"
-          @click="openStaticSection"
-        >
-          <div class="btn-icon check-icon"><CreateIcon /></div>
-          <div class="btn-text">{{ $t("Create static section") }}</div>
-        </button>
+<!--        <button-->
+<!--          class="hp-button create-static-section"-->
+<!--          @click="openStaticSection"-->
+<!--        >-->
+<!--          <div class="btn-icon check-icon"><CreateIcon /></div>-->
+<!--          <div class="btn-text">{{ $t("Create static section") }}</div>-->
+<!--        </button>-->
         <button
           class="hp-button "
           :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -179,9 +179,18 @@
                 v-for="(type, index) in types"
                 :key="type.name"
               >
-                <div v-if="type.access === 'private'" class="section-delete">
+                <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
                   <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                     <TrashIcon class="trash-icon-style" />
+                  </div>
+                </div>
+                <div v-else-if="type.notCreated === true" class="section-creation">
+                  <div class="section-creation-icon">
+                    <span class="toggleLabel">{{ $t('create') }}</span>
+                    <label id="toggle-label" class="switch">
+                      <input type="checkbox" @change="addNewStaticType(type.name)">
+                      <span class="slider round"></span>
+                    </label>
                   </div>
                 </div>
                 <div class="section-item" @click="openCurrentSection(type)">
@@ -190,9 +199,10 @@
                     class="bg-light-blue"
                     :title="formatName(type.name)"
                     :icon="type.name"
+                    :active="type.notCreated !== true"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
@@ -523,7 +533,6 @@
                   :section="view"
                   :lang="lang"
                   :locales="locales"
-                  :editor-options="editorOptions"
                 />
                 <div v-else>
                   <div v-if="admin" class="error-section-loaded">
@@ -603,7 +612,6 @@
                         :section="view"
                         :lang="lang"
                         :locales="locales"
-                        :editor-options="editorOptions"
                       />
                       <div v-else>
                         <div v-if="admin" class="error-section-loaded">
@@ -914,12 +922,6 @@ export default {
       type: String,
       default: "en",
     },
-    editorOptions: {
-      type: Object,
-      default() {
-        return {}
-      }
-    },
     viewsBgColor: {
       type: String,
       default: "transparent",
@@ -1024,7 +1026,8 @@ export default {
       errorInLayout: false,
       highlightRegions: false,
       sectionsMainErrors: [],
-      sectionsLayoutErrors: []
+      sectionsLayoutErrors: [],
+      availableSectionsForms: []
     }
   },
   computed: {
@@ -1072,6 +1075,7 @@ export default {
   },
   async fetch() {
     this.getAvailableLayouts()
+    this.getAvailableSections()
     this.sectionsMainErrors = []
     this.metadataFormLang = this.locales[0]
     this.locales.forEach(lang => {
@@ -1478,7 +1482,10 @@ export default {
       }
       return true;
     },
-    addNewStaticType() {
+    addNewStaticType(name) {
+      if (name) {
+        this.sectionTypeName = name;
+      }
       if (this.sectionTypeName !== "") {
         const token = this.$cookies.get("sections-auth-token");
         const config = {
@@ -1489,6 +1496,16 @@ export default {
         this.loading = true;
 
         let fieldsDeclaration = this.fieldsInputs
+
+        if (name) {
+          let path = "";
+          path = `/forms/${this.sectionTypeName}`;
+          let formComp = importComp(path);
+          if (formComp.props && formComp.props.mediaFields) {
+            fieldsDeclaration = formComp.props.mediaFields;
+          }
+        }
+
         fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
 
         this.$axios.post(URL, {
@@ -1504,11 +1521,9 @@ export default {
               name: ""
             }
           ]
-          this.loading = false;
         })
           .catch((error) => {
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
-            this.loading = false;
           });
       } else {
         this.showToast("Error", "error", this.$t('enterSectionTypeName'));
@@ -1553,7 +1568,7 @@ export default {
           this.availableLayouts.push(...layouts_names)
         }
       } catch (error) {
-        console.log('noLayoutsFolder')
+        console.warn(this.$t('noLayoutsFolder'));
       }
     },
     getSelectedLayout() {
@@ -1725,6 +1740,21 @@ export default {
         onClick: () => options && Object.keys(options).length > 0 ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
       });
     },
+    getAvailableSections() {
+      try {
+        const form_sections = require.context(`@/sections/forms`, false, /\.vue$/)
+        const forms_count = form_sections.keys().length
+        if (forms_count > 0) {
+          const form_names = form_sections.keys().map((filename) => {
+            const name = filename.replace(/^\.\/(.+)\.vue$/, '$1');
+            return name;
+          });
+          this.availableSectionsForms.push(...form_names)
+        }
+      } catch (error) {
+        console.warn(this.$t('noFormsFolder'));
+      }
+    },
     getSectionTypes() {
       if (this.types && this.types.length) {
         return;
@@ -1756,11 +1786,22 @@ export default {
               requirements: d.requirements
             });
           });
+          this.availableSectionsForms.forEach(name => {
+            const found = this.types.find(element => element.name === name)
+            if (!found) {
+              this.types.push({
+                name,
+                notCreated: true
+              })
+            }
+          });
           this.types = [...this.types, ...this.addSystemTypes()];
-          this.loading = false;
+          this.loading = false
+          this.$emit("load", false);
         })
         .catch((error) => {
-          this.loading = false;
+          this.loading = false
+          this.$emit("load", false);
           this.showToast("Error", "error", error.toString());
         });
     },
@@ -2274,8 +2315,8 @@ export default {
             res.data.message
           );
           this.types.splice(index, 1)
-          this.loading = false
-          this.$emit("load", false);
+          this.types = [];
+          this.getSectionTypes()
         })
         .catch((error) => {
           this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
@@ -2570,6 +2611,11 @@ button svg {
 
 .section-delete {
   text-align: -webkit-right;
+}
+
+.section-creation {
+  text-align: -webkit-right;
+  background: #adadad;
 }
 
 .section-delete-icon {
@@ -3061,6 +3107,82 @@ span.handle {
 
 .error-icon {
   width: 200px;
+}
+
+.section-item .section-creation-icon {
+  cursor: pointer;
+  margin-top: 3px;
+  display: flex;
+  justify-content: end;
+  gap: 4px;
+}
+
+.section-item .toggleLabel {
+  color: white;
+  font-size: 12px;
+}
+
+.section-item .switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 18px;
+  top: 1px;
+  right: 2px;
+}
+
+/* Hide default HTML checkbox */
+.section-item .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.section-item .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.section-item .slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  right: 14px;
+  top: 2px;
+  background-color: white;
+  transition: .4s;
+}
+
+.section-item input:checked + .slider {
+  background-color: #2196F3;
+}
+
+.section-item input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+.section-item input:checked + .slider:before {
+  -webkit-transform: translateX(12px);
+  -ms-transform: translateX(12px);
+  transform: translateX(12px);
+}
+
+/* Rounded sliders */
+.section-item .slider.round {
+  border-radius: 34px;
+}
+
+.section-item .slider.round:before {
+  border-radius: 50%;
 }
 
 </style>

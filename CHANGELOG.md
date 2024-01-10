@@ -83,5 +83,5 @@
 
  - Layout and region integration #103
  - Library should declare path /health #114
-
-
+ - Export the Wysiwyg component and add support for media meta component and media content linking
+ - Create static section enhancement #16

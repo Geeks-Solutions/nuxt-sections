@@ -204,6 +204,23 @@ await addNewStaticType(sectionTypeName).then((res) => {
 - Import globalFileUpload from "@geeks.solutions/nuxt-sections/lib/src/utils"
 - To link the uploaded media to your content settings must be sent as an array and the media key which is `media` in the below example should match the field name that is set when creating your static section type
 - media should also be sent as an array, and it is required to have `media_id` key and its value coming from id returned by the globalFileUpload function
+- The form component having your media must have a prop named `mediaFields` that is an array of object having the type and name of the medias used in the section:
+
+````
+props: {
+    ...
+    mediaFields: [
+      {
+        type: 'image',
+        name: 'media1'
+      },
+      {
+        type: 'image',
+        name: 'media2'
+      }
+    ]
+  }
+````
 
 ````js
 import {globalFileUpload} from "@geeks.solutions/nuxt-sections/lib/src/utils";
@@ -294,6 +311,8 @@ async removeImage() {
       )
     },
 ````
+
+
 
 # Language Support
 
