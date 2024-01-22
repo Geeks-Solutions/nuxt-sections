@@ -503,12 +503,12 @@ Then from the media meta component, select the media you want to edit, apply you
 
 ## Layouts
 
-* You can create different layouts for your Sections pages by adding layout Vue js components to `layouts` folder that should be created inside `sections` directory. 
+* You can create different layouts for your Sections pages by adding layout Vue js components to `layouts` folder that you should create inside `sections` directory. 
 
 * As Admin, in edit mode you can select your layout from the drop-down that will contain the list of layouts Vue js components that you added to the `sections/layouts` folder.
 
 * Layout component example that must be placed inside `sections/layouts` folder of your project:
-The below example creates a layout of 3 regions in a sections page (top, right, left and bottom).
+The below example creates a layout of 4 regions in a sections page (top, right, left and bottom).
 Keep in mind that the below structure of slots (which represents the different regions in your layout) like: `<slot name="top"></slot>` and the `slotNames` prop 
 are mandatory for the layout to work properly. 
 

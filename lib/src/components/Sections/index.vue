@@ -43,7 +43,6 @@
               <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
               <span class="slider round"></span>
             </label>
-            <!--            <input type="checkbox" id="highlightRegions" v-model="highlightRegions" />-->
             <label for="highlightRegions"></label>
           </div>
           <button
@@ -115,13 +114,6 @@
         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part2 hide-mobile"
         v-if="admin && editMode"
       >
-<!--        <button-->
-<!--          class="hp-button create-static-section"-->
-<!--          @click="openStaticSection"-->
-<!--        >-->
-<!--          <div class="btn-icon check-icon"><CreateIcon /></div>-->
-<!--          <div class="btn-text">{{ $t("Create static section") }}</div>-->
-<!--        </button>-->
         <button
           class="hp-button "
           :class="selectedVariation === pageName ? 'danger' : 'grey'"
