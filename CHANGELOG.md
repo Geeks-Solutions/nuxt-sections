@@ -1,87 +1,103 @@
 # Releases
 
----
+All notable changes to this project will be documented in this file.
 
-### v1.0.0 (19/4/2023)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
+## [1.0.7] - 2024-01-31
 
- - Launch of nuxt-sections module migrated from vue-sections library
+### Added
 
- - Library updates needed after the backend fixes done on media #93
+- Layout and region integration #103
+- Library should declare path /health #114
+- Export the Wysiwyg component and add support for media meta component and media content linking
+- Create static section enhancement #16
+- CHANGELOG reformatted based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+### Removed
 
-### v1.0.1 (23/5/2023)
+- Remove create static section button as the creation will now be dynamic from the list of available sections
 
----
+### Updated
 
- - Bug fixes for the media content linking of configurable sections
+- Update vue-components library with live version 1.0.5
 
- - Support for cookie-universal-nuxt alias to dynamically read the alias used by the host project
- 
- - SEO metadata management #101
+## [1.0.6] - 2023-08-28
 
- - New feature implementation of having default support for dynamic pages
+### Added
 
+- Add support for all sections errors by showing an alert icon near the edit/drag/delete option to indicate the sections that has error and display them in a popup when the button is clicked
 
-### v1.0.2 (29/5/2023)
+## [1.0.5] - 2023-06-07
 
----
+### Added
 
- - Bug fixes for create new static section type to prevent sending empty name fields
+- Global management of the errors if a page is saved and a sections is invalid, from the Library #12
+- Have an icon showing in the language switcher when editing a section, to show in which language the site is opened #13
 
+### Fixed
 
-### v1.0.3 (29/5/2023)
+- Verifying the integrity of the options the user wants to save for a section #9
 
----
+## [1.0.4] - 2023-06-08
 
- - Bug fix for the problem of loosing sections when saving settings after updating a page with new sections added
+### Added
 
- - Bug fix for the problem of sending updated sections that were not saved when saving settings
+- Dynamic page path implementation
+- Library management for supported language supported #110
+- Library update to support media #92
+- Proper 404 page when the page does not exist
 
- - Update success message when saving a page settings
+### Fixed
 
+- Load performance by only loading the necessary views when rendering the page. All admin related html/JS codes will only show for admin users and in the edit mode
+- Adjustment to be done in the Library #109
 
-### v1.0.4 (8/6/2023)
+## [1.0.3] - 2023-05-29
 
----
+### Fixed
 
- - Dynamic page path implementation
+- Bug fix for the problem of loosing sections when saving settings after updating a page with new sections added
+- Bug fix for the problem of sending updated sections that were not saved when saving settings
 
- - Issue 48 about performance by only loading the necessary views when rendering the page. All admin related html/JS codes will only show for admin users and in the edit mode 
+### Changed
 
- - Library must manage language supported #110
+- Update success message when saving a page settings
 
- - Adjustment to be done in the Library #109
+## [1.0.2] - 2023-05-29
 
- - Library update to support media #92
+### Fixed
 
- - Proper 404 page when the page does not exist eweev/geeks/section-website#67
+- Bug fixes for create new static section type to prevent sending empty name fields
 
+## [1.0.1] - 2023-05-23
 
-### v1.0.5 (6/7/2023)
+### Added
 
----
+- Support for cookie-universal-nuxt alias to dynamically read the alias used by the host project
+- SEO metadata management [#101](https://github.com/Geeks-Solutions/vue-sections/issues/101)
 
- - Verifying the integrity of the options the user wants to save for a section #9
+### Fixed
 
- - Global management of the errors if a page is saved and a sections is invalid, from the Library #12
+- Bug fixes for the media content linking of configurable sections
+- New feature implementation of having default support for dynamic pages
 
- - Have an icon showing in the language switcher when editing a section, to show in which language the site is opened #13
+## [1.0.0] - 2023-04-19
 
+### Added
 
-### v1.0.6 (8/28/2023)
+- Launch of nuxt-sections module migrated from vue-sections library
 
----
+### Fixed
 
- - Add support for all sections errors by showing an alert icon near the edit/drag/delete option to indicate the sections that has error and display them in a popup when the button is clicked  
+- Library updates needed after the backend fixes done on media [#93](https://github.com/Geeks-Solutions/vue-sections/issues/93)
 
-
-### v1.0.7 (10/12/2023)
-
----
-
- - Layout and region integration #103
- - Library should declare path /health #114
- - Export the Wysiwyg component and add support for media meta component and media content linking
- - Create static section enhancement #16
+[1.0.7]: https://github.com/Geeks-Solutions/nuxt-sections/pull/23
+[1.0.6]: https://github.com/Geeks-Solutions/nuxt-sections/pull/22
+[1.0.5]: https://github.com/Geeks-Solutions/nuxt-sections/pull/11
+[1.0.4]: https://github.com/Geeks-Solutions/nuxt-sections/pull/8
+[1.0.3]: https://github.com/Geeks-Solutions/nuxt-sections/pull/7
+[1.0.2]: https://github.com/Geeks-Solutions/nuxt-sections/pull/6
+[1.0.1]: https://github.com/Geeks-Solutions/nuxt-sections/pull/5
+[1.0.0]: https://github.com/Geeks-Solutions/nuxt-sections/pull/1
