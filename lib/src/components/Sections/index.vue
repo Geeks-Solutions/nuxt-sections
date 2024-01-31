@@ -1779,7 +1779,7 @@ export default {
             });
           });
           this.availableSectionsForms.forEach(name => {
-            const found = this.types.find(element => element.name === name)
+            const found = this.types.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
             if (!found) {
               this.types.push({
                 name,
