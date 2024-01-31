@@ -19,13 +19,34 @@
           v-if="admin && editMode"
         >
           <button
-            class="hp-button create-static-section"
-            @click="openStaticSection"
+            class="hp-button"
+            @click="layoutMode = !layoutMode"
           >
-            <div class="btn-icon check-icon"><CreateIcon /></div>
-            <div class="btn-text">{{ $t("Create static section") }}</div>
+            <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
           </button>
+          <div v-if="layoutMode === true" class="layoutSelect-container">
+            <div class="layoutSelect-select-wrapper">
+              <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select" @change="computeLayoutData">
+                <option disabled value="">-- Select layout --</option>
+                <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+              </select>
+              <div class="layoutSelect-arrow-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M10 12L5 7h10l-5 5z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div v-if="layoutMode === true" class="custom-checkbox">
+            <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+            <label class="switch">
+              <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+              <span class="slider round"></span>
+            </label>
+            <label for="highlightRegions"></label>
+          </div>
           <button
+            v-if="selectedLayout === 'standard'"
             class="hp-button"
             @click="
               (currentSection = null), (isModalOpen = true), (savedView = {})
@@ -42,7 +63,7 @@
             <div class="btn-icon back-icon"><BackIcon /></div>
             <div class="btn-text">{{ $t("Restore") }}</div>
           </button>
-          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto;">
+          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
             <button
               class="hp-button "
               :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -150,9 +171,18 @@
                 v-for="(type, index) in types"
                 :key="type.name"
               >
-                <div v-if="type.access === 'private'" class="section-delete">
+                <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
                   <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                     <TrashIcon class="trash-icon-style" />
+                  </div>
+                </div>
+                <div v-else-if="type.notCreated === true" class="section-creation">
+                  <div class="section-creation-icon">
+                    <span class="toggleLabel">{{ $t('create') }}</span>
+                    <label id="toggle-label" class="switch">
+                      <input type="checkbox" @change="addNewStaticType(type.name)">
+                      <span class="slider round"></span>
+                    </label>
                   </div>
                 </div>
                 <div class="section-item" @click="openCurrentSection(type)">
@@ -161,9 +191,10 @@
                     class="bg-light-blue"
                     :title="formatName(type.name)"
                     :icon="type.name"
+                    :active="type.notCreated !== true"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
@@ -301,6 +332,43 @@
 
       <!-- ------------------------------------------------------------------------------------------- -->
 
+      <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
+      <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+            <div class="flexSections flex-row justify-center items-center">
+              <AlertIcon />
+              <div class="text-center h4 my-3 pb-3 deletePageLabel">
+                {{ $t("deleteSection") }}
+              </div>
+            </div>
+            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+              {{ $t("delete-section") }}
+            </div>
+            <div class="flexSections flex-row justify-center">
+              <button
+                class="hp-button danger"
+                @click="deleteView(deletedSectionId)"
+              >
+                <div class="btn-text">
+                  {{ $t("Confirm") }}
+                </div>
+              </button>
+              <button
+                class="hp-button"
+                @click="isDeleteSectionModalOpen = false"
+              >
+                <div class="btn-text">
+                  {{ $t("Cancel") }}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------------------------------------------- -->
+
       <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
       <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -399,7 +467,20 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
-      <div class="views">
+      <div v-if="errorInLayout === true && admin && editMode" class="views">
+        <div class="flexSections not-found-error">
+          <div class="flexSections not-found-error-column">
+            <ErrorIcon class="error-icon" />
+            <div v-for="(error, index) in sectionsMainErrors" :key="`layout-error-${index}`" class="mainmsg not-found-error-column">
+              {{ error }}
+            </div>
+            <div v-for="(layoutError, layoutIndex) in sectionsLayoutErrors" :key="`layout-region-error-${layoutIndex}`" class="mainmsg not-found-error-column">
+              {{ layoutError }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else-if="selectedLayout === 'standard'" class="views">
         <draggable
           v-model="currentViews"
           group="people"
@@ -427,16 +508,16 @@
                   <EditIcon class="edit-icon" />
                 </div>
                 <DragIcon class="drag-icon handle" />
-                <div @click="deleteView(view.id)">
+                <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
                   <TrashIcon class="trash-icon" />
                 </div>
                 <div @click="copyAnchor(`#${view.name}-${view.id}`)">
                   <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
-              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                <div v-if="admin && editMode && invalidSectionsErrors[view.name] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[view.name].weight === view.weight" class="error-section-loaded">
-                  {{ $t('invalidSectionsError') + invalidSectionsErrors[view.name].error }}
+              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+                  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                 </div>
                 <component
                   v-if="view.settings || view.type == 'local'"
@@ -444,7 +525,6 @@
                   :section="view"
                   :lang="lang"
                   :locales="locales"
-                  :editor-options="editorOptions"
                 />
                 <div v-else>
                   <div v-if="admin" class="error-section-loaded">
@@ -456,6 +536,88 @@
           </section>
           <!-- </transition-group> -->
         </draggable>
+      </div>
+      <div v-else>
+        <component :is="getSelectedLayout()">
+          <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
+            <!-- Empty div injected to verify the slots              -->
+            <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
+            <div v-if="admin && editMode" class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
+              <button
+                class="hp-button"
+                @click.stop.prevent="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName)
+            "
+              >
+                <div class="btn-icon plus-icon"><PlusIcon /></div>
+                <div class="btn-text">{{ $t("Add") }}</div>
+              </button>
+              <div class="slot-name">
+                {{ $t(slotName.toUpperCase()) }}
+              </div>
+            </div>
+            <div class="views">
+              <draggable
+                v-model="viewsPerRegions[slotName]"
+                group="people"
+                @start="drag = true; highlightRegions = true;"
+                @end="drag = false; highlightRegions = false;"
+                @change="logDrag"
+                handle=".handle"
+                :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
+              >
+                <!-- <transition-group> -->
+                <section
+                  v-for="(view, index) in viewsPerRegions[slotName]"
+                  v-if="view.region[selectedLayout].slot === slotName"
+                  :key="index"
+                  :id="`${view.name}-${view.id}`"
+                  :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
+                >
+                  <div class="section-view relativeSections">
+                    <div
+                      class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+                      v-if="admin && editMode"
+                    >
+                      <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                        <AlertIcon />
+                      </div>
+                      <LinkIcon v-if="view.linkedTo" />
+                      <div @click="edit(view)" v-if="editable(view.type)">
+                        <EditIcon class="edit-icon" />
+                      </div>
+                      <DragIcon class="drag-icon handle" />
+                      <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
+                        <TrashIcon class="trash-icon" />
+                      </div>
+                      <div @click="copyAnchor(`#${view.name}-${view.id}`)">
+                        <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+                      </div>
+                    </div>
+                    <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                      <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+                        {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
+                      </div>
+                      <component
+                        v-if="view.settings || view.type == 'local'"
+                        :is="getComponent(view.name, view.type)"
+                        :section="view"
+                        :lang="lang"
+                        :locales="locales"
+                      />
+                      <div v-else>
+                        <div v-if="admin" class="error-section-loaded">
+                          {{ $t('sectionsNotLoadedCorrectly') }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <!-- </transition-group> -->
+              </draggable>
+            </div>
+          </template>
+        </component>
       </div>
 
       <!-- ------------------------------------------------------------------------------------------- -->
@@ -641,12 +803,20 @@
       <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
         {{ $t("Create New Page") }}
       </button>
+      <div class="flexSections not-found-error">
+        <div class="flexSections not-found-error-column">
+          <ErrorIcon class="error-icon" />
+          <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
+            {{ error }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { formatName, sectionHeader, importComp } from "../../utils";
+import {formatName, sectionHeader, importComp} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -676,6 +846,7 @@ import DotIcon from "../../base/icons/dot.vue";
 import CelebrateIcon from "../../base/icons/celebrate.vue";
 import AlertIcon from "../../base/icons/alert.vue";
 import SettingsIcon from "../../base/icons/settings.vue";
+import ErrorIcon from "../../base/icons/error.vue";
 
 import SectionItem from "../../base/SubTypes/sectionItem.vue";
 
@@ -713,7 +884,8 @@ export default {
     CelebrateIcon,
     AlertIcon,
     SettingsIcon,
-    TranslationComponent
+    TranslationComponent,
+    ErrorIcon
   },
   props: {
     pageName: {
@@ -741,12 +913,6 @@ export default {
     lang: {
       type: String,
       default: "en",
-    },
-    editorOptions: {
-      type: Object,
-      default() {
-        return {}
-      }
     },
     viewsBgColor: {
       type: String,
@@ -796,6 +962,8 @@ export default {
       isModalOpen: false,
       isDeleteModalOpen: false,
       isDeletePageModalOpen: false,
+      isDeleteSectionModalOpen: false,
+      deletedSectionId: null,
       isErrorsFormatModalOpen: false,
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
@@ -839,7 +1007,19 @@ export default {
       sectionsUserId: '',
       displayedErrorFormat: '',
       invalidSectionsErrors: {},
-      sectionsFormatErrors: {}
+      sectionsFormatErrors: {},
+      layoutSlotNames: [],
+      availableLayouts: ['standard'],
+      selectedLayout: 'standard',
+      viewsPerRegions: {},
+      sectionslayout: 'standard',
+      selectedSlotRegion: '',
+      layoutMode: false,
+      errorInLayout: false,
+      highlightRegions: false,
+      sectionsMainErrors: [],
+      sectionsLayoutErrors: [],
+      availableSectionsForms: []
     }
   },
   computed: {
@@ -886,6 +1066,9 @@ export default {
     }
   },
   async fetch() {
+    this.getAvailableLayouts()
+    this.getAvailableSections()
+    this.sectionsMainErrors = []
     this.metadataFormLang = this.locales[0]
     this.locales.forEach(lang => {
       this.pageMetadata[lang] = {
@@ -941,6 +1124,8 @@ export default {
         this.pageId = res.data.id;
         this.pagePath = res.data.path;
         this.sectionsPageName = res.data.page;
+        this.sectionslayout = res.data.layout;
+        this.selectedLayout = res.data.layout;
         for (const lang of this.locales) {
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
           if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
@@ -988,6 +1173,7 @@ export default {
         }
         this.loading = false;
         this.pageNotFound = true;
+        this.sectionsMainErrors.push(this.$t('404NotFound'));
         this.$emit("load", false);
       }
     } else {
@@ -1000,6 +1186,8 @@ export default {
           this.pageId = res.data.id;
           this.pagePath = res.data.path;
           this.sectionsPageName = res.data.page;
+          this.sectionslayout = res.data.layout;
+          this.selectedLayout = res.data.layout;
           for (const lang of this.locales) {
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
             if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
@@ -1051,10 +1239,12 @@ export default {
           }
           this.loading = false;
           this.pageNotFound = true;
+          this.sectionsMainErrors.push(this.$t('404NotFound'));
           this.$emit("load", false);
         }
       }
     }
+    this.computeLayoutData()
   },
   watch: {
     isModalOpen(value) {
@@ -1284,7 +1474,10 @@ export default {
       }
       return true;
     },
-    addNewStaticType() {
+    addNewStaticType(name) {
+      if (name) {
+        this.sectionTypeName = name;
+      }
       if (this.sectionTypeName !== "") {
         const token = this.$cookies.get("sections-auth-token");
         const config = {
@@ -1295,6 +1488,16 @@ export default {
         this.loading = true;
 
         let fieldsDeclaration = this.fieldsInputs
+
+        if (name) {
+          let path = "";
+          path = `/forms/${this.sectionTypeName}`;
+          let formComp = importComp(path);
+          if (formComp.props && formComp.props.mediaFields) {
+            fieldsDeclaration = formComp.props.mediaFields;
+          }
+        }
+
         fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
 
         this.$axios.post(URL, {
@@ -1310,11 +1513,9 @@ export default {
               name: ""
             }
           ]
-          this.loading = false;
         })
           .catch((error) => {
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
-            this.loading = false;
           });
       } else {
         this.showToast("Error", "error", this.$t('enterSectionTypeName'));
@@ -1347,6 +1548,124 @@ export default {
         return importComp(path);
       }
     },
+    getAvailableLayouts() {
+      try {
+        const external_layouts = require.context(`@/sections/layouts`, false, /\.vue$/)
+        const layouts_count = external_layouts.keys().length
+        if (layouts_count > 0) {
+          const layouts_names = external_layouts.keys().map((filename) => {
+            const name = filename.replace(/^\.\/(.+)\.vue$/, '$1');
+            return name;
+          });
+          this.availableLayouts.push(...layouts_names)
+        }
+      } catch (error) {
+        console.warn(this.$t('noLayoutsFolder'));
+      }
+    },
+    getSelectedLayout() {
+      let path = "";
+      path = `/layouts/${this.selectedLayout}`;
+      if (this.selectedLayout === 'standard') {
+        return 'div'
+      } else return importComp(path);
+    },
+    computeLayoutData() {
+      const slotNameExample = 'i.e. slotNames: { type: Array, default() { return [\'region1\'] }}';
+      this.errorInLayout = false;
+      if (this.selectedLayout !== 'standard') {
+        this.sectionsMainErrors = [];
+        this.sectionsLayoutErrors = [];
+        let path = "";
+        path = `/layouts/${this.selectedLayout}`;
+        this.layoutSlotNames = [];
+        let layoutComp = importComp(path);
+        if (!layoutComp.props) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.missingComp'))
+          return;
+        } else if (!layoutComp.props.slotNames) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.missingProp'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        } else if (!layoutComp.props.slotNames.type || layoutComp.props.slotNames.type !== Array || !layoutComp.props.slotNames.default) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        }
+        try {
+          this.layoutSlotNames = [...importComp(path).props.slotNames.default()]
+        } catch {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        }
+
+        if (!layoutComp.props.slotNames.default()[0]) {
+          this.errorInLayout = true;
+          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
+          this.sectionsMainErrors.push(slotNameExample)
+          return;
+        }
+
+        let views = [];
+        views = Object.values(
+          this.displayVariations[this.selectedVariation].views
+        );
+        views.map(view => {
+          if (!view.region[this.selectedLayout] || !view.region[this.selectedLayout]['slot']) {
+            view.region[this.selectedLayout] = {
+              slot: this.layoutSlotNames[0],
+              weight: view.weight
+            }
+          }
+        })
+        this.layoutSlotNames.forEach(slotName => {
+          this.viewsPerRegions[slotName] = []
+          views.forEach(view => {
+            if (view.region[this.selectedLayout].slot === slotName) {
+              this.viewsPerRegions[slotName].push(view)
+            }
+          })
+          let selectedLay = this.selectedLayout
+          this.viewsPerRegions[slotName] = this.viewsPerRegions[slotName].sort(function(a, b) {
+            return a.region[selectedLay].weight - b.region[selectedLay].weight;
+          });
+        })
+        if (this.admin && this.editMode){
+          this.verifySlots();
+        }
+      }
+    },
+    verifySlots() {
+      this.$nextTick(() => {
+        if (this.selectedLayout !== 'standard') {
+          this.sectionsLayoutErrors = [];
+          this.layoutSlotNames.forEach(slotName => {
+            if(!document.getElementById(`sections-slot-region-${this.selectedLayout}-${slotName}`)) {
+              this.errorInLayout = true;
+              this.sectionsLayoutErrors.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + this.$t('layoutErrors.regionNotConfigured'))
+              this.sectionsLayoutErrors.push(`<slot name=\"${slotName}\"></slot> ${this.$t('layoutErrors.layoutTemp')}`)
+              return;
+            }
+          })
+        }
+      })
+    },
+    logDrag(evt) {
+      Object.keys(this.viewsPerRegions).forEach(slotName => {
+        this.viewsPerRegions[slotName].forEach((view, index) => {
+          if (view.region[this.selectedLayout]['slot'] !== slotName) {
+            view.region[this.selectedLayout]['slot'] = slotName
+          }
+          view.region[this.selectedLayout]['weight'] = index
+        })
+      })
+      this.computeLayoutData()
+    },
     createNewPage() {
       // pageName
       this.loading = true;
@@ -1370,6 +1689,7 @@ export default {
         .then((res) => {
           this.loading = false
           this.pageNotFound = false;
+          this.sectionsMainErrors = []
           this.sectionsPageLastUpdated = res.data.last_updated;
           this.pageId = res.data.id;
           this.sectionsPageName = res.data.page;
@@ -1412,6 +1732,21 @@ export default {
         onClick: () => options && Object.keys(options).length > 0 ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
       });
     },
+    getAvailableSections() {
+      try {
+        const form_sections = require.context(`@/sections/forms`, false, /\.vue$/)
+        const forms_count = form_sections.keys().length
+        if (forms_count > 0) {
+          const form_names = form_sections.keys().map((filename) => {
+            const name = filename.replace(/^\.\/(.+)\.vue$/, '$1');
+            return name;
+          });
+          this.availableSectionsForms.push(...form_names)
+        }
+      } catch (error) {
+        console.warn(this.$t('noFormsFolder'));
+      }
+    },
     getSectionTypes() {
       if (this.types && this.types.length) {
         return;
@@ -1443,11 +1778,22 @@ export default {
               requirements: d.requirements
             });
           });
+          this.availableSectionsForms.forEach(name => {
+            const found = this.types.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
+            if (!found) {
+              this.types.push({
+                name,
+                notCreated: true
+              })
+            }
+          });
           this.types = [...this.types, ...this.addSystemTypes()];
-          this.loading = false;
+          this.loading = false
+          this.$emit("load", false);
         })
         .catch((error) => {
-          this.loading = false;
+          this.loading = false
+          this.$emit("load", false);
           this.showToast("Error", "error", error.toString());
         });
     },
@@ -1561,6 +1907,7 @@ export default {
           }
         })
         this.getUserData();
+        this.verifySlots();
       }
 
     },
@@ -1633,6 +1980,16 @@ export default {
           ).length;
         }
 
+        if (this.selectedLayout !== 'standard') {
+          section.region = {};
+          section.region[this.selectedLayout] = {
+            slot: this.selectedSlotRegion,
+            weight: Object.keys(
+              this.displayVariations[this.selectedVariation].views
+            ).length
+          };
+        }
+
         section.linkedTo = "";
         this.$set(
           this.displayVariations[this.selectedVariation].views,
@@ -1664,6 +2021,7 @@ export default {
         this.isModalOpen = false;
         this.savedView = {};
         this.loading = false;
+        this.computeLayoutData();
         if(showToast !== false) {
           this.showToast(
             "Success",
@@ -1694,6 +2052,7 @@ export default {
             name: view.name,
             type: view.type,
             linkedTo: view.linkedTo,
+            region: view.region
           };
           if (view.settings && view.type === "configurable") {
             refactorView.name = view.nameID;
@@ -1775,7 +2134,7 @@ export default {
         })
       }
 
-      if (integrityCheck === true) {
+      if (integrityCheck === true && this.errorInLayout !== true) {
         const token = this.$cookies.get("sections-auth-token");
         const header = {
           token,
@@ -1789,6 +2148,7 @@ export default {
           path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
           metadata: this.pageMetadata,
           variations: [],
+          layout: this.selectedLayout,
           sections,
         };
         const URL =
@@ -1808,6 +2168,7 @@ export default {
               this.originalVariations = JSON.parse(
                 JSON.stringify(this.displayVariations)
               );
+              this.sectionslayout = res.data.layout;
               this.loading = false;
               if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
                 this.showToast(
@@ -1816,7 +2177,7 @@ export default {
                   this.$t('someSectionsNotSaved')
                 );
                 res.data.invalid_sections.forEach(section => {
-                  this.invalidSectionsErrors[section.name] = {
+                  this.invalidSectionsErrors[`${section.name}-${section.weight}`] = {
                     error: section.error,
                     weight: section.weight
                   }
@@ -1827,6 +2188,7 @@ export default {
                   "success",
                   this.$t('successPageChanges')
                 );
+                this.layoutMode = false;
               }
               if (this.pagePath !== this.pageName) {
                 this.$nuxt.context.redirect(this.pagePath)
@@ -1846,7 +2208,7 @@ export default {
               this.loading = false;
             });
         } else this.loading = false;
-      }
+      } else this.loading = false;
     },
     saveVariation() {
       this.loading = true;
@@ -1885,6 +2247,8 @@ export default {
       this.displayVariations = JSON.parse(
         JSON.stringify(this.originalVariations)
       );
+      this.selectedLayout = this.sectionslayout;
+      this.computeLayoutData();
       this.showToast(
         "Revert Successful",
         "info",
@@ -1909,11 +2273,13 @@ export default {
       }
       // Then we remove the variation we want to delete
       this.$delete(this.displayVariations[this.selectedVariation].views, id);
+      this.isDeleteSectionModalOpen = false;
       this.showToast(
         "Deleted",
         "info",
         this.$t('sectionRemoved')
       );
+      this.computeLayoutData();
     },
     copyAnchor(anchor) {
       navigator.clipboard.writeText(anchor);
@@ -1941,8 +2307,8 @@ export default {
             res.data.message
           );
           this.types.splice(index, 1)
-          this.loading = false
-          this.$emit("load", false);
+          this.types = [];
+          this.getSectionTypes()
         })
         .catch((error) => {
           this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
@@ -2105,7 +2471,7 @@ export default {
   position: absolute !important;
   right: 10px !important;
   top: 10px;
-  z-index: 40 !important;
+  z-index: 50 !important;
 }
 .section-view .controls svg {
   cursor: pointer;
@@ -2183,29 +2549,28 @@ button svg {
 .section-wrapper {
   position: relative;
 }
-.section-wrapper .create-static-section {
+.part2 .create-static-section {
   border-color: #257596;
   color: #257596;
   background: white;
   position: absolute;
-  top: 50px;
   left: 0;
   padding: 0;
   display: flex;
   border-width: 2px;
   border: 2px solid #257596;
 }
-.section-wrapper .create-static-section:hover {
+.part2 .create-static-section:hover {
   background: #257596;
   color: white;
 }
-.section-wrapper .create-static-section:hover .btn-icon {
+.part2 .create-static-section:hover .btn-icon {
   background: white;
 }
-.section-wrapper .create-static-section:hover svg {
+.part2 .create-static-section:hover svg {
   color: #257596;
 }
-.section-wrapper .create-static-section .btn-icon {
+.part2 .create-static-section .btn-icon {
   background: #257596;
   color: white;
   width: 48px;
@@ -2213,7 +2578,7 @@ button svg {
   border-top-left-radius: 14px;
   border-bottom-left-radius: 14px;
 }
-.section-wrapper .create-static-section .btn-text {
+.part2 .create-static-section .btn-text {
   padding-right: 10px;
 }
 .btn-text {
@@ -2238,6 +2603,11 @@ button svg {
 
 .section-delete {
   text-align: -webkit-right;
+}
+
+.section-creation {
+  text-align: -webkit-right;
+  background: #adadad;
 }
 
 .section-delete-icon {
@@ -2273,6 +2643,11 @@ span.handle {
 .part2 {
   margin-top: 3px;
   z-index: 9;
+  position: relative;
+}
+.part3 {
+  margin-top: 3px;
+  z-index: 40;
   position: relative;
 }
 .section-modal-content {
@@ -2568,4 +2943,238 @@ span.handle {
   margin-top: 5px;
   margin-bottom: 5px;
 }
+
+.layoutSelect-container {
+  display: flex;
+  align-items: center;
+}
+
+.layoutSelect-label {
+  color: #4a5568;
+  font-size: 0.875rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.layoutSelect-select-wrapper {
+  position: relative;
+  margin-left: 10px;
+}
+
+.layoutSelect-select {
+  appearance: none;
+  width: 100%;
+  background-color: transparent;
+  border: 1px solid #cbd5e0;
+  color: #4a5568;
+  padding: 0.5rem 0.75rem;
+  padding-right: 2rem;
+  border-radius: 16px;
+  line-height: 1.25;
+  outline: none;
+}
+
+.layoutSelect-select:focus {
+  border-color: #718096;
+}
+
+.layoutSelect-arrow-icon {
+  pointer-events: none;
+  position: absolute;
+  top: 3px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  color: #4a5568;
+}
+
+.layoutSelect-arrow-icon svg {
+  fill: currentColor;
+  height: 1rem;
+  width: 1rem;
+}
+
+.slot-name {
+  align-self: center;
+  color: #31a9db;
+}
+
+.custom-checkbox {
+  align-self: center;
+  display: flex;
+  margin-left: 10px;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 5px;
+}
+
+.custom-checkbox .switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  margin-left: 10px;
+}
+
+.custom-checkbox .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom-checkbox .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.custom-checkbox .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.custom-checkbox input:checked + .slider {
+  background-color: #31a9db;
+}
+
+.custom-checkbox input:focus + .slider {
+  box-shadow: 0 0 1px #31a9db;
+}
+
+.custom-checkbox input:checked + .slider:before {
+  -webkit-transform: translateX(16px);
+  -ms-transform: translateX(16px);
+  transform: translateX(16px);
+}
+
+/* Rounded sliders */
+.custom-checkbox .slider.round {
+  border-radius: 34px;
+}
+
+.custom-checkbox .slider.round:before {
+  border-radius: 50%;
+}
+
+.highlited-regions {
+  border: solid 1.5px #31a9db;
+  margin: 2px;
+}
+
+.highlited-regions-plus {
+  width: 100%;
+  min-height: 20px;
+  border: solid 1.5px #31a9db;
+  margin: 2px 0 2px 0;
+}
+
+.not-found-error {
+  width: 100%;
+  justify-content: center;
+  margin-top: 100px;
+}
+
+.not-found-error-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.error-icon {
+  width: 200px;
+}
+
+.section-item .section-creation-icon {
+  cursor: pointer;
+  margin-top: 3px;
+  display: flex;
+  justify-content: end;
+  gap: 4px;
+}
+
+.section-item .toggleLabel {
+  color: white;
+  font-size: 12px;
+}
+
+.section-item .switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 18px;
+  top: 1px;
+  right: 2px;
+}
+
+/* Hide default HTML checkbox */
+.section-item .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.section-item .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.section-item .slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  right: 14px;
+  top: 2px;
+  background-color: white;
+  transition: .4s;
+}
+
+.section-item input:checked + .slider {
+  background-color: #2196F3;
+}
+
+.section-item input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+.section-item input:checked + .slider:before {
+  -webkit-transform: translateX(12px);
+  -ms-transform: translateX(12px);
+  transform: translateX(12px);
+}
+
+/* Rounded sliders */
+.section-item .slider.round {
+  border-radius: 34px;
+}
+
+.section-item .slider.round:before {
+  border-radius: 50%;
+}
+
 </style>

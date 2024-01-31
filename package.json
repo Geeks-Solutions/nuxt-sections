@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -49,7 +49,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@geeks.solutions/vue-components": "^1.0.4",
+    "@geeks.solutions/vue-components": "^1.0.5",
     "lodash": "^4.17.21",
     "@nuxtjs/axios": "^5.13.6",
     "cookie-universal-nuxt": "^2.2.2",
@@ -57,6 +57,7 @@
     "tailwindcss-pixel-dimensions": "^1.0.2",
     "vue-toastification": "^1.7.14",
     "vuedraggable": "^2.24.3",
-    "vue-quill-editor": "^3.0.6"
+    "vue-quill-editor": "^3.0.6",
+    "quill-emoji": "^0.2.0"
   }
 }

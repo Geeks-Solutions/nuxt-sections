@@ -204,6 +204,23 @@ await addNewStaticType(sectionTypeName).then((res) => {
 - Import globalFileUpload from "@geeks.solutions/nuxt-sections/lib/src/utils"
 - To link the uploaded media to your content settings must be sent as an array and the media key which is `media` in the below example should match the field name that is set when creating your static section type
 - media should also be sent as an array, and it is required to have `media_id` key and its value coming from id returned by the globalFileUpload function
+- The form component having your media must have a prop named `mediaFields` that is an array of object having the type and name of the medias used in the section:
+
+````
+props: {
+    ...
+    mediaFields: [
+      {
+        type: 'image',
+        name: 'media1'
+      },
+      {
+        type: 'image',
+        name: 'media2'
+      }
+    ]
+  }
+````
 
 ````js
 import {globalFileUpload} from "@geeks.solutions/nuxt-sections/lib/src/utils";
@@ -294,6 +311,8 @@ async removeImage() {
       )
     },
 ````
+
+
 
 # Language Support
 
@@ -481,6 +500,51 @@ So it will be displayed automatically if you are using the UploadMedia component
 so you can make the updates press on the save button and the changes will directly show in your sections form.
 Or if you are using the UploadMedia component just click in the image preview and the media meta component will open.
 Then from the media meta component, select the media you want to edit, apply your changes and save the form
+
+## Layouts
+
+* You can create different layouts for your Sections pages by adding layout Vue js components to `layouts` folder that you should create inside `sections` directory. 
+
+* As Admin, in edit mode you can select your layout from the drop-down that will contain the list of layouts Vue js components that you added to the `sections/layouts` folder.
+
+* Layout component example that must be placed inside `sections/layouts` folder of your project:
+The below example creates a layout of 4 regions in a sections page (top, right, left and bottom).
+Keep in mind that the below structure of slots (which represents the different regions in your layout) like: `<slot name="top"></slot>` and the `slotNames` prop 
+are mandatory for the layout to work properly. 
+
+```html
+<template>
+  <div>
+    <div>
+      <slot name="top"></slot>
+    </div>
+    <div class="grid grid-cols-2">
+      <div class="col-span-1">
+        <slot name="right"></slot>
+      </div>
+      <div class="col-span-1">
+        <slot name="left"></slot>
+      </div>
+    </div>
+    <div>
+      <slot name="bottom"></slot>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    slotNames: {
+      type: Array,
+      default() {
+        return ['left', 'right', 'top', 'bottom']
+      },
+    },
+  },
+}
+</script>
+```
 
 ## Development
 
