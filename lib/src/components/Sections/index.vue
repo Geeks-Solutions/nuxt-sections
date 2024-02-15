@@ -194,7 +194,7 @@
                     :active="type.notCreated !== true"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
@@ -207,7 +207,7 @@
                     </div>
                   </div>
                 </div>
-                <div v-else-if="type.type === 'configurable'" class="section-delete">
+                <div v-else-if="type.type === 'configurable' || type.type === 'dynamic'" class="section-delete">
                   <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
                     <div class="flexSections justify-between items-end">
                       <div class="flexSections pl-2 pb-1" style="font-size: 8px;">
@@ -239,13 +239,13 @@
                   @errorAddingSection="errorAddingSection"
                   :savedView="savedView"
                   :headers="headers"
+                  @load="(value) => loading = value"
                 />
                 <Configurable
                   v-if="currentSection.type === 'configurable'"
                   @addSectionType="addSectionType"
                   @errorAddingSection="errorAddingSection"
                   :props="currentSection"
-                  :variation="variation"
                   :savedView="savedView"
                   :headers="headers"
                   @load="(value) => loading = value"
@@ -520,7 +520,7 @@
                   {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                 </div>
                 <component
-                  v-if="view.settings || view.type == 'local'"
+                  v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                   :is="getComponent(view.name, view.type)"
                   :section="view"
                   :lang="lang"
@@ -599,7 +599,7 @@
                         {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                       </div>
                       <component
-                        v-if="view.settings || view.type == 'local'"
+                        v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                         :is="getComponent(view.name, view.type)"
                         :section="view"
                         :lang="lang"
@@ -1542,7 +1542,7 @@ export default {
       let path = "";
       if (sectionName.includes(":")) {
         path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-        this.$options.components[sectionName.split(":")[1]] = importComp(path);
+        return importComp(path);
       } else {
         path = `/views/${sectionName}_${sectionType}`;
         return importComp(path);
@@ -2058,7 +2058,7 @@ export default {
             refactorView.name = view.nameID;
             const options = [];
             view.render_data.map((rData) => {
-              if (!Array.isArray(rData.settings.image)) {
+              if (rData.settings.image && !Array.isArray(rData.settings.image)) {
                 formatValdiation = false
                 this.showToast(
                   "",
@@ -2092,7 +2092,7 @@ export default {
                       if (Object.keys(option).includes(field.name)) {
                         if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object')) {
                           if (Array.isArray(option[field.name])) {
-                            if ((!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
+                            if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
                               integrityCheck = false
                               this.loading = false;
                               this.showToast(
@@ -2225,16 +2225,16 @@ export default {
             view.fields = type.fields;
             view.multiple = type.multiple;
             view.application_id = type.application_id;
-            if (type.dynamicOptions) {
-              view.dynamicOptions = true;
+            if (type.dynamic_options) {
+              view.dynamic_options = true;
             }
           }
         } else {
           if (type.name === view.name) {
             view.fields = type.fields;
             view.multiple = type.multiple;
-            if (type.dynamicOptions) {
-              view.dynamicOptions = true;
+            if (type.dynamic_options) {
+              view.dynamic_options = true;
             }
           }
         }

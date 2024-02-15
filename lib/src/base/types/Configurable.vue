@@ -2,20 +2,20 @@
   <div class="container containerWidth text-center">
 
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
-      <div class="bg-info px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'bg-info' : 'bg-light border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
+      <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
         <div
             class="font-light mt-2 mb-2"
-            :class="currentTab === 'config' ? 'text-white' : 'text-info'"
+            :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
         >
           <div class="text-capitalize ">{{ formatName(props.name) }}</div>
         </div>
       </div>
 <!--  The below div element adds an extra tab to the configurable section. -->
 <!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
-      <div v-if="showCustomFormTab === true" class="bg-info px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'bg-info' : 'bg-light border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
+      <div v-if="showCustomFormTab === true" class="active-tab px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
         <div
             class="font-light mt-2 mb-2"
-            :class="currentTab === 'custom' ? 'text-white' : 'text-info'"
+            :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
         >
           {{ $t('Custom form') }}
         </div>
@@ -23,7 +23,7 @@
     </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
-      <div class="text-danger">
+      <div class="error-message">
         {{ errorMessage }}
       </div>
       <div class="form-group">
@@ -56,7 +56,7 @@
                     @change="changeFieldValue($event, idx, field.type, field.key)"
                 />
               </div>
-              <div v-else class="w-full justify-start">
+              <div v-else-if="field.type" class="w-full justify-start">
                 <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
                   <img
                       v-if="optionsData[field.key][0].url"
@@ -81,45 +81,38 @@
                 <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
                   <loadingCircle />
                 </div>
+                <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
+                  <div class="selectMultipleOptions">
+                    <div v-for="option in optionValues.option_values" :key="option.id" class="multiple-options-wrapper">
+                      <div class="single-multiple-option" :class="isSelected(option.id, field.name) ? 'multiple-options-selected' : ''" @click="selectOption(option.id, field.name)">{{ option.title }}</div>
+                    </div>
+                  </div>
+                </div>
                 <component
-                    v-show="field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"
+                    v-show="!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"
                     :value="optionsData[field.key]"
-                    :class="field.type !== 'media' ? 'd-input py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
+                    :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
                     :id="field.key"
-                    :is="getTag(field.type, field.name)"
+                    :is="getTag(field.type, field.name && field.name.includes(':') ? field.name.split(':')[1] : field.name)"
                     :type="getType(field.type)"
                     :name="field.name"
                     :title="'choose'"
+                    :multiple="optionValues.field === field.name && optionValues.option_values"
                     @input="changeFieldValue($event, idx, field.type, field.key)"
                 >
-                  <option value="no-value">Select a value</option>
                   <option
                       v-for="option in optionValues.option_values"
-                      :selected="
-                  parseInt(option.id) === parseInt(options[idx].effect)
-                "
                       :key="option.id"
                       :value="option.id"
+                      :selected="optionsData[field.key] && optionsData[field.key].indexOf(option.id) !== -1"
                   >{{ option.title }}</option
                   >
                 </component>
               </div>
               <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{ mediaError }}</span>
             </div>
-            <div
-                v-if="options[idx] && props.fields && props.fields.length > 1"
-                class="deleteRow p1 clickable"
-                @click="removeRow(idx)"
-            >
-              X
-            </div>
           </div>
-          <div class="text-right" v-if="props.multiple || savedView.multiple">
-            <button type="button" @click="addAnother()" class="btn btn-primary">
-              {{ $t('Add another') }}
-            </button>
-          </div>
-          <button class="flex items-center justify-center form-control bg-Blue text-white border-Blue border hover:text-Blue px-3.5 h-53px py-3.5 rounded-xl hover:bg-white mt-4 mb-4" type="button" @click="addConfigurable()">
+          <button class="submit-btn mt-4" type="button" @click="addConfigurable()">
             {{ $t('Submit data') }}
           </button>
         </form>
@@ -237,8 +230,8 @@ export default {
       });
       this.options = options;
       Object.assign(this.optionsData, this.options[0])
+      this.$set(this, ['optionsData'], this.options[0]);
       this.props.fields = [...fields[0]];
-      return;
     } else {
       this.props.fields.forEach((field) => {
         this.options[0][field.key] = "";
@@ -249,13 +242,8 @@ export default {
       this.settings.data = this.savedView.settings;
     }
 
-    const ob = this.props.fields[0].length;
-    if (this.props.multiple && !ob) {
-      this.props.fields = [this.props.fields];
-    }
-
     if (this.props.dynamic_options || this.savedView.dynamic_options){
-      this.$emit("loading");
+      this.$emit("load", true);
       const token = this.$cookies.get("sections-auth-token");
       const header = {
         token,
@@ -265,7 +253,7 @@ export default {
       };
 
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/${this.props.name}/options`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/${this.props.nameID ? this.props.nameID : this.props.name}/options`;
 
       this.$axios
         .get(URL, config)
@@ -273,10 +261,10 @@ export default {
           //TODO this should be updated to iterate over all the elements of the data array
           //and key the result by the `field` key in the object
           this.optionValues = res.data[0]
-          this.$emit("loading");
+          this.$emit("load", false);
         })
         .catch((err) => {
-          this.$emit("loading");
+          this.$emit("load", false);
           this.showToast("Error", "error", err.response.data.message.toString());
         });
     }
@@ -505,6 +493,19 @@ export default {
     updateWhitelistId(id) {
       this.optionsData['whitelist_id'] = id;
       this.options[0]['whitelist_id'] = id;
+    },
+    isSelected(id, name) {
+      return this.optionsData[name] !== undefined && this.optionsData[name].indexOf(id) !== -1;
+    },
+    selectOption(value, name) {
+      if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) === -1) {
+        this.optionsData[name].push(parseInt(value));
+      } else if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) !== -1) {
+        this.optionsData[name].splice(this.optionsData[name].indexOf(parseInt(value)), 1);
+      } else {
+        this.$set(this.optionsData, name, [parseInt(value)]);
+      }
+      this.options[0][name] = this.optionsData[name]
     }
   },
 };
@@ -565,10 +566,51 @@ export default {
   overflow-y: scroll;
   height: 550px;
 }
+.error-message {
+  color: #dc3545;
+}
+.inactive-text {
+  color: #03B1C7;
+}
+.active-tab {
+  background: #03B1C7;
+}
+.inactive-tab {
+  background: #ffffff;
+  border-color: #03B1C7;
+}
 @media only screen and (max-height: 800px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;
   }
+}
+
+.selectMultipleOptions {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  border-radius: 0.75rem;
+  overflow-y: scroll;
+  align-items: flex-start;
+  flex-direction: column;
+  max-width: 32rem;
+  height: 250px;
+  display: flex;
+  margin-top: 0.5rem;
+}
+
+.single-multiple-option {
+  padding-left: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.multiple-options-wrapper {
+  width: 100%;
+}
+
+.multiple-options-selected {
+  background: #C2C2C2;
 }
 </style>
