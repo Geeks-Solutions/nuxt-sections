@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A view component for medias regarding its type #30
 
+### Fixed
+
+- Dynamic and Configurable sections to support blogs section types
+
 ## [1.0.7] - 2024-01-31
 
 ### Added

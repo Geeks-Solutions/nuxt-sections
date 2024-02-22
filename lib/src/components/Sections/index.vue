@@ -1098,7 +1098,9 @@ export default {
     const queryStringObject = {}
     if(Object.keys(this.$route.query).length !== 0) {
       Object.keys(this.$route.query).map((queryKey) => {
-        queryStringObject[queryKey] = this.$route.query[queryKey]
+        if (queryKey.includes('[]')) {
+          queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
+        } else queryStringObject[queryKey] = this.$route.query[queryKey]
       })
     }
 
@@ -1881,7 +1883,9 @@ export default {
         const queryStringObject = {}
         if(Object.keys(this.$route.query).length !== 0) {
           Object.keys(this.$route.query).map((queryKey) => {
-            queryStringObject[queryKey] = this.$route.query[queryKey]
+            if (queryKey.includes('[]')) {
+              queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
+            } else queryStringObject[queryKey] = this.$route.query[queryKey]
           })
         }
 
