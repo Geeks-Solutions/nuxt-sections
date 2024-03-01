@@ -187,7 +187,7 @@
                 </div>
                 <div class="section-item" @click="openCurrentSection(type)">
                   <SectionItem
-                    v-if="type.name && !type.name.includes('local')"
+                    v-if="type.name"
                     class="bg-light-blue"
                     :title="formatName(type.name)"
                     :icon="type.name"

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dynamic and Configurable sections to support blogs section types
 
+- Dynamic section types showing empty in the list of section types by removing the !include('local) condition
+
 ## [1.0.7] - 2024-01-31
 
 ### Added
