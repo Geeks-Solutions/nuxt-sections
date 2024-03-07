@@ -41,7 +41,7 @@
                   v-if="field.name && field.type !== 'hidden'"
                   class="text-capitalize text-left"
               >
-                {{ field.name.replace("_", " ")+'*' }}
+                {{ $t(field.name.replace("_", " ")+'*') }}
               </div>
               <div v-if="field.type === 'wysiwyg'">
                 <div class="input">
@@ -84,7 +84,7 @@
                 <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
                   <div class="selectMultipleOptions">
                     <div v-for="option in optionValues.option_values" :key="option.id" class="multiple-options-wrapper">
-                      <div class="single-multiple-option" :class="isSelected(option.id, field.name) ? 'multiple-options-selected' : ''" @click="selectOption(option.id, field.name)">{{ option.title }}</div>
+                      <div class="single-multiple-option" :class="isSelected(option.id, field.name) ? 'multiple-options-selected' : ''" @click="selectOption(option.id, field.name)">{{ option.title + ' - ' + option.id }}</div>
                     </div>
                   </div>
                 </div>
@@ -261,6 +261,17 @@ export default {
           //TODO this should be updated to iterate over all the elements of the data array
           //and key the result by the `field` key in the object
           this.optionValues = res.data[0]
+
+          if (this.optionValues.option_values) {
+            this.optionValues.option_values.forEach(opt => {
+              if (this.isSelected(opt.id, this.optionValues.field)) {
+                const foundIdx = this.optionValues.option_values.findIndex(el => el.id == opt.id)
+                this.optionValues.option_values.splice(foundIdx, 1)
+                this.optionValues.option_values.unshift(opt)
+              }
+            })
+          }
+
           this.$emit("load", false);
         })
         .catch((err) => {
@@ -411,7 +422,7 @@ export default {
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields[i];
-        if (!this.options[0][key] || this.options[0][key][fields.key] === "no-value") {
+        if (!this.options[0][key]) {
           errorMessage =
               this.$t('fillRequiredFields');
         }

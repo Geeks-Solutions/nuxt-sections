@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A view component for medias regarding its type #30
 
+- Info icon above dynamic section types to show the required query strings
+
 ### Fixed
 
 - Dynamic and Configurable sections to support blogs section types

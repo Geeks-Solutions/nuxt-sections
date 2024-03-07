@@ -185,6 +185,11 @@
                     </label>
                   </div>
                 </div>
+                <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
+                  <div class="section-info-icon">
+                    <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
+                  </div>
+                </div>
                 <div class="section-item" @click="openCurrentSection(type)">
                   <SectionItem
                     v-if="type.name"
@@ -371,15 +376,15 @@
 
       <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
       <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center flexSections h4 sectionTypeHeader">
+            <div class="text-center flexSections sections-center h4 sectionTypeHeader">
               <AlertIcon />
               <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
                 <CloseIcon />
               </div>
             </div>
-            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+            <div class="text-center h4 my-3  pb-3 errorMessageDialog">
               {{ displayedErrorFormat }}
             </div>
           </div>
@@ -467,6 +472,9 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
+      <div v-if="errorInViews === true  && admin" class="error-section-loaded">
+        {{ $t('sectionsNotLoadedCorrectly') }}
+      </div>
       <div v-if="errorInLayout === true && admin && editMode" class="views">
         <div class="flexSections not-found-error">
           <div class="flexSections not-found-error-column">
@@ -519,6 +527,8 @@
                 <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
                   {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                 </div>
+                <div v-else-if="admin && editMode && view.error" class="error-section-loaded error-section-empty">
+                </div>
                 <component
                   v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                   :is="getComponent(view.name, view.type)"
@@ -526,11 +536,6 @@
                   :lang="lang"
                   :locales="locales"
                 />
-                <div v-else>
-                  <div v-if="admin" class="error-section-loaded">
-                    {{ $t('sectionsNotLoadedCorrectly') }}
-                  </div>
-                </div>
               </div>
             </div>
           </section>
@@ -605,11 +610,6 @@
                         :lang="lang"
                         :locales="locales"
                       />
-                      <div v-else>
-                        <div v-if="admin" class="error-section-loaded">
-                          {{ $t('sectionsNotLoadedCorrectly') }}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </section>
@@ -841,6 +841,7 @@ import CloseIcon from "../../base/icons/close.vue";
 import SyncIcon from "../../base/icons/sync.vue";
 import LinkIcon from "../../base/icons/link.vue";
 import AnchorIcon from "../../base/icons/anchor.vue";
+import InfoIcon from "../../base/icons/info.vue";
 import CreateIcon from "../../base/icons/create.vue";
 import DotIcon from "../../base/icons/dot.vue";
 import CelebrateIcon from "../../base/icons/celebrate.vue";
@@ -885,7 +886,8 @@ export default {
     AlertIcon,
     SettingsIcon,
     TranslationComponent,
-    ErrorIcon
+    ErrorIcon,
+    InfoIcon
   },
   props: {
     pageName: {
@@ -1016,6 +1018,7 @@ export default {
       selectedSlotRegion: '',
       layoutMode: false,
       errorInLayout: false,
+      errorInViews: false,
       highlightRegions: false,
       sectionsMainErrors: [],
       sectionsLayoutErrors: [],
@@ -1095,15 +1098,6 @@ export default {
     // because during SSR no cors preflight request is sent
     const inBrowser = typeof window !== 'undefined';
 
-    const queryStringObject = {}
-    if(Object.keys(this.$route.query).length !== 0) {
-      Object.keys(this.$route.query).map((queryKey) => {
-        if (queryKey.includes('[]')) {
-          queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
-        } else queryStringObject[queryKey] = this.$route.query[queryKey]
-      })
-    }
-
     const config = {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
@@ -1113,6 +1107,14 @@ export default {
     let payload = {}
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+      const queryStringObject = {}
+      if(Object.keys(this.$route.query).length !== 0) {
+        Object.keys(this.$route.query).map((queryKey) => {
+          if (queryKey.includes('[]')) {
+            queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
+          } else queryStringObject[queryKey] = this.$route.query[queryKey]
+        })
+      }
       payload = {
         "query_string": queryStringObject
       }
@@ -1157,6 +1159,10 @@ export default {
             views[section.id] = section;
           } else {
             views["test"] = section;
+          }
+
+          if (section.error || (section.settings === null || section.settings === undefined)) {
+            this.errorInViews = true;
           }
         });
         this.$set(this.displayVariations, this.activeVariation.pageName, {
@@ -1219,6 +1225,10 @@ export default {
               views[section.id] = section;
             } else {
               views["test"] = section;
+            }
+
+            if (section.error || (section.settings === null || section.settings === undefined)) {
+              this.errorInViews = true;
             }
           });
           this.$set(this.displayVariations, this.activeVariation.pageName, {
@@ -1285,7 +1295,7 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
-          if (refactorView.id.startsWith("id-")) {
+          if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
           sections.push({ ...refactorView });
@@ -1777,7 +1787,8 @@ export default {
               multiple: d.multiple,
               application_id: d.application_id,
               app_status: d.app_status,
-              requirements: d.requirements
+              requirements: d.requirements,
+              query_string_keys: d.query_string_keys
             });
           });
           this.availableSectionsForms.forEach(name => {
@@ -1880,21 +1891,20 @@ export default {
           headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
         };
 
-        const queryStringObject = {}
-        if(Object.keys(this.$route.query).length !== 0) {
-          Object.keys(this.$route.query).map((queryKey) => {
-            if (queryKey.includes('[]')) {
-              queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
-            } else queryStringObject[queryKey] = this.$route.query[queryKey]
-          })
-        }
-
         const URL =
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
 
         let payload = {}
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+          const queryStringObject = {}
+          if(Object.keys(this.$route.query).length !== 0) {
+            Object.keys(this.$route.query).map((queryKey) => {
+              if (queryKey.includes('[]')) {
+                queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
+              } else queryStringObject[queryKey] = this.$route.query[queryKey]
+            })
+          }
           payload = {
             "query_string": queryStringObject
           }
@@ -2077,7 +2087,7 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
-          if (refactorView.id.startsWith("id-")) {
+          if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
           sections.push({ ...refactorView });
@@ -2147,7 +2157,7 @@ export default {
           headers: sectionHeader(header),
         };
 
-        const variables = {
+        let variables = {
           page: this.sectionsPageName,
           path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
           metadata: this.pageMetadata,
@@ -2155,6 +2165,19 @@ export default {
           layout: this.selectedLayout,
           sections,
         };
+
+        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+          const queryStringObject = {}
+          if(Object.keys(this.$route.query).length !== 0) {
+            Object.keys(this.$route.query).map((queryKey) => {
+              if (queryKey.includes('[]')) {
+                queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
+              } else queryStringObject[queryKey] = this.$route.query[queryKey]
+            })
+          }
+          variables["query_string"] = queryStringObject
+        }
+
         const URL =
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
 
@@ -2886,6 +2909,9 @@ span.handle {
 .deletePageConfirmation {
   margin: 20px 0 20px 0;
 }
+.errorMessageDialog {
+  margin: 20px 0 20px 0;
+}
 .metadataFieldsContainer {
   width: 780px
 }
@@ -3181,4 +3207,27 @@ span.handle {
   border-radius: 50%;
 }
 
+.error-section-empty {
+  height: 60px;
+}
+
+.sections-center {
+  justify-content: center;
+}
+
+.section-info {
+  text-align: -webkit-right;
+}
+
+.section-info-icon {
+  cursor: pointer;
+  margin-top: 3px;
+  margin-right: 2px;
+}
+
+.info-icon-style {
+  height: 20px;
+  width: 20px;
+  color: white;
+}
 </style>
