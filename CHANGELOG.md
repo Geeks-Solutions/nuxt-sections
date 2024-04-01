@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Info icon above dynamic section types to show the required query strings
 
+- Expose Hooks for the dynamic page
+
 ### Fixed
 
 - Dynamic and Configurable sections to support blogs section types

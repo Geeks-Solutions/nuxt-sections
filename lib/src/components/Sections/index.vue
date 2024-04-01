@@ -1173,6 +1173,7 @@ export default {
         this.loading = false;
         this.$emit("load", true);
         this.sectionsPageLastUpdated = res.data.last_updated;
+        this.$nuxt.$emit('sectionsLoaded');
       } catch (error) {
         if(error.response.data.error) {
           this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
@@ -3135,7 +3136,7 @@ span.handle {
   cursor: pointer;
   margin-top: 3px;
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
   gap: 4px;
 }
 
