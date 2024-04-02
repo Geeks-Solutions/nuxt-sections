@@ -816,7 +816,7 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp} from "../../utils";
+import {formatName, importComp, parsePath, parseQS, sectionHeader} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -1102,79 +1102,28 @@ export default {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
 
     let payload = {}
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-      const queryStringObject = {}
-      if(Object.keys(this.$route.query).length !== 0) {
-        Object.keys(this.$route.query).map((queryKey) => {
-          if (queryKey.includes('[]')) {
-            queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
-          } else queryStringObject[queryKey] = this.$route.query[queryKey]
-        })
-      }
+      let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
       payload = {
-        "query_string": queryStringObject
+        query_string
       }
     }
 
     if (inBrowser) {
       try {
         const res = await this.$axios.post(URL, payload, config)
-        const sections = res.data.sections;
-        this.allSections = res.data.sections;
-        this.pageId = res.data.id;
-        this.pagePath = res.data.path;
-        this.sectionsPageName = res.data.page;
-        this.sectionslayout = res.data.layout;
-        this.selectedLayout = res.data.layout;
-        for (const lang of this.locales) {
-          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
-          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
-        }
-        this.computedTitle = this.pageMetadata[this.lang].title
-        this.computedDescription = this.pageMetadata[this.lang].description
-        const views = {};
-        sections.map((section) => {
-          this.trackSectionComp(section.name, section.type);
-
-          if (section.type === "configurable") {
-            // The below condition is set to replace old image fields in settings that were saved as objects,
-            // which was causing the section using this field to be discarded and no more saved to the page
-            // after the media content linking update on sections server that requires image field to be an array
-            if (!Array.isArray(section.render_data[0].settings.image)) {
-              section.render_data[0].settings.image = []
-            }
-            section.settings = section.render_data[0].settings;
-            // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
-            // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
-            section.nameID = section.name;
-            section.name = section.name.split(":")[1];
-          } else if (section.settings) {
-            section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
-          }
-          if (section.id) {
-            views[section.id] = section;
-          } else {
-            views["test"] = section;
-          }
-
-          if (section.error || (section.settings === null || section.settings === undefined)) {
-            this.errorInViews = true;
-          }
-        });
-        this.$set(this.displayVariations, this.activeVariation.pageName, {
-          name: this.activeVariation.pageName,
-          views: { ...views },
-        });
-        this.selectedVariation = this.activeVariation.pageName;
-        this.loading = false;
-        this.$emit("load", true);
-        this.sectionsPageLastUpdated = res.data.last_updated;
+        this.initializeSections(res);
         this.$nuxt.$emit('sectionsLoaded');
       } catch (error) {
+        if (error.response.status === 400) {
+          const res = error.response;
+          this.initializeSections(res);
+          return;
+        }
         if(error.response.data.error) {
           this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
         } else {
@@ -1190,57 +1139,13 @@ export default {
       if (optionsRes.status === 200) {
         try {
           const res = await this.$axios.post(URL, payload, config)
-          const sections = res.data.sections;
-          this.allSections = res.data.sections;
-          this.pageId = res.data.id;
-          this.pagePath = res.data.path;
-          this.sectionsPageName = res.data.page;
-          this.sectionslayout = res.data.layout;
-          this.selectedLayout = res.data.layout;
-          for (const lang of this.locales) {
-            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
-            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
-          }
-          this.computedTitle = this.pageMetadata[this.lang].title
-          this.computedDescription = this.pageMetadata[this.lang].description
-          const views = {};
-          sections.map((section) => {
-            this.trackSectionComp(section.name, section.type);
-
-            if (section.type === "configurable") {
-              // The below condition is set to replace old image fields in settings that were saved as objects,
-              // which was causing the section using this field to be discarded and no more saved to the page
-              // after the media content linking update on sections server that requires image field to be an array
-              if (!Array.isArray(section.render_data[0].settings.image)) {
-                section.render_data[0].settings.image = []
-              }
-              section.settings = section.render_data[0].settings;
-              // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
-              // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
-              section.nameID = section.name;
-              section.name = section.name.split(":")[1];
-            } else if (section.settings) {
-              section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
-            }
-            if (section.id) {
-              views[section.id] = section;
-            } else {
-              views["test"] = section;
-            }
-
-            if (section.error || (section.settings === null || section.settings === undefined)) {
-              this.errorInViews = true;
-            }
-          });
-          this.$set(this.displayVariations, this.activeVariation.pageName, {
-            name: this.activeVariation.pageName,
-            views: { ...views },
-          });
-          this.selectedVariation = this.activeVariation.pageName;
-          this.loading = false;
-          this.$emit("load", true);
-          this.sectionsPageLastUpdated = res.data.last_updated;
+          this.initializeSections(res);
         } catch (error) {
+          if (error.response.status === 400) {
+            const res = error.response;
+            this.initializeSections(res);
+            return;
+          }
           if (error.response.status === 404) {
             this.$nuxt.context.res.statusCode = 404
           }
@@ -1270,6 +1175,60 @@ export default {
     }
   },
   methods: {
+    initializeSections(res) {
+      const sections = res.data.sections;
+      this.allSections = res.data.sections;
+      this.pageId = res.data.id;
+      this.pagePath = res.data.path;
+      this.sectionsPageName = res.data.page;
+      this.sectionslayout = res.data.layout;
+      this.selectedLayout = res.data.layout;
+      for (const lang of this.locales) {
+        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+      }
+      this.computedTitle = this.pageMetadata[this.lang].title
+      this.computedDescription = this.pageMetadata[this.lang].description
+      const views = {};
+      sections.map((section) => {
+        this.trackSectionComp(section.name, section.type);
+
+        if (section.type === "configurable") {
+          // The below condition is set to replace old image fields in settings that were saved as objects,
+          // which was causing the section using this field to be discarded and no more saved to the page
+          // after the media content linking update on sections server that requires image field to be an array
+          if (!Array.isArray(section.render_data[0].settings.image)) {
+            section.render_data[0].settings.image = []
+          }
+          section.settings = section.render_data[0].settings;
+          // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
+          // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
+          section.nameID = section.name;
+          section.name = section.name.split(":")[1];
+        } else if (section.settings) {
+          section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
+        }
+        if (section.id) {
+          views[section.id] = section;
+        } else {
+          views["test"] = section;
+        }
+
+        if (section.error || (section.settings === null || section.settings === undefined)) {
+          this.errorInViews = true;
+        }
+      });
+      this.$set(this.displayVariations, this.activeVariation.pageName, {
+        name: this.activeVariation.pageName,
+        views: { ...views },
+      });
+      this.selectedVariation = this.activeVariation.pageName;
+      this.loading = false;
+      this.$emit("load", true);
+      this.sectionsPageLastUpdated = res.data.last_updated;
+    },
+    parsePath,
+    parseQS,
     updatePageMetaData() {
       this.loading = true
       this.metadataErrors.path[0] = ''
@@ -1340,7 +1299,7 @@ export default {
         sections
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
       this.$axios
         .put(URL, variables, config)
@@ -1689,7 +1648,7 @@ export default {
       const config = {
         headers: sectionHeader(header),
       };
-      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
       this.$axios
         .put(
           URL,
@@ -1893,21 +1852,14 @@ export default {
         };
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
 
         let payload = {}
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          const queryStringObject = {}
-          if(Object.keys(this.$route.query).length !== 0) {
-            Object.keys(this.$route.query).map((queryKey) => {
-              if (queryKey.includes('[]')) {
-                queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
-              } else queryStringObject[queryKey] = this.$route.query[queryKey]
-            })
-          }
+          let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
           payload = {
-            "query_string": queryStringObject
+            query_string
           }
         }
 
@@ -1920,7 +1872,7 @@ export default {
               this.$t('oldPageVersion')
             );
           }
-        })
+        }).catch(() => {})
         this.getUserData();
         this.verifySlots();
       }
@@ -2168,19 +2120,11 @@ export default {
         };
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          const queryStringObject = {}
-          if(Object.keys(this.$route.query).length !== 0) {
-            Object.keys(this.$route.query).map((queryKey) => {
-              if (queryKey.includes('[]')) {
-                queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
-              } else queryStringObject[queryKey] = this.$route.query[queryKey]
-            })
-          }
-          variables["query_string"] = queryStringObject
+          variables["query_string"] = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
         }
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
         if (formatValdiation === true) {
           this.$axios
@@ -2218,7 +2162,7 @@ export default {
                 );
                 this.layoutMode = false;
               }
-              if (this.pagePath !== this.pageName) {
+              if (this.pagePath !== decodeURIComponent(this.parsePath(encodeURIComponent(this.pageName)))) {
                 this.$nuxt.context.redirect(this.pagePath)
               }
             })

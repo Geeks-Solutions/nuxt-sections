@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dynamic section types showing empty in the list of section types by removing the !include('local) condition
 
+- Correct handling of sections initialization and sections errors
+
+### Updated
+
+- Query String management to support SEO
+
 ## [1.0.7] - 2024-01-31
 
 ### Added

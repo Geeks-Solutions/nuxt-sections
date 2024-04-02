@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { sectionHeader } from "../../utils";
+import {sectionHeader, parseQS} from "../../utils";
 
 export default {
   props: {
@@ -57,16 +57,8 @@ export default {
             }
       };
 
-      const queryStringObject = {}
-      if(Object.keys(this.$route.query).length !== 0) {
-        Object.keys(this.$route.query).map((queryKey) => {
-          if (queryKey.includes('[]')) {
-            queryStringObject[queryKey.substring(0, queryKey.indexOf('['))] = this.$route.query[queryKey].split(',')
-          } else queryStringObject[queryKey] = this.$route.query[queryKey]
-        })
-      }
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-        variables["query_string"] = queryStringObject
+        variables["query_string"] = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
       }
 
       const URL =
@@ -109,7 +101,8 @@ export default {
 
           this.$emit("load", false);
         });
-    }
+    },
+    parseQS
   },
 };
 </script>
