@@ -4,18 +4,18 @@
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
       <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
         <div
-            class="font-light mt-2 mb-2"
-            :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
+          class="font-light mt-2 mb-2"
+          :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
         >
           <div class="text-capitalize ">{{ formatName(props.name) }}</div>
         </div>
       </div>
-<!--  The below div element adds an extra tab to the configurable section. -->
-<!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
+      <!--  The below div element adds an extra tab to the configurable section. -->
+      <!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
       <div v-if="showCustomFormTab === true" class="active-tab px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
         <div
-            class="font-light mt-2 mb-2"
-            :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
+          class="font-light mt-2 mb-2"
+          :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
         >
           {{ $t('Custom form') }}
         </div>
@@ -29,12 +29,12 @@
       <div class="form-group">
         <form>
           <div
-              class=" flex flex-col justify-between content-wrapper"
+            class=" flex flex-col justify-between content-wrapper"
           >
             <div
-                :key="idx"
-                v-for="(field, idx) in props.fields"
-                :class="getType(field.type) !== 'file' ? '' : ''"
+              :key="idx"
+              v-for="(field, idx) in props.fields"
+              :class="getType(field.type) !== 'file' ? '' : ''"
             >
               <div v-if="!field.key.includes('list')" class="element d-inline-block">
                 <div
@@ -58,10 +58,10 @@
                 </div>
                 <div v-else-if="field.type === 'fieldset'" class="w-full">
                   <fieldset v-for="(object, index) in optionsData[field.key]" class="fieldSetStyle border border-solid border-gray-300 p-3 mt-2">
-                    <legend class="w-auto px-16 text-center">{{ field.type }} #{{ index }}: <span class="cursor-pointer text-xl pl-4 text-center" @click="removeFieldSet(index, field.key)">x</span></legend>
+                    <legend class="w-auto px-16 text-center">{{ field.type }} #{{ index }}: <span class="cursor-pointer text-xl pl-4 text-center" @click="removeFieldSet(index, field.key, object.media_ref.media_id)">x</span></legend>
                     <div>
                       <div class="mb-4 flex flex-row">
-                        <UploadMedia :media-label="$t('forms.media')" :upload-text="$t('forms.uploadMedia')" :change-text="$t('forms.changeMedia')" :seo-tag="$t('forms.seoTag')" :media="object.media && Object.keys(object.media).length > 0 ? [object.media] : []" @uploadContainerClicked="selectedFieldKey = field.key; selectedMediaIndex = index; selectedMediaKey = 'media'; $refs.sectionsMediaComponent.openModal(object.media && Object.keys(object.media).length > 0 ? object.media.media_id : null)" @removeUploadedImage="removeMedia(index, field.key)" />
+                        <UploadMedia :media-label="$t('forms.media')+'*'" :upload-text="$t('forms.uploadMedia')" :change-text="$t('forms.changeMedia')" :seo-tag="$t('forms.seoTag')" :media="object.media_ref && Object.keys(object.media_ref).length > 0 ? [object.media_ref] : []" @uploadContainerClicked="selectedFieldKey = field.key; selectedMediaIndex = index; selectedMediaKey = 'media'; $refs.sectionsMediaComponent.openModal(object.media_ref && Object.keys(object.media_ref).length > 0 ? object.media_ref.media_id : null)" @removeUploadedImage="removeMedia(index, field.key, object.media_ref.media_id)" />
                         <div class="flex flex-row">
                           <div class="wl-col">
                             <h4>All Whitelists</h4>
@@ -78,14 +78,21 @@
 
                           <div class="wl-col">
                             <h4>Selected Whitelists</h4>
-                            <draggable class="wl-list-group" :list="optionsData[field.key][index].selectedWhitelists" :group="`wl-${index}`" @change="(evt) => log(evt, field.key, index)">
-                              <div
-                                class="wl-list-group-item"
-                                v-for="(item, selectedIndex) in optionsData[field.key][index].selectedWhitelists"
-                                :key="`selected-whitelists-${selectedIndex}-${item.index}`"
-                              >
-                                {{ 'Token ID: ' + item.token_id + ', Whitelist index: ' + item.index }} <span class="wl-remove" @click="removeSelectedAt(field.key, index, selectedIndex)">x</span>
-                              </div>
+                            <draggable
+                              class="wl-list-group"
+                              :list="optionsData[field.key][index].whitelist_ids"
+                              tag="ul"
+                              :animation="200"
+                              :ghostClass="'ghost'" :group="`wl-${index}`" @change="(evt) => log(evt, field.key, index)" @start="drag = true"  @end="drag = false">
+                              <transition-group type="transition" :name="!drag ? 'wl-flip-list' : null" :css="false" @enter="() => {}" @leave="() => {}">
+                                <li
+                                  class="wl-list-group-item"
+                                  v-for="(item, selectedIndex) in optionsData[field.key][index].whitelist_ids"
+                                  :key="`selected-whitelists-${selectedIndex}-${item.index}`"
+                                >
+                                  {{ 'Token ID: ' + item.token_id + ', Whitelist index: ' + item.index }} <span class="wl-remove" @click="removeSelectedAt(field.key, index, selectedIndex)">x</span>
+                                </li>
+                              </transition-group>
                             </draggable>
                           </div>
                         </div>
@@ -142,14 +149,14 @@
                     :title="'choose'"
                     :multiple="optionValues.field === field.name && optionValues.option_values"
                     @input="changeFieldValue($event, idx, field.type, field.key)"
-                >
-                  <option
+                  >
+                    <option
                       v-for="option in optionValues.option_values"
                       :key="option.id"
                       :value="option.id"
                       :selected="optionsData[field.key] && optionsData[field.key].indexOf(option.id) !== -1"
-                  >{{ option.title }}</option
-                  >
+                    >{{ option.title }}</option
+                    >
                   </component>
                 </div>
                 <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{ mediaError }}</span>
@@ -195,7 +202,6 @@ export default {
       type: Object,
       default: () => {},
     },
-    selectedMedia: {},
     savedView: {
       type: Object,
       default: {},
@@ -225,11 +231,13 @@ export default {
       previewMedia: "",
       isInProgress: false,
       mediaError: '',
+      selectedMedia: {},
       selectedMediaIndex: 0,
       selectedMediaKey: '',
       selectedFieldKey: '',
+      mediaListKey: '',
       whitelists: [],
-      selectedWhitelists: []
+      drag: false
     };
   },
   watch: {
@@ -254,7 +262,20 @@ export default {
       if (mediaObject.files[0].headers) {
         media.headers = mediaObject.files[0].headers
       }
-      this.optionsData[this.selectedFieldKey][this.selectedMediaIndex][this.selectedMediaKey] = media;
+
+      if (!this.options[0][this.mediaListKey]) {
+        this.options[0][this.mediaListKey] = []
+      }
+      const old_media_id = this.optionsData[this.selectedFieldKey][this.selectedMediaIndex]['media_ref'].media_id;
+      const media_index = this.options[0][this.mediaListKey].findIndex(media => media.media_id === old_media_id)
+      if (media_index !== undefined && media_index !== null && media_index !== -1) {
+        this.options[0][this.mediaListKey][media_index] = media;
+      } else {
+        this.options[0][this.mediaListKey].push(media)
+      }
+
+      this.optionsData[this.selectedFieldKey][this.selectedMediaIndex]['media_ref'] = media;
+
       this.$refs.sectionsMediaComponent.closeModal()
     }
   },
@@ -311,9 +332,19 @@ export default {
       Object.assign(this.optionsData, this.options[0])
       this.$set(this, ['optionsData'], this.options[0]);
       this.props.fields = [...fields[0]];
+      this.props.fields.forEach((field) => {
+        if (field.key.includes("list") && field.key !== "whitelist_id") {
+          this.mediaListKey = field.key
+        }
+      });
     } else {
       this.props.fields.forEach((field) => {
-        this.options[0][field.key] = "";
+        if ((field.type === "fieldset" || field.key.includes("list")) && field.key !== "whitelist_id") {
+          if (field.key.includes("list")) {
+            this.mediaListKey = field.key
+          }
+          this.options[0][field.key] = [];
+        } else this.options[0][field.key] = "";
       });
     }
 
@@ -394,19 +425,19 @@ export default {
       ];
       this.mediaError = ''
       await globalFileUpload(e.target.files[0]).then(
-          (result) => {
-            if(result.success) {
-              this.isInProgress = false
-              media[0].url = result.data.files[0].url;
-              media[0].filename = result.data.files[0].filename;
-              media[0].media_id = result.data.id;
-              this.previewMedia = media[0].url;
-              this.options[0][name] = media;
-            } else {
-              this.isInProgress = false
-              this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
-            }
+        (result) => {
+          if(result.success) {
+            this.isInProgress = false
+            media[0].url = result.data.files[0].url;
+            media[0].filename = result.data.files[0].filename;
+            media[0].media_id = result.data.id;
+            this.previewMedia = media[0].url;
+            this.options[0][name] = media;
+          } else {
+            this.isInProgress = false
+            this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
           }
+        }
       )
     },
     async removeImage(name) {
@@ -500,15 +531,36 @@ export default {
       this.errorMessage = "";
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
-        const fields = this.props.fields[i];
+        const fields = this.props.fields.find(field => field.key === key);
         if (!this.options[0][key]) {
           errorMessage =
-              this.$t('fillRequiredFields');
+            this.$t('fillRequiredFields');
+        } else if (fields && fields.type === 'fieldset' && this.options[0][key].length === 0) {
+          errorMessage =
+            this.$t('fillRequiredFields');
+        } else if (fields && fields.type === 'fieldset') {
+          this.options[0][key].forEach(fieldset => {
+            if ((fieldset.media_ref && !fieldset.media_ref.url) || (fieldset.whitelist_ids && fieldset.whitelist_ids.length === 0)) {
+              errorMessage =
+                this.$t('fillRequiredFields');
+            }
+          })
         }
       });
       if (errorMessage) {
         this.errorMessage = errorMessage;
         return;
+      } else {
+        Object.keys(this.options[0]).map((key, i) => {
+          const fields = this.props.fields.find(field => field.key === key);
+          if (fields && fields.type === 'fieldset') {
+            this.options[0][key].forEach(item => {
+              if(item.whitelist_ids && item.whitelist_ids.length > 0) {
+                item.whitelist_ids = item.whitelist_ids.map(set => set.id)
+              }
+            })
+          }
+        })
       }
       this.$emit("load", true);
 
@@ -524,10 +576,10 @@ export default {
 
       const variables = {
         section: {
-              name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
-              weight: 1,
-              options: this.options
-            }
+          name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
+          weight: 1,
+          options: this.options
+        }
       };
       const URL =
         this.$sections.serverUrl +
@@ -558,10 +610,10 @@ export default {
         .catch(() => {
           this.$emit("load", false);
           this.$emit('errorAddingSection', {
-              closeModal: false,
-              title: "Error adding "+ this.props.name,
-              message: this.$t('saveConfigSectionError')
-            })
+            closeModal: false,
+            title: "Error adding "+ this.props.name,
+            message: this.$t('saveConfigSectionError')
+          })
         });
     },
     showToast(title, variant, message) {
@@ -586,6 +638,15 @@ export default {
     },
     updateWhitelists(array) {
       this.whitelists = array;
+      this.props.fields.forEach((field) => {
+        if (field.type === 'fieldset') {
+          this.optionsData[field.key].forEach(item => {
+            if(item.whitelist_ids && item.whitelist_ids.length > 0) {
+              item.whitelist_ids = item.whitelist_ids.map(id => this.whitelists.find(item => item.id === id))
+            }
+          })
+        }
+      });
     },
     isSelected(id, name) {
       return this.optionsData[name] !== undefined && this.optionsData[name].indexOf(id) !== -1;
@@ -601,40 +662,46 @@ export default {
       this.options[0][name] = this.optionsData[name]
     },
     log(evt, key, idx) {
-      window.console.log(this.optionsData[key][idx].selectedWhitelists);
+      window.console.log(this.optionsData[key][idx].whitelist_ids);
     },
     isSelectedWhitelist(evt, key, idx) {
-      if (this.optionsData[key][idx].selectedWhitelists.findIndex(item =>  item.id === evt.draggedContext.element.id) !== -1) {
+      if (this.optionsData[key][idx].whitelist_ids.findIndex(item =>  item.id === evt.draggedContext.element.id) !== -1) {
         return false
       }
     },
     removeSelectedAt(key, index, selectedIndex) {
-      this.optionsData[key][index].selectedWhitelists.splice(selectedIndex, 1);
+      this.optionsData[key][index].whitelist_ids.splice(selectedIndex, 1);
     },
     addFieldSet(key) {
       if (!this.optionsData[key]) {
         this.optionsData[key] = []
       }
       this.optionsData[key].push({
-        media: {
+        media_ref: {
           media_id: "",
           url: ""
         },
-        selectedWhitelists: [],
-        allWhitelists: this.whitelists
+        whitelist_ids: []
       });
       this.optionsData = {
         ...this.optionsData
       }
-      console.log(this.optionsData)
+
+      this.options[0][key] = this.optionsData[key]
     },
-    removeMedia(idx, key) {
-      this.optionsData[key][idx].media = {}
+    removeMedia(idx, key, mediaId) {
+      this.optionsData[key][idx].media_ref = {}
+      this.options[0][this.mediaListKey].splice(this.options[0][this.mediaListKey].findIndex(media => media.media_id === mediaId), 1)
     },
-    removeFieldSet(idx, key) {
+    removeFieldSet(idx, key, mediaId) {
       this.optionsData[key] = this.optionsData[key].filter((img, i) => idx !== i);
       this.optionsData = {
         ...this.optionsData
+      }
+      this.options[0][key] = this.optionsData[key]
+      const mediaIndex = this.options[0][this.mediaListKey].findIndex(media => media.media_id === mediaId)
+      if (mediaId && mediaIndex !== -1) {
+        this.options[0][this.mediaListKey].splice(mediaIndex, 1)
       }
     },
   },
@@ -780,5 +847,26 @@ export default {
   font-weight: 900;
   cursor: pointer;
   text-shadow: 0 0px 1px black;
+}
+
+.wl-flip-list-move {
+  transition: transform 0.5s;
+}
+
+.wl-list-group-item.v-enter-active, .wl-list-group-item.v-leave-active {
+  transition: none;
+}
+
+.wl-list-group-item.v-enter-to, .wl-list-group-item.v-leave-to {
+  transition: none;
+}
+
+.no-move {
+  transition: transform 0s;
+}
+
+.ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
 }
 </style>

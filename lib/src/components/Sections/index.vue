@@ -253,6 +253,7 @@
                   :props="currentSection"
                   :savedView="savedView"
                   :headers="headers"
+                  :sections-user-id="sectionsUserId"
                   @load="(value) => loading = value"
                 />
                 <Local
