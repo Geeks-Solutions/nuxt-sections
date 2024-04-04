@@ -1118,7 +1118,7 @@ export default {
       try {
         const res = await this.$axios.post(URL, payload, config)
         this.initializeSections(res);
-        this.$nuxt.$emit('sectionsLoaded');
+        this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } catch (error) {
         if (error.response.status === 400) {
           const res = error.response;
@@ -2166,6 +2166,7 @@ export default {
               if (this.pagePath !== decodeURIComponent(this.parsePath(encodeURIComponent(this.pageName)))) {
                 this.$nuxt.context.redirect(this.pagePath)
               }
+              this.$nuxt.$emit('sectionsLoaded', 'pageSaved');
             })
             .catch((error) => {
               if(error.response.data.errors) {
