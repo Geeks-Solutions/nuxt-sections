@@ -1103,12 +1103,12 @@ export default {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
+    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
     let payload = {}
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-      let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+      let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
       payload = {
         query_string
       }
@@ -1228,8 +1228,6 @@ export default {
       this.$emit("load", true);
       this.sectionsPageLastUpdated = res.data.last_updated;
     },
-    parsePath,
-    parseQS,
     updatePageMetaData() {
       this.loading = true
       this.metadataErrors.path[0] = ''
@@ -1300,7 +1298,7 @@ export default {
         sections
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
       this.$axios
         .put(URL, variables, config)
@@ -1649,7 +1647,7 @@ export default {
       const config = {
         headers: sectionHeader(header),
       };
-      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
+      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
       this.$axios
         .put(
           URL,
@@ -1853,12 +1851,12 @@ export default {
         };
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
         let payload = {}
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+          let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
           payload = {
             query_string
           }
@@ -2121,11 +2119,11 @@ export default {
         };
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          variables["query_string"] = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+          variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
         }
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
         if (formatValdiation === true) {
           this.$axios
@@ -2163,7 +2161,7 @@ export default {
                 );
                 this.layoutMode = false;
               }
-              if (this.pagePath !== decodeURIComponent(this.parsePath(encodeURIComponent(this.pageName)))) {
+              if (this.pagePath !== decodeURIComponent(parsePath(encodeURIComponent(this.pageName)))) {
                 this.$nuxt.context.redirect(this.pagePath)
               }
               this.$nuxt.$emit('sectionsLoaded', 'pageSaved');

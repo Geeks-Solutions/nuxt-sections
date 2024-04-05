@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2024-04-05
+
+### Fixed
+
+- readme file type to have categories_titles[] that was categories_titles
+
+- Add back the support for old query strings ?key=value in plus to the current management
+
+### Updated
+
+- When queryStrings is enabled: send a default qs with key=page_path that will have as value the sections page path (without the QS) for the render configurable, dynamic sections and when saving the page
+
 ## [1.0.8] - 2024-02-05
 
 ### Added
