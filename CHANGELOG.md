@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2024-02-05
+
+### Added
+
+- A view component for medias regarding its type #30
+
+- Info icon above dynamic section types to show the required query strings
+
+- Expose Hooks for the dynamic page
+
+### Fixed
+
+- Dynamic and Configurable sections to support blogs section types
+
+- Dynamic section types showing empty in the list of section types by removing the !include('local) condition
+
+- Correct handling of sections initialization and sections errors
+
+### Updated
+
+- Query String management to support SEO
+
 ## [1.0.7] - 2024-01-31
 
 ### Added

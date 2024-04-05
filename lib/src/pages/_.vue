@@ -10,6 +10,8 @@
 </template>
 
 <script>
+import {importJs} from "../utils";
+
 export default {
   name: "DynamicSectionsPage",
   layout: 'defaults',
@@ -29,6 +31,23 @@ export default {
     },
     admin() {
       return !!this.$cookies.get("sections-auth-token")
+    }
+  },
+  mounted() {
+    this.importHooks('mounted')
+  },
+  created() {
+    this.importHooks('created')
+  },
+  fetch() {
+    this.importHooks('fetch')
+  },
+  methods: {
+    importHooks(hook, params) {
+      let hooksJs = importJs(`/js/hooks`)
+      if (hooksJs[hook]) {
+        return hooksJs[hook](params)
+      } else return;
     }
   }
 };

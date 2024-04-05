@@ -2,7 +2,6 @@
   <div
     class="wys-wrapper view-section-component"
     :class="html && html.length > 2 ? 'mtitle' + html.charAt(2) : 'mtitle'"
-    v-view="viewHandler"
     v-if="html"
   >
     <div class="ql-editor ql-snow" :class="{ 'slide-up': isVisible }">
@@ -41,19 +40,7 @@ export default {
       }
       return "not found";
     }
-  },
-  methods: {
-    viewHandler(e) {
-      this.percenInViewPort = e.percentInView === 0 ? 1 : e.percentInView;
-      const percenInViewPort = e.percentInView;
-      if (percenInViewPort > 0) {
-        this.isVisible = true;
-      }
-      if (percenInViewPort === 1) {
-        this.addOpacity = true;
-      }
-    },
-  },
+  }
 };
 </script>
 

@@ -185,16 +185,21 @@
                     </label>
                   </div>
                 </div>
+                <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
+                  <div class="section-info-icon">
+                    <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
+                  </div>
+                </div>
                 <div class="section-item" @click="openCurrentSection(type)">
                   <SectionItem
-                    v-if="type.name && !type.name.includes('local')"
+                    v-if="type.name"
                     class="bg-light-blue"
                     :title="formatName(type.name)"
                     :icon="type.name"
                     :active="type.notCreated !== true"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
@@ -207,7 +212,7 @@
                     </div>
                   </div>
                 </div>
-                <div v-else-if="type.type === 'configurable'" class="section-delete">
+                <div v-else-if="type.type === 'configurable' || type.type === 'dynamic'" class="section-delete">
                   <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
                     <div class="flexSections justify-between items-end">
                       <div class="flexSections pl-2 pb-1" style="font-size: 8px;">
@@ -239,15 +244,16 @@
                   @errorAddingSection="errorAddingSection"
                   :savedView="savedView"
                   :headers="headers"
+                  @load="(value) => loading = value"
                 />
                 <Configurable
                   v-if="currentSection.type === 'configurable'"
                   @addSectionType="addSectionType"
                   @errorAddingSection="errorAddingSection"
                   :props="currentSection"
-                  :variation="variation"
                   :savedView="savedView"
                   :headers="headers"
+                  :sections-user-id="sectionsUserId"
                   @load="(value) => loading = value"
                 />
                 <Local
@@ -371,15 +377,15 @@
 
       <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
       <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center flexSections h4 sectionTypeHeader">
+            <div class="text-center flexSections sections-center h4 sectionTypeHeader">
               <AlertIcon />
               <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
                 <CloseIcon />
               </div>
             </div>
-            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+            <div class="text-center h4 my-3  pb-3 errorMessageDialog">
               {{ displayedErrorFormat }}
             </div>
           </div>
@@ -467,6 +473,9 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
+      <div v-if="errorInViews === true  && admin" class="error-section-loaded">
+        {{ $t('sectionsNotLoadedCorrectly') }}
+      </div>
       <div v-if="errorInLayout === true && admin && editMode" class="views">
         <div class="flexSections not-found-error">
           <div class="flexSections not-found-error-column">
@@ -519,18 +528,15 @@
                 <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
                   {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                 </div>
+                <div v-else-if="admin && editMode && view.error" class="error-section-loaded error-section-empty">
+                </div>
                 <component
-                  v-if="view.settings || view.type == 'local'"
+                  v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                   :is="getComponent(view.name, view.type)"
                   :section="view"
                   :lang="lang"
                   :locales="locales"
                 />
-                <div v-else>
-                  <div v-if="admin" class="error-section-loaded">
-                    {{ $t('sectionsNotLoadedCorrectly') }}
-                  </div>
-                </div>
               </div>
             </div>
           </section>
@@ -599,17 +605,12 @@
                         {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                       </div>
                       <component
-                        v-if="view.settings || view.type == 'local'"
+                        v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                         :is="getComponent(view.name, view.type)"
                         :section="view"
                         :lang="lang"
                         :locales="locales"
                       />
-                      <div v-else>
-                        <div v-if="admin" class="error-section-loaded">
-                          {{ $t('sectionsNotLoadedCorrectly') }}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </section>
@@ -816,7 +817,7 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp} from "../../utils";
+import {formatName, importComp, parsePath, parseQS, sectionHeader} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -841,6 +842,7 @@ import CloseIcon from "../../base/icons/close.vue";
 import SyncIcon from "../../base/icons/sync.vue";
 import LinkIcon from "../../base/icons/link.vue";
 import AnchorIcon from "../../base/icons/anchor.vue";
+import InfoIcon from "../../base/icons/info.vue";
 import CreateIcon from "../../base/icons/create.vue";
 import DotIcon from "../../base/icons/dot.vue";
 import CelebrateIcon from "../../base/icons/celebrate.vue";
@@ -885,7 +887,8 @@ export default {
     AlertIcon,
     SettingsIcon,
     TranslationComponent,
-    ErrorIcon
+    ErrorIcon,
+    InfoIcon
   },
   props: {
     pageName: {
@@ -1016,6 +1019,7 @@ export default {
       selectedSlotRegion: '',
       layoutMode: false,
       errorInLayout: false,
+      errorInViews: false,
       highlightRegions: false,
       sectionsMainErrors: [],
       sectionsLayoutErrors: [],
@@ -1095,77 +1099,32 @@ export default {
     // because during SSR no cors preflight request is sent
     const inBrowser = typeof window !== 'undefined';
 
-    const queryStringObject = {}
-    if(Object.keys(this.$route.query).length !== 0) {
-      Object.keys(this.$route.query).map((queryKey) => {
-        queryStringObject[queryKey] = this.$route.query[queryKey]
-      })
-    }
-
     const config = {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
 
     let payload = {}
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+      let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
       payload = {
-        "query_string": queryStringObject
+        query_string
       }
     }
 
     if (inBrowser) {
       try {
         const res = await this.$axios.post(URL, payload, config)
-        const sections = res.data.sections;
-        this.allSections = res.data.sections;
-        this.pageId = res.data.id;
-        this.pagePath = res.data.path;
-        this.sectionsPageName = res.data.page;
-        this.sectionslayout = res.data.layout;
-        this.selectedLayout = res.data.layout;
-        for (const lang of this.locales) {
-          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
-          if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
-        }
-        this.computedTitle = this.pageMetadata[this.lang].title
-        this.computedDescription = this.pageMetadata[this.lang].description
-        const views = {};
-        sections.map((section) => {
-          this.trackSectionComp(section.name, section.type);
-
-          if (section.type === "configurable") {
-            // The below condition is set to replace old image fields in settings that were saved as objects,
-            // which was causing the section using this field to be discarded and no more saved to the page
-            // after the media content linking update on sections server that requires image field to be an array
-            if (!Array.isArray(section.render_data[0].settings.image)) {
-              section.render_data[0].settings.image = []
-            }
-            section.settings = section.render_data[0].settings;
-            // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
-            // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
-            section.nameID = section.name;
-            section.name = section.name.split(":")[1];
-          } else if (section.settings) {
-            section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
-          }
-          if (section.id) {
-            views[section.id] = section;
-          } else {
-            views["test"] = section;
-          }
-        });
-        this.$set(this.displayVariations, this.activeVariation.pageName, {
-          name: this.activeVariation.pageName,
-          views: { ...views },
-        });
-        this.selectedVariation = this.activeVariation.pageName;
-        this.loading = false;
-        this.$emit("load", true);
-        this.sectionsPageLastUpdated = res.data.last_updated;
+        this.initializeSections(res);
+        this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } catch (error) {
+        if (error.response.status === 400) {
+          const res = error.response;
+          this.initializeSections(res);
+          return;
+        }
         if(error.response.data.error) {
           this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
         } else {
@@ -1181,53 +1140,13 @@ export default {
       if (optionsRes.status === 200) {
         try {
           const res = await this.$axios.post(URL, payload, config)
-          const sections = res.data.sections;
-          this.allSections = res.data.sections;
-          this.pageId = res.data.id;
-          this.pagePath = res.data.path;
-          this.sectionsPageName = res.data.page;
-          this.sectionslayout = res.data.layout;
-          this.selectedLayout = res.data.layout;
-          for (const lang of this.locales) {
-            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
-            if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
-          }
-          this.computedTitle = this.pageMetadata[this.lang].title
-          this.computedDescription = this.pageMetadata[this.lang].description
-          const views = {};
-          sections.map((section) => {
-            this.trackSectionComp(section.name, section.type);
-
-            if (section.type === "configurable") {
-              // The below condition is set to replace old image fields in settings that were saved as objects,
-              // which was causing the section using this field to be discarded and no more saved to the page
-              // after the media content linking update on sections server that requires image field to be an array
-              if (!Array.isArray(section.render_data[0].settings.image)) {
-                section.render_data[0].settings.image = []
-              }
-              section.settings = section.render_data[0].settings;
-              // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
-              // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
-              section.nameID = section.name;
-              section.name = section.name.split(":")[1];
-            } else if (section.settings) {
-              section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
-            }
-            if (section.id) {
-              views[section.id] = section;
-            } else {
-              views["test"] = section;
-            }
-          });
-          this.$set(this.displayVariations, this.activeVariation.pageName, {
-            name: this.activeVariation.pageName,
-            views: { ...views },
-          });
-          this.selectedVariation = this.activeVariation.pageName;
-          this.loading = false;
-          this.$emit("load", true);
-          this.sectionsPageLastUpdated = res.data.last_updated;
+          this.initializeSections(res);
         } catch (error) {
+          if (error.response.status === 400) {
+            const res = error.response;
+            this.initializeSections(res);
+            return;
+          }
           if (error.response.status === 404) {
             this.$nuxt.context.res.statusCode = 404
           }
@@ -1257,6 +1176,60 @@ export default {
     }
   },
   methods: {
+    initializeSections(res) {
+      const sections = res.data.sections;
+      this.allSections = res.data.sections;
+      this.pageId = res.data.id;
+      this.pagePath = res.data.path;
+      this.sectionsPageName = res.data.page;
+      this.sectionslayout = res.data.layout;
+      this.selectedLayout = res.data.layout;
+      for (const lang of this.locales) {
+        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+      }
+      this.computedTitle = this.pageMetadata[this.lang].title
+      this.computedDescription = this.pageMetadata[this.lang].description
+      const views = {};
+      sections.map((section) => {
+        this.trackSectionComp(section.name, section.type);
+
+        if (section.type === "configurable") {
+          // The below condition is set to replace old image fields in settings that were saved as objects,
+          // which was causing the section using this field to be discarded and no more saved to the page
+          // after the media content linking update on sections server that requires image field to be an array
+          if (!Array.isArray(section.render_data[0].settings.image)) {
+            section.render_data[0].settings.image = []
+          }
+          section.settings = section.render_data[0].settings;
+          // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
+          // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
+          section.nameID = section.name;
+          section.name = section.name.split(":")[1];
+        } else if (section.settings) {
+          section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
+        }
+        if (section.id) {
+          views[section.id] = section;
+        } else {
+          views["test"] = section;
+        }
+
+        if (section.error || (section.settings === null || section.settings === undefined)) {
+          this.errorInViews = true;
+        }
+      });
+      this.$set(this.displayVariations, this.activeVariation.pageName, {
+        name: this.activeVariation.pageName,
+        views: { ...views },
+      });
+      this.selectedVariation = this.activeVariation.pageName;
+      this.loading = false;
+      this.$emit("load", true);
+      this.sectionsPageLastUpdated = res.data.last_updated;
+    },
+    parsePath,
+    parseQS,
     updatePageMetaData() {
       this.loading = true
       this.metadataErrors.path[0] = ''
@@ -1283,7 +1256,7 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
-          if (refactorView.id.startsWith("id-")) {
+          if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
           sections.push({ ...refactorView });
@@ -1327,7 +1300,7 @@ export default {
         sections
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
       this.$axios
         .put(URL, variables, config)
@@ -1542,7 +1515,7 @@ export default {
       let path = "";
       if (sectionName.includes(":")) {
         path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-        this.$options.components[sectionName.split(":")[1]] = importComp(path);
+        return importComp(path);
       } else {
         path = `/views/${sectionName}_${sectionType}`;
         return importComp(path);
@@ -1676,7 +1649,7 @@ export default {
       const config = {
         headers: sectionHeader(header),
       };
-      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
       this.$axios
         .put(
           URL,
@@ -1775,7 +1748,8 @@ export default {
               multiple: d.multiple,
               application_id: d.application_id,
               app_status: d.app_status,
-              requirements: d.requirements
+              requirements: d.requirements,
+              query_string_keys: d.query_string_keys
             });
           });
           this.availableSectionsForms.forEach(name => {
@@ -1878,21 +1852,15 @@ export default {
           headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
         };
 
-        const queryStringObject = {}
-        if(Object.keys(this.$route.query).length !== 0) {
-          Object.keys(this.$route.query).map((queryKey) => {
-            queryStringObject[queryKey] = this.$route.query[queryKey]
-          })
-        }
-
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.pageName)}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
 
         let payload = {}
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+          let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
           payload = {
-            "query_string": queryStringObject
+            query_string
           }
         }
 
@@ -1905,7 +1873,7 @@ export default {
               this.$t('oldPageVersion')
             );
           }
-        })
+        }).catch(() => {})
         this.getUserData();
         this.verifySlots();
       }
@@ -2058,7 +2026,7 @@ export default {
             refactorView.name = view.nameID;
             const options = [];
             view.render_data.map((rData) => {
-              if (!Array.isArray(rData.settings.image)) {
+              if (rData.settings.image && !Array.isArray(rData.settings.image)) {
                 formatValdiation = false
                 this.showToast(
                   "",
@@ -2073,7 +2041,7 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
-          if (refactorView.id.startsWith("id-")) {
+          if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
           sections.push({ ...refactorView });
@@ -2092,7 +2060,7 @@ export default {
                       if (Object.keys(option).includes(field.name)) {
                         if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object')) {
                           if (Array.isArray(option[field.name])) {
-                            if ((!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
+                            if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
                               integrityCheck = false
                               this.loading = false;
                               this.showToast(
@@ -2143,7 +2111,7 @@ export default {
           headers: sectionHeader(header),
         };
 
-        const variables = {
+        let variables = {
           page: this.sectionsPageName,
           path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
           metadata: this.pageMetadata,
@@ -2151,8 +2119,13 @@ export default {
           layout: this.selectedLayout,
           sections,
         };
+
+        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+          variables["query_string"] = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+        }
+
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${encodeURIComponent(this.sectionsPageName)}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
         if (formatValdiation === true) {
           this.$axios
@@ -2190,9 +2163,10 @@ export default {
                 );
                 this.layoutMode = false;
               }
-              if (this.pagePath !== this.pageName) {
+              if (this.pagePath !== decodeURIComponent(this.parsePath(encodeURIComponent(this.pageName)))) {
                 this.$nuxt.context.redirect(this.pagePath)
               }
+              this.$nuxt.$emit('sectionsLoaded', 'pageSaved');
             })
             .catch((error) => {
               if(error.response.data.errors) {
@@ -2225,16 +2199,16 @@ export default {
             view.fields = type.fields;
             view.multiple = type.multiple;
             view.application_id = type.application_id;
-            if (type.dynamicOptions) {
-              view.dynamicOptions = true;
+            if (type.dynamic_options) {
+              view.dynamic_options = true;
             }
           }
         } else {
           if (type.name === view.name) {
             view.fields = type.fields;
             view.multiple = type.multiple;
-            if (type.dynamicOptions) {
-              view.dynamicOptions = true;
+            if (type.dynamic_options) {
+              view.dynamic_options = true;
             }
           }
         }
@@ -2882,6 +2856,9 @@ span.handle {
 .deletePageConfirmation {
   margin: 20px 0 20px 0;
 }
+.errorMessageDialog {
+  margin: 20px 0 20px 0;
+}
 .metadataFieldsContainer {
   width: 780px
 }
@@ -3105,7 +3082,7 @@ span.handle {
   cursor: pointer;
   margin-top: 3px;
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
   gap: 4px;
 }
 
@@ -3177,4 +3154,27 @@ span.handle {
   border-radius: 50%;
 }
 
+.error-section-empty {
+  height: 60px;
+}
+
+.sections-center {
+  justify-content: center;
+}
+
+.section-info {
+  text-align: -webkit-right;
+}
+
+.section-info-icon {
+  cursor: pointer;
+  margin-top: 3px;
+  margin-right: 2px;
+}
+
+.info-icon-style {
+  height: 20px;
+  width: 20px;
+  color: white;
+}
 </style>

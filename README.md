@@ -26,7 +26,7 @@ And configure the library, the possible configurations are as follow:
 - `projectId`: The ID of you project, you get it from your project interface after your register to sections
 - `environment`: _to use only for development purposes_ set it to "testing" if you want your requests to be directed to sections test server
 - `projectUrl`: _to use only if you intend to run sections in SSR_ set it to the project url you defined in your project interface on sections back office.
-- `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages.
+- `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages. (query string example: `/blogs1/blogs2/path=/blogs/article_path/categories_titles=Science,People` where pagePath is `/blogs1/blogs2` and query strings are `path1=/blogs/article_path` and `categories_titles=Science,People`)
 - `projectLocales`: _to use only if you intend to have multiple supported languages for your website. Its value must be a string of language code separated by comma and with no spaces ex.: `en,fr,it,es`. See Language Support section below for more details on how to use this feature
 
 > The following packages are installed by the module:
@@ -109,7 +109,7 @@ publicRuntimeConfig: {
 }
 ````
 
-3. Add the sections component on the page(s) of your choice
+3. The library comes with a default dynamic Sections page support (which you can specify its path from the url) but you can also add the sections component on the page(s) of your choice
 
 ````vue
 <template>
@@ -147,6 +147,30 @@ Here we load props from data on the page, the admin prop is used to indicate if 
 To get the UserToken and have it stored in the above cookie, simply set sections on a page of your website, then head to your Sections project page (where you have your projectID) and set the login redirect url properly, then hit connect sections to my app. This library will receive and process the request to generate the UserToken and store it in the cookie for further use. for more information check the [docs](https://sections.geeks.solutions/docs/frontend/index.html)
 
 If you now want to move on and start providing local and static sections for your website editor, or customize the display of dynamic or configurable ones, read below.
+
+When using the default dynamic Sections page, the library expose the mounted, created and fetch hooks of the pages. In order to use these hooks, your sections folder must have `js` folder and the `js` folder must have a `hooks.js` file containing the hooks **(Make sure to follow the same structure as showing below)**:   
+
+```js
+// sections/js/hooks.js
+
+const mounted = () => {
+  // mounted code goes here
+}
+
+const created = () => {
+  // created code goes here
+}
+
+const fetch = () => {
+  // fetch code goes here
+}
+
+module.exports = {
+  mounted,
+  created,
+  fetch
+};
+```
 
 # How it works
 
