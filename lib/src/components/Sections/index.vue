@@ -1202,7 +1202,7 @@ export default {
           // The below condition is set to replace old image fields in settings that were saved as objects,
           // which was causing the section using this field to be discarded and no more saved to the page
           // after the media content linking update on sections server that requires image field to be an array
-          if (!Array.isArray(section.render_data[0].settings.image)) {
+          if (section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
             section.render_data[0].settings.image = []
           }
           section.settings = section.render_data[0].settings;
