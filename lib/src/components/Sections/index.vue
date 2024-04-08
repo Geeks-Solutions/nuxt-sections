@@ -248,12 +248,15 @@
                 />
                 <Configurable
                   v-if="currentSection.type === 'configurable'"
+                  ref="sections-configurable-type"
                   @addSectionType="addSectionType"
                   @errorAddingSection="errorAddingSection"
                   :props="currentSection"
                   :savedView="savedView"
                   :headers="headers"
                   :sections-user-id="sectionsUserId"
+                  :sections-configurable-type="sectionsConfigurableTypeReference"
+                  @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
                 />
                 <Local
@@ -1023,7 +1026,8 @@ export default {
       highlightRegions: false,
       sectionsMainErrors: [],
       sectionsLayoutErrors: [],
-      availableSectionsForms: []
+      availableSectionsForms: [],
+      sectionsConfigurableTypeReference: null
     }
   },
   computed: {

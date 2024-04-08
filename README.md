@@ -204,7 +204,7 @@ In case you are trying to use a section that you haven't properly declared on yo
 
 - `addNewStaticType(sectionTypeName)` a helper function that takes a string of sectionTypeName that matches your component name created inside the configurations folder mentioned above which will be used then to add this section type to your page
 
-###Example on how to use the function:
+### Example on how to use the function:
 
 ````js
 import {addNewStaticType} from "@geeks.solutions/nuxt-sections/lib/src/utils";
@@ -219,6 +219,48 @@ await addNewStaticType(sectionTypeName).then((res) => {
 },
 ````
 ---
+
+### When using the configurable sections:
+
+- The configurable section currently supports the following types: 
+```json
+[
+  "file",
+  "media",
+  "string",
+  "integer",
+  "textfield",
+  "textarea",
+  "hidden",
+  "wysiwyg"
+]
+```
+
+- If a new field type is needed, you can create your custom vue component for it inside `@sections/configurable_components` and the name of the component should match `${fieldKey}-${fieldName}` so the library can load it correctly
+
+- You can also override an existing field type component by also created a component for it like the step above  
+
+- The library exposes the following props of the configurable section types giving you more control on the component:
+
+```json
+["options", "optionsData", "field", "customFormData", "sectionsUserId", "reference"]
+```
+
+Note that the reference props gives you full access to the configurable form code as it uses $refs that returns the configurable form vue form component
+
+- The library also expose the mounted hook of the configurable section type form. In order to use this hook, your sections folder must have `js` folder and the `js` folder must have a `configurable-hooks` file containing the hook:
+
+```js
+// sections/js/configurable-hooks.js
+
+const mounted = () => {
+    // mounted code goes here
+}
+
+module.exports = {
+  mounted
+};
+```
 
 # Media sections
 

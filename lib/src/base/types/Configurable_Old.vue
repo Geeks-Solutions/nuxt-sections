@@ -4,18 +4,18 @@
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
       <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
         <div
-          class="font-light mt-2 mb-2"
-          :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
+            class="font-light mt-2 mb-2"
+            :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
         >
           <div class="text-capitalize ">{{ formatName(props.name) }}</div>
         </div>
       </div>
-      <!--  The below div element adds an extra tab to the configurable section. -->
-      <!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
+<!--  The below div element adds an extra tab to the configurable section. -->
+<!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
       <div v-if="showCustomFormTab === true" class="active-tab px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
         <div
-          class="font-light mt-2 mb-2"
-          :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
+            class="font-light mt-2 mb-2"
+            :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
         >
           {{ $t('Custom form') }}
         </div>
@@ -29,118 +29,68 @@
       <div class="form-group">
         <form>
           <div
-            class=" flex flex-col justify-between content-wrapper"
+              class=" flex flex-col justify-between content-wrapper"
           >
             <div
-              :key="idx"
-              v-for="(field, idx) in props.fields"
-              :class="getType(field.type) !== 'file' ? '' : ''"
+                class="element d-inline-block"
+                :key="idx"
+                v-for="(field, idx) in props.fields"
+                :class="getType(field.type) !== 'file' ? '' : ''"
             >
-              <div v-if="!field.key.includes('list')" class="element d-inline-block">
-                <div
+              <div
                   v-if="field.name && field.type !== 'hidden'"
                   class="text-capitalize text-left"
-                >
-                  {{ field.name.replace("_", " ")+'*' }}
+              >
+                {{ $t(field.name.replace("_", " ")+'*') }}
+              </div>
+              <div v-if="field.type === 'wysiwyg'">
+                <div class="input">
+                  <quill-editor v-model="optionsData[field.key]" :ref="field.type+'Editor'" class="wyzywig" @change="onEditorChange($event, idx, field.key)" />
                 </div>
-                <div v-if="field.type === 'wysiwyg'">
-                  <div class="input">
-                    <quill-editor v-model="optionsData[field.key]" :ref="field.type+'Editor'" class="wyzywig" @change="onEditorChange($event, idx, field.key)" />
-                  </div>
-                </div>
-                <div v-else-if="field.type === 'textarea'" class="w-full">
-                  <textarea
+              </div>
+              <div v-else-if="field.type === 'textarea'" class="w-full">
+                <textarea
                     v-model="optionsData[field.key]"
-                    class="d-input py-4 pl-6 border rounded-xl border-FieldGray text-area-field w-full focus:outline-none"
+                    class="d-input py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
                     :name="field.name"
                     @change="changeFieldValue($event, idx, field.type, field.key)"
-                  />
-                </div>
-                <div v-else-if="field.type === 'fieldset'" class="w-full">
-                  <fieldset v-for="(object, index) in optionsData[field.key]" class="fieldSetStyle border border-solid border-gray-300 p-3 mt-2">
-                    <legend class="w-auto px-16 text-center">{{ field.type }} #{{ index }}: <span class="cursor-pointer text-xl pl-4 text-center" @click="removeFieldSet(index, field.key, object.media_ref.media_id)">x</span></legend>
-                    <div>
-                      <div class="mb-4 flex flex-row">
-                        <UploadMedia :media-label="$t('forms.media')+'*'" :upload-text="$t('forms.uploadMedia')" :change-text="$t('forms.changeMedia')" :seo-tag="$t('forms.seoTag')" :media="object.media_ref && Object.keys(object.media_ref).length > 0 ? [object.media_ref] : []" @uploadContainerClicked="selectedFieldKey = field.key; selectedMediaIndex = index; selectedMediaKey = 'media'; $refs.sectionsMediaComponent.openModal(object.media_ref && Object.keys(object.media_ref).length > 0 ? object.media_ref.media_id : null)" @removeUploadedImage="removeMedia(index, field.key, object.media_ref.media_id)" />
-                        <div class="flex flex-row">
-                          <div class="wl-col">
-                            <h4>All Whitelists</h4>
-                            <draggable class="wl-list-group" :list="whitelists" :sort="false" :group="{ name: `wl-${index}`, pull: 'clone', put: false, revertClone: true }" :move="(evt) => isSelectedWhitelist(evt, field.key, index)">
-                              <div
-                                class="wl-list-group-item"
-                                v-for="(item, allIndex) in whitelists"
-                                :key="`all-whitelists-${allIndex}-${item.index}`"
-                              >
-                                {{ 'Token ID: ' + item.token_id + ', Whitelist index: ' + item.index }}
-                              </div>
-                            </draggable>
-                          </div>
-
-                          <div class="wl-col">
-                            <h4>Selected Whitelists</h4>
-                            <draggable
-                              class="wl-list-group"
-                              :list="optionsData[field.key][index].whitelist_ids"
-                              tag="ul"
-                              :animation="200"
-                              :ghostClass="'ghost'" :group="`wl-${index}`" @change="(evt) => log(evt, field.key, index)" @start="drag = true"  @end="drag = false">
-                              <transition-group type="transition" :name="!drag ? 'wl-flip-list' : null" :css="false" @enter="() => {}" @leave="() => {}">
-                                <li
-                                  class="wl-list-group-item"
-                                  v-for="(item, selectedIndex) in optionsData[field.key][index].whitelist_ids"
-                                  :key="`selected-whitelists-${selectedIndex}-${item.index}`"
-                                >
-                                  {{ 'Token ID: ' + item.token_id + ', Whitelist index: ' + item.index }} <span class="wl-remove" @click="removeSelectedAt(field.key, index, selectedIndex)">x</span>
-                                </li>
-                              </transition-group>
-                            </draggable>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </fieldset>
-                  <div
-                    v-if="whitelists.length > 0"
-                    class="add-button underline cursor-pointer mt-2"
-                    @click="addFieldSet(field.key)"
-                  >
-                    <div class="p3 bold text">{{ $t("forms.addField") }}</div>
-                  </div>
-                </div>
-                <div v-else class="w-full justify-start">
-                  <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
-                    <img
+                />
+              </div>
+              <div v-else-if="field.type" class="w-full justify-start">
+                <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
+                  <img
                       v-if="optionsData[field.key][0].url"
                       :src="optionsData[field.key][0].url"
                       alt="image"
                       class="w-95px h-63px object-contain"
-                    />
-                    <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
-                      <CloseIcon />
-                    </div>
+                  />
+                  <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
+                    <CloseIcon />
                   </div>
-                  <div v-else-if="field.type === 'media' && previewMedia" class="py-4 flex align-items-center">
-                    <img
+                </div>
+                <div v-else-if="field.type === 'media' && previewMedia" class="py-4 flex align-items-center">
+                  <img
                       :src="previewMedia"
                       alt="image"
                       class="w-95px h-63px object-contain"
-                    />
-                    <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
-                      <CloseIcon />
+                  />
+                  <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
+                    <CloseIcon />
+                  </div>
+                </div>
+                <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
+                  <loadingCircle />
+                </div>
+                <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
+                  <div class="selectMultipleOptions">
+                    <div v-for="option in optionValues.option_values" :key="option.id" class="multiple-options-wrapper">
+                      <div class="single-multiple-option" :class="isSelected(option.id, field.name) ? 'multiple-options-selected' : ''" @click="selectOption(option.id, field.name)">{{ option.title + ' - ' + option.id }}</div>
                     </div>
                   </div>
-                  <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
-                    <loadingCircle />
-                  </div>
-                  <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
-                    <div class="selectMultipleOptions">
-                      <div v-for="option in optionValues.option_values" :key="option.id" class="multiple-options-wrapper">
-                        <div class="single-multiple-option" :class="isSelected(option.id, field.name) ? 'multiple-options-selected' : ''" @click="selectOption(option.id, field.name)">{{ option.title + ' - ' + option.id }}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <component
-                    v-show="!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"                    :value="optionsData[field.key]"
+                </div>
+                <component
+                    v-show="!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"
+                    :value="optionsData[field.key]"
                     :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
                     :id="field.key"
                     :is="getTag(field.type, field.name && field.name.includes(':') ? field.name.split(':')[1] : field.name)"
@@ -149,18 +99,17 @@
                     :title="'choose'"
                     :multiple="optionValues.field === field.name && optionValues.option_values"
                     @input="changeFieldValue($event, idx, field.type, field.key)"
-                  >
-                    <option
+                >
+                  <option
                       v-for="option in optionValues.option_values"
                       :key="option.id"
                       :value="option.id"
                       :selected="optionsData[field.key] && optionsData[field.key].indexOf(option.id) !== -1"
-                    >{{ option.title }}</option
-                    >
-                  </component>
-                </div>
-                <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{ mediaError }}</span>
+                  >{{ option.title }}</option
+                  >
+                </component>
               </div>
+              <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{ mediaError }}</span>
             </div>
           </div>
           <button class="submit-btn mt-4" type="button" @click="addConfigurable()">
@@ -168,13 +117,12 @@
           </button>
         </form>
       </div>
-      <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
     </div>
     <!--  The below div element is the custom form tab and its loaded from the host project using the computed getComponentForm() property that relies on the configurable section name -->
     <div v-show="currentTab === 'custom'" class="sub-types">
       <div>
         <div class="text-video d-flex content-wrapper" v-show="formatName(props.name)">
-          <component :is="getComponentForm" :ref="formatName(props.name)" :section-settings="props" :section-options="options[0]" @whitelistIdUpdated="updateWhitelistId" @whitelists="updateWhitelists" @load="(value) => $emit('load', value)" @customFormLoaded="showCustomFormTab = true" />
+          <component :is="getComponentForm" :ref="formatName(props.name)" :section-settings="props" :section-options="options[0]" @whitelistIdUpdated="updateWhitelistId" @load="(value) => $emit('load', value)" @customFormLoaded="showCustomFormTab = true" />
         </div>
       </div>
     </div>
@@ -182,20 +130,14 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload} from "../../utils";
+import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload, parseQS} from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
-import UploadMedia from "../../components/Medias/UploadMedia.vue";
-import MediaComponent from "../../components/Medias/MediaComponent.vue";
-import draggable from "vuedraggable";
 
 export default {
   components: {
-    UploadMedia,
-    MediaComponent,
     loadingCircle,
-    CloseIcon,
-    draggable
+    CloseIcon
   },
   props: {
     props: {
@@ -214,10 +156,6 @@ export default {
       type: String,
       default: ""
     },
-    sectionsUserId: {
-      type: String,
-      default: ''
-    }
   },
   data() {
     return {
@@ -230,14 +168,7 @@ export default {
       showCustomFormTab: false,
       previewMedia: "",
       isInProgress: false,
-      mediaError: '',
-      selectedMedia: {},
-      selectedMediaIndex: 0,
-      selectedMediaKey: '',
-      selectedFieldKey: '',
-      mediaListKey: '',
-      whitelists: [],
-      drag: false
+      mediaError: ''
     };
   },
   watch: {
@@ -246,37 +177,6 @@ export default {
     },
     html() {
       this.settings = this.html
-    },
-    selectedMedia(mediaObject) {
-      const media = {
-        media_id: "",
-        url: "",
-        seo_tag: "",
-        filename: "",
-        headers: {}
-      };
-      media.media_id = mediaObject.id;
-      media.url = mediaObject.files[0].url;
-      media.seo_tag = mediaObject.seo_tag;
-      media.filename = mediaObject.files[0].filename;
-      if (mediaObject.files[0].headers) {
-        media.headers = mediaObject.files[0].headers
-      }
-
-      if (!this.options[0][this.mediaListKey]) {
-        this.options[0][this.mediaListKey] = []
-      }
-      const old_media_id = this.optionsData[this.selectedFieldKey][this.selectedMediaIndex]['media_ref'].media_id;
-      const media_index = this.options[0][this.mediaListKey].findIndex(media => media.media_id === old_media_id)
-      if (media_index !== undefined && media_index !== null && media_index !== -1) {
-        this.options[0][this.mediaListKey][media_index] = media;
-      } else {
-        this.options[0][this.mediaListKey].push(media)
-      }
-
-      this.optionsData[this.selectedFieldKey][this.selectedMediaIndex]['media_ref'] = media;
-
-      this.$refs.sectionsMediaComponent.closeModal()
     }
   },
   computed: {
@@ -332,19 +232,9 @@ export default {
       Object.assign(this.optionsData, this.options[0])
       this.$set(this, ['optionsData'], this.options[0]);
       this.props.fields = [...fields[0]];
-      this.props.fields.forEach((field) => {
-        if (field.key.includes("list") && field.key !== "whitelist_id") {
-          this.mediaListKey = field.key
-        }
-      });
     } else {
       this.props.fields.forEach((field) => {
-        if ((field.type === "fieldset" || field.key.includes("list")) && field.key !== "whitelist_id") {
-          if (field.key.includes("list")) {
-            this.mediaListKey = field.key
-          }
-          this.options[0][field.key] = [];
-        } else this.options[0][field.key] = "";
+        this.options[0][field.key] = "";
       });
     }
 
@@ -425,19 +315,19 @@ export default {
       ];
       this.mediaError = ''
       await globalFileUpload(e.target.files[0]).then(
-        (result) => {
-          if(result.success) {
-            this.isInProgress = false
-            media[0].url = result.data.files[0].url;
-            media[0].filename = result.data.files[0].filename;
-            media[0].media_id = result.data.id;
-            this.previewMedia = media[0].url;
-            this.options[0][name] = media;
-          } else {
-            this.isInProgress = false
-            this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
+          (result) => {
+            if(result.success) {
+              this.isInProgress = false
+              media[0].url = result.data.files[0].url;
+              media[0].filename = result.data.files[0].filename;
+              media[0].media_id = result.data.id;
+              this.previewMedia = media[0].url;
+              this.options[0][name] = media;
+            } else {
+              this.isInProgress = false
+              this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
+            }
           }
-        }
       )
     },
     async removeImage(name) {
@@ -531,36 +421,15 @@ export default {
       this.errorMessage = "";
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
-        const fields = this.props.fields.find(field => field.key === key);
+        const fields = this.props.fields[i];
         if (!this.options[0][key]) {
           errorMessage =
-            this.$t('fillRequiredFields');
-        } else if (fields && fields.type === 'fieldset' && this.options[0][key].length === 0) {
-          errorMessage =
-            this.$t('fillRequiredFields');
-        } else if (fields && fields.type === 'fieldset') {
-          this.options[0][key].forEach(fieldset => {
-            if ((fieldset.media_ref && !fieldset.media_ref.url) || (fieldset.whitelist_ids && fieldset.whitelist_ids.length === 0)) {
-              errorMessage =
-                this.$t('fillRequiredFields');
-            }
-          })
+              this.$t('fillRequiredFields');
         }
       });
       if (errorMessage) {
         this.errorMessage = errorMessage;
         return;
-      } else {
-        Object.keys(this.options[0]).map((key, i) => {
-          const fields = this.props.fields.find(field => field.key === key);
-          if (fields && fields.type === 'fieldset') {
-            this.options[0][key].forEach(item => {
-              if(item.whitelist_ids && item.whitelist_ids.length > 0) {
-                item.whitelist_ids = item.whitelist_ids.map(set => set.id)
-              }
-            })
-          }
-        })
       }
       this.$emit("load", true);
 
@@ -576,11 +445,16 @@ export default {
 
       const variables = {
         section: {
-          name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
-          weight: 1,
-          options: this.options
-        }
+              name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
+              weight: 1,
+              options: this.options
+            }
       };
+
+      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+      }
+
       const URL =
         this.$sections.serverUrl +
         `/project/${this.$sections.projectId}/section/render`;
@@ -610,10 +484,10 @@ export default {
         .catch(() => {
           this.$emit("load", false);
           this.$emit('errorAddingSection', {
-            closeModal: false,
-            title: "Error adding "+ this.props.name,
-            message: this.$t('saveConfigSectionError')
-          })
+              closeModal: false,
+              title: "Error adding "+ this.props.name,
+              message: this.$t('saveConfigSectionError')
+            })
         });
     },
     showToast(title, variant, message) {
@@ -636,20 +510,6 @@ export default {
       this.optionsData['whitelist_id'] = id;
       this.options[0]['whitelist_id'] = id;
     },
-    updateWhitelists(array) {
-      this.whitelists = array;
-      this.props.fields.forEach((field) => {
-        if (field.type === 'fieldset' && this.optionsData[field.key]) {
-          this.optionsData[field.key].forEach(item => {
-            if(item.whitelist_ids && item.whitelist_ids.length > 0) {
-              if (Number.isInteger(item.whitelist_ids[0])) {
-                item.whitelist_ids = item.whitelist_ids.map(id => this.whitelists.find(item => item.id === id))
-              }
-            }
-          })
-        }
-      });
-    },
     isSelected(id, name) {
       return this.optionsData[name] !== undefined && this.optionsData[name].indexOf(id) !== -1;
     },
@@ -662,50 +522,7 @@ export default {
         this.$set(this.optionsData, name, [parseInt(value)]);
       }
       this.options[0][name] = this.optionsData[name]
-    },
-    log(evt, key, idx) {
-      window.console.log(this.optionsData[key][idx].whitelist_ids);
-    },
-    isSelectedWhitelist(evt, key, idx) {
-      if (this.optionsData[key][idx].whitelist_ids.findIndex(item =>  item.id === evt.draggedContext.element.id) !== -1) {
-        return false
-      }
-    },
-    removeSelectedAt(key, index, selectedIndex) {
-      this.optionsData[key][index].whitelist_ids.splice(selectedIndex, 1);
-    },
-    addFieldSet(key) {
-      if (!this.optionsData[key]) {
-        this.optionsData[key] = []
-      }
-      this.optionsData[key].push({
-        media_ref: {
-          media_id: "",
-          url: ""
-        },
-        whitelist_ids: []
-      });
-      this.optionsData = {
-        ...this.optionsData
-      }
-
-      this.options[0][key] = this.optionsData[key]
-    },
-    removeMedia(idx, key, mediaId) {
-      this.optionsData[key][idx].media_ref = {}
-      this.options[0][this.mediaListKey].splice(this.options[0][this.mediaListKey].findIndex(media => media.media_id === mediaId), 1)
-    },
-    removeFieldSet(idx, key, mediaId) {
-      this.optionsData[key] = this.optionsData[key].filter((img, i) => idx !== i);
-      this.optionsData = {
-        ...this.optionsData
-      }
-      this.options[0][key] = this.optionsData[key]
-      const mediaIndex = this.options[0][this.mediaListKey].findIndex(media => media.media_id === mediaId)
-      if (mediaId && mediaIndex !== -1) {
-        this.options[0][this.mediaListKey].splice(mediaIndex, 1)
-      }
-    },
+    }
   },
 };
 </script>
@@ -811,64 +628,5 @@ export default {
 
 .multiple-options-selected {
   background: #C2C2C2;
-}
-
-.text-area-field {
-  min-height: 48px;
-}
-
-.wl-col {
-  padding: 0 20px;
-}
-
-.wl-list-group {
-  display: flex;
-  flex-direction: column;
-  padding-left: 0;
-  margin-bottom: 0;
-  height: 200px;
-  overflow: auto;
-  width: 295px;
-}
-
-.wl-list-group-item {
-  position: relative;
-  display: block;
-  padding: 0.75rem 1.25rem;
-  margin-bottom: -1px;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  cursor: move;
-}
-
-.wl-remove {
-  position: absolute;
-  top: 7px;
-  right: 10px;
-  font-size: 20px;
-  font-weight: 900;
-  cursor: pointer;
-  text-shadow: 0 0px 1px black;
-}
-
-.wl-flip-list-move {
-  transition: transform 0.5s;
-}
-
-.wl-list-group-item.v-enter-active, .wl-list-group-item.v-leave-active {
-  transition: none;
-}
-
-.wl-list-group-item.v-enter-to, .wl-list-group-item.v-leave-to {
-  transition: none;
-}
-
-.no-move {
-  transition: transform 0s;
-}
-
-.ghost {
-  opacity: 0.5;
-  background: #c8ebfb;
 }
 </style>

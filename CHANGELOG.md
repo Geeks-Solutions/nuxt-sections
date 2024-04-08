@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When queryStrings is enabled: send a default qs with key=page_path that will have as value the sections page path (without the QS) for the render configurable, dynamic sections and when saving the page
 
+- Configurable section type to support new field types that can be defined and imported from the host project [Library adjustment for configurable sections and query strings #41](https://github.com/Geeks-Solutions/nuxt-sections/issues/41)
+
 ## [1.0.8] - 2024-02-05
 
 ### Added
