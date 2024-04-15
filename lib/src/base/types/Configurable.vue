@@ -23,6 +23,7 @@
     </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
+      <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
       <div class="error-message">
         {{ errorMessage }}
       </div>
@@ -37,7 +38,7 @@
               :class="getType(field.type) !== 'file' ? '' : ''"
             >
               <div v-if="registeredType(field.type, field.key)" class="element d-inline-block">
-                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" />
+                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" />
               </div>
               <div v-else-if="!getType(field.type)" class="element w-full unsupportedFieldType">
                 {{ $t('unsupportedFieldType', { name: `"${field.type}_${field.key}"`, type: `"${field.type}"`}) }}
@@ -142,11 +143,13 @@ import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 import UploadMedia from "../../components/Medias/UploadMedia.vue";
 import MediaComponent from "../../components/Medias/MediaComponent.vue";
+import TranslationComponent from "../../components/Translations/TranslationComponent";
 
 export default {
   components: {
     UploadMedia,
     MediaComponent,
+    TranslationComponent,
     loadingCircle,
     CloseIcon
   },
@@ -171,7 +174,17 @@ export default {
       type: String,
       default: ''
     },
-    sectionsConfigurableType: {}
+    sectionsConfigurableType: {},
+    locales: {
+      type: Array,
+      default() {
+        return ['en', 'fr']
+      }
+    },
+    translationComponentSupport: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {
@@ -185,7 +198,8 @@ export default {
       previewMedia: "",
       isInProgress: false,
       mediaError: '',
-      customFormData: null
+      customFormData: null,
+      formLang: this.locales[0]
     };
   },
   watch: {
@@ -444,7 +458,7 @@ export default {
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields.find(field => field.key === key);
-        let typeComp = this.registeredType(fields.type, fields.key)
+        let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
         if (!this.options[0][key]) {
           errorMessage =
             this.$t('fillRequiredFields');
@@ -462,7 +476,7 @@ export default {
       } else {
         Object.keys(this.options[0]).map((key, i) => {
           const fields = this.props.fields.find(field => field.key === key);
-          let typeComp = this.registeredType(fields.type, fields.key)
+          let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
           try {
             typeComp.methods.optionsValidated(this)
           } catch {}

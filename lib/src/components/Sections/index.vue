@@ -256,6 +256,7 @@
                   :headers="headers"
                   :sections-user-id="sectionsUserId"
                   :sections-configurable-type="sectionsConfigurableTypeReference"
+                  :translation-component-support="translationComponentSupport"
                   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
                 />
@@ -1202,7 +1203,7 @@ export default {
           // The below condition is set to replace old image fields in settings that were saved as objects,
           // which was causing the section using this field to be discarded and no more saved to the page
           // after the media content linking update on sections server that requires image field to be an array
-          if (section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
+          if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
             section.render_data[0].settings.image = []
           }
           section.settings = section.render_data[0].settings;
@@ -2060,7 +2061,7 @@ export default {
                   type.fields.forEach(field => {
                     section.options.forEach(option => {
                       if (Object.keys(option).includes(field.name)) {
-                        if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object')) {
+                        if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
                           if (Array.isArray(option[field.name])) {
                             if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
                               integrityCheck = false
