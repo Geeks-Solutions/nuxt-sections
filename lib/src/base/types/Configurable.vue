@@ -456,16 +456,18 @@ export default {
     addConfigurable() {
       this.errorMessage = "";
       let errorMessage = "";
+      let errros = []
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields.find(field => field.key === key);
         let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
         if (!this.options[0][key]) {
           errorMessage =
-            this.$t('fillRequiredFields');
+            this.$t('fillRequiredFields') + ` (${key})`;
         } else if (typeComp && typeComp.methods) {
           try {
-            if(typeComp.methods.validateOptions(this.options, fields, key, this) === true) {
-              errorMessage = this.$t('fillRequiredFields');
+            let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
+            if(validatedOptions.errorMessage === true) {
+              errorMessage = this.$t('fillRequiredFields') + ` (${key} ${validatedOptions.errors})`;
             }
           } catch {}
         }
@@ -580,8 +582,9 @@ export default {
       return importComp(path);
     },
     changeFieldLabel(field) {
-      if(this.importHooks('updateFieldLabel', field)) {
-        return this.importHooks('updateFieldLabel', field)
+      let importedHook = this.importHooks('updateFieldLabel', field)
+      if(importedHook) {
+        return importedHook
       } else return field.name.replace("_", " ")+'*'
     }
   }
