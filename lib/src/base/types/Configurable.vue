@@ -48,7 +48,7 @@
                   v-if="field.name && field.type !== 'hidden'"
                   class="text-capitalize text-left"
                 >
-                  {{ field.name.replace("_", " ")+'*' }}
+                  {{ changeFieldLabel(field) }}
                 </div>
                 <div v-if="field.type === 'wysiwyg'">
                   <div class="input">
@@ -578,6 +578,11 @@ export default {
     registeredType(type, key) {
       let path = `/configurable_components/${type}_${key}`
       return importComp(path);
+    },
+    changeFieldLabel(field) {
+      if(this.importHooks('updateFieldLabel', field)) {
+        return this.importHooks('updateFieldLabel', field)
+      } else return field.name.replace("_", " ")+'*'
     }
   }
 };
