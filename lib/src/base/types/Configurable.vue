@@ -456,7 +456,6 @@ export default {
     addConfigurable() {
       this.errorMessage = "";
       let errorMessage = "";
-      let errros = []
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields.find(field => field.key === key);
         let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
