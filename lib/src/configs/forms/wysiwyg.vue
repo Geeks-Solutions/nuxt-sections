@@ -49,6 +49,8 @@ export default {
           this.settings[0]['en'] = val
         } else if (!Array.isArray(val)) {
           this.settings = [val]
+        } else if(Array.isArray(val) && val.length === 0) {
+          this.settings = [{}]
         }
       }
     }

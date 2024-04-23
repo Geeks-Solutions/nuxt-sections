@@ -32,7 +32,7 @@ export default {
   computed: {
     html() {
       if (this.section.settings) {
-        if(Array.isArray(this.section.settings) && this.section.settings[0][this.lang] !== undefined) {
+        if(Array.isArray(this.section.settings) && this.section.settings.length > 0 && this.section.settings[0][this.lang] !== undefined) {
           return this.section.settings[0][this.lang];
         } else if(this.section.settings[this.lang]) {
           return this.section.settings[this.lang];

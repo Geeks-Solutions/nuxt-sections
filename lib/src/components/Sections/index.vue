@@ -2166,9 +2166,6 @@ export default {
                 );
                 this.layoutMode = false;
               }
-              if (this.pagePath !== decodeURIComponent(parsePath(encodeURIComponent(this.pageName)))) {
-                this.$nuxt.context.redirect(this.pagePath)
-              }
               this.$nuxt.$emit('sectionsLoaded', 'pageSaved');
             })
             .catch((error) => {
