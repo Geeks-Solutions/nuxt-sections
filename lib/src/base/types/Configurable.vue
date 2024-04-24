@@ -38,7 +38,7 @@
               :class="getType(field.type) !== 'file' ? '' : ''"
             >
               <div v-if="registeredType(field.type, field.key)" class="element d-inline-block">
-                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" />
+                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" :option-values="optionValues" />
               </div>
               <div v-else-if="!getType(field.type)" class="element w-full unsupportedFieldType">
                 {{ $t('unsupportedFieldType', { name: `"${field.type}_${field.key}"`, type: `"${field.type}"`}) }}
@@ -138,7 +138,7 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload, importJs} from "../../utils";
+import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload, importJs, parseQS} from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 import UploadMedia from "../../components/Medias/UploadMedia.vue";
@@ -459,7 +459,7 @@ export default {
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields.find(field => field.key === key);
         let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
-        if (!this.options[0][key]) {
+        if (!this.options[0][key] && typeof this.options[0][key] !== "boolean") {
           errorMessage =
             this.$t('fillRequiredFields') + ` (${key})`;
         } else if (typeComp && typeComp.methods) {
@@ -502,6 +502,11 @@ export default {
           options: this.options
         }
       };
+
+      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+      }
+
       const URL =
         this.$sections.serverUrl +
         `/project/${this.$sections.projectId}/section/render`;
@@ -528,12 +533,12 @@ export default {
             render_data: res.data.render_data
           })
         })
-        .catch(() => {
+        .catch((e) => {
           this.$emit("load", false);
           this.$emit('errorAddingSection', {
             closeModal: false,
             title: "Error adding "+ this.props.name,
-            message: this.$t('saveConfigSectionError')
+            message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
           })
         });
     },
