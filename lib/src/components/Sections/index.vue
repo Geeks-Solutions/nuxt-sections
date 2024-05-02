@@ -180,7 +180,7 @@
                   <div class="section-creation-icon">
                     <span class="toggleLabel">{{ $t('create') }}</span>
                     <label id="toggle-label" class="switch">
-                      <input type="checkbox" @change="addNewStaticType(type.name)">
+                      <input v-model="sectionTypeCreated" type="checkbox" @change="addNewStaticType(type.name)">
                       <span class="slider round"></span>
                     </label>
                   </div>
@@ -1028,7 +1028,8 @@ export default {
       sectionsMainErrors: [],
       sectionsLayoutErrors: [],
       availableSectionsForms: [],
-      sectionsConfigurableTypeReference: null
+      sectionsConfigurableTypeReference: null,
+      sectionTypeCreated: false
     }
   },
   computed: {
@@ -1479,6 +1480,7 @@ export default {
         this.$axios.post(URL, {
           "fields": fieldsDeclaration
         }, config).then(() => {
+          this.sectionTypeCreated = true;
           this.types = [];
           this.getSectionTypes();
           this.staticSuccess = true;
@@ -1491,9 +1493,13 @@ export default {
           ]
         })
           .catch((error) => {
+            this.sectionTypeCreated = false;
+            this.loading = false;
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
           });
       } else {
+        this.sectionTypeCreated = false;
+        this.loading = false;
         this.showToast("Error", "error", this.$t('enterSectionTypeName'));
       }
     },
