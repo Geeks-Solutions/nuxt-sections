@@ -23,7 +23,6 @@
     </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
-      <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
       <div class="error-message">
         {{ errorMessage }}
       </div>
@@ -32,6 +31,7 @@
           <div
             class=" flex flex-col justify-between content-wrapper"
           >
+            <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
             <div
               :key="idx"
               v-for="(field, idx) in props.fields"
