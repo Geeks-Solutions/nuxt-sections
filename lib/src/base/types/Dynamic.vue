@@ -58,7 +58,7 @@ export default {
       };
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-        variables["query_string"] = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
       }
 
       const URL =
@@ -101,8 +101,7 @@ export default {
 
           this.$emit("load", false);
         });
-    },
-    parseQS
+    }
   },
 };
 </script>

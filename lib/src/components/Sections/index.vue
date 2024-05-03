@@ -180,7 +180,7 @@
                   <div class="section-creation-icon">
                     <span class="toggleLabel">{{ $t('create') }}</span>
                     <label id="toggle-label" class="switch">
-                      <input type="checkbox" @change="addNewStaticType(type.name)">
+                      <input v-model="sectionTypeCreated" type="checkbox" @change="addNewStaticType(type.name)">
                       <span class="slider round"></span>
                     </label>
                   </div>
@@ -248,12 +248,16 @@
                 />
                 <Configurable
                   v-if="currentSection.type === 'configurable'"
+                  ref="sections-configurable-type"
                   @addSectionType="addSectionType"
                   @errorAddingSection="errorAddingSection"
                   :props="currentSection"
                   :savedView="savedView"
                   :headers="headers"
                   :sections-user-id="sectionsUserId"
+                  :sections-configurable-type="sectionsConfigurableTypeReference"
+                  :translation-component-support="translationComponentSupport"
+                  @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
                 />
                 <Local
@@ -1023,7 +1027,9 @@ export default {
       highlightRegions: false,
       sectionsMainErrors: [],
       sectionsLayoutErrors: [],
-      availableSectionsForms: []
+      availableSectionsForms: [],
+      sectionsConfigurableTypeReference: null,
+      sectionTypeCreated: false
     }
   },
   computed: {
@@ -1103,12 +1109,12 @@ export default {
       headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
+    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
     let payload = {}
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-      let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+      let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
       payload = {
         query_string
       }
@@ -1198,7 +1204,7 @@ export default {
           // The below condition is set to replace old image fields in settings that were saved as objects,
           // which was causing the section using this field to be discarded and no more saved to the page
           // after the media content linking update on sections server that requires image field to be an array
-          if (!Array.isArray(section.render_data[0].settings.image)) {
+          if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
             section.render_data[0].settings.image = []
           }
           section.settings = section.render_data[0].settings;
@@ -1228,8 +1234,6 @@ export default {
       this.$emit("load", true);
       this.sectionsPageLastUpdated = res.data.last_updated;
     },
-    parsePath,
-    parseQS,
     updatePageMetaData() {
       this.loading = true
       this.metadataErrors.path[0] = ''
@@ -1300,7 +1304,7 @@ export default {
         sections
       };
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
       this.$axios
         .put(URL, variables, config)
@@ -1476,6 +1480,7 @@ export default {
         this.$axios.post(URL, {
           "fields": fieldsDeclaration
         }, config).then(() => {
+          this.sectionTypeCreated = true;
           this.types = [];
           this.getSectionTypes();
           this.staticSuccess = true;
@@ -1488,9 +1493,13 @@ export default {
           ]
         })
           .catch((error) => {
+            this.sectionTypeCreated = false;
+            this.loading = false;
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
           });
       } else {
+        this.sectionTypeCreated = false;
+        this.loading = false;
         this.showToast("Error", "error", this.$t('enterSectionTypeName'));
       }
     },
@@ -1649,7 +1658,7 @@ export default {
       const config = {
         headers: sectionHeader(header),
       };
-      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
+      const URL =  `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
       this.$axios
         .put(
           URL,
@@ -1853,12 +1862,12 @@ export default {
         };
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.pageName))}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
         let payload = {}
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          let query_string = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+          let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
           payload = {
             query_string
           }
@@ -2058,7 +2067,7 @@ export default {
                   type.fields.forEach(field => {
                     section.options.forEach(option => {
                       if (Object.keys(option).includes(field.name)) {
-                        if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object')) {
+                        if(option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
                           if (Array.isArray(option[field.name])) {
                             if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
                               integrityCheck = false
@@ -2121,11 +2130,11 @@ export default {
         };
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          variables["query_string"] = this.parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'))
+          variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
         }
 
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.parsePath(encodeURIComponent(this.sectionsPageName))}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.sectionsPageName))}`;
 
         if (formatValdiation === true) {
           this.$axios
@@ -2162,9 +2171,6 @@ export default {
                   this.$t('successPageChanges')
                 );
                 this.layoutMode = false;
-              }
-              if (this.pagePath !== decodeURIComponent(this.parsePath(encodeURIComponent(this.pageName)))) {
-                this.$nuxt.context.redirect(this.pagePath)
               }
               this.$nuxt.$emit('sectionsLoaded', 'pageSaved');
             })
