@@ -540,6 +540,7 @@
                   :section="view"
                   :lang="lang"
                   :locales="locales"
+                  @refresh-section="(data) => refreshSectionView(view, data)"
                 />
               </div>
             </div>
@@ -614,6 +615,7 @@
                         :section="view"
                         :lang="lang"
                         :locales="locales"
+                        @refresh-section="(data) => refreshSectionView(view, data)"
                       />
                     </div>
                   </div>
@@ -2012,6 +2014,91 @@ export default {
           "error",
           this.$t('previewSectionError')
         );
+      }
+    },
+    async refreshSectionView(sectionView, data) {
+      let sectionData = {}
+      if (data.viewName) {
+        sectionData = this.currentViews.find(view => view.name === data.viewName)
+      } else {
+        sectionData = sectionView
+      }
+
+      const config = {
+        headers: sectionHeader({}),
+      };
+
+      const variables = {
+        section: {
+          name: sectionData.name,
+          weight: sectionData.weight
+        }
+      };
+
+      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (data.qs) {
+          variables["query_string"] = { ...variables["query_string"], ...data.qs}
+        }
+      }
+
+      const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/render`;
+
+      const inBrowser = typeof window !== 'undefined';
+
+      if (inBrowser) {
+        try {
+          const res = await this.$axios.post(URL, variables, config)
+          if (res.data && res.data.error) {
+            this.$nuxt.$emit('sectionViewRefreshed', res.data)
+            return res.data.error
+          } else {
+            const index = this.currentViews.findIndex(view => view.name === sectionData.name);
+
+            if (index !== -1) {
+              const updatedViews = [...this.currentViews];
+              updatedViews[index] = {
+                ...updatedViews[index],
+                render_data: res.data.render_data,
+              };
+
+              this.currentViews = updatedViews;
+            }
+            this.$nuxt.$emit('sectionViewRefreshed', res.data)
+            return res.data
+          }
+        } catch (e) {
+          this.$nuxt.$emit('sectionViewRefreshed', res.data)
+          return e.response.data.error
+        }
+      } else {
+        const optionsRes = await this.$axios.options(URL, config)
+        if (optionsRes.status === 200) {
+          try {
+            const res = await this.$axios.post(URL, variables, config)
+            if (res.data && res.data.error) {
+              this.$nuxt.$emit('sectionViewRefreshed', res.data)
+              return res.data.error
+            } else {
+              const index = this.currentViews.findIndex(view => view.name === sectionData.name);
+
+              if (index !== -1) {
+                const updatedViews = [...this.currentViews];
+                updatedViews[index] = {
+                  ...updatedViews[index],
+                  render_data: res.data.render_data,
+                };
+
+                this.currentViews = updatedViews;
+              }
+              this.$nuxt.$emit('sectionViewRefreshed', res.data)
+              return res.data
+            }
+          } catch (e) {
+            this.$nuxt.$emit('sectionViewRefreshed', res.data)
+            return e.response.data.error
+          }
+        }
       }
     },
     mutateVariation(variationName) {
