@@ -199,7 +199,7 @@ export default {
       isInProgress: false,
       mediaError: '',
       customFormData: null,
-      formLang: this.locales[0]
+      formLang: this.$i18n.locale.toString()
     };
   },
   watch: {

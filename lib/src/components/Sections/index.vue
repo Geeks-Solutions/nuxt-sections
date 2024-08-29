@@ -692,7 +692,7 @@
             <div class="section-modal-wrapper">
               <div class="text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("Metadata") }}</div>
-                <div class="closeIcon" @click="metadataModal = false; metadataFormLang = locales[0]">
+                <div class="closeIcon" @click="metadataModal = false; metadataFormLang = $i18n.locale.toString()">
                   <CloseIcon />
                 </div>
               </div>
@@ -1079,7 +1079,7 @@ export default {
     this.getAvailableLayouts()
     this.getAvailableSections()
     this.sectionsMainErrors = []
-    this.metadataFormLang = this.locales[0]
+    this.metadataFormLang = this.$i18n.locale.toString()
     this.locales.forEach(lang => {
       this.pageMetadata[lang] = {
         title: "",
@@ -1090,7 +1090,7 @@ export default {
       this.translationComponentSupport = true
       this.locales = []
       this.locales = this.$sections.projectLocales.split(',')
-      this.metadataFormLang = this.locales[0]
+      this.metadataFormLang = this.$i18n.locale.toString()
       this.locales.forEach(lang => {
         this.pageMetadata[lang] = {
           title: "",
@@ -1316,7 +1316,7 @@ export default {
           }
           this.sectionsPageLastUpdated = res.data.last_updated
           this.metadataModal = false
-          this.metadataFormLang = this.locales[0]
+          this.metadataFormLang = this.$i18n.locale.toString()
           this.showToast(
             "Success",
             "success",

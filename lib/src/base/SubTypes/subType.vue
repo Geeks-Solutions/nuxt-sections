@@ -51,7 +51,7 @@ export default {
   data() {
     return {
       withTabs: false,
-      formLang: this.locales[0],
+      formLang: this.$i18n.locale.toString(),
       selectedMedia: null
     };
   },
