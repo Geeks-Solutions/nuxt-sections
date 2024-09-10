@@ -2201,7 +2201,7 @@ export default {
         this.isModalOpen = false;
         this.savedView = {};
         this.loading = false;
-        console.log(this.currentViews)
+
         this.computeLayoutData();
         if(showToast !== false) {
           this.showToast(
