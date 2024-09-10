@@ -2,12 +2,20 @@
   <div class="container containerWidth text-center">
 
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
-      <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
-        <div
-          class="font-light mt-2 mb-2"
-          :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
-        >
-          <div class="text-capitalize ">{{ formatName(props.name) }}</div>
+      <div>
+        <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
+          <div
+              class="font-light mt-2 mb-2"
+              :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
+          >
+            <div class="text-capitalize ">{{ formatName(props.name) }}</div>
+          </div>
+        </div>
+        <div v-if="instance" class="autoInsertRow">
+          <div>
+            {{ $t('autoInsertInstance') }}
+          </div>
+          <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
         </div>
       </div>
       <!--  The below div element adds an extra tab to the configurable section. -->
@@ -184,6 +192,10 @@ export default {
     translationComponentSupport: {
       type: Boolean,
       default: false
+    },
+    instance: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -199,7 +211,8 @@ export default {
       isInProgress: false,
       mediaError: '',
       customFormData: null,
-      formLang: this.$i18n.locale.toString()
+      formLang: this.$i18n.locale.toString(),
+      autoInsert: false
     };
   },
   watch: {
@@ -530,7 +543,8 @@ export default {
             settings: this.options[0],
             id: this.id,
             weight: this.weight,
-            render_data: res.data.render_data
+            render_data: res.data.render_data,
+            auto_insertion: this.autoInsert
           })
         })
         .catch((e) => {
@@ -704,5 +718,17 @@ export default {
 
 .wl-col {
   padding: 0 20px;
+}
+
+.autoInsertRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+.autoInsertInput {
+  width: 15px;
+  height: 15px;
 }
 </style>

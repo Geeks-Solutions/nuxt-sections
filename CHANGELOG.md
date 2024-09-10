@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix default language selection when locales order is changed [Query strings used for a section dynamic or configurable needs to support the root one / #48](https://github.com/Geeks-Solutions/nuxt-sections/issues/48)
 
+- Global Sections management [Global Sections management #39](https://github.com/Geeks-Solutions/nuxt-sections/issues/39)
+
 ### Added
 
 - Add a new event to the view component that allow the view section to be refreshed by calling the render API

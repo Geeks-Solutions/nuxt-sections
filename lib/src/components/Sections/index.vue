@@ -150,8 +150,14 @@
         <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
             <div class="flexSections flex-row relativeSections justify-center">
-              <div class="text-center h4 my-3 pb-6" v-if="!currentSection">
-                {{ $t("Add") }}
+              <div class="flexSections flex-row my-3 pb-6 justify-center" v-if="!currentSection">
+                <div class="text-center h2 cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
+                  {{ $t("Add") }}
+                </div>
+                <div class="text-center h2 px-4">/</div>
+                <div class="text-center h2 cursor-pointer" :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'globalTypes'">
+                  {{ $t("AddGlobal") }}
+                </div>
               </div>
               <div class="closeIcon" @click="isModalOpen = false">
                 <CloseIcon />
@@ -165,9 +171,9 @@
               <BackIcon />
             </div>
 
-            <div v-if="!currentSection" class="m-1 p-1 type-items content-wrapper">
+            <div v-if="!currentSection && typesTab === 'types'" class="m-1 p-1 type-items content-wrapper">
               <div
-                class="section-item section-item-box bg-blue"
+                class="section-item section-item-box"
                 v-for="(type, index) in types"
                 :key="type.name"
               >
@@ -180,7 +186,7 @@
                   <div class="section-creation-icon">
                     <span class="toggleLabel">{{ $t('create') }}</span>
                     <label id="toggle-label" class="switch">
-                      <input v-model="sectionTypeCreated" type="checkbox" @change="addNewStaticType(type.name)">
+                      <input :checked="type.notCreated !== true" type="checkbox" @change="addNewStaticType(type.name)">
                       <span class="slider round"></span>
                     </label>
                   </div>
@@ -190,7 +196,7 @@
                     <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
                   </div>
                 </div>
-                <div class="section-item" @click="openCurrentSection(type)">
+                <div class="section-item" @click="type.notCreated !== true ? openCurrentSection(type) : null">
                   <SectionItem
                     v-if="type.name"
                     class="bg-light-blue"
@@ -224,6 +230,28 @@
                 </div>
               </div>
             </div>
+            <div v-else-if="!currentSection && typesTab === 'globalTypes'" class="m-1 p-1 type-items content-wrapper">
+              <div
+                class="section-item section-item-box"
+                v-for="(type, index) in globalTypes"
+                :key="type.name"
+              >
+                <div v-if="type.notCreated !== true" class="section-delete">
+                  <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
+                    <TrashIcon class="trash-icon-style" />
+                  </div>
+                </div>
+                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type}, null, true)">
+                  <SectionItem
+                    v-if="type.name"
+                    class="bg-light-blue"
+                    :title="formatName(type.name)"
+                    :icon="type.name"
+                    :active="type.notCreated !== true"
+                  />
+                </div>
+              </div>
+            </div>
             <div v-else class="flexSections">
               <div class="component-view">
                 <!-- we can use this short hand too -->
@@ -231,16 +259,18 @@
                 <Static
                   v-if="currentSection.type === 'static'"
                   :props="currentSection"
-                  @addSectionType="addSectionType"
+                  @addSectionType="(section) => currentSection.instance === true ? currentSection.linked_to !== '' ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                   :savedView="savedView"
                   :locales="locales"
                   :translation-component-support="translationComponentSupport"
                   :sections-user-id="sectionsUserId"
+                  :instance="currentSection.instance === true || currentSection.linked_to !== ''"
+                  @load="(value) => loading = value"
                 />
                 <Dynamic
                   v-if="currentSection.type === 'dynamic'"
                   :props="currentSection"
-                  @addSectionType="addSectionType"
+                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
                   @errorAddingSection="errorAddingSection"
                   :savedView="savedView"
                   :headers="headers"
@@ -249,7 +279,7 @@
                 <Configurable
                   v-if="currentSection.type === 'configurable'"
                   ref="sections-configurable-type"
-                  @addSectionType="addSectionType"
+                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
                   @errorAddingSection="errorAddingSection"
                   :props="currentSection"
                   :savedView="savedView"
@@ -257,13 +287,15 @@
                   :sections-user-id="sectionsUserId"
                   :sections-configurable-type="sectionsConfigurableTypeReference"
                   :translation-component-support="translationComponentSupport"
+                  :instance="currentSection.instance === true || currentSection.linked_to !== ''"
                   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
                 />
                 <Local
                   v-if="currentSection.type === 'local'"
                   :props="currentSection"
-                  @addSectionType="addSectionType"
+                  :instance="currentSection.instance === true || currentSection.linked_to !== ''"
+                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
                   :savedView="savedView"
                 />
               </div>
@@ -279,12 +311,12 @@
         <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
             <div class="text-center h4 my-3  pb-3">
-              {{ $t("delete-section-type") + selectedSectionTypeName}}
+              {{ typesTab === 'types' ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName }}
             </div>
             <div class="flexSections flex-row">
               <button
                 class="hp-button"
-                @click="deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
+                @click="typesTab === 'types' ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
               >
                 <div class="btn-text">
                   {{ $t("Confirm") }}
@@ -516,9 +548,8 @@
                 <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                   <AlertIcon />
                 </div>
-                <LinkIcon v-if="view.linkedTo" />
                 <div @click="edit(view)" v-if="editable(view.type)">
-                  <EditIcon class="edit-icon" />
+                  <EditIcon :color="view.linked_to !== '' ? '#FF0000' : undefined" class="edit-icon" />
                 </div>
                 <DragIcon class="drag-icon handle" />
                 <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
@@ -593,9 +624,8 @@
                       <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                         <AlertIcon />
                       </div>
-                      <LinkIcon v-if="view.linkedTo" />
                       <div @click="edit(view)" v-if="editable(view.type)">
-                        <EditIcon class="edit-icon" />
+                        <EditIcon :color="view.linked_to !== '' ? '#FF0000' : undefined" class="edit-icon" />
                       </div>
                       <DragIcon class="drag-icon handle" />
                       <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
@@ -761,13 +791,13 @@
                   <CelebrateIcon />
                 </div>
                 <div class="title">
-                  {{ $t("success-section-title") }}
+                  {{ typesTab === 'types' ? $t("success-section-title") : $t("success-global-section-title") }}
                 </div>
                 <div class="closeIcon" @click="staticSuccess = false">
                   <CloseIcon />
                 </div>
               </div>
-              <div class="flexSections w-full justify-center">
+              <div v-if="typesTab === 'types'" class="flexSections w-full justify-center">
                 <div class="body">
                   <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
                   <div class="section-list">
@@ -959,6 +989,8 @@ export default {
       dismissCountDown: 0,
       editMode: false,
       selectedVariation: this.pageName,
+      typesTab: 'types',
+      globalTypes: [],
       types: [],
       sectionTypes: [],
       originalVariations: {},
@@ -1030,8 +1062,7 @@ export default {
       sectionsMainErrors: [],
       sectionsLayoutErrors: [],
       availableSectionsForms: [],
-      sectionsConfigurableTypeReference: null,
-      sectionTypeCreated: false
+      sectionsConfigurableTypeReference: null
     }
   },
   computed: {
@@ -1250,7 +1281,7 @@ export default {
             weight: view.weight,
             name: view.name,
             type: view.type,
-            linkedTo: view.linkedTo,
+            linkedTo: view.linkedTo
           };
           if (view.settings && view.type === "configurable") {
             refactorView.name = view.nameID;
@@ -1265,7 +1296,14 @@ export default {
           if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
-          sections.push({ ...refactorView });
+          if (view.linkedTo) {
+            sections.push({ ...{
+                weight: view.weight,
+                linked_to: view.linkedTo
+              } });
+          } else {
+            sections.push({ ...refactorView });
+          }
         }
       });
 
@@ -1453,6 +1491,102 @@ export default {
       }
       return true;
     },
+    updateGlobalType(section) {
+      if (section && section.name) {
+        this.sectionTypeName = section.name;
+      }
+      if (this.sectionTypeName !== "") {
+
+        if (this.selectedLayout !== 'standard') {
+          section.region = {};
+          section.region[this.selectedLayout] = {
+            slot: this.selectedSlotRegion,
+            weight: Object.keys(
+                this.displayVariations[this.selectedVariation].views
+            ).length
+          };
+        } else {
+          section.region = {}
+        }
+
+        const token = this.$cookies.get("sections-auth-token");
+        const config = {
+          headers: sectionHeader({ token }),
+        };
+        const URL =
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.sectionTypeName}`;
+        this.loading = true;
+
+        this.$axios.put(URL, {
+          "section": {
+            "name": this.sectionTypeName,
+            "options": section.settings
+          },
+          "regions": section.region,
+          "auto_insertion": section.auto_insertion
+        }, config).then(() => {
+          this.sectionTypeName = "";
+          this.currentSection = null
+          this.isModalOpen = false
+          this.loading = false
+          this.showToast(
+              "Success",
+              "success",
+              this.$t('globalTypeUpdated')
+          );
+        })
+          .catch((error) => {
+            this.loading = false;
+            this.showToast("Error", "error", this.$t('updateSectionTypeError') + error.response.data.message, error.response.data.options);
+          });
+      } else {
+        this.loading = false;
+        this.showToast("Error", "error", this.$t('enterSectionTypeName'));
+      }
+    },
+    addNewGlobalType(section) {
+      if (section && section.name) {
+        this.sectionTypeName = section.name;
+      }
+      if (this.sectionTypeName !== "") {
+
+        const token = this.$cookies.get("sections-auth-token");
+        const config = {
+          headers: sectionHeader({ token }),
+        };
+        const URL =
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.sectionTypeName}`;
+        this.loading = true;
+
+        this.$axios.post(URL, {
+          "section": {
+            "name": this.sectionTypeName,
+            "options": section.settings
+          },
+          "regions": {},
+          "auto_insertion": section.auto_insertion
+        }, config).then(() => {
+          this.globalTypes = [];
+          this.getGlobalSectionTypes();
+          this.staticSuccess = true;
+          this.sectionTypeName = "";
+          this.fieldsInputs = [
+            {
+              type: "image",
+              name: ""
+            }
+          ]
+          this.currentSection = null
+        })
+          .catch((error) => {
+            this.loading = false;
+            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
+          });
+      } else {
+        this.loading = false;
+        this.showToast("Error", "error", this.$t('enterSectionTypeName'));
+      }
+    },
     addNewStaticType(name) {
       if (name) {
         this.sectionTypeName = name;
@@ -1482,8 +1616,8 @@ export default {
         this.$axios.post(URL, {
           "fields": fieldsDeclaration
         }, config).then(() => {
-          this.sectionTypeCreated = true;
           this.types = [];
+          this.globalTypes = [];
           this.getSectionTypes();
           this.staticSuccess = true;
           this.sectionTypeName = "";
@@ -1495,12 +1629,10 @@ export default {
           ]
         })
           .catch((error) => {
-            this.sectionTypeCreated = false;
             this.loading = false;
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
           });
       } else {
-        this.sectionTypeCreated = false;
         this.loading = false;
         this.showToast("Error", "error", this.$t('enterSectionTypeName'));
       }
@@ -1731,6 +1863,64 @@ export default {
         console.warn(this.$t('noFormsFolder'));
       }
     },
+    getGlobalSectionTypes() {
+      if (this.globalTypes && this.globalTypes.length) {
+        return;
+      }
+      this.loading = true;
+      const token = this.$cookies.get("sections-auth-token");
+      const config = {
+        headers: sectionHeader({
+          token,
+        }),
+      };
+      const url =
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances`;
+      this.$axios
+          .get(url, config)
+          .then((res) => {
+            res.data.data.map((d) => {
+              this.globalTypes.push({
+                regions: d.regions,
+                auto_insertion: d.auto_insertion,
+                section: d.section,
+                pages: d.pages,
+                name: d.name,
+                id: d.id,
+                type: this.types.find(t => t.name === d.name) ? this.types.find(t => t.name === d.name).type : undefined
+              });
+            });
+            this.availableSectionsForms.forEach(name => {
+              const found = this.globalTypes.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
+              if (!found && this.types.some(t => t.name === name && t.notCreated === true) === false) {
+                this.globalTypes.push({
+                  name,
+                  notCreated: true
+                })
+              }
+            });
+            // this.types.filter(t => t.type === 'configurable' || t.type === 'dynamic').forEach(type => {
+            //   this.globalTypes.push({
+            //     name: type.name,
+            //     notCreated: true
+            //   })
+            // })
+            this.loading = false
+            if (this.allSections.length === 0 && this.globalTypes && this.globalTypes.length > 0) {
+              this.globalTypes.forEach(gt => {
+                if (gt.auto_insertion === true) {
+                  this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type}, false, true)
+                }
+              })
+            }
+            this.$emit("load", false);
+          })
+          .catch((error) => {
+            this.loading = false
+            this.$emit("load", false);
+            this.showToast("Error", "error", error.toString());
+          });
+    },
     getSectionTypes() {
       if (this.types && this.types.length) {
         return;
@@ -1760,7 +1950,8 @@ export default {
               application_id: d.application_id,
               app_status: d.app_status,
               requirements: d.requirements,
-              query_string_keys: d.query_string_keys
+              query_string_keys: d.query_string_keys,
+              notCreated: false
             });
           });
           this.availableSectionsForms.forEach(name => {
@@ -1775,6 +1966,7 @@ export default {
           this.types = [...this.types, ...this.addSystemTypes()];
           this.loading = false
           this.$emit("load", false);
+          this.getGlobalSectionTypes();
         })
         .catch((error) => {
           this.loading = false
@@ -1943,7 +2135,7 @@ export default {
         this.synched = false;
       }, 1000);
     },
-    addSectionType(section, showToast) {
+    addSectionType(section, showToast, instance) {
       try {
         if (this.savedView.linkedTo) {
           const confirmed = window.confirm(
@@ -1969,7 +2161,16 @@ export default {
           };
         }
 
-        section.linkedTo = "";
+        if (instance === true) {
+          section.linkedTo = section.name;
+          section.linked_to = section.name;
+          section.instance = true;
+          section.settings = section.options
+        } else {
+          section.linkedTo = "";
+          section.linked_to = "";
+        }
+
         this.$set(
           this.displayVariations[this.selectedVariation].views,
           section.id,
@@ -2000,6 +2201,7 @@ export default {
         this.isModalOpen = false;
         this.savedView = {};
         this.loading = false;
+        console.log(this.currentViews)
         this.computeLayoutData();
         if(showToast !== false) {
           this.showToast(
@@ -2140,7 +2342,14 @@ export default {
           if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
-          sections.push({ ...refactorView });
+          if (view.linkedTo) {
+            sections.push({ ...{
+                weight: view.weight,
+                linked_to: view.linkedTo
+              } });
+          } else {
+            sections.push({ ...refactorView });
+          }
         }
       });
 
@@ -2306,6 +2515,9 @@ export default {
           }
         }
       });
+      if(view.linked_to !== "") {
+        view.instance = true
+      }
       this.currentSection = view;
       this.savedView = view;
       this.isModalOpen = true;
@@ -2355,6 +2567,34 @@ export default {
       this.isModalOpen = !error.closeModal;
       this.showToast(error.title, "error", error.message);
     },
+    deleteGlobalSectionType(sectionTypeName, index) {
+      this.isDeleteModalOpen = false
+      this.loading = true
+      this.$emit("load", true);
+      const token = this.$cookies.get("sections-auth-token");
+      const config = {
+        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
+      };
+      const URL =
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${sectionTypeName}`;
+      this.$axios
+        .delete(URL, config)
+        .then((res) => {
+          this.showToast(
+            "Success",
+            "info",
+            res.data.message
+          );
+          this.globalTypes.splice(index, 1)
+          this.globalTypes = [];
+          this.getGlobalSectionTypes()
+        })
+        .catch((error) => {
+          this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
+          this.loading = false
+          this.$emit("load", false);
+        });
+    },
     deleteSectionType(sectionTypeName, index) {
       this.isDeleteModalOpen = false
       this.loading = true
@@ -2375,6 +2615,7 @@ export default {
           );
           this.types.splice(index, 1)
           this.types = [];
+          this.globalTypes = []
           this.getSectionTypes()
         })
         .catch((error) => {
@@ -2508,8 +2749,14 @@ export default {
       this.selectedAppName = applicationName
       this.isUnAuthModalOpen = true
     },
-    openCurrentSection(type) {
-      if(type.app_status === 'disbaled' || type.app_status === 'disabled') {
+    openCurrentSection(type, global) {
+      if (global === true) {
+        this.currentSection = {
+          ...this.types.find(t => t.name === type.name),
+          ...type,
+          instance: true
+        }
+      } else if(type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
       } else this.currentSection = type
     }
@@ -2796,6 +3043,8 @@ span.handle {
 .modalContainer .section-item-box {
   display: flex;
   flex-direction: column;
+  background: #31a9db;
+  color: white;
 }
 .modalContainer .type-items {
   display: grid;
@@ -3269,5 +3518,13 @@ span.handle {
   height: 20px;
   width: 20px;
   color: white;
+}
+
+.h2 {
+  font-size: 1.1rem;
+}
+.selectedTypesTab {
+  color: #31a9db;
+  text-decoration: underline;
 }
 </style>

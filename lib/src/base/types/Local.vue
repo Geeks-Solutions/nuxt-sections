@@ -1,6 +1,12 @@
 <template>
   <div>
     <h4>{{ $t('Adding section') }}</h4>
+    <div v-if="instance" class="autoInsertRow">
+      <div>
+        {{ $t('autoInsertInstance') }}
+      </div>
+      <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
+    </div>
   </div>
 </template>
 
@@ -15,6 +21,15 @@ export default {
       type: Object,
       default: {},
     },
+    instance: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      autoInsert: false
+    }
   },
   computed: {
     id() {
@@ -38,10 +53,23 @@ export default {
         type: "local",
         id: this.id,
         weight: this.weight,
+        auto_insertion: this.autoInsert
       });
     }, 500);
   },
 };
 </script>
 
-<style></style>
+<style>
+.autoInsertRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+.autoInsertInput {
+  width: 15px;
+  height: 15px;
+}
+</style>
