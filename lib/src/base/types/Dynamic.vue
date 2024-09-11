@@ -21,6 +21,10 @@ export default {
       type: Object,
       default: {},
     },
+    instance: {
+      type: Boolean,
+      default: false
+    }
   },
   computed: {
     id() {
@@ -37,7 +41,16 @@ export default {
     },
   },
   mounted() {
-    this.renderSection(this.props.name)
+    if (this.instance === true) {
+      this.$emit('addSectionType', {
+        name: this.props.name,
+        type: 'dynamic',
+        id: this.id,
+        weight: this.weight
+      })
+    } else {
+      this.renderSection(this.props.name)
+    }
   },
   methods: {
     renderSection(name) {

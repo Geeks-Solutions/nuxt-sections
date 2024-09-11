@@ -49,11 +49,20 @@
             v-if="selectedLayout === 'standard'"
             class="hp-button"
             @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {})
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false)
             "
           >
             <div class="btn-icon plus-icon"><PlusIcon /></div>
             <div class="btn-text">{{ $t("Add") }}</div>
+          </button>
+          <button
+            class="hp-button"
+            @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (typesTab = 'globalTypes')
+            "
+          >
+            <div class="btn-icon plus-icon"><PlusIcon /></div>
+            <div class="btn-text">{{ $t("AddGlobal") }}</div>
           </button>
           <button class="hp-button" @click="saveVariation">
             <div class="btn-icon check-icon"><CheckIcon /></div>
@@ -150,7 +159,7 @@
         <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
           <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
             <div class="flexSections flex-row relativeSections justify-center">
-              <div class="flexSections flex-row my-3 pb-6 justify-center" v-if="!currentSection">
+              <div class="flexSections flex-row my-3 pb-6 justify-center" v-if="!currentSection && isCreateInstance === false">
                 <div class="text-center h2 cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
                   {{ $t("Add") }}
                 </div>
@@ -159,7 +168,12 @@
                   {{ $t("AddGlobal") }}
                 </div>
               </div>
-              <div class="closeIcon" @click="isModalOpen = false">
+              <div class="flexSections flex-row my-3 pb-6 justify-center" v-else-if="!currentSection && isCreateInstance === true">
+                <div class="text-center h2 cursor-pointer selectSectionType">
+                  {{ $t("selectSectionType") }}
+                </div>
+              </div>
+              <div class="closeIcon" @click="isModalOpen = false; isCreateInstance = false">
                 <CloseIcon />
               </div>
             </div>
@@ -233,21 +247,26 @@
             <div v-else-if="!currentSection && typesTab === 'globalTypes'" class="m-1 p-1 type-items content-wrapper">
               <div
                 class="section-item section-item-box"
-                v-for="(type, index) in globalTypes"
-                :key="type.name"
+                v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
+                :key="`${type.name}-${index}`"
               >
                 <div v-if="type.notCreated !== true" class="section-delete">
                   <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                     <TrashIcon class="trash-icon-style" />
                   </div>
                 </div>
-                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type}, null, true)">
+                <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
+                  <div class="global-section-info-icon">
+                    <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
+                  </div>
+                </div>
+                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'dynamic' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name}, null, true)">
                   <SectionItem
                     v-if="type.name"
                     class="bg-light-blue"
                     :title="formatName(type.name)"
                     :icon="type.name"
-                    :active="type.notCreated !== true"
+                    :active="true"
                   />
                 </div>
               </div>
@@ -259,21 +278,24 @@
                 <Static
                   v-if="currentSection.type === 'static'"
                   :props="currentSection"
-                  @addSectionType="(section) => currentSection.instance === true ? currentSection.linked_to !== '' ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                   :savedView="savedView"
                   :locales="locales"
                   :translation-component-support="translationComponentSupport"
                   :sections-user-id="sectionsUserId"
-                  :instance="currentSection.instance === true || currentSection.linked_to !== ''"
+                  :instance="currentSection.instance === true"
+                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                   @load="(value) => loading = value"
+                  @promote-section="currentSection = {...currentSection, instance: true}"
                 />
                 <Dynamic
                   v-if="currentSection.type === 'dynamic'"
                   :props="currentSection"
-                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
+                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section, null, true)"
                   @errorAddingSection="errorAddingSection"
                   :savedView="savedView"
                   :headers="headers"
+                  :instance="currentSection.instance === true || (currentSection.linked_to !== '' && currentSection.linked_to !== undefined)"
                   @load="(value) => loading = value"
                 />
                 <Configurable
@@ -287,14 +309,14 @@
                   :sections-user-id="sectionsUserId"
                   :sections-configurable-type="sectionsConfigurableTypeReference"
                   :translation-component-support="translationComponentSupport"
-                  :instance="currentSection.instance === true || currentSection.linked_to !== ''"
+                  :instance="currentSection.instance === true || (currentSection.linked_to !== '' && currentSection.linked_to !== undefined)"
                   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
                 />
                 <Local
                   v-if="currentSection.type === 'local'"
                   :props="currentSection"
-                  :instance="currentSection.instance === true || currentSection.linked_to !== ''"
+                  :instance="currentSection.instance === true || (currentSection.linked_to !== '' && currentSection.linked_to !== undefined)"
                   @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
                   :savedView="savedView"
                 />
@@ -1000,6 +1022,7 @@ export default {
       loading: false,
       dragging: false,
       currentSection: null,
+      isCreateInstance: false,
       isModalOpen: false,
       isDeleteModalOpen: false,
       isDeletePageModalOpen: false,
@@ -1296,10 +1319,10 @@ export default {
           if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
-          if (view.linkedTo) {
+          if (view.linked_to) {
             sections.push({ ...{
                 weight: view.weight,
-                linked_to: view.linkedTo
+                linked_to: view.linked_to
               } });
           } else {
             sections.push({ ...refactorView });
@@ -1514,7 +1537,7 @@ export default {
           headers: sectionHeader({ token }),
         };
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.sectionTypeName}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${section.instance_name}`;
         this.loading = true;
 
         this.$axios.put(URL, {
@@ -1555,7 +1578,7 @@ export default {
           headers: sectionHeader({ token }),
         };
         const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.sectionTypeName}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${section.instance_name}`;
         this.loading = true;
 
         this.$axios.post(URL, {
@@ -1577,6 +1600,8 @@ export default {
             }
           ]
           this.currentSection = null
+          this.isCreateInstance = false
+          this.typesTab = 'globalTypes'
         })
           .catch((error) => {
             this.loading = false;
@@ -1887,29 +1912,21 @@ export default {
                 pages: d.pages,
                 name: d.name,
                 id: d.id,
-                type: this.types.find(t => t.name === d.name) ? this.types.find(t => t.name === d.name).type : undefined
+                type: this.types.find(t => t.name === d.section.name) ? this.types.find(t => t.name === d.section.name).type : undefined,
+                query_string_keys: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).query_string_keys ? this.types.find(t => t.name === d.section.name).query_string_keys : undefined
               });
             });
-            this.availableSectionsForms.forEach(name => {
-              const found = this.globalTypes.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
-              if (!found && this.types.some(t => t.name === name && t.notCreated === true) === false) {
-                this.globalTypes.push({
-                  name,
-                  notCreated: true
-                })
-              }
-            });
-            // this.types.filter(t => t.type === 'configurable' || t.type === 'dynamic').forEach(type => {
-            //   this.globalTypes.push({
-            //     name: type.name,
-            //     notCreated: true
-            //   })
-            // })
+            this.types.forEach(type => {
+              this.globalTypes.push({
+                name: type.name,
+                notCreated: true
+              })
+            })
             this.loading = false
             if (this.allSections.length === 0 && this.globalTypes && this.globalTypes.length > 0) {
               this.globalTypes.forEach(gt => {
                 if (gt.auto_insertion === true) {
-                  this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type}, false, true)
+                  this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type, instance_name: gt.name}, false, true)
                 }
               })
             }
@@ -2162,8 +2179,8 @@ export default {
         }
 
         if (instance === true) {
-          section.linkedTo = section.name;
-          section.linked_to = section.name;
+          section.linkedTo = section.instance_name;
+          section.linked_to = section.instance_name;
           section.instance = true;
           section.settings = section.options
         } else {
@@ -2342,10 +2359,10 @@ export default {
           if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
-          if (view.linkedTo) {
+          if (view.linked_to) {
             sections.push({ ...{
                 weight: view.weight,
-                linked_to: view.linkedTo
+                linked_to: view.linked_to
               } });
           } else {
             sections.push({ ...refactorView });
@@ -2754,11 +2771,14 @@ export default {
         this.currentSection = {
           ...this.types.find(t => t.name === type.name),
           ...type,
-          instance: true
+          instance: type.notCreated === true
+        }
+        if (!this.currentSection.linked_to) {
+          this.currentSection.linked_to = ""
         }
       } else if(type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
-      } else this.currentSection = type
+      } else this.currentSection = {...type, creation: true}
     }
   }
 }
@@ -3045,6 +3065,7 @@ span.handle {
   flex-direction: column;
   background: #31a9db;
   color: white;
+  position: relative;
 }
 .modalContainer .type-items {
   display: grid;
@@ -3508,10 +3529,21 @@ span.handle {
   text-align: -webkit-right;
 }
 
+.global-section-info {
+  text-align: -webkit-left;
+  position: absolute;
+}
+
 .section-info-icon {
   cursor: pointer;
   margin-top: 3px;
   margin-right: 2px;
+}
+
+.global-section-info-icon {
+  cursor: pointer;
+  margin-top: 3px;
+  margin-left: 2px;
 }
 
 .info-icon-style {
@@ -3526,5 +3558,8 @@ span.handle {
 .selectedTypesTab {
   color: #31a9db;
   text-decoration: underline;
+}
+.selectSectionType {
+  width: 500px;
 }
 </style>

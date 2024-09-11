@@ -1,21 +1,33 @@
 <template>
   <div class="text-center">
     <div class="element-type">
-      <h3>{{ formatName(props.name, " / ") }}</h3>
-      <div v-if="instance" class="autoInsertRow">
-        <div>
-          {{ $t('autoInsertInstance') }}
+      <h3>{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</h3>
+      <div v-if="globalSectionMode === true">
+        <div class="autoInsertRow">
+          <div>
+            {{ $t('autoInsertInstance') }}
+          </div>
+          <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
         </div>
-        <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
+        <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+          <input
+              class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+              type="text"
+              :placeholder="$t('instanceName')+'*'"
+              :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+              v-model="instanceName"
+          />
+        </div>
+        <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
       </div>
-      <div v-if="instance && pages.length > 0">
+      <div v-if="globalSectionMode === true && pages.length > 0">
         <div class="pagesReferenceWrapper">
           <div class="pagesReference">{{ $t('referencedSection', {pages: pages.join(', ')}) }}</div>
         </div>
       </div>
       <form>
         <div>
-          <subType :name="props.name" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
+          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
             <slot />
           </subType>
         </div>
@@ -60,6 +72,10 @@ export default {
     instance: {
       type: Boolean,
       default: false
+    },
+    linked: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -68,6 +84,8 @@ export default {
       elements: [],
       imported: false,
       autoInsert: false,
+      instanceNameError: false,
+      instanceName: '',
       pages: []
     };
   },
@@ -88,6 +106,9 @@ export default {
       }
       return "null";
     },
+    globalSectionMode() {
+      return this.instance === true || this.linked === true
+    }
   },
   mounted() {
     if (this.savedView && this.savedView.settings) {
@@ -100,20 +121,26 @@ export default {
     setTimeout(() => {
       this.elements = this.$refs.importedComponent.fields;
     }, 10);
-    if (this.props.linked_to !== '') {
+    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
       this.getGlobalType()
     }
   },
   methods: {
     formatName,
     addStatic(settings) {
+      this.instanceNameError = false
+      if (this.globalSectionMode && this.instanceName === '') {
+        this.instanceNameError = true
+        return
+      }
       this.$emit("addSectionType", {
         name: this.props.name,
         type: "static",
         settings,
         id: this.id,
         weight: this.weight,
-        auto_insertion: this.autoInsert
+        auto_insertion: this.autoInsert,
+        instance_name: this.instanceName
       });
     },
     getGlobalType() {
@@ -122,7 +149,7 @@ export default {
         headers: sectionHeader({ token }),
       };
       const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.props.name}`;
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.props.linked_to}`;
       this.$emit("load", true);
 
       this.$axios.get(URL, config).then((res) => {
@@ -132,6 +159,7 @@ export default {
           if (res.data.pages && res.data.pages.length > 0) {
             this.pages = res.data.pages.map(p => p.path)
           }
+          this.instanceName = res.data.name
         }
       })
           .catch((error) => {
@@ -177,5 +205,8 @@ h3 {
   width: 100%;
   display: flex;
   place-content: center;
+}
+.instanceInput {
+  width: 350px;
 }
 </style>

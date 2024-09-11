@@ -15,6 +15,15 @@
     >
       {{ $t('Submit data') }}
     </button>
+    <button
+        v-if="promoteButton"
+        class="mt-4 submit-btn promote-btn"
+        type="button"
+        @click="$emit('promote-section')"
+        :class="{ withTabs }"
+    >
+      {{ $t('promoteSection') }}
+    </button>
   </div>
 </template>
 
@@ -46,6 +55,10 @@ export default {
     sectionsUserId: {
       type: String,
       default: ''
+    },
+    promoteButton: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -102,6 +115,9 @@ export default {
 .content-wrapper {
   overflow-y: scroll;
   height: 550px;
+}
+.promote-btn {
+  font-size: 20px !important;
 }
 @media only screen and (max-height: 800px) {
   .content-wrapper {
