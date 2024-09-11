@@ -58,7 +58,7 @@
           <button
             class="hp-button"
             @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (typesTab = 'globalTypes')
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true)
             "
           >
             <div class="btn-icon plus-icon"><PlusIcon /></div>
@@ -291,11 +291,12 @@
                 <Dynamic
                   v-if="currentSection.type === 'dynamic'"
                   :props="currentSection"
-                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section, null, true)"
+                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                   @errorAddingSection="errorAddingSection"
                   :savedView="savedView"
                   :headers="headers"
-                  :instance="currentSection.instance === true || (currentSection.linked_to !== '' && currentSection.linked_to !== undefined)"
+                  :instance="currentSection.instance === true"
+                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                   @load="(value) => loading = value"
                 />
                 <Configurable
@@ -2178,7 +2179,7 @@ export default {
           };
         }
 
-        if (instance === true) {
+        if (instance === true || (section.type === 'dynamic' && section.instance_name)) {
           section.linkedTo = section.instance_name;
           section.linked_to = section.instance_name;
           section.instance = true;
@@ -2771,6 +2772,8 @@ export default {
         this.currentSection = {
           ...this.types.find(t => t.name === type.name),
           ...type,
+          name: type.section && type.section.name ? type.section.name : undefined,
+          instance_name: type.name,
           instance: type.notCreated === true
         }
         if (!this.currentSection.linked_to) {
