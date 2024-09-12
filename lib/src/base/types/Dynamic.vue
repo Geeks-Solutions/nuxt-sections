@@ -96,6 +96,7 @@ export default {
     }
   },
   methods: {
+    formatName,
     renderSection(name) {
       this.$emit("load", true);
       const token = this.$cookies.get("sections-auth-token");
@@ -206,5 +207,29 @@ export default {
 .dynamic-t {
   min-width: 350px;
   min-height: 40px;
+}
+.autoInsertRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+.autoInsertInput {
+  width: 15px;
+  height: 15px;
+}
+.pagesReference {
+  font-size: 14px;
+  color: red;
+  width: 500px;
+}
+.pagesReferenceWrapper {
+  width: 100%;
+  display: flex;
+  place-content: center;
+}
+.instanceInput {
+  width: 350px;
 }
 </style>

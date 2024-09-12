@@ -8,14 +8,8 @@
               class="font-light mt-2 mb-2"
               :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
           >
-            <div class="text-capitalize ">{{ formatName(props.name) }}</div>
+            <div class="text-capitalize ">{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</div>
           </div>
-        </div>
-        <div v-if="instance" class="autoInsertRow">
-          <div>
-            {{ $t('autoInsertInstance') }}
-          </div>
-          <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
         </div>
       </div>
       <!--  The below div element adds an extra tab to the configurable section. -->
@@ -27,6 +21,29 @@
         >
           {{ $t('Custom form') }}
         </div>
+      </div>
+    </div>
+    <div v-if="globalSectionMode === true">
+      <div class="autoInsertRow">
+        <div>
+          {{ $t('autoInsertInstance') }}
+        </div>
+        <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
+      </div>
+      <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+        <input
+            class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+            type="text"
+            :placeholder="$t('instanceName')+'*'"
+            :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+            v-model="instanceName"
+        />
+      </div>
+      <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+    </div>
+    <div v-if="globalSectionMode === true && pages.length > 0">
+      <div class="pagesReferenceWrapper">
+        <div class="pagesReference">{{ $t('referencedSection', {pages: pages.join(', ')}) }}</div>
       </div>
     </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
@@ -130,6 +147,14 @@
           <button class="submit-btn mt-4" type="button" @click="addConfigurable()">
             {{ $t('Submit data') }}
           </button>
+          <button
+              v-if="instance === false && props.creation !== true && globalSectionMode === false"
+              class="mt-4 submit-btn promote-btn"
+              type="button"
+              @click="$emit('promote-section')"
+          >
+            {{ $t('promoteSection') }}
+          </button>
         </form>
       </div>
       <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
@@ -196,6 +221,10 @@ export default {
     instance: {
       type: Boolean,
       default: false
+    },
+    linked: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -212,7 +241,10 @@ export default {
       mediaError: '',
       customFormData: null,
       formLang: this.$i18n.locale.toString(),
-      autoInsert: false
+      autoInsert: false,
+      instanceNameError: false,
+      instanceName: '',
+      pages: []
     };
   },
   watch: {
@@ -246,6 +278,9 @@ export default {
       }
       return importComp(path);
     },
+    globalSectionMode() {
+      return this.instance === true || this.linked === true
+    }
   },
   mounted() {
     this.$emit('loadReference')
@@ -317,6 +352,10 @@ export default {
             })
           }
 
+          if (this.props.addToPage) {
+            this.addConfigurable()
+          }
+
           this.$emit("load", false);
         })
         .catch((err) => {
@@ -326,6 +365,10 @@ export default {
     }
 
     this.importHooks('mounted')
+
+    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
+      this.getGlobalType()
+    }
   },
   methods: {
     formatFileName(name) {
@@ -467,6 +510,11 @@ export default {
       }
     },
     addConfigurable() {
+      this.instanceNameError = false
+      if (this.globalSectionMode && this.instanceName === '') {
+        this.instanceNameError = true
+        return
+      }
       this.errorMessage = "";
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
@@ -544,7 +592,8 @@ export default {
             id: this.id,
             weight: this.weight,
             render_data: res.data.render_data,
-            auto_insertion: this.autoInsert
+            auto_insertion: this.autoInsert,
+            instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
           })
         })
         .catch((e) => {
@@ -555,6 +604,30 @@ export default {
             message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
           })
         });
+    },
+    getGlobalType() {
+      const token = this.$cookies.get("sections-auth-token");
+      const config = {
+        headers: sectionHeader({ token }),
+      };
+      const URL =
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.props.linked_to}`;
+      this.$emit("load", true);
+
+      this.$axios.get(URL, config).then((res) => {
+        if (res && res.data) {
+          this.$emit("load", false);
+          this.autoInsert = res.data.auto_insertion
+          if (res.data.pages && res.data.pages.length > 0) {
+            this.pages = res.data.pages.map(p => p.path)
+          }
+          this.instanceName = res.data.name
+        }
+      })
+          .catch((error) => {
+            this.$emit("load", false);
+            this.showToast("Error", "error", error.response.data.message, error.response.data.options);
+          });
     },
     showToast(title, variant, message) {
       this.$toast[variant](message, {
@@ -730,5 +803,21 @@ export default {
 .autoInsertInput {
   width: 15px;
   height: 15px;
+}
+.pagesReference {
+  font-size: 14px;
+  color: red;
+  width: 500px;
+}
+.pagesReferenceWrapper {
+  width: 100%;
+  display: flex;
+  place-content: center;
+}
+.instanceInput {
+  width: 350px;
+}
+.promote-btn {
+  font-size: 20px !important;
 }
 </style>

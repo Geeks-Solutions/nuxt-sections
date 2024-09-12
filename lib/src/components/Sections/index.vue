@@ -185,7 +185,7 @@
               <BackIcon />
             </div>
 
-            <div v-if="!currentSection && typesTab === 'types'" class="m-1 p-1 type-items content-wrapper">
+            <div v-if="!currentSection && typesTab === 'types' && isCreateInstance !== true" class="m-1 p-1 type-items content-wrapper">
               <div
                 class="section-item section-item-box"
                 v-for="(type, index) in types"
@@ -244,7 +244,7 @@
                 </div>
               </div>
             </div>
-            <div v-else-if="!currentSection && typesTab === 'globalTypes'" class="m-1 p-1 type-items content-wrapper">
+            <div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)" class="m-1 p-1 type-items content-wrapper">
               <div
                 class="section-item section-item-box"
                 v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
@@ -260,7 +260,7 @@
                     <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
                   </div>
                 </div>
-                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'dynamic' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name}, null, true)">
+                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
                   <SectionItem
                     v-if="type.name"
                     class="bg-light-blue"
@@ -302,7 +302,7 @@
                 <Configurable
                   v-if="currentSection.type === 'configurable'"
                   ref="sections-configurable-type"
-                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
+                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                   @errorAddingSection="errorAddingSection"
                   :props="currentSection"
                   :savedView="savedView"
@@ -310,9 +310,11 @@
                   :sections-user-id="sectionsUserId"
                   :sections-configurable-type="sectionsConfigurableTypeReference"
                   :translation-component-support="translationComponentSupport"
-                  :instance="currentSection.instance === true || (currentSection.linked_to !== '' && currentSection.linked_to !== undefined)"
+                  :instance="currentSection.instance === true"
+                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
+                  @promote-section="currentSection = {...currentSection, instance: true}"
                 />
                 <Local
                   v-if="currentSection.type === 'local'"
@@ -560,7 +562,7 @@
           <section
             v-for="(view, index) in currentViews"
             :key="index"
-            :id="`${view.name}-${view.id}`"
+            :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
             :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
           >
             <div class="section-view relativeSections">
@@ -571,15 +573,15 @@
                 <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                   <AlertIcon />
                 </div>
-                <div @click="edit(view)" v-if="editable(view.type)">
-                  <EditIcon :color="view.linked_to !== '' ? '#FF0000' : undefined" class="edit-icon" />
+                <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+                  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
                 </div>
                 <DragIcon class="drag-icon handle" />
                 <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
                   <TrashIcon class="trash-icon" />
                 </div>
-                <div @click="copyAnchor(`#${view.name}-${view.id}`)">
-                  <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+                <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                 </div>
               </div>
               <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -636,7 +638,7 @@
                   v-for="(view, index) in viewsPerRegions[slotName]"
                   v-if="view.region[selectedLayout].slot === slotName"
                   :key="index"
-                  :id="`${view.name}-${view.id}`"
+                  :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
                   :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
                 >
                   <div class="section-view relativeSections">
@@ -647,15 +649,15 @@
                       <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                         <AlertIcon />
                       </div>
-                      <div @click="edit(view)" v-if="editable(view.type)">
-                        <EditIcon :color="view.linked_to !== '' ? '#FF0000' : undefined" class="edit-icon" />
+                      <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+                        <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
                       </div>
                       <DragIcon class="drag-icon handle" />
                       <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
                         <TrashIcon class="trash-icon" />
                       </div>
-                      <div @click="copyAnchor(`#${view.name}-${view.id}`)">
-                        <AnchorIcon :title="`Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+                      <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                        <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
                       </div>
                     </div>
                     <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -1516,7 +1518,9 @@ export default {
       return true;
     },
     updateGlobalType(section) {
-      if (section && section.name) {
+      if (section.type === 'configurable') {
+        this.sectionTypeName = section.nameID;
+      } else if (section && section.name) {
         this.sectionTypeName = section.name;
       }
       if (this.sectionTypeName !== "") {
@@ -1544,7 +1548,7 @@ export default {
         this.$axios.put(URL, {
           "section": {
             "name": this.sectionTypeName,
-            "options": section.settings
+            "options": section.type === 'configurable' ? [section.settings] : section.settings
           },
           "regions": section.region,
           "auto_insertion": section.auto_insertion
@@ -1569,7 +1573,9 @@ export default {
       }
     },
     addNewGlobalType(section) {
-      if (section && section.name) {
+      if (section.type === 'configurable') {
+        this.sectionTypeName = section.nameID;
+      } else if (section && section.name) {
         this.sectionTypeName = section.name;
       }
       if (this.sectionTypeName !== "") {
@@ -1585,7 +1591,7 @@ export default {
         this.$axios.post(URL, {
           "section": {
             "name": this.sectionTypeName,
-            "options": section.settings
+            "options": section.type === 'configurable' ? [section.settings] : section.settings
           },
           "regions": {},
           "auto_insertion": section.auto_insertion
@@ -1914,7 +1920,9 @@ export default {
                 name: d.name,
                 id: d.id,
                 type: this.types.find(t => t.name === d.section.name) ? this.types.find(t => t.name === d.section.name).type : undefined,
-                query_string_keys: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).query_string_keys ? this.types.find(t => t.name === d.section.name).query_string_keys : undefined
+                query_string_keys: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).query_string_keys ? this.types.find(t => t.name === d.section.name).query_string_keys : undefined,
+                fields: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).fields ? this.types.find(t => t.name === d.section.name).fields : undefined,
+                dynamic_options: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).dynamic_options ? this.types.find(t => t.name === d.section.name).dynamic_options : undefined
               });
             });
             this.types.forEach(type => {
@@ -2179,11 +2187,11 @@ export default {
           };
         }
 
-        if (instance === true || (section.type === 'dynamic' && section.instance_name)) {
+        if (instance === true || (section.type === 'dynamic' && section.instance_name) || (section.type === 'configurable' && section.instance_name)) {
           section.linkedTo = section.instance_name;
           section.linked_to = section.instance_name;
           section.instance = true;
-          section.settings = section.options
+          section.settings = (section.type === 'dynamic' || section.type === 'configurable') && section.render_data && section.render_data[0] && section.render_data[0].settings ? section.render_data[0].settings : section.options
         } else {
           section.linkedTo = "";
           section.linked_to = "";
@@ -2536,6 +2544,7 @@ export default {
       if(view.linked_to !== "") {
         view.instance = true
       }
+
       this.currentSection = view;
       this.savedView = view;
       this.isModalOpen = true;
@@ -2772,12 +2781,17 @@ export default {
         this.currentSection = {
           ...this.types.find(t => t.name === type.name),
           ...type,
-          name: type.section && type.section.name ? type.section.name : undefined,
+          name: type.section && type.section.name ? type.section.name : type.name,
           instance_name: type.name,
-          instance: type.notCreated === true
+          instance: type.notCreated === true,
+          render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined,
+          addToPage: type.type === 'configurable' ? true : undefined
         }
         if (!this.currentSection.linked_to) {
           this.currentSection.linked_to = ""
+        }
+        if (type.type === 'configurable') {
+          this.savedView = this.currentSection
         }
       } else if(type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
