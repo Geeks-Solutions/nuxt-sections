@@ -1125,6 +1125,18 @@ export default {
           );
         }
       },
+    },
+    id() {
+      if (this.savedView.id) {
+        return this.savedView.id;
+      }
+      return "id-" + Date.now();
+    },
+    weight() {
+      if (this.savedView.weight) {
+        return this.savedView.weight;
+      }
+      return null;
     }
   },
   mounted() {
@@ -1895,7 +1907,70 @@ export default {
         console.warn(this.$t('noFormsFolder'));
       }
     },
-    getGlobalSectionTypes() {
+    async renderDynamicSection(name, instanceName) {
+      this.$emit("load", true);
+      const token = this.$cookies.get("sections-auth-token");
+      const header = {
+        token,
+      };
+      const config = {
+        headers: sectionHeader(header),
+      };
+
+      const variables = {
+        section: {
+          name,
+          weight: 1
+        }
+      };
+
+      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+      }
+
+      const URL =
+          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/render`;
+      this.$axios
+          .post(URL, variables, config)
+          .then((res) => {
+            if (res.data && res.data.error) {
+              this.$emit('errorAddingSection', {
+                closeModal: true,
+                title: "Error adding "+ name,
+                message: res.data.error
+              })
+              this.$emit("load", false);
+              return;
+            }
+            this.addSectionType( {
+              name: name,
+              type: 'dynamic',
+              id: this.id,
+              weight: this.weight,
+              render_data: res.data.render_data,
+              instance_name: instanceName
+            })
+            this.$emit("load", false);
+          })
+          .catch((e) => {
+            if (e.response.data.error) {
+              this.$emit('errorAddingSection', {
+                closeModal: true,
+                title: "Error adding "+ this.props.name,
+                message: e.response.data.error
+              })
+            } else {
+              this.$emit('errorAddingSection', {
+                closeModal: true,
+                title: "Error adding "+ this.props.name,
+                message: this.$t('saveConfigSectionError')
+              })
+            }
+
+            this.$emit("load", false);
+          });
+    },
+    getGlobalSectionTypes(autoLoad) {
       if (this.globalTypes && this.globalTypes.length) {
         return;
       }
@@ -1910,7 +1985,7 @@ export default {
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances`;
       this.$axios
           .get(url, config)
-          .then((res) => {
+          .then(async (res) => {
             res.data.data.map((d) => {
               this.globalTypes.push({
                 regions: d.regions,
@@ -1932,12 +2007,16 @@ export default {
               })
             })
             this.loading = false
-            if (this.allSections.length === 0 && this.globalTypes && this.globalTypes.length > 0) {
-              this.globalTypes.forEach(gt => {
-                if (gt.auto_insertion === true) {
-                  this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type, instance_name: gt.name}, false, true)
+            if (autoLoad === true) {
+              if (this.allSections.length === 0 && this.globalTypes && this.globalTypes.length > 0) {
+                for (const gt of this.globalTypes.filter(gt => gt.auto_insertion === true)) {
+                  if (gt.type === 'dynamic') {
+                    await this.renderDynamicSection(gt.section.name, gt.name)
+                  } else {
+                    this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type, instance_name: gt.name, fields: gt.fields, query_string_keys: gt.query_string_keys, dynamic_options: gt.dynamic_options, render_data: gt.section && gt.section.options && gt.section.options[0] ? [{settings: gt.section.options[0]}] : undefined}, false, true)
+                  }
                 }
-              })
+              }
             }
             this.$emit("load", false);
           })
@@ -1947,7 +2026,7 @@ export default {
             this.showToast("Error", "error", error.toString());
           });
     },
-    getSectionTypes() {
+    getSectionTypes(autoLoad) {
       if (this.types && this.types.length) {
         return;
       }
@@ -1992,7 +2071,7 @@ export default {
           this.types = [...this.types, ...this.addSystemTypes()];
           this.loading = false
           this.$emit("load", false);
-          this.getGlobalSectionTypes();
+          this.getGlobalSectionTypes(autoLoad);
         })
         .catch((error) => {
           this.loading = false
@@ -2065,7 +2144,7 @@ export default {
       return staticTypes;
     },
     async openEditMode() {
-      this.getSectionTypes();
+      this.getSectionTypes(true);
       if (!this.originalVariations[this.selectedVariation]) {
         this.originalVariations = JSON.parse(
           JSON.stringify(this.displayVariations)
