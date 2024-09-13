@@ -1336,6 +1336,9 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
+          if (view.type === 'dynamic') {
+            refactorView.options = []
+          }
           if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
           }
@@ -1567,7 +1570,6 @@ export default {
             "name": this.sectionTypeName,
             "options": section.type === 'configurable' ? [section.settings] : section.settings
           },
-          "regions": section.region,
           "auto_insertion": section.auto_insertion
         }, config).then(() => {
           this.sectionTypeName = "";
@@ -1610,7 +1612,6 @@ export default {
             "name": this.sectionTypeName,
             "options": section.type === 'configurable' ? [section.settings] : section.settings
           },
-          "regions": {},
           "auto_insertion": section.auto_insertion
         }, config).then(() => {
           this.globalTypes = [];
@@ -2443,6 +2444,9 @@ export default {
             refactorView.options = options;
           } else if (view.settings) {
             refactorView.options = view.settings;
+          }
+          if (view.type === 'dynamic') {
+            refactorView.options = []
           }
           if (refactorView.id && refactorView.id.startsWith("id-")) {
             delete refactorView.id;
