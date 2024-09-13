@@ -1568,7 +1568,8 @@ export default {
         this.$axios.put(URL, {
           "section": {
             "name": this.sectionTypeName,
-            "options": section.type === 'configurable' ? [section.settings] : section.settings
+            "options": section.type === 'configurable' ? [section.settings] : section.settings,
+            "type": section.type
           },
           "auto_insertion": section.auto_insertion
         }, config).then(() => {
@@ -1610,7 +1611,8 @@ export default {
         this.$axios.post(URL, {
           "section": {
             "name": this.sectionTypeName,
-            "options": section.type === 'configurable' ? [section.settings] : section.settings
+            "options": section.type === 'configurable' ? [section.settings] : section.settings,
+            "type": section.type
           },
           "auto_insertion": section.auto_insertion
         }, config).then(() => {
@@ -1913,6 +1915,68 @@ export default {
         console.warn(this.$t('noFormsFolder'));
       }
     },
+    async renderConfigurableSection(gt, options) {
+      this.$emit("load", true);
+
+      const token = this.$cookies.get("sections-auth-token");
+      const header = {
+        token,
+      };
+      const config = {
+        headers: sectionHeader(header),
+      };
+
+      const variables = {
+        section: {
+          name: gt.section.name,
+          weight: 1,
+          options: options
+        }
+      };
+
+      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+      }
+
+      const URL =
+          this.$sections.serverUrl +
+          `/project/${this.$sections.projectId}/section/render`;
+
+      this.$axios
+          .post(URL, variables, config)
+          .then((res) => {
+            this.$emit("load", false);
+            if (res.data && res.data.error) {
+              this.errorAddingSection( {
+                closeModal: false,
+                title: "Error adding "+ gt.name,
+                message: res.data.error
+              })
+              return;
+            }
+            this.addSectionType({
+              name: gt.section.name,
+              type: 'configurable',
+              settings: options[0],
+              id: this.id,
+              weight: this.weight,
+              render_data: res.data.render_data,
+              fields: gt.fields,
+              query_string_keys: gt.query_string_keys,
+              dynamic_options: gt.dynamic_options,
+              auto_insertion: gt.auto_insertion,
+              instance_name: gt.name
+            })
+          })
+          .catch((e) => {
+            this.$emit("load", false);
+            this.$emit('errorAddingSection', {
+              closeModal: false,
+              title: "Error adding "+ gt.name,
+              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
+            })
+          });
+    },
     async renderDynamicSection(name, instanceName) {
       this.$emit("load", true);
       const token = this.$cookies.get("sections-auth-token");
@@ -1942,7 +2006,7 @@ export default {
             if (res.data && res.data.error) {
               this.$emit('errorAddingSection', {
                 closeModal: true,
-                title: "Error adding "+ name,
+                title: "Error adding "+ instanceName,
                 message: res.data.error
               })
               this.$emit("load", false);
@@ -1962,13 +2026,13 @@ export default {
             if (e.response.data.error) {
               this.$emit('errorAddingSection', {
                 closeModal: true,
-                title: "Error adding "+ this.props.name,
+                title: "Error adding "+ instanceName,
                 message: e.response.data.error
               })
             } else {
               this.$emit('errorAddingSection', {
                 closeModal: true,
-                title: "Error adding "+ this.props.name,
+                title: "Error adding "+ instanceName,
                 message: this.$t('saveConfigSectionError')
               })
             }
@@ -2016,7 +2080,10 @@ export default {
             if (autoLoad === true) {
               if (this.allSections.length === 0 && this.globalTypes && this.globalTypes.length > 0) {
                 for (const gt of this.globalTypes.filter(gt => gt.auto_insertion === true)) {
-                  if (gt.type === 'dynamic') {
+                  await new Promise((resolve) => setTimeout(resolve, 100));
+                  if (gt.type === 'configurable') {
+                    await this.renderConfigurableSection(gt, gt.section.options)
+                  } else if (gt.type === 'dynamic') {
                     await this.renderDynamicSection(gt.section.name, gt.name)
                   } else {
                     this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type, instance_name: gt.name, fields: gt.fields, query_string_keys: gt.query_string_keys, dynamic_options: gt.dynamic_options, render_data: gt.section && gt.section.options && gt.section.options[0] ? [{settings: gt.section.options[0]}] : undefined}, false, true)

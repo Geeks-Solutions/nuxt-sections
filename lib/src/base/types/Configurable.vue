@@ -23,29 +23,6 @@
         </div>
       </div>
     </div>
-    <div v-if="globalSectionMode === true">
-      <div class="autoInsertRow">
-        <div>
-          {{ $t('autoInsertInstance') }}
-        </div>
-        <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
-      </div>
-      <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
-        <input
-            class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
-            type="text"
-            :placeholder="$t('instanceName')+'*'"
-            :disabled="props.linked_to !== '' && props.linked_to !== undefined"
-            v-model="instanceName"
-        />
-      </div>
-      <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
-    </div>
-    <div v-if="globalSectionMode === true && pages.length > 0">
-      <div class="pagesReferenceWrapper">
-        <div class="pagesReference">{{ $t('referencedSection', {pages: pages.join(', ')}) }}</div>
-      </div>
-    </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
       <div class="error-message">
@@ -56,6 +33,29 @@
           <div
             class=" flex flex-col justify-between content-wrapper"
           >
+            <div v-if="globalSectionMode === true">
+              <div class="autoInsertRow">
+                <div>
+                  {{ $t('autoInsertInstance') }}
+                </div>
+                <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
+              </div>
+              <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+                <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+                    type="text"
+                    :placeholder="$t('instanceName')+'*'"
+                    :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+                    v-model="instanceName"
+                />
+              </div>
+              <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+            </div>
+            <div v-if="globalSectionMode === true && pages.length > 0">
+              <div class="pagesReferenceWrapper">
+                <div class="pagesReference">{{ $t('referencedSection', {pages: pages.join(', ')}) }}</div>
+              </div>
+            </div>
             <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
             <div
               :key="idx"
