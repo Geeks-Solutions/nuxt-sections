@@ -128,7 +128,7 @@
           :class="selectedVariation === pageName ? 'danger' : 'grey'"
           @click="selectedVariation = pageName"
         >
-          <div class="btn-text">{{ pageName + " " + "Main" }}</div>
+          <div class="btn-text">{{ decodeURIComponent(parsePath(encodeURIComponent(pageName))) + " " + "Main" }}</div>
         </button>
         <div v-for="(v, idx) in variations" :key="idx">
           <button
@@ -1062,6 +1062,7 @@ export default {
       sectionsError: "",
       sectionsErrorOptions: null,
       sectionsAdminError: "",
+      renderSectionError: "",
       fieldsInputs: [
         {
           type: "image",
@@ -1144,6 +1145,9 @@ export default {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
     } else if (this.sectionsAdminError !== "") {
       this.showToast("Error", "error", this.sectionsAdminError);
+    }
+    if (this.renderSectionError !== "") {
+      this.showToast("Error", "error", this.renderSectionError);
     }
   },
   async fetch() {
@@ -1253,6 +1257,7 @@ export default {
     }
   },
   methods: {
+    parsePath,
     initializeSections(res) {
       const sections = res.data.sections;
       this.allSections = res.data.sections;
@@ -2324,23 +2329,14 @@ export default {
       }
     },
     async refreshSectionView(sectionView, data) {
-      let sectionData = {}
-      if (data.viewName) {
-        sectionData = this.currentViews.find(view => view.name === data.viewName)
-      } else {
-        sectionData = sectionView
-      }
+      let sectionDatas = []
+      sectionDatas = this.allSections.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
 
       const config = {
         headers: sectionHeader({}),
       };
 
-      const variables = {
-        section: {
-          name: sectionData.name,
-          weight: sectionData.weight
-        }
-      };
+      let variables = {}
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
@@ -2351,44 +2347,22 @@ export default {
 
       const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/render`;
 
-      const inBrowser = typeof window !== 'undefined';
-
-      if (inBrowser) {
-        try {
-          const res = await this.$axios.post(URL, variables, config)
-          if (res.data && res.data.error) {
-            this.$nuxt.$emit('sectionViewRefreshed', res.data)
-            return res.data.error
-          } else {
-            const index = this.currentViews.findIndex(view => view.name === sectionData.name);
-
-            if (index !== -1) {
-              const updatedViews = [...this.currentViews];
-              updatedViews[index] = {
-                ...updatedViews[index],
-                render_data: res.data.render_data,
-              };
-
-              this.currentViews = updatedViews;
-            }
-            this.$nuxt.$emit('sectionViewRefreshed', res.data)
-            return res.data
-          }
-        } catch (e) {
-          this.$nuxt.$emit('sectionViewRefreshed', res.data)
-          return e.response.data.error
-        }
-      } else {
-        const optionsRes = await this.$axios.options(URL, config)
-        if (optionsRes.status === 200) {
+      for(const sectionData of sectionDatas) {
+        const sectionName = sectionData.nameID ? sectionData.nameID : sectionData.name
+        variables['section'] = {
+          name: sectionName,
+          weight: sectionData.weight
+        };
+        const inBrowser = typeof window !== 'undefined';
+        if (inBrowser) {
           try {
             const res = await this.$axios.post(URL, variables, config)
             if (res.data && res.data.error) {
-              this.$nuxt.$emit('sectionViewRefreshed', res.data)
-              return res.data.error
+              this.$nuxt.$emit('sectionViewRefreshed', {error: res.data})
+              this.renderSectionError = `${sectionName}: ${res.data.error}`
+              this.showToast("Error", "error", this.renderSectionError);
             } else {
               const index = this.currentViews.findIndex(view => view.name === sectionData.name);
-
               if (index !== -1) {
                 const updatedViews = [...this.currentViews];
                 updatedViews[index] = {
@@ -2399,11 +2373,37 @@ export default {
                 this.currentViews = updatedViews;
               }
               this.$nuxt.$emit('sectionViewRefreshed', res.data)
-              return res.data
             }
           } catch (e) {
-            this.$nuxt.$emit('sectionViewRefreshed', res.data)
-            return e.response.data.error
+            this.$nuxt.$emit('sectionViewRefreshed', {error: e.response.data})
+            this.renderSectionError = `${sectionName}: ${e.response.data.error}`
+            this.showToast("Error", "error", this.renderSectionError);
+          }
+        } else {
+          const optionsRes = await this.$axios.options(URL, config)
+          if (optionsRes.status === 200) {
+            try {
+              const res = await this.$axios.post(URL, variables, config)
+              if (res.data && res.data.error) {
+                this.$nuxt.$emit('sectionViewRefreshed', res.data)
+                this.renderSectionError = `${sectionName}: ${res.data.error}`
+              } else {
+                const index = this.currentViews.findIndex(view => view.name === sectionData.name);
+                if (index !== -1) {
+                  const updatedViews = [...this.currentViews];
+                  updatedViews[index] = {
+                    ...updatedViews[index],
+                    render_data: res.data.render_data,
+                  };
+
+                  this.currentViews = updatedViews;
+                }
+                this.$nuxt.$emit('sectionViewRefreshed', res.data)
+              }
+            } catch (e) {
+              this.$nuxt.$emit('sectionViewRefreshed', {error: e.response.data})
+              this.renderSectionError = `${sectionName}: ${e.response.data.error}`
+            }
           }
         }
       }
