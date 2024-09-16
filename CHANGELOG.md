@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add a new event to the view component that allow the view section to be refreshed by calling the render API
 
+- Added JSON QS support
+
 ## [1.0.9] - 2024-04-05
 
 ### Fixed
