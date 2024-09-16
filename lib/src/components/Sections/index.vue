@@ -3405,7 +3405,7 @@ span.handle {
   font-size: 16px;
   padding-left: 16px;
 }
-@media only screen and (max-height: 800px) {
+@media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;

@@ -119,7 +119,7 @@ export default {
 .promote-btn {
   font-size: 20px !important;
 }
-@media only screen and (max-height: 800px) {
+@media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;
