@@ -605,78 +605,80 @@
         </draggable>
       </div>
       <div v-else>
-        <component :is="getSelectedLayout()">
+        <component :is="getSelectedLayout()" :lang="lang" :locales="locales">
           <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
             <!-- Empty div injected to verify the slots              -->
-            <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
-            <div v-if="admin && editMode" class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
-              <button
-                class="hp-button"
-                @click.stop.prevent="
+            <div class="flexSections flex-col">
+              <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
+              <div v-if="admin && editMode" class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
+                <button
+                    class="hp-button"
+                    @click.stop.prevent="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName)
             "
-              >
-                <div class="btn-icon plus-icon"><PlusIcon /></div>
-                <div class="btn-text">{{ $t("Add") }}</div>
-              </button>
-              <div class="slot-name">
-                {{ $t(slotName.toUpperCase()) }}
-              </div>
-            </div>
-            <div class="views">
-              <draggable
-                v-model="viewsPerRegions[slotName]"
-                group="people"
-                @start="drag = true; highlightRegions = true;"
-                @end="drag = false; highlightRegions = false;"
-                @change="logDrag"
-                handle=".handle"
-                :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
-              >
-                <!-- <transition-group> -->
-                <section
-                  v-for="(view, index) in viewsPerRegions[slotName]"
-                  v-if="view.region[selectedLayout].slot === slotName"
-                  :key="index"
-                  :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-                  :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
                 >
-                  <div class="section-view relativeSections">
-                    <div
-                      class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-                      v-if="admin && editMode"
-                    >
-                      <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                        <AlertIcon />
+                  <div class="btn-icon plus-icon"><PlusIcon /></div>
+                  <div class="btn-text">{{ $t("Add") }}</div>
+                </button>
+                <div class="slot-name">
+                  {{ $t(slotName.toUpperCase()) }}
+                </div>
+              </div>
+              <div class="views">
+                <draggable
+                    v-model="viewsPerRegions[slotName]"
+                    group="people"
+                    @start="drag = true; highlightRegions = true;"
+                    @end="drag = false; highlightRegions = false;"
+                    @change="logDrag"
+                    handle=".handle"
+                    :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
+                >
+                  <!-- <transition-group> -->
+                  <section
+                      v-for="(view, index) in viewsPerRegions[slotName]"
+                      v-if="view.region[selectedLayout].slot === slotName"
+                      :key="index"
+                      :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
+                      :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
+                  >
+                    <div class="section-view relativeSections">
+                      <div
+                          class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+                          v-if="admin && editMode"
+                      >
+                        <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                          <AlertIcon />
+                        </div>
+                        <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+                          <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
+                        </div>
+                        <DragIcon class="drag-icon handle" />
+                        <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
+                          <TrashIcon class="trash-icon" />
+                        </div>
+                        <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                          <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+                        </div>
                       </div>
-                      <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                        <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
-                      </div>
-                      <DragIcon class="drag-icon handle" />
-                      <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
-                        <TrashIcon class="trash-icon" />
-                      </div>
-                      <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
-                        <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+                      <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+                        <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+                          {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
+                        </div>
+                        <component
+                            v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
+                            :is="getComponent(view.name, view.type)"
+                            :section="view"
+                            :lang="lang"
+                            :locales="locales"
+                            @refresh-section="(data) => refreshSectionView(view, data)"
+                        />
                       </div>
                     </div>
-                    <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                      <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
-                        {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
-                      </div>
-                      <component
-                        v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                        :is="getComponent(view.name, view.type)"
-                        :section="view"
-                        :lang="lang"
-                        :locales="locales"
-                        @refresh-section="(data) => refreshSectionView(view, data)"
-                      />
-                    </div>
-                  </div>
-                </section>
-                <!-- </transition-group> -->
-              </draggable>
+                  </section>
+                  <!-- </transition-group> -->
+                </draggable>
+              </div>
             </div>
           </template>
         </component>
@@ -1345,7 +1347,8 @@ export default {
           if (view.linked_to) {
             sections.push({ ...{
                 weight: view.weight,
-                linked_to: view.linked_to
+                linked_to: view.linked_to,
+                region: view.region ? view.region : {}
               } });
           } else {
             sections.push({ ...refactorView });
@@ -2521,7 +2524,8 @@ export default {
           if (view.linked_to) {
             sections.push({ ...{
                 weight: view.weight,
-                linked_to: view.linked_to
+                linked_to: view.linked_to,
+                region: view.region ? view.region : {}
               } });
           } else {
             sections.push({ ...refactorView });
