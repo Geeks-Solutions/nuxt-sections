@@ -2478,6 +2478,7 @@ export default {
           }
         }
       }
+      this.computeLayoutData()
     },
     mutateVariation(variationName) {
       this.invalidSectionsErrors = {}
