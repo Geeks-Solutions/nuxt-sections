@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h4>{{ $t('Adding section') }}</h4>
-    <div v-if="globalSectionMode === true">
+    <h4 class="local-t">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
+    <div v-if="globalSectionMode === true" class="mt-4">
       <div class="autoInsertRow">
         <div>
           {{ $t('autoInsertInstance') }}
@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import {sectionHeader} from "../../utils";
+import {sectionHeader, formatName} from "../../utils";
 
 export default {
   props: {
@@ -92,7 +92,7 @@ export default {
           id: this.id,
           weight: this.weight,
           auto_insertion: this.autoInsert,
-          instance_name: this.instanceName
+          instance_name: this.props.instance_name
         });
       }, 500);
     }
@@ -101,6 +101,7 @@ export default {
     }
   },
   methods: {
+    formatName,
     addLocal() {
       this.instanceNameError = false
       if (this.globalSectionMode && this.instanceName === '') {
@@ -168,5 +169,9 @@ export default {
 }
 .instanceInput {
   width: 350px;
+}
+.local-t {
+  min-width: 350px;
+  min-height: 40px;
 }
 </style>

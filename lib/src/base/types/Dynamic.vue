@@ -29,7 +29,6 @@
         class="mt-4 submit-btn"
         type="button"
         @click="addStatic"
-        :class="{ withTabs }"
     >
       {{ $t('Submit data') }}
     </button>

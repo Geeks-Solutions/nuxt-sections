@@ -219,7 +219,7 @@
                     :active="type.notCreated !== true"
                   />
                 </div>
-                <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
+                <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.type !== 'local' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
                   {{ $t('by') + type.application }}
                 </div>
                 <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
@@ -260,7 +260,7 @@
                     <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
                   </div>
                 </div>
-                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
+                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
                   <SectionItem
                     v-if="type.name"
                     class="bg-light-blue"
@@ -319,8 +319,9 @@
                 <Local
                   v-if="currentSection.type === 'local'"
                   :props="currentSection"
-                  :instance="currentSection.instance === true || (currentSection.linked_to !== '' && currentSection.linked_to !== undefined)"
-                  @addSectionType="(section) => currentSection.instance === true ? addNewGlobalType(section) : addSectionType(section)"
+                  :instance="currentSection.instance === true"
+                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                   :savedView="savedView"
                 />
               </div>
@@ -1338,7 +1339,7 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
-          if (view.type === 'dynamic') {
+          if (view.type === 'dynamic' || view.type === 'local') {
             refactorView.options = []
           }
           if (refactorView.id && refactorView.id.startsWith("id-")) {
@@ -2342,7 +2343,7 @@ export default {
           };
         }
 
-        if (instance === true || (section.type === 'dynamic' && section.instance_name) || (section.type === 'configurable' && section.instance_name)) {
+        if (instance === true || (section.type === 'local' && section.instance_name) || (section.type === 'dynamic' && section.instance_name) || (section.type === 'configurable' && section.instance_name)) {
           section.linkedTo = section.instance_name;
           section.linked_to = section.instance_name;
           section.instance = true;
@@ -2516,7 +2517,7 @@ export default {
           } else if (view.settings) {
             refactorView.options = view.settings;
           }
-          if (view.type === 'dynamic') {
+          if (view.type === 'dynamic' || view.type === 'local') {
             refactorView.options = []
           }
           if (refactorView.id && refactorView.id.startsWith("id-")) {
