@@ -1459,7 +1459,7 @@ export default {
             const token = res.data.token;
             const date = new Date();
             date.setDate(date.getDate() + 7);
-            this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {expires: date});
+            this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {expires: date, path: '/'});
             this.$nuxt.context.redirect(this.$route.path)
             this.loading = false;
           })
@@ -3145,6 +3145,7 @@ span.handle {
 }
 .views {
   margin: 0 auto;
+  width: 100%;
 }
 .part2 {
   margin-top: 3px;
