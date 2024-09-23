@@ -2425,6 +2425,9 @@ export default {
           name: sectionName,
           weight: sectionData.weight
         };
+        if (sectionData.type === 'configurable') {
+          variables['section']['options'] = [sectionData.render_data[0].settings]
+        }
         const inBrowser = typeof window !== 'undefined';
         if (inBrowser) {
           try {
