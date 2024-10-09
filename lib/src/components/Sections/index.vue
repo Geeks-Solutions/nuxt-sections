@@ -651,7 +651,7 @@
                         <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                           <AlertIcon />
                         </div>
-                        <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+                        <div @click="edit(view); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                           <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
                         </div>
                         <DragIcon class="drag-icon handle" />
@@ -2337,7 +2337,7 @@ export default {
           section.region = {};
           section.region[this.selectedLayout] = {
             slot: this.selectedSlotRegion,
-            weight: Object.keys(
+            weight: this.viewsPerRegions[this.selectedSlotRegion] ? this.viewsPerRegions[this.selectedSlotRegion].length : Object.keys(
               this.displayVariations[this.selectedVariation].views
             ).length
           };
