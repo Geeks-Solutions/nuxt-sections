@@ -612,6 +612,52 @@ export default {
 </script>
 ```
 
+## Global Sections
+
+### Create a Global section:
+
+* You can create a global section using `Add a global instance` button available as Admin in the page edit mode that will open a list popup
+
+* You can select one of the existing section types from the list, which will open the section in edit mode, give the global instance a name and fill the form required data for the section
+In the form you also have an option `Automatically add this section to new pages`, if checked the global instance will be automatically added to any new page you create
+
+* If you have existing sections with data in your pages, and you would like to create a global instance for these sections, when editing the sections you have button `Promote to global instance`
+Clicking on the button will open the create global instance form, but it will be filled with the data of your section that you chose to promote
+
+### Editing a Global section:
+
+* In Admin page edit mode, the global instances are marked by a red edit button
+
+* To edit the global instance, you simply open the global section instance, perform the updates you want and submit the form
+Note: When opening the global section instance in edit mode, you have an indication at the top in red showing the pages where this global section instance is referenced, and that editing it will modify it on all these pages
+
+* The auto insertion field is also editable from the global section instance
+
+### Deleting a Global section:
+
+* Similar to the regular section types, you have a delete icon to remove the global section instance from the page
+
+* You can also delete the global instances you created from the global instance tab that you get when clicking on the `Add a new section` button in the page edit mode as Admin
+
+
+## Refreshing the render data of a configurable or dynamic section:
+
+* To refresh the content of a configurable or dynamic section use the event `refresh-section`
+
+* When emitting the event make sure you pass as args an object that has a `qs` object and inside the `qs` you will add the query string key/value that you would like to update
+
+* The library automatically check the query string you passed, it will compare them with query strings required by the sections available in your page.
+So any configurable or dynamic section in the page that is using the query string you passed in the args of the event, will be refreshed with the new value sent in the event.
+Values of the query string can have any type like string, array, object, number ie.:
+```js
+this.$emit('refresh-section', {
+  qs: {
+    offset: '12'
+  }
+})
+```
+* In the example above, all configurable or dynamic sections in the page that are using the `offset` query string will be refreshed with the new value `offset: '12'`
+
 ## Development
 
 1. Clone this repository

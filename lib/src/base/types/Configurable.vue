@@ -171,7 +171,16 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload, importJs, parseQS} from "../../utils";
+import {
+  formatName,
+  sectionHeader,
+  importComp,
+  deleteMedia,
+  globalFileUpload,
+  importJs,
+  parseQS,
+  getGlobalTypeData
+} from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 import UploadMedia from "../../components/Medias/UploadMedia.vue";
@@ -605,29 +614,20 @@ export default {
           })
         });
     },
-    getGlobalType() {
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader({ token }),
-      };
-      const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${this.props.linked_to}`;
+    async getGlobalType() {
       this.$emit("load", true);
-
-      this.$axios.get(URL, config).then((res) => {
-        if (res && res.data) {
-          this.$emit("load", false);
-          this.autoInsert = res.data.auto_insertion
-          if (res.data.pages && res.data.pages.length > 0) {
-            this.pages = res.data.pages.map(p => p.path)
-          }
-          this.instanceName = res.data.name
+      const result = await getGlobalTypeData(this.props.linked_to)
+      if (result.res && result.res.data) {
+        this.$emit("load", false);
+        this.autoInsert = result.res.data.auto_insertion
+        if (result.res.data.pages && result.res.data.pages.length > 0) {
+          this.pages = result.res.data.pages.map(p => p.path)
         }
-      })
-          .catch((error) => {
-            this.$emit("load", false);
-            this.showToast("Error", "error", error.response.data.message, error.response.data.options);
-          });
+        this.instanceName = result.res.data.name
+      } else if (result.error) {
+        this.$emit("load", false);
+        this.showToast("Error", "error", result.error.response.data.message, result.error.response.data.options);
+      }
     },
     showToast(title, variant, message) {
       this.$toast[variant](message, {
