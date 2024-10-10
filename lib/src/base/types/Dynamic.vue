@@ -20,8 +20,24 @@
       <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
     </div>
     <div v-if="globalSectionMode === true && pages.length > 0">
-      <div class="pagesReferenceWrapper">
-        <div class="pagesReference">{{ $t('referencedSection', {pages: pages.join(', ')}) }}</div>
+      <div class="global-sections-reference-section">
+        <div class="global-sections-first-row">
+          <span>{{ $t('referencedSection1') }}</span>
+          <div class="relative">
+              <span class="global-sections-pages-link" @click="showPagesList = !showPagesList">
+                {{ pages.length }}
+              </span>
+            <div v-if="showPagesList" class="global-sections-popup">
+              <ul>
+                <li v-for="(page, index) in pages" :key="`refenced-pages-${index}`">{{ page }}</li>
+              </ul>
+            </div>
+          </div>
+          <span>{{ $t('referencedSection1Pages') }}</span>
+        </div>
+        <div class="global-sections-second-row">
+          <span>{{ $t('referencedSection2') }}</span>
+        </div>
       </div>
     </div>
     <button
@@ -65,6 +81,7 @@ export default {
     return {
       autoInsert: false,
       instanceNameError: false,
+      showPagesList: false,
       instanceName: '',
       pages: []
     }

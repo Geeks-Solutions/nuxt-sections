@@ -1788,7 +1788,10 @@ export default {
           this.displayVariations[this.selectedVariation].views
         );
         views.map(view => {
-          if (!view.region[this.selectedLayout] || !view.region[this.selectedLayout]['slot']) {
+          if (!view.region || !view.region[this.selectedLayout] || !view.region[this.selectedLayout]['slot']) {
+            if (!view.region) {
+              view['region'] = {}
+            }
             view.region[this.selectedLayout] = {
               slot: this.layoutSlotNames[0],
               weight: view.weight
@@ -3738,5 +3741,46 @@ span.handle {
 }
 .selectSectionType {
   width: 500px;
+}
+
+.global-sections-first-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: red;
+}
+
+.global-sections-second-row {
+  color: red;
+}
+
+.global-sections-pages-link {
+  font-size: 14px;
+  color: red;
+  margin: 0 5px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.global-sections-popup {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 10px;
+  position: absolute;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  max-height: 400px;
+  overflow-y: scroll;
+  color: red;
+}
+
+.global-sections-popup ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.global-sections-popup li {
+  padding: 5px 0;
+  white-space: nowrap;
 }
 </style>
