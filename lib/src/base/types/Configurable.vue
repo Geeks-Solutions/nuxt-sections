@@ -195,6 +195,7 @@ import {
   globalFileUpload,
   importJs,
   parseQS,
+  validateQS,
   getGlobalTypeData
 } from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
@@ -250,6 +251,10 @@ export default {
     linked: {
       type: Boolean,
       default: false
+    },
+    basePath: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -587,11 +592,18 @@ export default {
           name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
           weight: 1,
           options: this.options
-        }
+        },
+        base_path: this.basePath
       };
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (this.props.query_string_keys && this.props.query_string_keys.length > 0) {
+          variables["query_string"] = {
+            ...variables["query_string"],
+            ...validateQS(variables["query_string"], this.props.query_string_keys, true)
+          }
+        }
       }
 
       const URL =

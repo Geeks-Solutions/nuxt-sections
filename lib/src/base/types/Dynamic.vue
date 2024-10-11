@@ -52,7 +52,7 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, parseQS, getGlobalTypeData} from "../../utils";
+import {formatName, sectionHeader, parseQS, validateQS, getGlobalTypeData} from "../../utils";
 
 export default {
   props: {
@@ -75,6 +75,10 @@ export default {
     linked: {
       type: Boolean,
       default: false
+    },
+    basePath: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -127,11 +131,18 @@ export default {
         section: {
               name,
               weight: 1
-            }
+            },
+        base_path: this.basePath
       };
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (this.props.query_string_keys && this.props.query_string_keys.length > 0) {
+          variables["query_string"] = {
+            ...variables["query_string"],
+            ...validateQS(variables["query_string"], this.props.query_string_keys, true)
+          }
+        }
       }
 
       const URL =

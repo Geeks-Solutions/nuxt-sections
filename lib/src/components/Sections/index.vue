@@ -297,6 +297,7 @@
                   :headers="headers"
                   :instance="currentSection.instance === true"
                   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                  :base-path="pagePath"
                   @load="(value) => loading = value"
                 />
                 <Configurable
@@ -312,6 +313,7 @@
                   :translation-component-support="translationComponentSupport"
                   :instance="currentSection.instance === true"
                   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                  :base-path="pagePath"
                   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
                   @load="(value) => loading = value"
                   @promote-section="currentSection = {...currentSection, instance: true}"
@@ -1938,7 +1940,8 @@ export default {
           name: gt.section.name,
           weight: 1,
           options: options
-        }
+        },
+        base_path: this.pagePath
       };
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
@@ -1998,7 +2001,8 @@ export default {
         section: {
           name,
           weight: 1
-        }
+        },
+        base_path: this.pagePath
       };
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
@@ -2411,7 +2415,9 @@ export default {
         headers: sectionHeader({}),
       };
 
-      let variables = {}
+      let variables = {
+          base_path: this.pagePath
+      }
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
