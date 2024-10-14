@@ -165,25 +165,37 @@ export default {
             id: this.id,
             weight: this.weight,
             render_data: res.data.render_data,
+            query_string_keys: res.data.query_string_keys,
             instance_name: this.props.instance_name
           })
           this.$emit("load", false);
         })
         .catch((e) => {
-          if (e.response.data.error) {
-            this.$emit('errorAddingSection', {
-              closeModal: true,
-              title: "Error adding "+ this.props.name,
-              message: e.response.data.error
+          if (e.response.status === 404) {
+            this.$emit('addSectionType', {
+              name: name,
+              type: 'dynamic',
+              id: this.id,
+              weight: this.weight,
+              render_data: e.response.data.render_data,
+              query_string_keys: e.response.data.query_string_keys,
+              instance_name: this.props.instance_name
             })
           } else {
-            this.$emit('errorAddingSection', {
-              closeModal: true,
-              title: "Error adding "+ this.props.name,
-              message: this.$t('saveConfigSectionError')
-            })
+            if (e.response.data.error) {
+              this.$emit('errorAddingSection', {
+                closeModal: true,
+                title: "Error adding "+ this.props.name,
+                message: e.response.data.error
+              })
+            } else {
+              this.$emit('errorAddingSection', {
+                closeModal: true,
+                title: "Error adding "+ this.props.name,
+                message: this.$t('saveConfigSectionError')
+              })
+            }
           }
-
           this.$emit("load", false);
         });
     },

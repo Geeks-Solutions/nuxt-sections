@@ -630,17 +630,33 @@ export default {
             id: this.id,
             weight: this.weight,
             render_data: res.data.render_data,
+            query_string_keys: res.data.query_string_keys,
             auto_insertion: this.autoInsert,
             instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
           })
         })
         .catch((e) => {
+          if (e.response.status === 404) {
+            this.$emit('addSectionType', {
+              name: this.props.name.includes(":") ? this.props.name.split(":")[1] : this.props.name,
+              nameID: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
+              type: 'configurable',
+              settings: this.options[0],
+              id: this.id,
+              weight: this.weight,
+              render_data: e.response.data.render_data,
+              query_string_keys: e.response.data.query_string_keys,
+              auto_insertion: this.autoInsert,
+              instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
+            })
+          } else {
+            this.$emit('errorAddingSection', {
+              closeModal: false,
+              title: "Error adding "+ this.props.name,
+              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
+            })
+          }
           this.$emit("load", false);
-          this.$emit('errorAddingSection', {
-            closeModal: false,
-            title: "Error adding "+ this.props.name,
-            message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
-          })
         });
     },
     async getGlobalType() {

@@ -883,7 +883,7 @@
 </template>
 
 <script>
-import {formatName, importComp, parsePath, parseQS, sectionHeader} from "../../utils";
+import {formatName, importComp, parsePath, parseQS, validateQS, sectionHeader} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -1946,6 +1946,12 @@ export default {
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (gt.query_string_keys && gt.query_string_keys.length > 0) {
+          variables["query_string"] = {
+            ...variables["query_string"],
+            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode)
+          }
+        }
       }
 
       const URL =
@@ -1979,15 +1985,31 @@ export default {
             })
           })
           .catch((e) => {
+            if (e.response.status === 404) {
+              this.$emit('addSectionType', {
+                name: gt.section.name,
+                type: 'configurable',
+                settings: options[0],
+                id: this.id,
+                weight: this.weight,
+                render_data: e.response.data.render_data,
+                fields: gt.fields,
+                query_string_keys: gt.query_string_keys,
+                dynamic_options: gt.dynamic_options,
+                auto_insertion: gt.auto_insertion,
+                instance_name: gt.name
+              })
+            } else {
+              this.$emit('errorAddingSection', {
+                closeModal: false,
+                title: "Error adding "+ gt.name,
+                message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
+              })
+            }
             this.$emit("load", false);
-            this.$emit('errorAddingSection', {
-              closeModal: false,
-              title: "Error adding "+ gt.name,
-              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
-            })
           });
     },
-    async renderDynamicSection(name, instanceName) {
+    async renderDynamicSection(name, instanceName, gt) {
       this.$emit("load", true);
       const token = this.$cookies.get("sections-auth-token");
       const header = {
@@ -2007,6 +2029,12 @@ export default {
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (gt.query_string_keys && gt.query_string_keys.length > 0) {
+          variables["query_string"] = {
+            ...variables["query_string"],
+            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode)
+          }
+        }
       }
 
       const URL =
@@ -2029,25 +2057,37 @@ export default {
               id: this.id,
               weight: this.weight,
               render_data: res.data.render_data,
+              query_string_keys: res.data.query_string_keys,
               instance_name: instanceName
             })
             this.$emit("load", false);
           })
           .catch((e) => {
-            if (e.response.data.error) {
-              this.$emit('errorAddingSection', {
-                closeModal: true,
-                title: "Error adding "+ instanceName,
-                message: e.response.data.error
+            if (e.response.status === 404) {
+              this.$emit('addSectionType', {
+                name: name,
+                type: 'dynamic',
+                id: this.id,
+                weight: this.weight,
+                render_data: e.response.data.render_data,
+                query_string_keys: e.response.data.query_string_keys,
+                instance_name: instanceName
               })
             } else {
-              this.$emit('errorAddingSection', {
-                closeModal: true,
-                title: "Error adding "+ instanceName,
-                message: this.$t('saveConfigSectionError')
-              })
+              if (e.response.data.error) {
+                this.$emit('errorAddingSection', {
+                  closeModal: true,
+                  title: "Error adding "+ instanceName,
+                  message: e.response.data.error
+                })
+              } else {
+                this.$emit('errorAddingSection', {
+                  closeModal: true,
+                  title: "Error adding "+ instanceName,
+                  message: this.$t('saveConfigSectionError')
+                })
+              }
             }
-
             this.$emit("load", false);
           });
     },
@@ -2095,7 +2135,7 @@ export default {
                   if (gt.type === 'configurable') {
                     await this.renderConfigurableSection(gt, gt.section.options)
                   } else if (gt.type === 'dynamic') {
-                    await this.renderDynamicSection(gt.section.name, gt.name)
+                    await this.renderDynamicSection(gt.section.name, gt.name, gt)
                   } else {
                     this.addSectionType({...gt.section, id: 'id-' + Date.now(), weight: 'null', type: gt.type, instance_name: gt.name, fields: gt.fields, query_string_keys: gt.query_string_keys, dynamic_options: gt.dynamic_options, render_data: gt.section && gt.section.options && gt.section.options[0] ? [{settings: gt.section.options[0]}] : undefined}, false, true)
                   }
@@ -2497,6 +2537,7 @@ export default {
       this.invalidSectionsErrors = {}
       this.sectionsFormatErrors = {}
       const sections = [];
+      const qsKeys = [];
       let views = this.displayVariations[variationName].views;
       views = Object.values(views);
       let formatValdiation = true
@@ -2543,6 +2584,9 @@ export default {
               } });
           } else {
             sections.push({ ...refactorView });
+          }
+          if (view.query_string_keys && view.query_string_keys.length > 0) {
+            qsKeys.push(...view.query_string_keys)
           }
         }
       });
@@ -2621,6 +2665,12 @@ export default {
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
           variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+          if (qsKeys && qsKeys.length > 0) {
+            variables["query_string"] = {
+              ...variables["query_string"],
+              ...validateQS(variables["query_string"], qsKeys, this.editMode)
+            }
+          }
         }
 
         const URL =
@@ -3788,5 +3838,9 @@ span.handle {
 .global-sections-popup li {
   padding: 5px 0;
   white-space: nowrap;
+}
+
+.ql-editor p img {
+  display: inline;
 }
 </style>
