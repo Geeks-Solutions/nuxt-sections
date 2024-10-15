@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Global Sections management [Global Sections management #39](https://github.com/Geeks-Solutions/nuxt-sections/issues/39)
 
+### Updated
+
+- Updated vue-components library with live version 1.0.7
+
 ## [1.0.9] - 2024-04-05
 
 ### Fixed
