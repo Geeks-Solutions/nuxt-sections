@@ -2,12 +2,14 @@
   <div class="container containerWidth text-center">
 
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
-      <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
-        <div
-          class="font-light mt-2 mb-2"
-          :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
-        >
-          <div class="text-capitalize ">{{ formatName(props.name) }}</div>
+      <div>
+        <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
+          <div
+              class="font-light mt-2 mb-2"
+              :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
+          >
+            <div class="text-capitalize ">{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</div>
+          </div>
         </div>
       </div>
       <!--  The below div element adds an extra tab to the configurable section. -->
@@ -31,6 +33,25 @@
           <div
             class=" flex flex-col justify-between content-wrapper"
           >
+            <div v-if="globalSectionMode === true">
+              <div class="autoInsertRow">
+                <div>
+                  {{ $t('autoInsertInstance') }}
+                </div>
+                <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
+              </div>
+              <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+                <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+                    type="text"
+                    :placeholder="$t('instanceName')+'*'"
+                    :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+                    v-model="instanceName"
+                />
+              </div>
+              <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+            </div>
+            <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
             <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
             <div
               :key="idx"
@@ -122,6 +143,14 @@
           <button class="submit-btn mt-4" type="button" @click="addConfigurable()">
             {{ $t('Submit data') }}
           </button>
+          <button
+              v-if="instance === false && props.creation !== true && globalSectionMode === false"
+              class="mt-4 submit-btn promote-btn"
+              type="button"
+              @click="$emit('promote-section')"
+          >
+            {{ $t('promoteSection') }}
+          </button>
         </form>
       </div>
       <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
@@ -138,18 +167,30 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload, importJs, parseQS} from "../../utils";
+import {
+  formatName,
+  sectionHeader,
+  importComp,
+  deleteMedia,
+  globalFileUpload,
+  importJs,
+  parseQS,
+  validateQS,
+  getGlobalTypeData
+} from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 import UploadMedia from "../../components/Medias/UploadMedia.vue";
 import MediaComponent from "../../components/Medias/MediaComponent.vue";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
+import GlobalReferences from "../SubTypes/globalReferences.vue";
 
 export default {
   components: {
     UploadMedia,
     MediaComponent,
     TranslationComponent,
+    GlobalReferences,
     loadingCircle,
     CloseIcon
   },
@@ -184,6 +225,18 @@ export default {
     translationComponentSupport: {
       type: Boolean,
       default: false
+    },
+    instance: {
+      type: Boolean,
+      default: false
+    },
+    linked: {
+      type: Boolean,
+      default: false
+    },
+    basePath: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -199,7 +252,12 @@ export default {
       isInProgress: false,
       mediaError: '',
       customFormData: null,
-      formLang: this.locales[0]
+      formLang: this.$i18n.locale.toString(),
+      autoInsert: false,
+      instanceNameError: false,
+      showPagesList: false,
+      instanceName: '',
+      pages: []
     };
   },
   watch: {
@@ -233,6 +291,9 @@ export default {
       }
       return importComp(path);
     },
+    globalSectionMode() {
+      return this.instance === true || this.linked === true
+    }
   },
   mounted() {
     this.$emit('loadReference')
@@ -304,6 +365,10 @@ export default {
             })
           }
 
+          if (this.props.addToPage) {
+            this.addConfigurable()
+          }
+
           this.$emit("load", false);
         })
         .catch((err) => {
@@ -313,6 +378,10 @@ export default {
     }
 
     this.importHooks('mounted')
+
+    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
+      this.getGlobalType()
+    }
   },
   methods: {
     formatFileName(name) {
@@ -454,6 +523,11 @@ export default {
       }
     },
     addConfigurable() {
+      this.instanceNameError = false
+      if (this.globalSectionMode && this.instanceName === '') {
+        this.instanceNameError = true
+        return
+      }
       this.errorMessage = "";
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
@@ -500,11 +574,18 @@ export default {
           name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
           weight: 1,
           options: this.options
-        }
+        },
+        base_path: this.basePath
       };
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (this.props.query_string_keys && this.props.query_string_keys.length > 0) {
+          variables["query_string"] = {
+            ...variables["query_string"],
+            ...validateQS(variables["query_string"], this.props.query_string_keys, true)
+          }
+        }
       }
 
       const URL =
@@ -530,17 +611,50 @@ export default {
             settings: this.options[0],
             id: this.id,
             weight: this.weight,
-            render_data: res.data.render_data
+            render_data: res.data.render_data,
+            query_string_keys: res.data.query_string_keys,
+            auto_insertion: this.autoInsert,
+            instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
           })
         })
         .catch((e) => {
+          if (e.response.status === 404) {
+            this.$emit('addSectionType', {
+              name: this.props.name.includes(":") ? this.props.name.split(":")[1] : this.props.name,
+              nameID: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
+              type: 'configurable',
+              settings: this.options[0],
+              id: this.id,
+              weight: this.weight,
+              render_data: e.response.data.render_data,
+              query_string_keys: e.response.data.query_string_keys,
+              auto_insertion: this.autoInsert,
+              instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
+            })
+          } else {
+            this.$emit('errorAddingSection', {
+              closeModal: false,
+              title: "Error adding "+ this.props.name,
+              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
+            })
+          }
           this.$emit("load", false);
-          this.$emit('errorAddingSection', {
-            closeModal: false,
-            title: "Error adding "+ this.props.name,
-            message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
-          })
         });
+    },
+    async getGlobalType() {
+      this.$emit("load", true);
+      const result = await getGlobalTypeData(this.props.linked_to)
+      if (result.res && result.res.data) {
+        this.$emit("load", false);
+        this.autoInsert = result.res.data.auto_insertion
+        if (result.res.data.pages && result.res.data.pages.length > 0) {
+          this.pages = result.res.data.pages.map(p => p.path)
+        }
+        this.instanceName = result.res.data.name
+      } else if (result.error) {
+        this.$emit("load", false);
+        this.showToast("Error", "error", result.error.response.data.message, result.error.response.data.options);
+      }
     },
     showToast(title, variant, message) {
       this.$toast[variant](message, {
@@ -704,5 +818,23 @@ export default {
 
 .wl-col {
   padding: 0 20px;
+}
+
+.autoInsertRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+.autoInsertInput {
+  width: 15px;
+  height: 15px;
+}
+.instanceInput {
+  width: 350px;
+}
+.promote-btn {
+  font-size: 20px !important;
 }
 </style>

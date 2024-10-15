@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.10] - 2024-08-29
+
+### Fixed
+
+- Fix query string problem on the root path [Query strings used for a section dynamic or configurable needs to support the root one / #48](https://github.com/Geeks-Solutions/nuxt-sections/issues/48)
+
+- Fix default language selection when locales order is changed [Query strings used for a section dynamic or configurable needs to support the root one / #48](https://github.com/Geeks-Solutions/nuxt-sections/issues/48)
+
+### Added
+
+- Add a new event to the view component that allow the view section to be refreshed by calling the render API
+
+- Added JSON QS support
+
+- Global Sections management [Global Sections management #39](https://github.com/Geeks-Solutions/nuxt-sections/issues/39)
+
 ## [1.0.9] - 2024-04-05
 
 ### Fixed
