@@ -19,27 +19,7 @@
       </div>
       <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
     </div>
-    <div v-if="globalSectionMode === true && pages.length > 0">
-      <div class="global-sections-reference-section">
-        <div class="global-sections-first-row">
-          <span>{{ $t('referencedSection1') }}</span>
-          <div class="relative">
-              <span class="global-sections-pages-link" @click="showPagesList = !showPagesList">
-                {{ pages.length }}
-              </span>
-            <div v-if="showPagesList" class="global-sections-popup">
-              <ul>
-                <li v-for="(page, index) in pages" :key="`refenced-pages-${index}`">{{ page }}</li>
-              </ul>
-            </div>
-          </div>
-          <span>{{ $t('referencedSection1Pages') }}</span>
-        </div>
-        <div class="global-sections-second-row">
-          <span>{{ $t('referencedSection2') }}</span>
-        </div>
-      </div>
-    </div>
+    <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
     <button
         v-if="globalSectionMode === true"
         class="mt-4 submit-btn"
@@ -53,6 +33,7 @@
 
 <script>
 import {formatName, sectionHeader, parseQS, validateQS, getGlobalTypeData} from "../../utils";
+import GlobalReferences from "../SubTypes/globalReferences.vue";
 
 export default {
   props: {
@@ -80,6 +61,9 @@ export default {
       type: String,
       default: ''
     }
+  },
+  components: {
+    GlobalReferences
   },
   data() {
     return {
@@ -248,16 +232,6 @@ export default {
 .autoInsertInput {
   width: 15px;
   height: 15px;
-}
-.pagesReference {
-  font-size: 14px;
-  color: red;
-  width: 500px;
-}
-.pagesReferenceWrapper {
-  width: 100%;
-  display: flex;
-  place-content: center;
 }
 .instanceInput {
   width: 350px;
