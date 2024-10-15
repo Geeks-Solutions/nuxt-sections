@@ -153,7 +153,7 @@ export default {
   width: 350px;
 }
 .local-t {
-  min-width: 350px;
+  min-width: 550px;
   min-height: 40px;
 }
 </style>
