@@ -1023,6 +1023,7 @@ export default {
       globalTypes: [],
       types: [],
       sectionTypes: [],
+      sectionsQsKeys: [],
       originalVariations: {},
       // current visible views
       views: {},
@@ -1297,6 +1298,9 @@ export default {
         } else if (section.settings) {
           section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
         }
+        if (section.query_string_keys && section.query_string_keys.length > 0) {
+          this.sectionsQsKeys.push(...section.query_string_keys)
+        }
         if (section.id) {
           views[section.id] = section;
         } else {
@@ -1305,7 +1309,16 @@ export default {
 
         if (section.error || (section.settings === null || section.settings === undefined)) {
           this.errorInViews = true;
+        } else {
+          this.errorInViews = false
         }
+        sections.forEach((section) => {
+          if (section.status_code === 404) {
+            this.errorInViews = false;
+          } else {
+            this.errorInViews = false
+          }
+        })
       });
       this.$set(this.displayVariations, this.activeVariation.pageName, {
         name: this.activeVariation.pageName,
@@ -2295,6 +2308,12 @@ export default {
           payload = {
             query_string
           }
+          if (this.sectionsQsKeys && this.sectionsQsKeys.length > 0) {
+            payload["query_string"] = {
+              ...payload["query_string"],
+              ...validateQS(payload["query_string"], this.sectionsQsKeys, this.editMode)
+            }
+          }
         }
 
         await this.$axios.post(URL, payload, config).then((res) => {
@@ -2306,6 +2325,7 @@ export default {
               this.$t('oldPageVersion')
             );
           }
+          this.initializeSections(res);
         }).catch(() => {})
         this.getUserData();
         this.verifySlots();
