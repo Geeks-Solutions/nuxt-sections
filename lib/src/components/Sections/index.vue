@@ -409,7 +409,7 @@
             <div class="flexSections flex-row justify-center items-center">
               <AlertIcon />
               <div class="text-center h4 my-3 pb-3 deletePageLabel">
-                {{ $t("deleteSection") }}
+                {{ $t("deleteSection") }} ({{ deletedSectionName }})
               </div>
             </div>
             <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
@@ -573,14 +573,14 @@
                 class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                 v-if="admin && editMode"
               >
-                <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                   <AlertIcon />
                 </div>
                 <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                   <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
                 </div>
                 <DragIcon class="drag-icon handle" />
-                <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
+                <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
                   <TrashIcon class="trash-icon" />
                 </div>
                 <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
@@ -591,7 +591,7 @@
                 <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
                   {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
                 </div>
-                <div v-else-if="admin && editMode && view.error" class="error-section-loaded error-section-empty">
+                <div v-else-if="admin && editMode && (view.error && view.status_code !== 404)" class="error-section-loaded error-section-empty">
                 </div>
                 <component
                   v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
@@ -650,14 +650,14 @@
                           class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                           v-if="admin && editMode"
                       >
-                        <div v-if="sectionsFormatErrors[view.weight] || view.error" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                        <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
                           <AlertIcon />
                         </div>
                         <div @click="edit(view); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                           <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
                         </div>
                         <DragIcon class="drag-icon handle" />
-                        <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id">
+                        <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
                           <TrashIcon class="trash-icon" />
                         </div>
                         <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
@@ -1036,6 +1036,7 @@ export default {
       isDeletePageModalOpen: false,
       isDeleteSectionModalOpen: false,
       deletedSectionId: null,
+      deletedSectionName: null,
       isErrorsFormatModalOpen: false,
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
@@ -1323,7 +1324,7 @@ export default {
       let views = this.originalVariations[this.pageName].views;
       views = Object.values(views);
       views.forEach((view) => {
-        if(!view.error) {
+        if(!view.error || view.status_code === 404) {
           const refactorView = {
             id: view.id,
             weight: view.weight,
@@ -1492,7 +1493,7 @@ export default {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.allSections));
       const dlAnchorElem = document.getElementById('downloadAnchorElem');
       dlAnchorElem.setAttribute("href",     dataStr     );
-      dlAnchorElem.setAttribute("download", `${this.pageName}.json`);
+      dlAnchorElem.setAttribute("download", `${this.pagePath}.json`);
       dlAnchorElem.click();
     },
     initImportSections() {
@@ -2542,7 +2543,7 @@ export default {
       views = Object.values(views);
       let formatValdiation = true
       views.map((view) => {
-        if(!view.error) {
+        if(!view.error || view.status_code === 404) {
           const refactorView = {
             id: view.id,
             weight: view.weight,
@@ -3842,5 +3843,14 @@ span.handle {
 
 .ql-editor p img {
   display: inline;
+}
+
+.pagesReference {
+  font-size: 14px;
+  color: red;
+}
+
+.view-in-edit-mode {
+  min-height: 54px;
 }
 </style>
