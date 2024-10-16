@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Multiple bug fixes [Library fixes needed for Maiori #65](https://github.com/Geeks-Solutions/nuxt-sections/issues/65)
+- Multiple bug fixes [Library fixes needed #65](https://github.com/Geeks-Solutions/nuxt-sections/issues/65)
 
 ## [1.0.10] - 2024-08-29
 
