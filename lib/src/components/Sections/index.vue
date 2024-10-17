@@ -1728,8 +1728,14 @@ export default {
     },
     getComponent(sectionName, sectionType) {
       let path = "";
-      if (sectionName.includes(":")) {
+      if (sectionName.includes(":") && sectionName.includes("_-_")) {
+        path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+        return importComp(path);
+      } else if (sectionName.includes(":")) {
         path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+        return importComp(path);
+      } else if (sectionName.includes("_-_")) {
+        path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
         return importComp(path);
       } else {
         path = `/views/${sectionName}_${sectionType}`;
