@@ -26,7 +26,7 @@ And configure the library, the possible configurations are as follow:
 - `projectId`: The ID of you project, you get it from your project interface after your register to sections
 - `environment`: _to use only for development purposes_ set it to "testing" if you want your requests to be directed to sections test server
 - `projectUrl`: _to use only if you intend to run sections in SSR_ set it to the project url you defined in your project interface on sections back office.
-- `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages.
+- `queryStringSupport`: _to use only if you intend to use query strings on your project_ set it to `enabled`. Enabling it on a project that does not have access to query strings will return errors when getting pages. (query string example: `/blogs1/blogs2/path=/blogs/article_path/categories_titles[]=Science,People/sort{}={"updated_at": "DSC""}` where pagePath is `/blogs1/blogs2` and query strings are `path1=/blogs/article_path` and `categories_titles[]=Science,People`). It is important to add `[]` after the QS key if the value of the QS should be an array like `categories_titles[]=Science,People`. You can as well use query strings in the following way (`?path=` instead of `/path=`): `/blogs1/blogs2?path=/blogs/article_path&categories_titles[]=Science,People&sort{}={"updated_at": "DSC""}`. Note that you can not use both ways together
 - `projectLocales`: _to use only if you intend to have multiple supported languages for your website. Its value must be a string of language code separated by comma and with no spaces ex.: `en,fr,it,es`. See Language Support section below for more details on how to use this feature
 
 > The following packages are installed by the module:
@@ -109,7 +109,7 @@ publicRuntimeConfig: {
 }
 ````
 
-3. Add the sections component on the page(s) of your choice
+3. The library comes with a default dynamic Sections page support (which you can specify its path from the url) but you can also add the sections component on the page(s) of your choice
 
 ````vue
 <template>
@@ -148,6 +148,30 @@ To get the UserToken and have it stored in the above cookie, simply set sections
 
 If you now want to move on and start providing local and static sections for your website editor, or customize the display of dynamic or configurable ones, read below.
 
+When using the default dynamic Sections page, the library expose the mounted, created and fetch hooks of the pages. In order to use these hooks, your sections folder must have `js` folder and the `js` folder must have a `hooks.js` file containing the hooks **(Make sure to follow the same structure as showing below)**:   
+
+```js
+// sections/js/hooks.js
+
+const mounted = () => {
+  // mounted code goes here
+}
+
+const created = () => {
+  // created code goes here
+}
+
+const fetch = () => {
+  // fetch code goes here
+}
+
+module.exports = {
+  mounted,
+  created,
+  fetch
+};
+```
+
 # How it works
 
 Sections server comes with a Wysiwyg and any public sections out of the box.
@@ -180,7 +204,7 @@ In case you are trying to use a section that you haven't properly declared on yo
 
 - `addNewStaticType(sectionTypeName)` a helper function that takes a string of sectionTypeName that matches your component name created inside the configurations folder mentioned above which will be used then to add this section type to your page
 
-###Example on how to use the function:
+### Example on how to use the function:
 
 ````js
 import {addNewStaticType} from "@geeks.solutions/nuxt-sections/lib/src/utils";
@@ -196,6 +220,48 @@ await addNewStaticType(sectionTypeName).then((res) => {
 ````
 ---
 
+### When using the configurable sections:
+
+- The configurable section currently supports the following types: 
+```json
+[
+  "file",
+  "media",
+  "string",
+  "integer",
+  "textfield",
+  "textarea",
+  "hidden",
+  "wysiwyg"
+]
+```
+
+- If a new field type is needed, you can create your custom vue component for it inside `@sections/configurable_components` and the name of the component should match `${fieldKey}-${fieldName}` so the library can load it correctly
+
+- You can also override an existing field type component by also created a component for it like the step above  
+
+- The library exposes the following props of the configurable section types giving you more control on the component:
+
+```json
+["options", "optionsData", "field", "customFormData", "sectionsUserId", "reference"]
+```
+
+Note that the reference props gives you full access to the configurable form code as it uses $refs that returns the configurable form vue form component
+
+- The library also expose the mounted hook of the configurable section type form. In order to use this hook, your sections folder must have `js` folder and the `js` folder must have a `configurable-hooks` file containing the hook:
+
+```js
+// sections/js/configurable-hooks.js
+
+const mounted = () => {
+    // mounted code goes here
+}
+
+module.exports = {
+  mounted
+};
+```
+
 # Media sections
 
 - `globalFileUpload` A function that uses media to upload images replacing the base64 format and removing old media.
@@ -204,6 +270,23 @@ await addNewStaticType(sectionTypeName).then((res) => {
 - Import globalFileUpload from "@geeks.solutions/nuxt-sections/lib/src/utils"
 - To link the uploaded media to your content settings must be sent as an array and the media key which is `media` in the below example should match the field name that is set when creating your static section type
 - media should also be sent as an array, and it is required to have `media_id` key and its value coming from id returned by the globalFileUpload function
+- The form component having your media must have a prop named `mediaFields` that is an array of object having the type and name of the medias used in the section:
+
+````
+props: {
+    ...
+    mediaFields: [
+      {
+        type: 'image',
+        name: 'media1'
+      },
+      {
+        type: 'image',
+        name: 'media2'
+      }
+    ]
+  }
+````
 
 ````js
 import {globalFileUpload} from "@geeks.solutions/nuxt-sections/lib/src/utils";
@@ -294,6 +377,8 @@ async removeImage() {
       )
     },
 ````
+
+
 
 # Language Support
 
@@ -481,6 +566,97 @@ So it will be displayed automatically if you are using the UploadMedia component
 so you can make the updates press on the save button and the changes will directly show in your sections form.
 Or if you are using the UploadMedia component just click in the image preview and the media meta component will open.
 Then from the media meta component, select the media you want to edit, apply your changes and save the form
+
+## Layouts
+
+* You can create different layouts for your Sections pages by adding layout Vue js components to `layouts` folder that you should create inside `sections` directory. 
+
+* As Admin, in edit mode you can select your layout from the drop-down that will contain the list of layouts Vue js components that you added to the `sections/layouts` folder.
+
+* Layout component example that must be placed inside `sections/layouts` folder of your project:
+The below example creates a layout of 4 regions in a sections page (top, right, left and bottom).
+Keep in mind that the below structure of slots (which represents the different regions in your layout) like: `<slot name="top"></slot>` and the `slotNames` prop 
+are mandatory for the layout to work properly. 
+
+```html
+<template>
+  <div>
+    <div>
+      <slot name="top"></slot>
+    </div>
+    <div class="grid grid-cols-2">
+      <div class="col-span-1">
+        <slot name="right"></slot>
+      </div>
+      <div class="col-span-1">
+        <slot name="left"></slot>
+      </div>
+    </div>
+    <div>
+      <slot name="bottom"></slot>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    slotNames: {
+      type: Array,
+      default() {
+        return ['left', 'right', 'top', 'bottom']
+      },
+    },
+  },
+}
+</script>
+```
+
+## Global Sections
+
+### Create a Global section:
+
+* You can create a global section using `Add a global instance` button available as Admin in the page edit mode that will open a list popup
+
+* You can select one of the existing section types from the list, which will open the section in edit mode, give the global instance a name and fill the form required data for the section
+In the form you also have an option `Automatically add this section to new pages`, if checked the global instance will be automatically added to any new page you create
+
+* If you have existing sections with data in your pages, and you would like to create a global instance for these sections, when editing the sections you have button `Promote to global instance`
+Clicking on the button will open the create global instance form, but it will be filled with the data of your section that you chose to promote
+
+### Editing a Global section:
+
+* In Admin page edit mode, the global instances are marked by a red edit button
+
+* To edit the global instance, you simply open the global section instance, perform the updates you want and submit the form
+Note: When opening the global section instance in edit mode, you have an indication at the top in red showing the pages where this global section instance is referenced, and that editing it will modify it on all these pages
+
+* The auto insertion field is also editable from the global section instance
+
+### Deleting a Global section:
+
+* Similar to the regular section types, you have a delete icon to remove the global section instance from the page
+
+* You can also delete the global instances you created from the global instance tab that you get when clicking on the `Add a new section` button in the page edit mode as Admin
+
+
+## Refreshing the render data of a configurable or dynamic section:
+
+* To refresh the content of a configurable or dynamic section use the event `refresh-section`
+
+* When emitting the event make sure you pass as args an object that has a `qs` object and inside the `qs` you will add the query string key/value that you would like to update
+
+* The library automatically check the query string you passed, it will compare them with query strings required by the sections available in your page.
+So any configurable or dynamic section in the page that is using the query string you passed in the args of the event, will be refreshed with the new value sent in the event.
+Values of the query string can have any type like string, array, object, number ie.:
+```js
+this.$emit('refresh-section', {
+  qs: {
+    offset: '12'
+  }
+})
+```
+* In the example above, all configurable or dynamic sections in the page that are using the `offset` query string will be refreshed with the new value `offset: '12'`
 
 ## Development
 

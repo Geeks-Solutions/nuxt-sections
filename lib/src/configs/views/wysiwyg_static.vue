@@ -1,8 +1,8 @@
 <template>
   <div
     class="wys-wrapper view-section-component"
-    :class="'mtitle' + html.charAt(2)"
-    v-view="viewHandler"
+    :class="html && html.length > 2 ? 'mtitle' + html.charAt(2) : 'mtitle'"
+    v-if="html"
   >
     <div class="ql-editor ql-snow" :class="{ 'slide-up': isVisible }">
       <div v-html="html" />
@@ -32,25 +32,15 @@ export default {
   computed: {
     html() {
       if (this.section.settings) {
-        if(this.section.settings[this.lang]) {
+        if(Array.isArray(this.section.settings) && this.section.settings.length > 0 && this.section.settings[0][this.lang] !== undefined) {
+          return this.section.settings[0][this.lang];
+        } else if(this.section.settings[this.lang]) {
           return this.section.settings[this.lang];
         } else return this.section.settings
       }
       return "not found";
-    },
-  },
-  methods: {
-    viewHandler(e) {
-      this.percenInViewPort = e.percentInView === 0 ? 1 : e.percentInView;
-      const percenInViewPort = e.percentInView;
-      if (percenInViewPort > 0) {
-        this.isVisible = true;
-      }
-      if (percenInViewPort === 1) {
-        this.addOpacity = true;
-      }
-    },
-  },
+    }
+  }
 };
 </script>
 

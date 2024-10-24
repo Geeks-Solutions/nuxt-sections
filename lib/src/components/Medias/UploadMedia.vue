@@ -32,8 +32,8 @@
               <div>
                 <div v-if="media.length > 0 && media[0].seo_tag" class="section-module-upload-media-seo">{{ seoTag + media[0].seo_tag }}</div>
                 <div>
-                  <span v-if="media.length === 0 || (media.length > 0 && media[0].url === '')" class="section-module-upload-media-upload-text">{{ uploadText }}</span>
-                  <span v-else class="section-module-upload-media-upload-text">{{ changeText }}</span>
+                  <span v-if="media.length === 0 || (media.length > 0 && media[0].url === '')" class="section-module-upload-media-upload-text">{{ $t(uploadText) }}</span>
+                  <span v-else class="section-module-upload-media-upload-text">{{ $t(changeText) }}</span>
                 </div>
               </div>
             </div>
@@ -66,11 +66,11 @@ export default {
     },
     uploadText: {
       type: String,
-      default: 'Upload'
+      default: 'mediaComponent.Upload'
     },
     changeText: {
       type: String,
-      default: 'Change'
+      default: 'mediaComponent.Change'
     },
     seoTag: {
       type: String,

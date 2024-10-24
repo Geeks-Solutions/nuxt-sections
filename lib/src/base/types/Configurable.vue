@@ -2,20 +2,22 @@
   <div class="container containerWidth text-center">
 
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
-      <div class="bg-info px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'bg-info' : 'bg-light border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
-        <div
-            class="font-light mt-2 mb-2"
-            :class="currentTab === 'config' ? 'text-white' : 'text-info'"
-        >
-          <div class="text-capitalize ">{{ formatName(props.name) }}</div>
+      <div>
+        <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
+          <div
+              class="font-light mt-2 mb-2"
+              :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
+          >
+            <div class="text-capitalize ">{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</div>
+          </div>
         </div>
       </div>
-<!--  The below div element adds an extra tab to the configurable section. -->
-<!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
-      <div v-if="showCustomFormTab === true" class="bg-info px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'bg-info' : 'bg-light border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
+      <!--  The below div element adds an extra tab to the configurable section. -->
+      <!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
+      <div v-if="showCustomFormTab === true" class="active-tab px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
         <div
-            class="font-light mt-2 mb-2"
-            :class="currentTab === 'custom' ? 'text-white' : 'text-info'"
+          class="font-light mt-2 mb-2"
+          :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
         >
           {{ $t('Custom form') }}
         </div>
@@ -23,113 +25,141 @@
     </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
-      <div class="text-danger">
+      <div class="error-message">
         {{ errorMessage }}
       </div>
       <div class="form-group">
         <form>
           <div
-              class=" flex flex-col justify-between content-wrapper"
+            class=" flex flex-col justify-between content-wrapper"
           >
-            <div
-                class="element d-inline-block"
-                :key="idx"
-                v-for="(field, idx) in props.fields"
-                :class="getType(field.type) !== 'file' ? '' : ''"
-            >
-              <div
-                  v-if="field.name && field.type !== 'hidden'"
-                  class="text-capitalize text-left"
-              >
-                {{ field.name.replace("_", " ")+'*' }}
-              </div>
-              <div v-if="field.type === 'wysiwyg'">
-                <div class="input">
-                  <quill-editor v-model="optionsData[field.key]" :ref="field.type+'Editor'" class="wyzywig" @change="onEditorChange($event, idx, field.key)" />
+            <div v-if="globalSectionMode === true">
+              <div class="autoInsertRow">
+                <div>
+                  {{ $t('autoInsertInstance') }}
                 </div>
+                <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
               </div>
-              <div v-else-if="field.type === 'textarea'" class="w-full">
-                <textarea
-                    v-model="optionsData[field.key]"
-                    class="d-input py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    :name="field.name"
-                    @change="changeFieldValue($event, idx, field.type, field.key)"
+              <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+                <input
+                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+                    type="text"
+                    :placeholder="$t('instanceName')+'*'"
+                    :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+                    v-model="instanceName"
                 />
               </div>
-              <div v-else class="w-full justify-start">
-                <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
-                  <img
+              <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+            </div>
+            <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+            <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
+            <div
+              :key="idx"
+              v-for="(field, idx) in props.fields"
+              :class="getType(field.type) !== 'file' ? '' : ''"
+            >
+              <div v-if="registeredType(field.type, field.key)" class="element d-inline-block">
+                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" :option-values="optionValues" />
+              </div>
+              <div v-else-if="!getType(field.type)" class="element w-full unsupportedFieldType">
+                {{ $t('unsupportedFieldType', { name: `"${field.type}_${field.key}"`, type: `"${field.type}"`}) }}
+              </div>
+              <div v-else class="element d-inline-block">
+                <div
+                  v-if="field.name && field.type !== 'hidden'"
+                  class="text-capitalize text-left"
+                >
+                  {{ changeFieldLabel(field) }}
+                </div>
+                <div v-if="field.type === 'wysiwyg'">
+                  <div class="input">
+                    <quill-editor v-model="optionsData[field.key]" :ref="field.type+'Editor'" class="wyzywig" @change="onEditorChange($event, idx, field.key)" />
+                  </div>
+                </div>
+                <div v-else-if="field.type === 'textarea'" class="w-full">
+                  <textarea
+                    v-model="optionsData[field.key]"
+                    class="d-input py-4 pl-6 border rounded-xl border-FieldGray text-area-field w-full focus:outline-none"
+                    :name="field.name"
+                    @change="changeFieldValue($event, idx, field.type, field.key)"
+                  />
+                </div>
+                <div v-else class="w-full justify-start">
+                  <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
+                    <img
                       v-if="optionsData[field.key][0].url"
                       :src="optionsData[field.key][0].url"
                       alt="image"
                       class="w-95px h-63px object-contain"
-                  />
-                  <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
-                    <CloseIcon />
+                    />
+                    <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
+                      <CloseIcon />
+                    </div>
                   </div>
-                </div>
-                <div v-else-if="field.type === 'media' && previewMedia" class="py-4 flex align-items-center">
-                  <img
+                  <div v-else-if="field.type === 'media' && previewMedia" class="py-4 flex align-items-center">
+                    <img
                       :src="previewMedia"
                       alt="image"
                       class="w-95px h-63px object-contain"
-                  />
-                  <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
-                    <CloseIcon />
+                    />
+                    <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
+                      <CloseIcon />
+                    </div>
                   </div>
-                </div>
-                <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
-                  <loadingCircle />
-                </div>
-                <component
-                    v-show="field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"
-                    :value="optionsData[field.key]"
-                    :class="field.type !== 'media' ? 'd-input py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
+                  <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
+                    <loadingCircle />
+                  </div>
+                  <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
+                    <div class="selectMultipleOptions">
+                      <div v-for="option in optionValues.option_values" :key="option.id" class="multiple-options-wrapper">
+                        <div class="single-multiple-option" :class="isSelected(option.id, field.name) ? 'multiple-options-selected' : ''" @click="selectOption(option.id, field.name)">{{ option.title + ' - ' + option.id }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <component
+                    v-show="!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"                    :value="optionsData[field.key]"
+                    :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
                     :id="field.key"
-                    :is="getTag(field.type, field.name)"
+                    :is="getTag(field.type, field.name && field.name.includes(':') ? field.name.split(':')[1] : field.name)"
                     :type="getType(field.type)"
                     :name="field.name"
                     :title="'choose'"
+                    :multiple="optionValues.field === field.name && optionValues.option_values"
                     @input="changeFieldValue($event, idx, field.type, field.key)"
-                >
-                  <option value="no-value">Select a value</option>
-                  <option
+                  >
+                    <option
                       v-for="option in optionValues.option_values"
-                      :selected="
-                  parseInt(option.id) === parseInt(options[idx].effect)
-                "
                       :key="option.id"
                       :value="option.id"
-                  >{{ option.title }}</option
-                  >
-                </component>
+                      :selected="optionsData[field.key] && optionsData[field.key].indexOf(option.id) !== -1"
+                    >{{ option.title }}</option
+                    >
+                  </component>
+                </div>
+                <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{ mediaError }}</span>
               </div>
-              <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{ mediaError }}</span>
-            </div>
-            <div
-                v-if="options[idx] && props.fields && props.fields.length > 1"
-                class="deleteRow p1 clickable"
-                @click="removeRow(idx)"
-            >
-              X
             </div>
           </div>
-          <div class="text-right" v-if="props.multiple || savedView.multiple">
-            <button type="button" @click="addAnother()" class="btn btn-primary">
-              {{ $t('Add another') }}
-            </button>
-          </div>
-          <button class="flex items-center justify-center form-control bg-Blue text-white border-Blue border hover:text-Blue px-3.5 h-53px py-3.5 rounded-xl hover:bg-white mt-4 mb-4" type="button" @click="addConfigurable()">
+          <button class="submit-btn mt-4" type="button" @click="addConfigurable()">
             {{ $t('Submit data') }}
+          </button>
+          <button
+              v-if="instance === false && props.creation !== true && globalSectionMode === false"
+              class="mt-4 submit-btn promote-btn"
+              type="button"
+              @click="$emit('promote-section')"
+          >
+            {{ $t('promoteSection') }}
           </button>
         </form>
       </div>
+      <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
     </div>
     <!--  The below div element is the custom form tab and its loaded from the host project using the computed getComponentForm() property that relies on the configurable section name -->
     <div v-show="currentTab === 'custom'" class="sub-types">
       <div>
         <div class="text-video d-flex content-wrapper" v-show="formatName(props.name)">
-          <component :is="getComponentForm" :ref="formatName(props.name)" :section-settings="props" :section-options="options[0]" @whitelistIdUpdated="updateWhitelistId" @load="(value) => $emit('load', value)" @customFormLoaded="showCustomFormTab = true" />
+          <component :is="getComponentForm" :ref="formatName(props.name)" :section-settings="props" :section-options="options[0]" @whitelistIdUpdated="updateWhitelistId" @customFormEvent="(data) => { customFormData = data }" @load="(value) => $emit('load', value)" @customFormLoaded="showCustomFormTab = true" />
         </div>
       </div>
     </div>
@@ -137,12 +167,30 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, importComp, deleteMedia, globalFileUpload} from "../../utils";
+import {
+  formatName,
+  sectionHeader,
+  importComp,
+  deleteMedia,
+  globalFileUpload,
+  importJs,
+  parseQS,
+  validateQS,
+  getGlobalTypeData
+} from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
+import UploadMedia from "../../components/Medias/UploadMedia.vue";
+import MediaComponent from "../../components/Medias/MediaComponent.vue";
+import TranslationComponent from "../../components/Translations/TranslationComponent";
+import GlobalReferences from "../SubTypes/globalReferences.vue";
 
 export default {
   components: {
+    UploadMedia,
+    MediaComponent,
+    TranslationComponent,
+    GlobalReferences,
     loadingCircle,
     CloseIcon
   },
@@ -163,6 +211,33 @@ export default {
       type: String,
       default: ""
     },
+    sectionsUserId: {
+      type: String,
+      default: ''
+    },
+    sectionsConfigurableType: {},
+    locales: {
+      type: Array,
+      default() {
+        return ['en', 'fr']
+      }
+    },
+    translationComponentSupport: {
+      type: Boolean,
+      default: false
+    },
+    instance: {
+      type: Boolean,
+      default: false
+    },
+    linked: {
+      type: Boolean,
+      default: false
+    },
+    basePath: {
+      type: String,
+      default: ''
+    }
   },
   data() {
     return {
@@ -175,7 +250,14 @@ export default {
       showCustomFormTab: false,
       previewMedia: "",
       isInProgress: false,
-      mediaError: ''
+      mediaError: '',
+      customFormData: null,
+      formLang: this.$i18n.locale.toString(),
+      autoInsert: false,
+      instanceNameError: false,
+      showPagesList: false,
+      instanceName: '',
+      pages: []
     };
   },
   watch: {
@@ -209,8 +291,12 @@ export default {
       }
       return importComp(path);
     },
+    globalSectionMode() {
+      return this.instance === true || this.linked === true
+    }
   },
   mounted() {
+    this.$emit('loadReference')
     // Load the configurable section type options
     if (this.savedView.fields) {
       const options = [];
@@ -237,11 +323,11 @@ export default {
       });
       this.options = options;
       Object.assign(this.optionsData, this.options[0])
+      this.$set(this, ['optionsData'], this.options[0]);
       this.props.fields = [...fields[0]];
-      return;
     } else {
       this.props.fields.forEach((field) => {
-        this.options[0][field.key] = "";
+        this.options[0][field.key] = null;
       });
     }
 
@@ -249,13 +335,8 @@ export default {
       this.settings.data = this.savedView.settings;
     }
 
-    const ob = this.props.fields[0].length;
-    if (this.props.multiple && !ob) {
-      this.props.fields = [this.props.fields];
-    }
-
     if (this.props.dynamic_options || this.savedView.dynamic_options){
-      this.$emit("loading");
+      this.$emit("load", true);
       const token = this.$cookies.get("sections-auth-token");
       const header = {
         token,
@@ -265,7 +346,7 @@ export default {
       };
 
       const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/${this.props.name}/options`;
+        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/${this.props.nameID ? this.props.nameID : this.props.name}/options`;
 
       this.$axios
         .get(URL, config)
@@ -273,12 +354,33 @@ export default {
           //TODO this should be updated to iterate over all the elements of the data array
           //and key the result by the `field` key in the object
           this.optionValues = res.data[0]
-          this.$emit("loading");
+
+          if (this.optionValues.option_values) {
+            this.optionValues.option_values.forEach(opt => {
+              if (this.isSelected(opt.id, this.optionValues.field)) {
+                const foundIdx = this.optionValues.option_values.findIndex(el => el.id == opt.id)
+                this.optionValues.option_values.splice(foundIdx, 1)
+                this.optionValues.option_values.unshift(opt)
+              }
+            })
+          }
+
+          if (this.props.addToPage) {
+            this.addConfigurable()
+          }
+
+          this.$emit("load", false);
         })
         .catch((err) => {
-          this.$emit("loading");
+          this.$emit("load", false);
           this.showToast("Error", "error", err.response.data.message.toString());
         });
+    }
+
+    this.importHooks('mounted')
+
+    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
+      this.getGlobalType()
     }
   },
   methods: {
@@ -316,19 +418,19 @@ export default {
       ];
       this.mediaError = ''
       await globalFileUpload(e.target.files[0]).then(
-          (result) => {
-            if(result.success) {
-              this.isInProgress = false
-              media[0].url = result.data.files[0].url;
-              media[0].filename = result.data.files[0].filename;
-              media[0].media_id = result.data.id;
-              this.previewMedia = media[0].url;
-              this.options[0][name] = media;
-            } else {
-              this.isInProgress = false
-              this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
-            }
+        (result) => {
+          if(result.success) {
+            this.isInProgress = false
+            media[0].url = result.data.files[0].url;
+            media[0].filename = result.data.files[0].filename;
+            media[0].media_id = result.data.id;
+            this.previewMedia = media[0].url;
+            this.options[0][name] = media;
+          } else {
+            this.isInProgress = false
+            this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
           }
+        }
       )
     },
     async removeImage(name) {
@@ -416,21 +518,44 @@ export default {
           return "text";
         case "hidden":
           return "text";
+        case "wysiwyg":
+          return "text";
       }
     },
     addConfigurable() {
+      this.instanceNameError = false
+      if (this.globalSectionMode && this.instanceName === '') {
+        this.instanceNameError = true
+        return
+      }
       this.errorMessage = "";
       let errorMessage = "";
       Object.keys(this.options[0]).map((key, i) => {
-        const fields = this.props.fields[i];
-        if (!this.options[0][key] || this.options[0][key][fields.key] === "no-value") {
+        const fields = this.props.fields.find(field => field.key === key);
+        let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
+        if (!this.options[0][key] && typeof this.options[0][key] !== "boolean") {
           errorMessage =
-              this.$t('fillRequiredFields');
+            this.$t('fillRequiredFields') + ` (${key})`;
+        } else if (typeComp && typeComp.methods) {
+          try {
+            let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
+            if(validatedOptions.errorMessage === true) {
+              errorMessage = this.$t('fillRequiredFields') + ` (${key} ${validatedOptions.errors})`;
+            }
+          } catch {}
         }
       });
       if (errorMessage) {
         this.errorMessage = errorMessage;
         return;
+      } else {
+        Object.keys(this.options[0]).map((key, i) => {
+          const fields = this.props.fields.find(field => field.key === key);
+          let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
+          try {
+            typeComp.methods.optionsValidated(this)
+          } catch {}
+        })
       }
       this.$emit("load", true);
 
@@ -446,11 +571,23 @@ export default {
 
       const variables = {
         section: {
-              name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
-              weight: 1,
-              options: this.options
-            }
+          name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
+          weight: 1,
+          options: this.options
+        },
+        base_path: this.basePath
       };
+
+      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+        if (this.props.query_string_keys && this.props.query_string_keys.length > 0) {
+          variables["query_string"] = {
+            ...variables["query_string"],
+            ...validateQS(variables["query_string"], this.props.query_string_keys, true)
+          }
+        }
+      }
+
       const URL =
         this.$sections.serverUrl +
         `/project/${this.$sections.projectId}/section/render`;
@@ -474,17 +611,50 @@ export default {
             settings: this.options[0],
             id: this.id,
             weight: this.weight,
-            render_data: res.data.render_data
+            render_data: res.data.render_data,
+            query_string_keys: res.data.query_string_keys,
+            auto_insertion: this.autoInsert,
+            instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
           })
         })
-        .catch(() => {
-          this.$emit("load", false);
-          this.$emit('errorAddingSection', {
+        .catch((e) => {
+          if (e.response.status === 404) {
+            this.$emit('addSectionType', {
+              name: this.props.name.includes(":") ? this.props.name.split(":")[1] : this.props.name,
+              nameID: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
+              type: 'configurable',
+              settings: this.options[0],
+              id: this.id,
+              weight: this.weight,
+              render_data: e.response.data.render_data,
+              query_string_keys: e.response.data.query_string_keys,
+              auto_insertion: this.autoInsert,
+              instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
+            })
+          } else {
+            this.$emit('errorAddingSection', {
               closeModal: false,
               title: "Error adding "+ this.props.name,
-              message: this.$t('saveConfigSectionError')
+              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
             })
+          }
+          this.$emit("load", false);
         });
+    },
+    async getGlobalType() {
+      this.$emit("load", true);
+      const result = await getGlobalTypeData(this.props.linked_to)
+      if (result.res && result.res.data) {
+        this.$emit("load", false);
+        this.autoInsert = result.res.data.auto_insertion
+        if (result.res.data.pages && result.res.data.pages.length > 0) {
+          this.pages = result.res.data.pages.map(p => p.path)
+        }
+        this.instanceName = result.res.data.name
+      } else if (result.error) {
+        this.$emit("load", false);
+        this.showToast("Error", "error", result.error.response.data.message, result.error.response.data.options);
+      }
     },
     showToast(title, variant, message) {
       this.$toast[variant](message, {
@@ -505,8 +675,37 @@ export default {
     updateWhitelistId(id) {
       this.optionsData['whitelist_id'] = id;
       this.options[0]['whitelist_id'] = id;
+    },
+    isSelected(id, name) {
+      return this.optionsData[name] !== undefined && this.optionsData[name].indexOf(id) !== -1;
+    },
+    selectOption(value, name) {
+      if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) === -1) {
+        this.optionsData[name].push(parseInt(value));
+      } else if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) !== -1) {
+        this.optionsData[name].splice(this.optionsData[name].indexOf(parseInt(value)), 1);
+      } else {
+        this.$set(this.optionsData, name, [parseInt(value)]);
+      }
+      this.options[0][name] = this.optionsData[name]
+    },
+    importHooks(hook, params) {
+      let hooksJs = importJs(`/js/configurable-hooks`)
+      if (hooksJs[hook]) {
+        return hooksJs[hook](params)
+      } else return;
+    },
+    registeredType(type, key) {
+      let path = `/configurable_components/${type}_${key}`
+      return importComp(path);
+    },
+    changeFieldLabel(field) {
+      let importedHook = this.importHooks('updateFieldLabel', field)
+      if(importedHook) {
+        return importedHook
+      } else return field.name.replace("_", " ")+'*'
     }
-  },
+  }
 };
 </script>
 
@@ -565,10 +764,77 @@ export default {
   overflow-y: scroll;
   height: 550px;
 }
+.error-message {
+  color: #dc3545;
+}
+.inactive-text {
+  color: #03B1C7;
+}
+.active-tab {
+  background: #03B1C7;
+}
+.inactive-tab {
+  background: #ffffff;
+  border-color: #03B1C7;
+}
 @media only screen and (max-height: 800px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;
   }
+}
+
+.selectMultipleOptions {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  border-radius: 0.75rem;
+  overflow-y: scroll;
+  align-items: flex-start;
+  flex-direction: column;
+  max-width: 32rem;
+  height: 250px;
+  display: flex;
+  margin-top: 0.5rem;
+}
+
+.single-multiple-option {
+  padding-left: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.multiple-options-wrapper {
+  width: 100%;
+}
+
+.multiple-options-selected {
+  background: #C2C2C2;
+}
+
+.text-area-field {
+  min-height: 48px;
+}
+
+.wl-col {
+  padding: 0 20px;
+}
+
+.autoInsertRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+.autoInsertInput {
+  width: 15px;
+  height: 15px;
+}
+.instanceInput {
+  width: 350px;
+}
+.promote-btn {
+  font-size: 20px !important;
 }
 </style>

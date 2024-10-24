@@ -14,7 +14,6 @@
 </template>
 
 <script>
-import { sectionHeader } from "../../utils";
 import CloseIcon from "../../base/icons/close.vue";
 
 export default {
