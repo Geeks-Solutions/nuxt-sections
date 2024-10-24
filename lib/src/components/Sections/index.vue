@@ -4291,7 +4291,7 @@ span.handle {
 .gtmError {
   display: flex;
   flex-direction: row;
-  justify-content: start;
+  justify-content: flex-start;
   color: rgb(216, 42, 42);
 }
 
