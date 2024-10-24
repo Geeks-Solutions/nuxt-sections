@@ -3705,7 +3705,7 @@ span.handle {
 @media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
-    height: 450px;
+    height: 350px;
   }
 }
 
@@ -4298,7 +4298,7 @@ span.handle {
 @media only screen and (max-height: 800px) {
   .sections-page-settings {
 	overflow: scroll;
-	max-height: 320px;
+	max-height: 350px;
   }
 }
 </style>
