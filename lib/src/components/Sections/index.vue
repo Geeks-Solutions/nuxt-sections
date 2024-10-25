@@ -748,9 +748,9 @@
       <!-- ------------------------------------------------------------------------------------------- -->
 
       <!-- This is the popup to updatethe page metadata     -->
-      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true" :class="$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
         <div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
-          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+          <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl" :class="$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
             <div class="section-modal-wrapper">
               <div class="sections-text-center h4 sectionTypeHeader">
                 <div class="title">{{ $t("Metadata") }}</div>
@@ -759,10 +759,10 @@
                 </div>
               </div>
               <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
-              <div class="flexSections sections-w-full sections-justify-center sections-page-settings">
+              <div class="flexSections sections-w-full sections-justify-center" :class="$sections.cname === 'active' ? 'sections-page-settings' : ''">
                 <div class="body metadataFieldsContainer">
                   <div class="flexSections sections-flex-row sections-gap-4">
-                    <div>
+                    <div class='sections-w-full'>
                       <div class="sectionsFieldsLabels">
                         {{ $t("pageUrl") }}
                       </div>
@@ -793,15 +793,15 @@
                             type="text"
                             v-model="pageMetadata[metadataFormLang].description"
                           />
-                          <div class="sections-mt-2 sectionsFieldsLabels">
+                          <div v-if="$sections.cname === 'active'" class="sections-mt-2 sectionsFieldsLabels">
                             {{ $t("sectionsLanguages") }}
                           </div>
-                          <div class="sections-border sections-border-FieldGray rounded-xl overflow-y-scroll overflow-visible sections-mt-2">
+                          <div v-if="$sections.cname === 'active'" class="sections-border sections-border-FieldGray rounded-xl overflow-y-scroll overflow-visible sections-mt-2">
                             <div v-for="(language, i) in supportedLanguages" :key="language.id">
                               <div :class="[isSelectedLang(language.id) ? 'sections-bg-FieldGray sections-pl-4 sections-p-2 sections-cursor-pointer' : 'sections-pl-4 sections-p-2 sections-cursor-pointer', i === 0 ? 'sections-borders-top' : 'sections-borders-bottom']" @click="toggleLanguageSelection(language.id)">{{ language.label }}</div>
                             </div>
                           </div>
-                          <div class="flexSections sections-mt-2 sections-flex-row">
+                          <div v-if="$sections.cname === 'active'" class="flexSections sections-mt-2 sections-flex-row">
                             <div class="sections-mt-2 sections-pr-3 sectionsFieldsLabels">
                               {{ $t("activateCookieControl") }}
                             </div>
@@ -824,7 +824,7 @@
                         </div>
                       </div>
                     </div>
-                    <div>
+                    <div v-if="$sections.cname === 'active'">
                       <div class="sections-mt-2 sectionsFieldsLabels">
                         {{ $t("mediaComponent.media") }}
                       </div>
@@ -1906,41 +1906,57 @@ export default {
       }
     },
     getComponent(sectionName, sectionType) {
-	  if (this.$sections.cname === "active") {
-		let path = "";
-		if (sectionName.includes(":")) {
-		  path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-		  if (process.client) {
-			Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
-			  extends: importComp(path)
-			})
-		  }
-		  return `${sectionName.split(":")[1]}_${sectionType}`;
-		} else {
-		  path = `/views/${sectionName}_${sectionType}`;
-		  if (process.client) {
-			Vue.component(`${sectionName}_${sectionType}`, {
-			  extends: importComp(path)
-			})
-		  }
-		  return `${sectionName}_${sectionType}`;
-		}
-	  } else {
-		let path = "";
-		if (sectionName.includes(":") && sectionName.includes("_-_")) {
-		  path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-		  return importComp(path);
-		} else if (sectionName.includes(":")) {
-		  path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-		  return importComp(path);
-		} else if (sectionName.includes("_-_")) {
-		  path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
-		  return importComp(path);
-		} else {
-		  path = `/views/${sectionName}_${sectionType}`;
-		  return importComp(path);
-		}
-	  }
+      if (this.$sections.cname === "active") {
+        let path = "";
+        if (sectionName.includes(":") && sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+          if (process.client) {
+            Vue.component(`${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`, {
+              extends: importComp(path)
+            })
+          }
+          return `${sectionName.split(":")[1]}_${sectionType}`;
+        } else if (sectionName.includes(":")) {
+          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+          if (process.client) {
+            Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
+              extends: importComp(path)
+            })
+          }
+          return `${sectionName.split(":")[1]}_${sectionType}`;
+        } else if (sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
+          if (process.client) {
+            Vue.component(`${sectionName.split("_-_")[0]}_${sectionType}`, {
+              extends: importComp(path)
+            })
+          }
+          return `${sectionName.split(":")[1]}_${sectionType}`;
+        } else {
+          path = `/views/${sectionName}_${sectionType}`;
+          if (process.client) {
+            Vue.component(`${sectionName}_${sectionType}`, {
+              extends: importComp(path)
+            })
+          }
+          return `${sectionName}_${sectionType}`;
+        }
+      } else {
+        let path = "";
+        if (sectionName.includes(":") && sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+          return importComp(path);
+        } else if (sectionName.includes(":")) {
+          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+          return importComp(path);
+        } else if (sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
+          return importComp(path);
+        } else {
+          path = `/views/${sectionName}_${sectionType}`;
+          return importComp(path);
+        }
+      }
     },
     getAvailableLayouts() {
       try {

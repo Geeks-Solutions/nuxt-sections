@@ -29,7 +29,7 @@ export default {
   },
   data() {
     return {
-      formLang: 'en'
+      formLang: this.$i18n.locale ? this.$i18n.locale : 'en'
     }
   }
 }
