@@ -191,6 +191,9 @@
                 v-for="(type, index) in types"
                 :key="type.name"
               >
+				<div v-if="getComponent(type.name, type.type, true).settings" class="text-capitalize section-item-title">
+				  {{ formatTexts(formatName(type.name), " ") }}
+				</div>
                 <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
                   <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                     <TrashIcon class="trash-icon-style" />
@@ -215,7 +218,8 @@
                     v-if="type.name"
                     class="bg-light-blue"
                     :title="formatName(type.name)"
-                    :icon="type.name"
+                    :component-item="getComponent(type.name, type.type)"
+					:section="getComponent(type.name, type.type, true)"
                     :active="type.notCreated !== true"
                   />
                 </div>
@@ -926,7 +930,17 @@
 
 <script>
 import Vue from "vue";
-import {formatName, importComp, parsePath, parseQS, validateQS, sectionHeader} from "../../utils";
+import {
+  formatName,
+  formatTexts,
+  importComp,
+  parsePath,
+  parseQS,
+  validateQS,
+  sectionHeader,
+  populateWithDummyValues,
+  dummyDataPresets
+} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -1222,7 +1236,7 @@ export default {
 	if (this.$sections.cname === "active" && this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
 	  this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
 	}
-	
+
 	if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
 	  // Dynamically add the CSS file to the DOM after the component is mounted to insure the imported css styles override all other css styles
 	  const link = document.createElement('link');
@@ -1230,7 +1244,7 @@ export default {
 	  link.href = this.pageMetadata['media'].url;
 	  document.head.appendChild(link);
 	}
-	
+
 	if (this.pageMetadata['activateCookieControl'] === true) {
 	  this.$nuxt.$emit('activateCookieControl', this.pageMetadata['gtmId'], true)
 	}
@@ -1396,7 +1410,7 @@ export default {
 	  const views = {};
 	  sections.map((section) => {
 		this.trackSectionComp(section.name, section.type);
-		
+
 		if (section.type === "configurable") {
 		  // The below condition is set to replace old image fields in settings that were saved as objects,
 		  // which was causing the section using this field to be discarded and no more saved to the page
@@ -1420,7 +1434,7 @@ export default {
 		} else {
 		  views["test"] = section;
 		}
-		
+
 		if (section.error || (section.settings === null || section.settings === undefined)) {
 		  this.errorInViews = true;
 		} else {
@@ -1905,8 +1919,25 @@ export default {
         );
       }
     },
-    getComponent(sectionName, sectionType) {
-      if (this.$sections.cname === "active") {
+    getComponent(sectionName, sectionType, returnProps) {
+	  if (returnProps === true) {
+		let path = "";
+		if (sectionName.includes(":") && sectionName.includes("_-_")) {
+		  path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+		} else if (sectionName.includes(":")) {
+		  path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+		} else if (sectionName.includes("_-_")) {
+		  path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
+		} else {
+		  path = `/views/${sectionName}_${sectionType}`;
+		}
+		const moduleData = importComp(path);
+		if (moduleData && moduleData.props && moduleData.props.viewStructure && moduleData.props.viewStructure.settings) {
+		  console.log(moduleData.props.viewStructure)
+		  console.log(populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets))
+		  return { settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets) }
+		} else return {}
+	  } else if (this.$sections.cname === "active") {
         let path = "";
         if (sectionName.includes(":") && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
@@ -2555,6 +2586,7 @@ export default {
 
     },
     formatName,
+	formatTexts,
     editable(sectionType) {
       switch (sectionType) {
         case "local":
@@ -3537,8 +3569,17 @@ span.handle {
 }
 .modalContainer .section-item {
   width: 100%;
-  height: 130px;
+  height: 330px;
   margin: 0px;
+}
+.modalContainer .section-item .section-item-title {
+  font-size: 16px;
+  display: flex;
+  position: absolute;
+  padding: 3px;
+  place-content: center;
+  width: 300px;
+  text-align: center;
 }
 .modalContainer .section-item-box {
   display: flex;
@@ -3549,8 +3590,8 @@ span.handle {
 }
 .modalContainer .type-items {
   display: grid;
-  grid-template-columns: repeat(4, 130px);
-  grid-gap: 35px;
+  grid-template-columns: repeat(2, 330px);
+  grid-gap: 25px;
   justify-content: center;
 }
 .bg-grey {

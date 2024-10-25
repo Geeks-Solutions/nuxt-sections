@@ -1,10 +1,16 @@
 <template>
   <div class="item text-center" :class="{ active }">
     <div class="card-content">
-      <div class="icon">
-        <component :is="!base ? getIcon : getIconBase" />
+      <div v-if="section.settings && active === true" class="comp-preview">
+		<component
+			 v-if="section.settings"
+			 :is="componentItem"
+			 :section="section"
+			 :lang="lang"
+			 :locales="locales"
+		/>
       </div>
-      <div class="p3 text-capitalize px-1">
+      <div v-else class="p3 text-capitalize px-1">
         {{ formatText(title, " ") }}
       </div>
     </div>
@@ -23,20 +29,28 @@ export default {
       type: Boolean,
       default: true,
     },
-    base: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  computed: {
-    getIcon() {
-      const path = "/type-icons/" + this.title.replace(/ /g, "_");
-      return importComp(path);
-    },
-    getIconBase() {
-      const path = "/type-icons/" + this.title.replace(/ /g, "_");
-      return importComp(path);
-    },
+	view: {
+	  type: Object,
+	  default: () => {},
+	},
+	section: {
+	  type: Object,
+	  default: () => {},
+	},
+	lang: {
+	  type: String,
+	  default: "en"
+	},
+	locales: {
+	  type: Array,
+	  default() {
+		return []
+	  }
+	},
+	componentItem: {
+	  type: [String, Object],
+	  required: true,
+	}
   },
   methods: {
     formatText(text, sep) {
@@ -72,10 +86,20 @@ export default {
   height: 60px;
 }
 .card-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-direction: column;
-  line-height: 1.85;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  align-content: center;
+}
+.card-content .comp-preview {
+  position: absolute;
+  width: 100vw;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  transform: scale(0.3);
+  transform-origin: top left;
+  pointer-events: none;
 }
 </style>
