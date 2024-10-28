@@ -20,7 +20,15 @@ export default {
     lang: {
       type: String,
       default: "en"
-    }
+    },
+	viewStructure: {
+	  settings: [
+		{
+		  en: 'html',
+		  fr: 'html'
+		}
+	  ]
+	}
   },
   data() {
     return {

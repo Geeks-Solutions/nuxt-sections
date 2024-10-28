@@ -1,9 +1,8 @@
 <template>
   <div class="item text-center" :class="{ active }">
     <div class="card-content">
-      <div v-if="section.settings && active === true" class="comp-preview">
+      <div v-if="(section && section.type === 'local') || (section && section.settings && active === true)" class="comp-preview">
 		<component
-			 v-if="section.settings"
 			 :is="componentItem"
 			 :section="section"
 			 :lang="lang"
@@ -18,7 +17,7 @@
 </template>
 
 <script>
-import { importComp, formatTexts } from "../../utils";
+import { formatTexts } from "../../utils";
 export default {
   props: {
     title: {

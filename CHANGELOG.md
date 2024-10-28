@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Meta data form needs css as additonal field #15
 
+- Introduced a preview of the sections from the listing #57
+
 ## [1.0.11] - 2024-10-16
 
 ### Fixed

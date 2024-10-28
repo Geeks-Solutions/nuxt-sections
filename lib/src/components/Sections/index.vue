@@ -191,7 +191,7 @@
                 v-for="(type, index) in types"
                 :key="type.name"
               >
-				<div v-if="getComponent(type.name, type.type, true).settings" class="text-capitalize section-item-title">
+				<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
 				  {{ formatTexts(formatName(type.name), " ") }}
 				</div>
                 <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
@@ -213,6 +213,7 @@
                     <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
                   </div>
                 </div>
+				<div v-else class="section-top-separator"></div>
                 <div class="section-item" @click="type.notCreated !== true ? openCurrentSection(type) : null">
                   <SectionItem
                     v-if="type.name"
@@ -254,6 +255,9 @@
                 v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
                 :key="`${type.name}-${index}`"
               >
+				<div v-if="type.type === 'local' || getComponent(type && type.section ? type.section.name : type.name, type.type, true).settings" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+				  {{ formatTexts(formatName(type.name), " ") }}
+				</div>
                 <div v-if="type.notCreated !== true" class="section-delete">
                   <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                     <TrashIcon class="trash-icon-style" />
@@ -269,7 +273,8 @@
                     v-if="type.name"
                     class="bg-light-blue"
                     :title="formatName(type.name)"
-                    :icon="type.name"
+					:component-item="getComponent(type && type.section ? type.section.name : type.name, type.type)"
+					:section="getComponent(type && type.section ? type.section.name : type.name, type.type, true)"
                     :active="true"
                   />
                 </div>
@@ -1922,24 +1927,22 @@ export default {
     getComponent(sectionName, sectionType, returnProps) {
 	  if (returnProps === true) {
 		let path = "";
-		if (sectionName.includes(":") && sectionName.includes("_-_")) {
+		if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
 		  path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-		} else if (sectionName.includes(":")) {
+		} else if (sectionName && sectionName.includes(":")) {
 		  path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-		} else if (sectionName.includes("_-_")) {
+		} else if (sectionName && sectionName.includes("_-_")) {
 		  path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
 		} else {
 		  path = `/views/${sectionName}_${sectionType}`;
 		}
 		const moduleData = importComp(path);
 		if (moduleData && moduleData.props && moduleData.props.viewStructure && moduleData.props.viewStructure.settings) {
-		  console.log(moduleData.props.viewStructure)
-		  console.log(populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets))
-		  return { settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets) }
-		} else return {}
+		  return { settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets), type: sectionType }
+		} else return {type: sectionType}
 	  } else if (this.$sections.cname === "active") {
         let path = "";
-        if (sectionName.includes(":") && sectionName.includes("_-_")) {
+        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
           if (process.client) {
             Vue.component(`${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`, {
@@ -1947,7 +1950,7 @@ export default {
             })
           }
           return `${sectionName.split(":")[1]}_${sectionType}`;
-        } else if (sectionName.includes(":")) {
+        } else if (sectionName && sectionName.includes(":")) {
           path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
           if (process.client) {
             Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
@@ -1955,7 +1958,7 @@ export default {
             })
           }
           return `${sectionName.split(":")[1]}_${sectionType}`;
-        } else if (sectionName.includes("_-_")) {
+        } else if (sectionName && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
           if (process.client) {
             Vue.component(`${sectionName.split("_-_")[0]}_${sectionType}`, {
@@ -1974,13 +1977,13 @@ export default {
         }
       } else {
         let path = "";
-        if (sectionName.includes(":") && sectionName.includes("_-_")) {
+        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
           return importComp(path);
-        } else if (sectionName.includes(":")) {
+        } else if (sectionName && sectionName.includes(":")) {
           path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
           return importComp(path);
-        } else if (sectionName.includes("_-_")) {
+        } else if (sectionName && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
           return importComp(path);
         } else {
@@ -3574,12 +3577,15 @@ span.handle {
 }
 .modalContainer .section-item .section-item-title {
   font-size: 16px;
-  display: flex;
   position: absolute;
   padding: 3px;
   place-content: center;
   width: 300px;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 300px;
+  white-space: nowrap;
 }
 .modalContainer .section-item-box {
   display: flex;
@@ -4059,6 +4065,11 @@ span.handle {
   cursor: pointer;
   margin-top: 3px;
   margin-right: 2px;
+}
+
+.section-top-separator {
+  margin-top: 3px;
+  height: 20px;
 }
 
 .global-section-info-icon {

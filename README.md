@@ -658,6 +658,74 @@ this.$emit('refresh-section', {
 ```
 * In the example above, all configurable or dynamic sections in the page that are using the `offset` query string will be refreshed with the new value `offset: '12'`
 
+## Enabling the preview of the sections in the listing when adding one to the page
+
+### To have a preview of the section (static, dynamic, configurable), follow the simple below steps:
+
+* Inside the props of the section view, add a prop object name viewStructure that has a settings array inside it.
+
+* In the settings array you will define the structure of data for the section to be previewed.
+
+For example if you have in your section form the below settings:
+
+```js
+settings: [
+        {
+          media: {
+            media_id: "",
+            url: "",
+            seo_tag: "",
+          },
+          description: {
+            en: '',
+            fr: ''
+          }
+        }
+      ]
+```
+
+* Then you take the settings array and add it in the settings of the viewStructure in you view component. 
+
+* Then replace the value of each data field by its type
+
+* Supported types in the library are: (html, integer, number, image, string, text, boolean)
+
+Following the example of the form settings we shared above, you will the below viewStructure settings in your view component:
+
+```js
+props: {
+    ...,
+    viewStructure: {
+        settings: [
+            {
+                media: 'image',
+                description: {
+                    en: 'string',
+                    fr: 'string'
+                }
+            },
+            {
+                media: 'image',
+                description: {
+                    en: 'string',
+                    fr: 'string'
+                }
+            },
+            {
+                media: 'image',
+                description: {
+                    en: 'string',
+                    fr: 'string'
+                }
+            }
+        ]
+    }
+}
+```
+
+* The settings of the viewStructure prop of the dynamic and configurable section types will depend on the data of the section view that each section support.
+For Configurable sections, the settings array will include the fields defined by sections which can be found in the section-types API response inside `fields`. 
+
 ## Development
 
 1. Clone this repository
