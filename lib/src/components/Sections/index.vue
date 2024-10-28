@@ -191,7 +191,7 @@
                 v-for="(type, index) in types"
                 :key="type.name"
               >
-				<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+				<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
 				  {{ formatTexts(formatName(type.name), " ") }}
 				</div>
                 <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
@@ -255,7 +255,7 @@
                 v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
                 :key="`${type.name}-${index}`"
               >
-				<div v-if="type.type === 'local' || getComponent(type && type.section ? type.section.name : type.name, type.type, true).settings" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+				<div v-if="type.type === 'local' || getComponent(type && type.section ? type.section.name : type.name, type.type, true).settings || getComponent(type && type.section ? type.section.name : type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
 				  {{ formatTexts(formatName(type.name), " ") }}
 				</div>
                 <div v-if="type.notCreated !== true" class="section-delete">
@@ -1937,8 +1937,8 @@ export default {
 		  path = `/views/${sectionName}_${sectionType}`;
 		}
 		const moduleData = importComp(path);
-		if (moduleData && moduleData.props && moduleData.props.viewStructure && moduleData.props.viewStructure.settings) {
-		  return { settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets), type: sectionType }
+		if (moduleData && moduleData.props && moduleData.props.viewStructure && (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
+		  return { settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets), render_data: populateWithDummyValues(moduleData.props.viewStructure.render_data, dummyDataPresets), type: sectionType }
 		} else return {type: sectionType}
 	  } else if (this.$sections.cname === "active") {
         let path = "";
@@ -1949,7 +1949,7 @@ export default {
               extends: importComp(path)
             })
           }
-          return `${sectionName.split(":")[1]}_${sectionType}`;
+          return `${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
         } else if (sectionName && sectionName.includes(":")) {
           path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
           if (process.client) {
@@ -1965,7 +1965,7 @@ export default {
               extends: importComp(path)
             })
           }
-          return `${sectionName.split(":")[1]}_${sectionType}`;
+          return `${sectionName.split("_-_")[0]}_${sectionType}`;
         } else {
           path = `/views/${sectionName}_${sectionType}`;
           if (process.client) {

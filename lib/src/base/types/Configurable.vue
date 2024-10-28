@@ -1,5 +1,5 @@
 <template>
-  <div class="container containerWidth text-center">
+  <div class="container containerWidth text-center sub-types">
 
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
       <div>

@@ -1,7 +1,7 @@
 <template>
   <div class="item text-center" :class="{ active }">
     <div class="card-content">
-      <div v-if="(section && section.type === 'local') || (section && section.settings && active === true)" class="comp-preview">
+      <div v-if="(section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)" class="comp-preview">
 		<component
 			 :is="componentItem"
 			 :section="section"
@@ -100,5 +100,6 @@ export default {
   transform: scale(0.3);
   transform-origin: top left;
   pointer-events: none;
+  color: initial;
 }
 </style>

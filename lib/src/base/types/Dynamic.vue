@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="sub-types">
     <h4 class="dynamic-t">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
     <div v-if="globalSectionMode === true" class="mt-4">
       <div class="autoInsertRow">
