@@ -4363,6 +4363,12 @@ span.handle {
   color: rgb(216, 42, 42);
 }
 
+@media (min-width: 768px) {
+  .md\:flex-row {
+	flex-direction: row !important;
+  }
+}
+
 @media only screen and (max-height: 800px) {
   .sections-page-settings {
 	overflow: scroll;
