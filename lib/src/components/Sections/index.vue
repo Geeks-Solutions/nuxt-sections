@@ -18,6 +18,7 @@
 			   :sections-user-id="sectionsUserId"
 			   :instance="currentSection.instance === true"
 			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+			   :is-side-bar-open="isSideBarOpen"
 			   @load="(value) => loading = value"
 			   @promote-section="currentSection = {...currentSection, instance: true}"
 		  />
@@ -31,6 +32,7 @@
 			   :instance="currentSection.instance === true"
 			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
 			   :base-path="pagePath"
+			   :is-side-bar-open="isSideBarOpen"
 			   @load="(value) => loading = value"
 		  />
 		  <Configurable
@@ -83,7 +85,7 @@
 			<div v-if="admin && editMode" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
 			  {{ $t('changesPublished') }}
 			</div>
-			
+
 			<div
 				 class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
 				 v-if="admin && editMode"
@@ -221,9 +223,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
 		  <div v-if="isModalOpen && admin && editMode" ref="modal" class="sections-fixed section-modal-content sections-z-50 bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -254,7 +256,7 @@
 				>
 				  <BackIcon />
 				</div>
-				
+
 				<div v-if="!currentSection && typesTab === 'types' && isCreateInstance !== true" class="sections-m-1 sections-p-1 type-items content-wrapper">
 				  <div
 					   class="section-item section-item-box"
@@ -410,9 +412,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
 		  <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -441,9 +443,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
 		  <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -478,9 +480,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
 		  <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -515,9 +517,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
 		  <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -534,9 +536,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
 		  <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -553,7 +555,7 @@
 						 v-model="requirementsInputs[requiredInput]"
 					/>
 				  </div>
-				  
+
 				  <div class="flexSections sections-flex-row">
 					<button
 						 class="hp-button"
@@ -572,14 +574,14 @@
 					  </div>
 					</button>
 				  </div>
-				
+
 				</div>
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
 		  <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -588,7 +590,7 @@
 				  {{ $t("un-authorize-section-type") + selectedAppName }}
 				</div>
 				<div class="flexSections sections-flex-col sections-gap-4">
-				  
+
 				  <div class="flexSections sections-flex-row">
 					<button
 						 class="hp-button"
@@ -607,14 +609,14 @@
 					  </div>
 					</button>
 				  </div>
-				
+
 				</div>
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
 		  <div v-if="errorInViews === true  && admin" class="error-section-loaded">
 			{{ $t('sectionsNotLoadedCorrectly') }}
@@ -765,9 +767,9 @@
 			  </template>
 			</component>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is the popup to create a new static section type     -->
 		  <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -823,9 +825,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is the popup to updatethe page metadata     -->
 		  <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true" :class="$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -929,9 +931,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <!-- This is popup to show the successfully created new static section message      -->
 		  <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -981,9 +983,9 @@
 			  </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- ------------------------------------------------------------------------------------------- -->
-		  
+
 		  <Loading :loading="loading" />
 		</div>
 		<div v-else>
@@ -3136,7 +3138,7 @@ export default {
 	  this.$nextTick(() => {
 		this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
 		this.resizeData.resizeTarget = this.$refs.resizeTarget;
-		
+
 		window.addEventListener("mousemove", this.onMouseMove);
 		window.addEventListener("mouseup", this.stopTracking);
 	  })
@@ -3391,17 +3393,17 @@ export default {
     },
 	startTracking(event) {
 	  if (event.button !== 0) return;
-	  
+
 	  event.preventDefault();
 	  const handleElement = event.currentTarget;
-	  
+
 	  const targetSelector = handleElement.getAttribute("data-target");
 	  const targetElement = this.$refs.resizeTarget.closest(targetSelector);
-	  
+
 	  if (!targetElement) {
 		return;
 	  }
-	  
+
 	  this.resizeData.startWidth = targetElement.offsetWidth;
 	  this.resizeData.startCursorScreenX = event.screenX;
 	  this.resizeData.resizeTarget = targetElement;
@@ -3411,14 +3413,14 @@ export default {
 	},
 	onMouseMove(event) {
 	  if (!this.resizeData.tracking) return;
-	  
+
 	  const cursorScreenXDelta =
 		   event.screenX - this.resizeData.startCursorScreenX;
 	  const newWidth = Math.min(
 		   this.resizeData.startWidth + cursorScreenXDelta,
 		   this.resizeData.maxWidth
 	  );
-	  
+
 	  this.resizeData.resizeTarget.style.width = `${newWidth}px`;
 	},
 	stopTracking() {
@@ -4517,7 +4519,7 @@ span.handle {
   height: 100vh;
   overflow: hidden;
   background-color: white;
-  
+
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -4532,7 +4534,7 @@ span.handle {
   align-self: auto;
   padding: 10px;
   overflow: auto;
-  
+
   /* Make the sidebar sticky */
   position: sticky;
   top: 0;
@@ -4579,7 +4581,7 @@ span.handle {
   border-right-style: solid;
   border-right-color: black;
   cursor: ew-resize;
-  
+
   user-select: none;
 }
 
