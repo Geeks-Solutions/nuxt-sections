@@ -1,7 +1,10 @@
 <template>
   <div class="sections-container">
 	<aside v-if="admin && editMode && isSideBarOpen && currentSection" ref="resizeTarget" class="sections-aside">
-	  <div v-else class="flexSections">
+	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false">
+		<CloseIcon />
+	  </div>
+	  <div class="flexSections">
 		<div class="component-view">
 		  <!-- we can use this short hand too -->
 		  <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
@@ -71,7 +74,7 @@
 		  <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
 		  <button
 			   @click="openEditMode()"
-			   v-if="admin"
+			   v-if="admin && !isSideBarOpen"
 			   class="bg-blue control-button hide-mobile btn-text"
 		  >
 			{{ !editMode ? $t("Edit page") : $t("View page") }}
@@ -1332,12 +1335,6 @@ export default {
 	if (this.pageMetadata['activateCookieControl'] === true) {
 	  this.$nuxt.$emit('activateCookieControl', this.pageMetadata['gtmId'], true)
 	}
-	
-	this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
-	this.resizeData.resizeTarget = this.$refs.resizeTarget;
-	
-	window.addEventListener("mousemove", this.onMouseMove);
-	window.addEventListener("mouseup", this.stopTracking);
   },
   beforeDestroy() {
 	window.removeEventListener("mousemove", this.onMouseMove);
@@ -1883,6 +1880,7 @@ export default {
           this.sectionTypeName = "";
           this.currentSection = null
           this.isModalOpen = false
+          this.isSideBarOpen = false
           this.loading = false
           this.showToast(
               "Success",
@@ -2795,6 +2793,7 @@ export default {
           ].views;
         this.displayVariations[this.selectedVariation].altered = true;
         this.isModalOpen = false;
+        this.isSideBarOpen = false;
         this.savedView = {};
         this.loading = false;
 
@@ -3134,6 +3133,13 @@ export default {
       this.currentSection = view;
       this.savedView = view;
       this.isSideBarOpen = true;
+	  this.$nextTick(() => {
+		this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+		this.resizeData.resizeTarget = this.$refs.resizeTarget;
+		
+		window.addEventListener("mousemove", this.onMouseMove);
+		window.addEventListener("mouseup", this.stopTracking);
+	  })
     },
     restoreVariations() {
       this.displayVariations = JSON.parse(
@@ -4531,6 +4537,25 @@ span.handle {
   position: sticky;
   top: 0;
   height: 100vh; /* Ensures it stays full height */
+  width: 527px;
+  max-width: 50%;
+}
+
+.sections-aside
+.closeIcon {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+}
+.sections-aside
+.closeIcon svg {
+  width: 35px;
+  height: 35px;
+  color: #31a9db;
+}
+.sections-aside
+.closeIcon svg:hover {
+  color: darken(#31a9db, 10%);
 }
 
 .sections-container > .sections-main {
