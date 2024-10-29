@@ -24,8 +24,8 @@ export default {
 	viewStructure: {
 	  settings: [
 		{
-		  en: 'html',
-		  fr: 'html'
+		  en: 'wysiwyg',
+		  fr: 'wysiwyg'
 		}
 	  ]
 	}

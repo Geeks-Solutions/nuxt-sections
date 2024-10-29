@@ -688,7 +688,7 @@ settings: [
 
 * Then replace the value of each data field by its type
 
-* Supported types in the library are: (html, integer, number, image, string, text, boolean)
+* Supported types in the library are: (wysiwyg, html, integer, number, image, string, text, boolean)
 
 Following the example of the form settings we shared above, you will the below viewStructure settings in your view component:
 

@@ -1,6 +1,6 @@
 <template>
   <div class="item text-center" :class="{ active }">
-    <div class="card-content">
+    <div class="card-content" :class="{'card-content-preview': (section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)}">
       <div v-if="(section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)" class="comp-preview">
 		<component
 			 :is="componentItem"
@@ -88,18 +88,23 @@ export default {
   position: relative;
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow: auto;
   align-content: center;
 }
 .card-content .comp-preview {
   position: absolute;
-  width: 100vw;
+  width: 1496px;
   top: 0;
   left: 0;
   overflow: hidden;
-  transform: scale(0.3);
+  transform: scale(0.22);
   transform-origin: top left;
   pointer-events: none;
   color: initial;
+  background: white;
+  padding: 20px 0;
+}
+.card-content-preview {
+  background: white;
 }
 </style>

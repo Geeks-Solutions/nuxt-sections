@@ -214,7 +214,7 @@
                   </div>
                 </div>
 				<div v-else class="section-top-separator"></div>
-                <div class="section-item" @click="type.notCreated !== true ? openCurrentSection(type) : null">
+                <div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated !== true ? openCurrentSection(type) : null">
                   <SectionItem
                     v-if="type.name"
                     class="bg-light-blue"
@@ -268,7 +268,7 @@
                     <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
                   </div>
                 </div>
-                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
+                <div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
                   <SectionItem
                     v-if="type.name"
                     class="bg-light-blue"
@@ -3574,6 +3574,10 @@ span.handle {
   width: 100%;
   height: 330px;
   margin: 0px;
+}
+.modalContainer .section-item.active {
+  margin: 10px 0px;
+  border: 1px solid #31a9db;
 }
 .modalContainer .section-item .section-item-title {
   font-size: 16px;
