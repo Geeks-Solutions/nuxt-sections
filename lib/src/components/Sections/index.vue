@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container">
-	<aside v-if="admin && editMode && isSideBarOpen && currentSection" ref="resizeTarget" class="sections-aside">
+	<aside v-if="admin && editMode && isSideBarOpen && currentSection !== null" ref="resizeTarget" class="sections-aside">
 	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false">
 		<CloseIcon />
 	  </div>
@@ -63,7 +63,7 @@
 	  </div>
 	</aside>
 	<div
-		 v-if="admin && editMode && isSideBarOpen && currentSection"
+		 v-if="admin && editMode && isSideBarOpen && currentSection !== null"
 		 class="sections-resize-handle--x"
 		 @mousedown="startTracking"
 		 data-target="aside"
@@ -119,7 +119,7 @@
 				   v-if="selectedLayout === 'standard'"
 				   class="hp-button"
 				   @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false)
             "
 			  >
 				<div class="btn-icon plus-icon"><PlusIcon /></div>
@@ -128,7 +128,7 @@
 			  <button
 				   class="hp-button"
 				   @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
             "
 			  >
 				<div class="btn-icon plus-icon"><PlusIcon /></div>
