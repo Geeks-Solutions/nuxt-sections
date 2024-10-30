@@ -1,5 +1,5 @@
 <template>
-  <div class="container containerWidth text-center sub-types">
+  <div class="container text-center sub-types" :class="{'containerWidth': isSideBarOpen === false}">
 
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
       <div>
@@ -31,7 +31,8 @@
       <div class="form-group">
         <form>
           <div
-            class=" flex flex-col justify-between content-wrapper"
+            class=" flex flex-col justify-between"
+			:class="{'content-wrapper': isSideBarOpen === false}"
           >
             <div v-if="globalSectionMode === true">
               <div class="autoInsertRow">
@@ -237,7 +238,11 @@ export default {
     basePath: {
       type: String,
       default: ''
-    }
+    },
+	isSideBarOpen: {
+	  type: Boolean,
+	  default: false
+	}
   },
   data() {
     return {

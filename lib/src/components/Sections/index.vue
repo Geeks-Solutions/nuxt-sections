@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container">
-	<aside v-if="admin && editMode && isSideBarOpen && currentSection !== null" ref="resizeTarget" class="sections-aside">
+	<aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget" class="sections-aside">
 	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false">
 		<CloseIcon />
 	  </div>
@@ -49,6 +49,7 @@
 			   :instance="currentSection.instance === true"
 			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
 			   :base-path="pagePath"
+			   :is-side-bar-open="isSideBarOpen"
 			   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
 			   @load="(value) => loading = value"
 			   @promote-section="currentSection = {...currentSection, instance: true}"
@@ -56,10 +57,10 @@
 		  <Local
 			   v-if="currentSection.type === 'local'"
 			   :props="currentSection"
+			   :savedView="savedView"
 			   :instance="currentSection.instance === true"
 			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
 			   @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
-			   :savedView="savedView"
 		  />
 		</div>
 	  </div>
@@ -402,10 +403,10 @@
 					<Local
 						 v-if="currentSection.type === 'local'"
 						 :props="currentSection"
+						 :savedView="savedView"
 						 :instance="currentSection.instance === true"
 						 :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
 						 @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
-						 :savedView="savedView"
 					/>
 				  </div>
 				</div>
@@ -2033,36 +2034,36 @@ export default {
         let path = "";
         if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-          if (process.client) {
-            Vue.component(`${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`, {
-              extends: importComp(path)
-            })
-          }
-          return `${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
         } else if (sectionName && sectionName.includes(":")) {
           path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-          if (process.client) {
-            Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
-              extends: importComp(path)
-            })
-          }
-          return `${sectionName.split(":")[1]}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
         } else if (sectionName && sectionName.includes("_-_")) {
           path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
-          if (process.client) {
-            Vue.component(`${sectionName.split("_-_")[0]}_${sectionType}`, {
-              extends: importComp(path)
-            })
-          }
-          return `${sectionName.split("_-_")[0]}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName.split("_-_")[0]}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
         } else {
           path = `/views/${sectionName}_${sectionType}`;
-          if (process.client) {
-            Vue.component(`${sectionName}_${sectionType}`, {
-              extends: importComp(path)
-            })
-          }
-          return `${sectionName}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
         }
       } else {
         let path = "";
@@ -3426,7 +3427,6 @@ export default {
 	stopTracking() {
 	  if (this.resizeData.tracking) {
 		this.resizeData.tracking = false;
-		console.log("tracking stopped");
 	  }
 	},
   }

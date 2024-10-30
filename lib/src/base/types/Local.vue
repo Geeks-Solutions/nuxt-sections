@@ -91,7 +91,6 @@ export default {
           name: this.props.name,
           type: "local",
           id: this.id,
-          weight: this.weight,
           auto_insertion: this.autoInsert,
           instance_name: this.props.instance_name
         });

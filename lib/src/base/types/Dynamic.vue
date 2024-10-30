@@ -1,6 +1,6 @@
 <template>
-  <div class="sub-types">
-    <h4 :class="{'dynamic-t': isSideBarOpen}">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
+  <div class="sub-types dynamic-s">
+    <h4 :class="{'dynamic-t': isSideBarOpen === false}">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
     <div v-if="globalSectionMode === true" class="mt-4">
       <div class="autoInsertRow">
         <div>
@@ -239,5 +239,8 @@ export default {
 }
 .instanceInput {
   width: 350px;
+}
+.dynamic-s {
+  text-align: center;
 }
 </style>
