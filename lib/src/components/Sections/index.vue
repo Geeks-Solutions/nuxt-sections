@@ -4,6 +4,9 @@
 	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false">
 		<CloseIcon />
 	  </div>
+	  <a class="anchorIcon" :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
+		<AnchorIcon :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`" class="edit-icon" />
+	  </a>
 	  <div class="flexSections">
 		<div class="component-view">
 		  <!-- we can use this short hand too -->
@@ -3139,7 +3142,13 @@ export default {
 	  this.$nextTick(() => {
 		this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
 		this.resizeData.resizeTarget = this.$refs.resizeTarget;
-
+		setTimeout(() => {
+		  if (this.$refs.resizeTarget) {
+			this.$refs.resizeTarget.scrollTo({
+			  top: 0
+			});
+		  }
+		}, 600);
 		window.addEventListener("mousemove", this.onMouseMove);
 		window.addEventListener("mouseup", this.stopTracking);
 	  })
@@ -4540,7 +4549,9 @@ span.handle {
   top: 0;
   height: 100vh; /* Ensures it stays full height */
   width: 527px;
+  min-width: 422px;
   max-width: 50%;
+  z-index: 200;
 }
 
 .sections-aside
@@ -4557,6 +4568,24 @@ span.handle {
 }
 .sections-aside
 .closeIcon svg:hover {
+  color: darken(#31a9db, 10%);
+}
+
+.sections-aside
+.anchorIcon {
+  position: absolute;
+  right: 55px;
+  top: 16px;
+  cursor: pointer;
+}
+.sections-aside
+.anchorIcon svg {
+  width: 25px;
+  height: 25px;
+  color: #31a9db;
+}
+.sections-aside
+.anchorIcon svg:hover {
   color: darken(#31a9db, 10%);
 }
 

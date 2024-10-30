@@ -93,11 +93,11 @@ export default {
 }
 .card-content .comp-preview {
   position: absolute;
-  width: 1496px;
+  width: 1736px;
   top: 0;
   left: 0;
   overflow: hidden;
-  transform: scale(0.22);
+  transform: scale(0.188);
   transform-origin: top left;
   pointer-events: none;
   color: initial;
