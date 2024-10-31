@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Introduced a preview of the sections from the listing #57
 
+- Introduce custom CSS and css presets in page settings #69
+
 ## [1.0.11] - 2024-10-16
 
 ### Fixed

@@ -726,6 +726,369 @@ props: {
 * The settings of the viewStructure prop of the dynamic and configurable section types will depend on the data of the section view that each section support.
 For Configurable sections, the settings array will include the fields defined by sections which can be found in the section-types API response inside `fields`. 
 
+## Update the css of your page 
+
+* In the settings of your page, you will find a css preset dropdown that has 3 different css that where you can select one and save it for your page.
+* The preset array will come from an env variable that should follow this structure
+``NUXT_ENV_SECTIONS_CSS_PRESET=[{\"name\": \"Preset 1\", \"url\": \"https://s3.amazonaws.com/eweevtestbucketprivate/sections/preset1f5bee855a36c43708a8c7b801864715c.css\"},{\"name\": \"Preset 2\", \"url\": \"https://s3.amazonaws.com/eweevtestbucketprivate/sections/preset2127eaa90b85f48798c16665f2a96cf5a.css\"},{\"name\": \"Preset 3\", \"url\": \"https://s3.amazonaws.com/eweevtestbucketprivate/sections/preset3348a13214941498bb6391ab43ae5d057.css\"}]``
+* You have an option `Other` that allow you to upload your own custom css file to use in your page.
+* Each preset can be exported, allowing you to make the updates you want and then upload it using the Other option
+* The project is styled with Tailwindcss and all Tailwindcss classes can be updated by adding the class name and its update in the custom css file   
+Here is an example of one of the presets that includes Tailwindcss classes which are the standards for any style update that has to be added/changed
+```css
+html {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+.rounded-md {
+  border-radius: 0.375rem !important;
+}
+
+.rounded-sm {
+  border-radius: 0.125rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-br-lg {
+  border-bottom-right-radius: 0.5rem !important;
+}
+
+.rounded-tl-lg {
+  border-top-left-radius: 0.5rem !important;
+}
+
+.border {
+  border-width: 1px !important;
+}
+
+.border-b {
+  border-bottom-width: 1px !important;
+}
+
+.border-t {
+  border-top-width: 1px !important;
+}
+
+
+.text-2xl {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+}
+
+.text-3xl {
+  font-size: 1.875rem !important;
+  line-height: 2.25rem !important;
+}
+
+.text-4xl {
+  font-size: 2.25rem !important;
+  line-height: 2.5rem !important;
+}
+
+.text-8xl {
+  font-size: 6rem !important;
+  line-height: 1 !important;
+}
+
+.text-base {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+.text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75rem !important;
+}
+
+.text-sm {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.text-xl {
+  font-size: 1.25rem !important;
+  line-height: 1.75rem !important;
+}
+
+.text-xs {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+.font-bold {
+  font-weight: 700 !important;
+}
+
+.font-extrabold {
+  font-weight: 800 !important;
+}
+
+.font-light {
+  font-weight: 300 !important;
+}
+
+.font-medium {
+  font-weight: 500 !important;
+}
+
+.font-semibold {
+  font-weight: 600 !important;
+}
+
+.font-thin {
+  font-weight: 100 !important;
+}
+
+.shadow {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
+.shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
+.drop-shadow-2xl {
+  --tw-drop-shadow: drop-shadow(0 25px 25px rgb(0 0 0 / 0.15)) !important;
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow) !important;
+}
+
+.grayscale {
+  --tw-grayscale: grayscale(100%) !important;
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow) !important;
+}
+
+.hover\:border:hover {
+  border-width: 1px !important;
+}
+
+.hover\:shadow:hover {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
+.border-Blue {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(50 150 250 / var(--tw-border-opacity)) !important;
+}
+
+.border-Error_200 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(255 120 60 / var(--tw-border-opacity)) !important;
+}
+
+.border-Error_600 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(200 40 40 / var(--tw-border-opacity)) !important;
+}
+
+.border-FieldGray {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(130 130 130 / var(--tw-border-opacity)) !important;
+}
+
+.border-Gray_200 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(190 190 220 / var(--tw-border-opacity)) !important;
+}
+
+.border-Gray_300 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(160 160 200 / var(--tw-border-opacity)) !important;
+}
+
+.border-Primary_Color_10 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(240 230 110 / var(--tw-border-opacity)) !important;
+}
+
+.border-Primary_Color_25 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(225 205 210 / var(--tw-border-opacity)) !important;
+}
+
+.border-Primary_Color_50 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(160 160 180 / var(--tw-border-opacity)) !important;
+}
+
+.border-Primary_Color_600 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(20 20 80 / var(--tw-border-opacity)) !important;
+}
+
+.border-gray-300 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(190 200 210 / var(--tw-border-opacity)) !important;
+}
+
+.border-white {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(240 240 240 / var(--tw-border-opacity)) !important;
+}
+
+.bg-BgGrey {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(220 220 220 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Error_200 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(255 140 80 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Error_600 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(220 70 70 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Gray_50 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(240 248 255 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Primary_Color_10 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(130 190 190 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Primary_Color_25 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(200 240 240 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Primary_Color_50 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(160 200 190 / var(--tw-bg-opacity)) !important;
+}
+
+.bg-Primary_Color_600 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(40 40 80 / var(--tw-bg-opacity)) !important;
+}
+
+.text-Blue {
+  --tw-text-opacity: 1 !important;
+  color: rgb(30 140 100 / var(--tw-text-opacity)) !important;
+}
+
+.text-Gray_300 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(130 160 190 / var(--tw-text-opacity)) !important;
+}
+
+.text-Gray_600 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(20 224 224 / var(--tw-text-opacity)) !important;
+}
+
+.text-Gray_700 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(50 80 130 / var(--tw-text-opacity)) !important;
+}
+
+.text-Gray_800 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(30 60 100 / var(--tw-text-opacity)) !important;
+}
+
+.text-Gray_900 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(0 34 102 / var(--tw-text-opacity)) !important;
+}
+
+.text-Primary_Color_300 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(70 90 50 / var(--tw-text-opacity)) !important;
+}
+
+.text-Primary_Color_700 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(255 87 51 / var(--tw-text-opacity)) !important;
+}
+
+.text-error {
+  --tw-text-opacity: 1 !important;
+  color: rgb(210 50 80 / var(--tw-text-opacity)) !important;
+}
+
+.text-gray-800 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(40 55 75 / var(--tw-text-opacity)) !important;
+}
+
+.text-white {
+  --tw-text-opacity: 1 !important;
+  color: rgb(210 230 230 / var(--tw-text-opacity)) !important;
+}
+
+.hover\:border-Error_700:hover {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(190 60 60 / var(--tw-border-opacity)) !important;
+}
+
+.hover\:border-Gray_1000:hover {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(180 180 170 / var(--tw-border-opacity)) !important;
+}
+
+.hover\:border-Primary_Color_400:hover {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(80 80 60 / var(--tw-border-opacity)) !important;
+}
+
+.hover\:bg-Error_700:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(190 60 60 / var(--tw-bg-opacity)) !important;
+}
+
+.hover\:bg-Gray_1000:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(180 180 170 / var(--tw-bg-opacity)) !important;
+}
+
+.hover\:bg-Primary_Color_400:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(80 80 60 / var(--tw-bg-opacity)) !important;
+}
+
+.hover\:text-Blue:hover {
+  --tw-text-opacity: 1 !important;
+  color: rgb(30 140 100 / var(--tw-text-opacity)) !important;
+}
+
+.hover\:text-Gray_700:hover {
+  --tw-text-opacity: 1 !important;
+  color: rgb(50 80 130 / var(--tw-text-opacity)) !important;
+}
+
+.hover\:text-Primary_Color_800:hover {
+  --tw-text-opacity: 1 !important;
+  color: rgb(20 20 10 / var(--tw-text-opacity)) !important;
+}
+```
+
+
+
 ## Development
 
 1. Clone this repository
