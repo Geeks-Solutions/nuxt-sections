@@ -910,10 +910,40 @@
 						  </div>
 						</div>
 						<div v-if="$sections.cname === 'active'">
-						  <div class="sections-mt-2 sectionsFieldsLabels">
+						  <div class="flexSections metadata-media sections-flex-row sections-gap-4">
+							<div class="sections-mt-2 sectionsFieldsLabels">
+							  {{ $t("CSS") }}
+							</div>
+							<div
+								 v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name && pageMetadata['selectedCSSPreset'].name !== 'Other'"
+								 class="css-preset"
+								 @click="exportCSSFile(pageMetadata['selectedCSSPreset'])"
+							>
+							  {{ $t("Export CSS") }}
+							</div>
+						  </div>
+						  <AutoComplete
+							   :main-filter="pageMetadata['selectedCSSPreset']"
+							   :select-placeholder="$t('Presets')"
+							   :filter-label-prop="'name'"
+							   :filter-options="[
+									...computedCSSPreset || [],
+  								{
+  								    name: 'Other',
+  								    url: ''
+  								  }
+							   ]"
+							   :filter-searchable="false"
+							   :track-by="'name'"
+							   :preselect-first="true"
+							   :multiple="false"
+							   @itemSelected="(val) => {$set(pageMetadata, 'selectedCSSPreset', val)}"
+						  ></AutoComplete>
+
+						  <div v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name === 'Other'" class="sections-mt-2 sectionsFieldsLabels">
 							{{ $t("mediaComponent.media") }}
 						  </div>
-						  <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []" @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')" @removeUploadedImage="removeMedia('media')" />
+						  <UploadMedia v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name === 'Other'" :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []" @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')" @removeUploadedImage="removeMedia('media')" />
 						  <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
 						  <div class="sections-mt-2 sectionsFieldsLabels">
 							{{ $t("mediaComponent.favicon") }}
@@ -1064,6 +1094,7 @@ import upperFirst from "lodash/upperFirst";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
 import UploadMedia from "../../components/Medias/UploadMedia";
 import MediaComponent from "../../components/Medias/MediaComponent";
+import AutoComplete from "@geeks.solutions/vue-components/components/AutoComplete.vue";
 
 export default {
   name: "Sections",
@@ -1098,7 +1129,8 @@ export default {
 	ErrorIcon,
 	InfoIcon,
 	UploadMedia,
-	MediaComponent
+	MediaComponent,
+	AutoComplete
   },
   props: {
     pageName: {
@@ -1315,7 +1347,14 @@ export default {
         return this.savedView.weight;
       }
       return null;
-    }
+    },
+	computedCSSPreset() {
+	  try {
+		return JSON.parse(this.$sections.cssPreset.replace(/\\"/g, '"'))
+	  } catch {
+		return []
+	  }
+	}
   },
   mounted() {
     if(this.sectionsError !== "") {
@@ -1330,11 +1369,24 @@ export default {
 	  this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
 	}
 
-	if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
+	let hrefLink = ''
+	let link = ''
+	if (this.pageMetadata['selectedCSSPreset'] || this.pageMetadata['media']) {
 	  // Dynamically add the CSS file to the DOM after the component is mounted to insure the imported css styles override all other css styles
-	  const link = document.createElement('link');
+	  link = document.createElement('link');
 	  link.rel = 'stylesheet';
-	  link.href = this.pageMetadata['media'].url;
+	}
+	if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other') {
+	  hrefLink = this.pageMetadata['selectedCSSPreset'].url;
+	  link.href = hrefLink
+	  document.head.appendChild(link);
+	} else if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
+	  this.$set(this.pageMetadata, 'selectedCSSPreset', {
+		name: 'Other',
+		url: ''
+	  })
+	  hrefLink = this.pageMetadata['media'].url;
+	  link.href = hrefLink
 	  document.head.appendChild(link);
 	}
 
@@ -1490,6 +1542,9 @@ export default {
 	  }
 	  if (res.data.metadata.media) {
 		this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+	  }
+	  if (res.data.metadata.selectedCSSPreset) {
+		this.$set(this.pageMetadata, 'selectedCSSPreset', res.data.metadata.selectedCSSPreset)
 	  }
 	  if (res.data.metadata.favicon) {
 		this.$set(this.pageMetadata, 'favicon', res.data.metadata.favicon)
@@ -3438,6 +3493,22 @@ export default {
 		this.resizeData.tracking = false;
 	  }
 	},
+	async exportCSSFile(file) {
+	  const response = await fetch(file.url);
+
+	  if (response) {
+		const blob = await response.blob();
+		const url = window.URL.createObjectURL(blob);
+
+		const dlAnchorElem = document.getElementById('downloadAnchorElem');
+		dlAnchorElem.setAttribute("href", url);
+		dlAnchorElem.setAttribute("download", `${file.name}.css`);
+		dlAnchorElem.click();
+
+		// Clean up the URL object after the download
+		window.URL.revokeObjectURL(url);
+	  }
+	}
   }
 }
 </script>
@@ -4638,4 +4709,11 @@ span.handle {
   border-right-width: 1px;
 }
 
+.metadata-media .css-preset {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #31a9db;
+  font-size: 14px;
+  align-content: center;
+}
 </style>
