@@ -1350,7 +1350,11 @@ export default {
     },
 	computedCSSPreset() {
 	  try {
-		return JSON.parse(this.$sections.cssPreset.replace(/\\"/g, '"'))
+		if (Array.isArray(this.$sections.cssPreset)) {
+		  return this.$sections.cssPreset
+		} else {
+		  return JSON.parse(this.$sections.cssPreset.replace(/\\"/g, '"'))
+		}
 	  } catch {
 		return []
 	  }
@@ -4715,5 +4719,11 @@ span.handle {
   color: #31a9db;
   font-size: 14px;
   align-content: center;
+}
+
+.sections-required-field-error {
+  padding-top: 4px;
+  color: rgb(216, 42, 42);
+  font-size: 14px;
 }
 </style>
