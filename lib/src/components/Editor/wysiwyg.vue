@@ -5,12 +5,9 @@
   </div>
 </template>
 <script>
-import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
-import "quill/dist/quill.bubble.css";
 
 import { quillEditor } from "vue-quill-editor";
-import {globalFileUpload} from "@geeks.solutions/nuxt-sections/lib/src/utils";
 import * as Emoji from "quill-emoji";
 import Quill from 'quill';
 Quill.register("modules/emoji", Emoji);
