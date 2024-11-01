@@ -1778,7 +1778,9 @@ export default {
               baseURL = baseURL + routerBase
             }
             window.location.replace(`${baseURL}/${pagePath}`);
-          }
+          } else {
+			window.location.reload()
+		  }
         })
         .catch((error) => {
           this.loading = false

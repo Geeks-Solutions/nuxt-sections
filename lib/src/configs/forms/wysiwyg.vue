@@ -3,6 +3,7 @@
     <div class="input mt-8">
       <wysiwyg :key="quillKey" ref="myQuillEditor" class="wyzywig" :html="settings[0][selectedLang]" @wysiwygMedia="wysiwygMediaAdded" @settingsUpdate="updateContent" />
 	  <span v-if="errors.quill === true && selectedLang === 'en'" class="flexSections sections-required-field-error">{{ $t('requiredField') }}</span>
+	  <span v-else-if="errors.quill === true && selectedLang !== 'en'" id="required-fields" class="flexSections sections-required-field-error">{{ $t('checkRequiredField') }}</span>
 	</div>
   </div>
 </template>
