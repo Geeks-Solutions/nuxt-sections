@@ -1,5 +1,5 @@
 <template>
-  <div class="sections-container">
+  <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
 	<aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget" class="sections-aside">
 	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false">
 		<CloseIcon />
@@ -4602,7 +4602,6 @@ span.handle {
 }
 
 .sections-container {
-  height: 100vh;
   overflow: hidden;
   background-color: white;
 
@@ -4612,6 +4611,10 @@ span.handle {
   justify-content: flex-start;
   align-content: stretch;
   align-items: stretch;
+}
+
+.sections-container-edit-mode {
+  height: 100vh;
 }
 
 .sections-container > .sections-aside {
@@ -4670,7 +4673,6 @@ span.handle {
   order: 0;
   flex: 1 1 auto;
   align-self: auto;
-  padding: 10px;
   overflow: auto;
 }
 
