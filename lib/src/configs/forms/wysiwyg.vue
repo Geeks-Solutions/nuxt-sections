@@ -81,6 +81,22 @@ export default {
           }
         })
       }
+	  try {
+		for(const lang of ['en', 'fr']) {
+		  const parser = new DOMParser();
+		  const doc = parser.parseFromString(this.settings[0][lang], 'text/html');
+		  const imgTags = doc.querySelectorAll('img');
+		  imgTags.forEach(img => {
+			if (!img.hasAttribute('alt')) {
+			  img.setAttribute('alt', 'Image Alt');
+			}
+			if (!img.hasAttribute('loading')) {
+			  img.setAttribute('loading', 'lazy');
+			}
+		  });
+		  this.settings[0][lang] = doc.body.innerHTML;
+		}
+	  } catch {}
 	  if (!this.settings[0].en) {
 		this.errors.quill = true
 		return false

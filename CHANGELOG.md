@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Section types listing updated tabs to Available sections, global Sections and Inventory #67
 
+- Update wysiwygs image with default alt and lazy loading #75 
+
 ## [1.0.11] - 2024-10-16
 
 ### Fixed
