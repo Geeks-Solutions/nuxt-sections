@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Introduce custom CSS and css presets in page settings #69
 
+### Updated
+
+- Section types listing updated tabs to Available sections, global Sections and Inventory #67
+
 ## [1.0.11] - 2024-10-16
 
 ### Fixed

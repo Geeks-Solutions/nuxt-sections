@@ -237,11 +237,15 @@
 				<div class="flexSections sections-flex-row relativeSections sections-justify-center">
 				  <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center" v-if="!currentSection && isCreateInstance === false">
 					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
-					  {{ $t("Add") }}
+					  {{ $t("availableSections") }}
 					</div>
 					<div class="sections-text-center h2 sections-px-4">/</div>
 					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'globalTypes'">
 					  {{ $t("AddGlobal") }}
+					</div>
+					<div class="sections-text-center h2 sections-px-4">/</div>
+					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'inventoryTypes'">
+					  {{ $t("typeInventory") }}
 					</div>
 				  </div>
 				  <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center" v-else-if="!currentSection && isCreateInstance === true">
@@ -261,10 +265,10 @@
 				  <BackIcon />
 				</div>
 
-				<div v-if="!currentSection && typesTab === 'types' && isCreateInstance !== true" class="sections-m-1 sections-p-1 type-items content-wrapper">
+				<div v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true" class="sections-m-1 sections-p-1 type-items content-wrapper">
 				  <div
 					   class="section-item section-item-box"
-					   v-for="(type, index) in types"
+					   v-for="(type, index) in typesTab === 'types' ? types.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : types.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
 					   :key="type.name"
 				  >
 					<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
@@ -309,6 +313,7 @@
 						  <div v-if="type.type === 'configurable'" class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
 							{{ $t('by') + type.application }}
 						  </div>
+						  <div v-else></div>
 						  <LockedIcon class="trash-icon-style sections-p-1" />
 						</div>
 					  </div>
@@ -978,13 +983,13 @@
 					  <CelebrateIcon />
 					</div>
 					<div class="title">
-					  {{ typesTab === 'types' ? $t("success-section-title") : $t("success-global-section-title") }}
+					  {{ typesTab === 'types' || typesTab === 'inventoryTypes' ? $t("success-section-title") : $t("success-global-section-title") }}
 					</div>
 					<div class="closeIcon" @click="staticSuccess = false">
 					  <CloseIcon />
 					</div>
 				  </div>
-				  <div v-if="typesTab === 'types'" class="flexSections sections-w-full sections-justify-center">
+				  <div v-if="typesTab === 'types' || typesTab === 'inventoryTypes'" class="flexSections sections-w-full sections-justify-center">
 					<div class="body">
 					  <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
 					  <div class="section-list">
@@ -3373,7 +3378,9 @@ export default {
           );
           this.isAuthModalOpen = false;
           this.requirementsInputs = {}
-          this.types[index].app_status = "enabled"
+		  this.types.filter(type => type.application_id === sectionAppId).forEach(type => {
+			type.app_status = "enabled"
+		  })
           this.loading = false
           this.$emit("load", false);
         })
@@ -3411,7 +3418,9 @@ export default {
             this.$t("unAuthorizeSuccess", {appName: this.selectedAppName})
           );
           this.isUnAuthModalOpen = false;
-          this.types[index].app_status = "disabled"
+		  this.types.filter(type => type.application_id === sectionAppId).forEach(type => {
+			type.app_status = "disabled"
+		  })
           this.loading = false
           this.$emit("load", false);
         })
