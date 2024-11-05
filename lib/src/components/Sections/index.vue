@@ -1,7 +1,7 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
 	<aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget" class="sections-aside">
-	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false">
+	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false; restoreSection()">
 		<CloseIcon />
 	  </div>
 	  <a class="anchorIcon" :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
@@ -2059,6 +2059,9 @@ export default {
         })
           .catch((error) => {
             this.loading = false;
+			this.types = [];
+			this.globalTypes = [];
+			this.getSectionTypes();
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
           });
       } else {
@@ -3523,6 +3526,19 @@ export default {
 		// Clean up the URL object after the download
 		window.URL.revokeObjectURL(url);
 	  }
+	},
+	restoreSection() {
+	  this.displayVariations[this.selectedVariation].altered = false;
+	  this.$set(
+		   this.displayVariations[this.selectedVariation].views,
+		   this.currentSection.id,
+		   this.originalVariations[this.selectedVariation].views[this.currentSection.id]
+	  );
+	  this.originalVariations = JSON.parse(
+		   JSON.stringify(this.displayVariations)
+	  );
+	  
+	  this.currentViews = this.displayVariations[this.selectedVariation].views;
 	}
   }
 }
