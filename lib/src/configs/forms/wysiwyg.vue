@@ -87,8 +87,18 @@ export default {
 		  const doc = parser.parseFromString(this.settings[0][lang], 'text/html');
 		  const imgTags = doc.querySelectorAll('img');
 		  imgTags.forEach(img => {
+			const url = img.getAttribute('src')
+			let seo_tag = ""
+			if (this.settings[0][lang]) {
+			  const foundM = this.settings.find(m => {
+				return m.wysiwygMedia !== undefined && m.wysiwygMedia.url === url
+			  })
+			  if (foundM && foundM.wysiwygMedia && foundM.wysiwygMedia.seo_tag) {
+				seo_tag = foundM.wysiwygMedia.seo_tag
+			  }
+			}
 			if (!img.hasAttribute('alt')) {
-			  img.setAttribute('alt', 'Image Alt');
+			  img.setAttribute('alt', seo_tag);
 			}
 			if (!img.hasAttribute('loading')) {
 			  img.setAttribute('loading', 'lazy');
