@@ -1,7 +1,7 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
 	<aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget" class="sections-aside">
-	  <div class="closeIcon" @click="isSideBarOpen = false; isCreateInstance = false; restoreSection()">
+	  <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
 		<CloseIcon />
 	  </div>
 	  <a class="anchorIcon" :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
@@ -144,7 +144,7 @@
 				<div class="btn-icon check-icon"><CheckIcon /></div>
 				<div class="btn-text">{{ $t("Save") }}</div>
 			  </button>
-			  <button class="hp-button grey" @click="restoreVariations">
+			  <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
 				<div class="btn-icon back-icon"><BackIcon /></div>
 				<div class="btn-text">{{ $t("Restore") }}</div>
 			  </button>
@@ -443,6 +443,37 @@
 				  <button
 					   class="hp-button"
 					   @click="isDeleteModalOpen = false"
+				  >
+					<div class="btn-text">
+					  {{ $t("Cancel") }}
+					</div>
+				  </button>
+				</div>
+			  </div>
+			</div>
+		  </div>
+
+		  <!-- ------------------------------------------------------------------------------------------- -->
+
+
+		  <div v-if="isRestoreSectionOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="sections-text-center h4 sections-my-3  sections-pb-3">
+				  {{ $t("restoreSectionContent") }}
+				</div>
+				<div class="flexSections sections-flex-row">
+				  <button
+					   class="hp-button"
+					   @click="restoreSectionContent()"
+				  >
+					<div class="btn-text">
+					  {{ $t("Confirm") }}
+					</div>
+				  </button>
+				  <button
+					   class="hp-button"
+					   @click="isRestoreSectionOpen = false"
 				  >
 					<div class="btn-text">
 					  {{ $t("Cancel") }}
@@ -920,7 +951,7 @@
 							  {{ $t("CSS") }}
 							</div>
 							<div
-								 v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name && pageMetadata['selectedCSSPreset'].name !== 'Other'"
+								 v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name && pageMetadata['selectedCSSPreset'].name !== 'Other' && pageMetadata['selectedCSSPreset'].name !== 'None'"
 								 class="css-preset"
 								 @click="exportCSSFile(pageMetadata['selectedCSSPreset'])"
 							>
@@ -935,6 +966,10 @@
 									...computedCSSPreset || [],
   								{
   								    name: 'Other',
+  								    url: ''
+  								  },
+  								{
+  								    name: 'None',
   								    url: ''
   								  }
 							   ]"
@@ -1226,6 +1261,8 @@ export default {
       isModalOpen: false,
 	  isSideBarOpen: false,
       isDeleteModalOpen: false,
+	  isRestoreSectionOpen: false,
+	  restoreType: 'section',
       isDeletePageModalOpen: false,
       isDeleteSectionModalOpen: false,
       deletedSectionId: null,
@@ -1385,7 +1422,7 @@ export default {
 	  link = document.createElement('link');
 	  link.rel = 'stylesheet';
 	}
-	if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other') {
+	if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other' && this.pageMetadata['selectedCSSPreset'].name !== 'None') {
 	  hrefLink = this.pageMetadata['selectedCSSPreset'].url;
 	  link.href = hrefLink
 	  document.head.appendChild(link);
@@ -3527,6 +3564,16 @@ export default {
 		window.URL.revokeObjectURL(url);
 	  }
 	},
+	restoreSectionContent() {
+	  this.isSideBarOpen = false;
+	  this.isCreateInstance = false;
+	  this.isRestoreSectionOpen = false;
+	  if (this.restoreType === 'section') {
+		this.restoreSection();
+	  } else {
+		this.restoreVariations()
+	  }
+	},
 	restoreSection() {
 	  this.displayVariations[this.selectedVariation].altered = false;
 	  this.$set(
@@ -3537,7 +3584,7 @@ export default {
 	  this.originalVariations = JSON.parse(
 		   JSON.stringify(this.displayVariations)
 	  );
-	  
+
 	  this.currentViews = this.displayVariations[this.selectedVariation].views;
 	}
   }
