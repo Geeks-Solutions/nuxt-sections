@@ -23,7 +23,7 @@
       <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
       <form>
         <div>
-          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
+          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
             <slot />
           </subType>
         </div>
@@ -72,6 +72,10 @@ export default {
       default: false
     },
     linked: {
+      type: Boolean,
+      default: false
+    },
+	isSideBarOpen: {
       type: Boolean,
       default: false
     }
@@ -172,7 +176,7 @@ export default {
   min-width: 0;
   max-width: 1000px;
 }
-h3 {
+.element-type h3 {
   font-size: 29px;
 }
 .autoInsertRow {

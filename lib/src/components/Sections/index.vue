@@ -1,889 +1,1099 @@
 <template>
-  <div class="sections-config justify-center">
-    <div v-if="!pageNotFound">
-      <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
-      <button
-        @click="openEditMode()"
-        v-if="admin"
-        class="bg-blue control-button hide-mobile btn-text"
-      >
-        {{ !editMode ? $t("Edit page") : $t("View page") }}
-      </button>
-      <div class="bg-light-grey-hp hide-mobile section-wrapper">
-        <div v-if="admin && editMode" class="p-3 text-center mainmsg pt-3">
-          {{ $t('changesPublished') }}
-        </div>
+  <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
+	<aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget" class="sections-aside">
+	  <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
+		<CloseIcon />
+	  </div>
+	  <a class="anchorIcon" :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
+		<AnchorIcon :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`" class="edit-icon" />
+	  </a>
+	  <div class="flexSections">
+		<div class="component-view">
+		  <!-- we can use this short hand too -->
+		  <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
+		  <Static
+			   v-if="currentSection.type === 'static'"
+			   :props="currentSection"
+			   @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+			   :savedView="savedView"
+			   :locales="locales"
+			   :translation-component-support="translationComponentSupport"
+			   :sections-user-id="sectionsUserId"
+			   :instance="currentSection.instance === true"
+			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+			   :is-side-bar-open="isSideBarOpen"
+			   @load="(value) => loading = value"
+			   @promote-section="currentSection = {...currentSection, instance: true}"
+		  />
+		  <Dynamic
+			   v-if="currentSection.type === 'dynamic'"
+			   :props="currentSection"
+			   @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+			   @errorAddingSection="errorAddingSection"
+			   :savedView="savedView"
+			   :headers="headers"
+			   :instance="currentSection.instance === true"
+			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+			   :base-path="pagePath"
+			   :is-side-bar-open="isSideBarOpen"
+			   @load="(value) => loading = value"
+		  />
+		  <Configurable
+			   v-if="currentSection.type === 'configurable'"
+			   ref="sections-configurable-type"
+			   @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+			   @errorAddingSection="errorAddingSection"
+			   :props="currentSection"
+			   :savedView="savedView"
+			   :headers="headers"
+			   :sections-user-id="sectionsUserId"
+			   :sections-configurable-type="sectionsConfigurableTypeReference"
+			   :translation-component-support="translationComponentSupport"
+			   :instance="currentSection.instance === true"
+			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+			   :base-path="pagePath"
+			   :is-side-bar-open="isSideBarOpen"
+			   @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
+			   @load="(value) => loading = value"
+			   @promote-section="currentSection = {...currentSection, instance: true}"
+		  />
+		  <Local
+			   v-if="currentSection.type === 'local'"
+			   :props="currentSection"
+			   :savedView="savedView"
+			   :instance="currentSection.instance === true"
+			   :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+			   @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+		  />
+		</div>
+	  </div>
+	</aside>
+	<div
+		 v-if="admin && editMode && isSideBarOpen && currentSection !== null"
+		 class="sections-resize-handle--x"
+		 @mousedown="startTracking"
+		 data-target="aside"
+	></div>
+	<main class="sections-main">
+	  <div class="sections-config sections-justify-center">
+		<div v-if="!pageNotFound">
+		  <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
+		  <button
+			   @click="openEditMode()"
+			   v-if="admin && !isSideBarOpen"
+			   class="bg-blue control-button hide-mobile btn-text"
+		  >
+			{{ !editMode ? $t("Edit page") : $t("View page") }}
+		  </button>
+		  <div class="bg-light-grey-hp hide-mobile section-wrapper">
+			<div v-if="admin && editMode" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
+			  {{ $t('changesPublished') }}
+			</div>
 
-        <div
-          class="pb-4 flexSections flex-row justify-center hide-mobile"
-          v-if="admin && editMode"
-        >
-          <button
-            class="hp-button"
-            @click="layoutMode = !layoutMode"
-          >
-            <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
-          </button>
-          <div v-if="layoutMode === true" class="layoutSelect-container">
-            <div class="layoutSelect-select-wrapper">
-              <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select" @change="computeLayoutData">
-                <option disabled value="">-- Select layout --</option>
-                <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-              </select>
-              <div class="layoutSelect-arrow-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M10 12L5 7h10l-5 5z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div v-if="layoutMode === true" class="custom-checkbox">
-            <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-            <label class="switch">
-              <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-              <span class="slider round"></span>
-            </label>
-            <label for="highlightRegions"></label>
-          </div>
-          <button
-            v-if="selectedLayout === 'standard'"
-            class="hp-button"
-            @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false)
+			<div
+				 class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
+				 v-if="admin && editMode"
+			>
+			  <button
+				   class="hp-button"
+				   @click="layoutMode = !layoutMode"
+			  >
+				<div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+			  </button>
+			  <div v-if="layoutMode === true" class="layoutSelect-container">
+				<div class="layoutSelect-select-wrapper">
+				  <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select" @change="computeLayoutData">
+					<option disabled value="">-- Select layout --</option>
+					<option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+				  </select>
+				  <div class="layoutSelect-arrow-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+					  <path d="M10 12L5 7h10l-5 5z" />
+					</svg>
+				  </div>
+				</div>
+			  </div>
+			  <div v-if="layoutMode === true" class="custom-checkbox">
+				<span class="mainmsg">{{ $t('highlightRegions') }}</span>
+				<label class="switch">
+				  <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+				  <span class="slider round"></span>
+				</label>
+				<label for="highlightRegions"></label>
+			  </div>
+			  <button
+				   v-if="selectedLayout === 'standard'"
+				   class="hp-button"
+				   @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false)
             "
-          >
-            <div class="btn-icon plus-icon"><PlusIcon /></div>
-            <div class="btn-text">{{ $t("Add") }}</div>
-          </button>
-          <button
-            class="hp-button"
-            @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true)
+			  >
+				<div class="btn-icon plus-icon"><PlusIcon /></div>
+				<div class="btn-text">{{ $t("Add") }}</div>
+			  </button>
+			  <button
+				   class="hp-button"
+				   @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
             "
-          >
-            <div class="btn-icon plus-icon"><PlusIcon /></div>
-            <div class="btn-text">{{ $t("AddGlobal") }}</div>
-          </button>
-          <button class="hp-button" @click="saveVariation">
-            <div class="btn-icon check-icon"><CheckIcon /></div>
-            <div class="btn-text">{{ $t("Save") }}</div>
-          </button>
-          <button class="hp-button grey" @click="restoreVariations">
-            <div class="btn-icon back-icon"><BackIcon /></div>
-            <div class="btn-text">{{ $t("Restore") }}</div>
-          </button>
-          <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
-            <button
-              class="hp-button "
-              :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
-              @click="exportSections"
-            >
-              <ImportIcon />
-            </button>
-            <a id="downloadAnchorElem" style="display:none"></a>
-            <button
-              class="hp-button "
-              :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
-              @click="initImportSections"
-            >
-              <ExportIcon />
-            </button>
-            <button
-              class="hp-button danger"
-              data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
-              @click="isDeletePageModalOpen = true">
-              <TrashIcon class="trash-icon-style" />
-            </button>
-            <button
-              class="hp-button "
-              :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-              @click="metadataModal = true"
-            >
-              <SettingsIcon />
-            </button>
-            <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none" />
-            <button
-              @click="$cookies.remove('sections-auth-token'), (admin = false)"
-              v-if="admin"
-              class="bg-blue"
-              style="background: black;
+			  >
+				<div class="btn-icon plus-icon"><PlusIcon /></div>
+				<div class="btn-text">{{ $t("AddGlobal") }}</div>
+			  </button>
+			  <button class="hp-button" @click="saveVariation">
+				<div class="btn-icon check-icon"><CheckIcon /></div>
+				<div class="btn-text">{{ $t("Save") }}</div>
+			  </button>
+			  <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+				<div class="btn-icon back-icon"><BackIcon /></div>
+				<div class="btn-text">{{ $t("Restore") }}</div>
+			  </button>
+			  <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
+				<button
+					 class="hp-button "
+					 :class="selectedVariation === pageName ? 'danger' : 'grey'"
+					 data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
+					 @click="exportSections"
+				>
+				  <ImportIcon />
+				</button>
+				<a id="downloadAnchorElem" style="display:none"></a>
+				<button
+					 class="hp-button "
+					 :class="selectedVariation === pageName ? 'danger' : 'grey'"
+					 data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
+					 @click="initImportSections"
+				>
+				  <ExportIcon />
+				</button>
+				<button
+					 class="hp-button danger"
+					 data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+					 @click="isDeletePageModalOpen = true">
+				  <TrashIcon class="trash-icon-style" />
+				</button>
+				<button
+					 class="hp-button "
+					 :class="selectedVariation === pageName ? 'danger' : 'grey'"
+					 data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+					 @click="metadataModal = true"
+				>
+				  <SettingsIcon />
+				</button>
+				<input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none" />
+				<button
+					 @click="$cookies.remove('sections-auth-token'), (admin = false)"
+					 v-if="admin"
+					 class="bg-blue"
+					 style="background: black;
                   font-size: 13px;
                   border-radius: 5px;
                   padding: 3px 6px;"
-            >
-              {{ $t("Logout") }}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div
-        class="bg-light-grey-hp p-3 flexSections flex-row justify-center part2 hide-mobile"
-        v-if="admin && editMode"
-      >
-        <button
-          class="hp-button "
-          :class="selectedVariation === pageName ? 'danger' : 'grey'"
-          @click="selectedVariation = pageName"
-        >
-          <div class="btn-text">{{ decodeURIComponent(parsePath(encodeURIComponent(pageName))) + " " + "Main" }}</div>
-        </button>
-        <div v-for="(v, idx) in variations" :key="idx">
-          <button
-            class="hp-button"
-            :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
-            @click="
+				>
+				  {{ $t("Logout") }}
+				</button>
+			  </div>
+			</div>
+		  </div>
+		  <div
+			   class="bg-light-grey-hp sections-p-3 flexSections sections-flex-row sections-justify-center part2 hide-mobile"
+			   v-if="admin && editMode"
+		  >
+			<button
+				 class="hp-button "
+				 :class="selectedVariation === pageName ? 'danger' : 'grey'"
+				 @click="selectedVariation = pageName"
+			>
+			  <div class="btn-text">{{ decodeURIComponent(parsePath(encodeURIComponent(pageName))) + " " + "Main" }}</div>
+			</button>
+			<div v-for="(v, idx) in variations" :key="idx">
+			  <button
+				   class="hp-button"
+				   :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
+				   @click="
               displayVariations[pageName].altered ? dismissCountDown = 4 :
               selectedVariation = v.pageName
             "
-          >
-            <div class="btn-text">{{ v.name }}</div>
-          </button>
-          <div
-            class="sync flexSections flex-row p-4 justify-center"
-            v-if="selectedVariation === v.pageName"
-            @click="synch()"
-          >
-            <div class="icon" :class="{ synched }"><SyncIcon /></div>
-            <span>{{ $t("Synchronise") }}</span>
-          </div>
-        </div>
-      </div>
+			  >
+				<div class="btn-text">{{ v.name }}</div>
+			  </button>
+			  <div
+				   class="sync flexSections sections-flex-row sections-p-4 sections-justify-center"
+				   v-if="selectedVariation === v.pageName"
+				   @click="synch()"
+			  >
+				<div class="icon" :class="{ synched }"><SyncIcon /></div>
+				<span>{{ $t("Synchronise") }}</span>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
-      <div v-if="isModalOpen && admin && editMode" ref="modal" class="fixed section-modal-content z-50 bg-grey bg-opacity-25 inset-0 p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl">
-            <div class="flexSections flex-row relativeSections justify-center">
-              <div class="flexSections flex-row my-3 pb-6 justify-center" v-if="!currentSection && isCreateInstance === false">
-                <div class="text-center h2 cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
-                  {{ $t("Add") }}
-                </div>
-                <div class="text-center h2 px-4">/</div>
-                <div class="text-center h2 cursor-pointer" :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'globalTypes'">
-                  {{ $t("AddGlobal") }}
-                </div>
-              </div>
-              <div class="flexSections flex-row my-3 pb-6 justify-center" v-else-if="!currentSection && isCreateInstance === true">
-                <div class="text-center h2 cursor-pointer selectSectionType">
-                  {{ $t("selectSectionType") }}
-                </div>
-              </div>
-              <div class="closeIcon" @click="isModalOpen = false; isCreateInstance = false">
-                <CloseIcon />
-              </div>
-            </div>
-            <div
-              class="step-back"
-              v-if="currentSection"
-              @click="currentSection = null"
-            >
-              <BackIcon />
-            </div>
+		  <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
+		  <div v-if="isModalOpen && admin && editMode" ref="modal" class="sections-fixed section-modal-content sections-z-50 bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl">
+				<div class="flexSections sections-flex-row relativeSections sections-justify-center">
+				  <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center" v-if="!currentSection && isCreateInstance === false">
+					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
+					  {{ $t("availableSections") }}
+					</div>
+					<div class="sections-text-center h2 sections-px-4">/</div>
+					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'globalTypes'">
+					  {{ $t("AddGlobal") }}
+					</div>
+					<div class="sections-text-center h2 sections-px-4">/</div>
+					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'inventoryTypes'">
+					  {{ $t("typeInventory") }}
+					</div>
+				  </div>
+				  <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center" v-else-if="!currentSection && isCreateInstance === true">
+					<div class="sections-text-center h2 sections-cursor-pointer selectSectionType">
+					  {{ $t("selectSectionType") }}
+					</div>
+				  </div>
+				  <div class="closeIcon" @click="isModalOpen = false; isCreateInstance = false">
+					<CloseIcon />
+				  </div>
+				</div>
+				<div
+					 class="step-back"
+					 v-if="currentSection"
+					 @click="currentSection = null"
+				>
+				  <BackIcon />
+				</div>
 
-            <div v-if="!currentSection && typesTab === 'types' && isCreateInstance !== true" class="m-1 p-1 type-items content-wrapper">
-              <div
-                class="section-item section-item-box"
-                v-for="(type, index) in types"
-                :key="type.name"
-              >
-                <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
-                  <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
-                    <TrashIcon class="trash-icon-style" />
-                  </div>
-                </div>
-                <div v-else-if="type.notCreated === true" class="section-creation">
-                  <div class="section-creation-icon">
-                    <span class="toggleLabel">{{ $t('create') }}</span>
-                    <label id="toggle-label" class="switch">
-                      <input :checked="type.notCreated !== true" type="checkbox" @change="addNewStaticType(type.name)">
-                      <span class="slider round"></span>
-                    </label>
-                  </div>
-                </div>
-                <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
-                  <div class="section-info-icon">
-                    <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
-                  </div>
-                </div>
-                <div class="section-item" @click="type.notCreated !== true ? openCurrentSection(type) : null">
-                  <SectionItem
-                    v-if="type.name"
-                    class="bg-light-blue"
-                    :title="formatName(type.name)"
-                    :icon="type.name"
-                    :active="type.notCreated !== true"
-                  />
-                </div>
-                <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.type !== 'local' && type.notCreated !== true" class="flexSections pl-2 pb-1" style="font-size: 10px;">
-                  {{ $t('by') + type.application }}
-                </div>
-                <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
-                  <div class="section-delete-icon" @click="openAuthConfigurableSectionTypeModal(type.application_id, index, type.requirements, type.name, type.application)">
-                    <div class="flexSections justify-between items-end">
-                      <div v-if="type.type === 'configurable'" class="flexSections pl-2 pb-1" style="font-size: 8px;">
-                        {{ $t('by') + type.application }}
-                      </div>
-                      <LockedIcon class="trash-icon-style p-1" />
-                    </div>
-                  </div>
-                </div>
-                <div v-else-if="type.type === 'configurable' || type.type === 'dynamic'" class="section-delete">
-                  <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
-                    <div class="flexSections justify-between items-end">
-                      <div class="flexSections pl-2 pb-1" style="font-size: 8px;">
-                        {{ $t('by') + type.application }}
-                      </div>
-                      <UnlockedIcon class="trash-icon-style p-1" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)" class="m-1 p-1 type-items content-wrapper">
-              <div
-                class="section-item section-item-box"
-                v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
-                :key="`${type.name}-${index}`"
-              >
-                <div v-if="type.notCreated !== true" class="section-delete">
-                  <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
-                    <TrashIcon class="trash-icon-style" />
-                  </div>
-                </div>
-                <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
-                  <div class="global-section-info-icon">
-                    <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
-                  </div>
-                </div>
-                <div class="section-item" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
-                  <SectionItem
-                    v-if="type.name"
-                    class="bg-light-blue"
-                    :title="formatName(type.name)"
-                    :icon="type.name"
-                    :active="true"
-                  />
-                </div>
-              </div>
-            </div>
-            <div v-else class="flexSections">
-              <div class="component-view">
-                <!-- we can use this short hand too -->
-                <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
-                <Static
-                  v-if="currentSection.type === 'static'"
-                  :props="currentSection"
-                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
-                  :savedView="savedView"
-                  :locales="locales"
-                  :translation-component-support="translationComponentSupport"
-                  :sections-user-id="sectionsUserId"
-                  :instance="currentSection.instance === true"
-                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
-                  @load="(value) => loading = value"
-                  @promote-section="currentSection = {...currentSection, instance: true}"
-                />
-                <Dynamic
-                  v-if="currentSection.type === 'dynamic'"
-                  :props="currentSection"
-                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
-                  @errorAddingSection="errorAddingSection"
-                  :savedView="savedView"
-                  :headers="headers"
-                  :instance="currentSection.instance === true"
-                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
-                  :base-path="pagePath"
-                  @load="(value) => loading = value"
-                />
-                <Configurable
-                  v-if="currentSection.type === 'configurable'"
-                  ref="sections-configurable-type"
-                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
-                  @errorAddingSection="errorAddingSection"
-                  :props="currentSection"
-                  :savedView="savedView"
-                  :headers="headers"
-                  :sections-user-id="sectionsUserId"
-                  :sections-configurable-type="sectionsConfigurableTypeReference"
-                  :translation-component-support="translationComponentSupport"
-                  :instance="currentSection.instance === true"
-                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
-                  :base-path="pagePath"
-                  @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
-                  @load="(value) => loading = value"
-                  @promote-section="currentSection = {...currentSection, instance: true}"
-                />
-                <Local
-                  v-if="currentSection.type === 'local'"
-                  :props="currentSection"
-                  :instance="currentSection.instance === true"
-                  :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
-                  @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
-                  :savedView="savedView"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+				<div v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true" class="sections-m-1 sections-p-1 type-items content-wrapper">
+				  <div
+					   class="section-item section-item-box"
+					   v-for="(type, index) in typesTab === 'types' ? types.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : types.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
+					   :key="type.name"
+				  >
+					<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+					  {{ formatTexts(formatName(type.name), " ") }}
+					</div>
+					<div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
+					  <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
+						<TrashIcon class="trash-icon-style" />
+					  </div>
+					</div>
+					<div v-else-if="type.notCreated === true" class="section-creation">
+					  <div class="section-creation-icon">
+						<span class="toggleLabel">{{ $t('create') }}</span>
+						<label id="toggle-label" class="switch">
+						  <input :checked="type.notCreated !== true" type="checkbox" @change="addNewStaticType(type.name)">
+						  <span class="slider round"></span>
+						</label>
+					  </div>
+					</div>
+					<div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
+					  <div class="section-info-icon">
+						<InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
+					  </div>
+					</div>
+					<div v-else class="section-top-separator"></div>
+					<div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated !== true ? openCurrentSection(type) : null">
+					  <SectionItem
+						   v-if="type.name"
+						   class="bg-light-blue"
+						   :title="formatName(type.name)"
+						   :component-item="getComponent(type.name, type.type)"
+						   :section="getComponent(type.name, type.type, true)"
+						   :active="type.notCreated !== true"
+					  />
+					</div>
+					<div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.type !== 'local' && type.notCreated !== true" class="flexSections sections-pl-2 sections-pb-1" style="font-size: 10px;">
+					  {{ $t('by') + type.application }}
+					</div>
+					<div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
+					  <div class="section-delete-icon" @click="openAuthConfigurableSectionTypeModal(type.application_id, index, type.requirements, type.name, type.application)">
+						<div class="flexSections justify-between sections-items-end">
+						  <div v-if="type.type === 'configurable'" class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
+							{{ $t('by') + type.application }}
+						  </div>
+						  <div v-else></div>
+						  <LockedIcon class="trash-icon-style sections-p-1" />
+						</div>
+					  </div>
+					</div>
+					<div v-else-if="type.type === 'configurable' || type.type === 'dynamic'" class="section-delete">
+					  <div class="section-delete-icon" @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
+						<div class="flexSections justify-between sections-items-end">
+						  <div class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
+							{{ $t('by') + type.application }}
+						  </div>
+						  <UnlockedIcon class="trash-icon-style sections-p-1" />
+						</div>
+					  </div>
+					</div>
+				  </div>
+				</div>
+				<div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)" class="m-1 p-1 type-items content-wrapper">
+				  <div
+					   class="section-item section-item-box"
+					   v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
+					   :key="`${type.name}-${index}`"
+				  >
+					<div v-if="type.type === 'local' || getComponent(type && type.section ? type.section.name : type.name, type.type, true).settings || getComponent(type && type.section ? type.section.name : type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+					  {{ formatTexts(formatName(type.name), " ") }}
+					</div>
+					<div v-if="type.notCreated !== true" class="section-delete">
+					  <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
+						<TrashIcon class="trash-icon-style" />
+					  </div>
+					</div>
+					<div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
+					  <div class="global-section-info-icon">
+						<InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
+					  </div>
+					</div>
+					<div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
+					  <SectionItem
+						   v-if="type.name"
+						   class="bg-light-blue"
+						   :title="formatName(type.name)"
+						   :component-item="getComponent(type && type.section ? type.section.name : type.name, type.type)"
+						   :section="getComponent(type && type.section ? type.section.name : type.name, type.type, true)"
+						   :active="true"
+					  />
+					</div>
+				  </div>
+				</div>
+				<div v-else class="flexSections">
+				  <div class="component-view">
+					<!-- we can use this short hand too -->
+					<!-- <component :is="currentSection.type" :props="currentSection"  /> -->
+					<Static
+						 v-if="currentSection.type === 'static'"
+						 :props="currentSection"
+						 @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+						 :savedView="savedView"
+						 :locales="locales"
+						 :translation-component-support="translationComponentSupport"
+						 :sections-user-id="sectionsUserId"
+						 :instance="currentSection.instance === true"
+						 :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+						 @load="(value) => loading = value"
+						 @promote-section="currentSection = {...currentSection, instance: true}"
+					/>
+					<Dynamic
+						 v-if="currentSection.type === 'dynamic'"
+						 :props="currentSection"
+						 @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+						 @errorAddingSection="errorAddingSection"
+						 :savedView="savedView"
+						 :headers="headers"
+						 :instance="currentSection.instance === true"
+						 :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+						 :base-path="pagePath"
+						 @load="(value) => loading = value"
+					/>
+					<Configurable
+						 v-if="currentSection.type === 'configurable'"
+						 ref="sections-configurable-type"
+						 @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+						 @errorAddingSection="errorAddingSection"
+						 :props="currentSection"
+						 :savedView="savedView"
+						 :headers="headers"
+						 :sections-user-id="sectionsUserId"
+						 :sections-configurable-type="sectionsConfigurableTypeReference"
+						 :translation-component-support="translationComponentSupport"
+						 :instance="currentSection.instance === true"
+						 :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+						 :base-path="pagePath"
+						 @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
+						 @load="(value) => loading = value"
+						 @promote-section="currentSection = {...currentSection, instance: true}"
+					/>
+					<Local
+						 v-if="currentSection.type === 'local'"
+						 :props="currentSection"
+						 :savedView="savedView"
+						 :instance="currentSection.instance === true"
+						 :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+						 @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+					/>
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
-      <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center h4 my-3  pb-3">
-              {{ typesTab === 'types' ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName }}
-            </div>
-            <div class="flexSections flex-row">
-              <button
-                class="hp-button"
-                @click="typesTab === 'types' ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
-              >
-                <div class="btn-text">
-                  {{ $t("Confirm") }}
-                </div>
-              </button>
-              <button
-                class="hp-button"
-                @click="isDeleteModalOpen = false"
-              >
-                <div class="btn-text">
-                  {{ $t("Cancel") }}
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+		  <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
+		  <div v-if="isDeleteModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="sections-text-center h4 sections-my-3  sections-pb-3">
+				  {{ typesTab === 'types' ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName }}
+				</div>
+				<div class="flexSections sections-flex-row">
+				  <button
+					   class="hp-button"
+					   @click="typesTab === 'types' ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
+				  >
+					<div class="btn-text">
+					  {{ $t("Confirm") }}
+					</div>
+				  </button>
+				  <button
+					   class="hp-button"
+					   @click="isDeleteModalOpen = false"
+				  >
+					<div class="btn-text">
+					  {{ $t("Cancel") }}
+					</div>
+				  </button>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
-      <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="flexSections flex-row justify-center items-center">
-              <AlertIcon />
-              <div class="text-center h4 my-3 pb-3 deletePageLabel">
-                {{ $t("deletePage") }}
-              </div>
-            </div>
-            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
-              {{ $t("delete-section-page") }}
-            </div>
-            <div class="flexSections flex-row justify-center">
-              <button
-                class="hp-button danger"
-                @click="deleteSectionPage()"
-              >
-                <div class="btn-text">
-                  {{ $t("Confirm") }}
-                </div>
-              </button>
-              <button
-                class="hp-button"
-                @click="isDeletePageModalOpen = false"
-              >
-                <div class="btn-text">
-                  {{ $t("Cancel") }}
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <div v-if="isRestoreSectionOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="sections-text-center h4 sections-my-3  sections-pb-3">
+				  {{ $t("restoreSectionContent") }}
+				</div>
+				<div class="flexSections sections-flex-row">
+				  <button
+					   class="hp-button"
+					   @click="restoreSectionContent()"
+				  >
+					<div class="btn-text">
+					  {{ $t("Confirm") }}
+					</div>
+				  </button>
+				  <button
+					   class="hp-button"
+					   @click="isRestoreSectionOpen = false"
+				  >
+					<div class="btn-text">
+					  {{ $t("Cancel") }}
+					</div>
+				  </button>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
-      <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="flexSections flex-row justify-center items-center">
-              <AlertIcon />
-              <div class="text-center h4 my-3 pb-3 deletePageLabel">
-                {{ $t("deleteSection") }} ({{ deletedSectionName }})
-              </div>
-            </div>
-            <div class="text-center h4 my-3  pb-3 deletePageConfirmation">
-              {{ $t("delete-section") }}
-            </div>
-            <div class="flexSections flex-row justify-center">
-              <button
-                class="hp-button danger"
-                @click="deleteView(deletedSectionId)"
-              >
-                <div class="btn-text">
-                  {{ $t("Confirm") }}
-                </div>
-              </button>
-              <button
-                class="hp-button"
-                @click="isDeleteSectionModalOpen = false"
-              >
-                <div class="btn-text">
-                  {{ $t("Cancel") }}
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
+		  <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="flexSections sections-flex-row sections-justify-center sections-items-center">
+				  <AlertIcon />
+				  <div class="sections-text-center h4 sections-my-3 sections-pb-3 deletePageLabel">
+					{{ $t("deletePage") }}
+				  </div>
+				</div>
+				<div class="sections-text-center h4 sections-my-3  sections-pb-3 deletePageConfirmation">
+				  {{ $t("delete-section-page") }}
+				</div>
+				<div class="flexSections sections-flex-row sections-justify-center">
+				  <button
+					   class="hp-button danger"
+					   @click="deleteSectionPage()"
+				  >
+					<div class="btn-text">
+					  {{ $t("Confirm") }}
+					</div>
+				  </button>
+				  <button
+					   class="hp-button"
+					   @click="isDeletePageModalOpen = false"
+				  >
+					<div class="btn-text">
+					  {{ $t("Cancel") }}
+					</div>
+				  </button>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
-      <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center flexSections sections-center h4 sectionTypeHeader">
-              <AlertIcon />
-              <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
-                <CloseIcon />
-              </div>
-            </div>
-            <div class="text-center h4 my-3  pb-3 errorMessageDialog">
-              {{ displayedErrorFormat }}
-            </div>
-          </div>
-        </div>
-      </div>
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
+		  <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+			  <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+				<div class="flexSections flex-row justify-center items-center">
+				  <AlertIcon />
+				  <div class="text-center h4 my-3 pb-3 deletePageLabel">
+					{{ $t("deleteSection") }} ({{ deletedSectionName }})
+				  </div>
+				</div>
+				<div class="text-center h4 my-3  pb-3 deletePageConfirmation">
+				  {{ $t("delete-section") }}
+				</div>
+				<div class="flexSections flex-row justify-center">
+				  <button
+					   class="hp-button danger"
+					   @click="deleteView(deletedSectionId)"
+				  >
+					<div class="btn-text">
+					  {{ $t("Confirm") }}
+					</div>
+				  </button>
+				  <button
+					   class="hp-button"
+					   @click="isDeleteSectionModalOpen = false"
+				  >
+					<div class="btn-text">
+					  {{ $t("Cancel") }}
+					</div>
+				  </button>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
-      <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center h4 my-3 pb-4">
-              {{ $t("authorize-section-type") + selectedAppName}}
-            </div>
-            <div class="flexSections flex-col gap-4">
-              <div v-for="requiredInput in selectedSectionRequirements">
-                <input
-                  class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                  type="text"
-                  :placeholder="requiredInput"
-                  v-model="requirementsInputs[requiredInput]"
-                />
-              </div>
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-              <div class="flexSections flex-row">
-                <button
-                  class="hp-button"
-                  @click="authorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
-                >
-                  <div class="btn-text">
-                    {{ $t("Confirm") }}
-                  </div>
-                </button>
-                <button
-                  class="hp-button"
-                  @click="isAuthModalOpen = false; requirementsInputs = {}"
-                >
-                  <div class="btn-text">
-                    {{ $t("Cancel") }}
-                  </div>
-                </button>
-              </div>
+		  <!-- This is errors formats sections popup that opens when the admin click on the alert icon button in red located near the option to edit or delete a section -->
+		  <div v-if="isErrorsFormatModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+			  <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
+				<div class="text-center flexSections sections-center h4 sectionTypeHeader">
+				  <AlertIcon />
+				  <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
+					<CloseIcon />
+				  </div>
+				</div>
+				<div class="text-center h4 my-3  pb-3 errorMessageDialog">
+				  {{ displayedErrorFormat }}
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-            </div>
-          </div>
-        </div>
-      </div>
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
+		  <div v-if="isAuthModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="sections-text-center h4 sections-my-3 sections-pb-4">
+				  {{ $t("authorize-section-type") + selectedAppName}}
+				</div>
+				<div class="flexSections sections-flex-col sections-gap-4">
+				  <div v-for="requiredInput in selectedSectionRequirements">
+					<input
+						 class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+						 type="text"
+						 :placeholder="requiredInput"
+						 v-model="requirementsInputs[requiredInput]"
+					/>
+				  </div>
 
-      <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
-      <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="text-center h4 my-3  pb-3">
-              {{ $t("un-authorize-section-type") + selectedAppName }}
-            </div>
-            <div class="flexSections flex-col gap-4">
+				  <div class="flexSections sections-flex-row">
+					<button
+						 class="hp-button"
+						 @click="authorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
+					>
+					  <div class="btn-text">
+						{{ $t("Confirm") }}
+					  </div>
+					</button>
+					<button
+						 class="hp-button"
+						 @click="isAuthModalOpen = false; requirementsInputs = {}"
+					>
+					  <div class="btn-text">
+						{{ $t("Cancel") }}
+					  </div>
+					</button>
+				  </div>
 
-              <div class="flexSections flex-row">
-                <button
-                  class="hp-button"
-                  @click="unAuthorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
-                >
-                  <div class="btn-text">
-                    {{ $t("Confirm") }}
-                  </div>
-                </button>
-                <button
-                  class="hp-button"
-                  @click="isUnAuthModalOpen = false;"
-                >
-                  <div class="btn-text">
-                    {{ $t("Cancel") }}
-                  </div>
-                </button>
-              </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-            </div>
-          </div>
-        </div>
-      </div>
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
+		  <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="sections-text-center h4 sections-my-3  sections-pb-3">
+				  {{ $t("un-authorize-section-type") + selectedAppName }}
+				</div>
+				<div class="flexSections sections-flex-col sections-gap-4">
 
-      <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
-      <div v-if="errorInViews === true  && admin" class="error-section-loaded">
-        {{ $t('sectionsNotLoadedCorrectly') }}
-      </div>
-      <div v-if="errorInLayout === true && admin && editMode" class="views">
-        <div class="flexSections not-found-error">
-          <div class="flexSections not-found-error-column">
-            <ErrorIcon class="error-icon" />
-            <div v-for="(error, index) in sectionsMainErrors" :key="`layout-error-${index}`" class="mainmsg not-found-error-column">
-              {{ error }}
-            </div>
-            <div v-for="(layoutError, layoutIndex) in sectionsLayoutErrors" :key="`layout-region-error-${layoutIndex}`" class="mainmsg not-found-error-column">
-              {{ layoutError }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-else-if="selectedLayout === 'standard'" class="views">
-        <draggable
-          v-model="currentViews"
-          group="people"
-          @start="drag = true"
-          @end="drag = false"
-          handle=".handle"
-        >
-          <!-- <transition-group> -->
-          <section
-            v-for="(view, index) in currentViews"
-            :key="index"
-            :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-            :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
-          >
-            <div class="section-view relativeSections">
-              <div
-                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-                v-if="admin && editMode"
-              >
-                <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                  <AlertIcon />
-                </div>
-                <div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
-                </div>
-                <DragIcon class="drag-icon handle" />
-                <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                  <TrashIcon class="trash-icon" />
-                </div>
-                <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
-                  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
-                </div>
-              </div>
-              <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
-                  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
-                </div>
-                <div v-else-if="admin && editMode && (view.error && view.status_code !== 404)" class="error-section-loaded error-section-empty">
-                </div>
-                <component
-                  v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                  :is="getComponent(view.name, view.type)"
-                  :section="view"
-                  :lang="lang"
-                  :locales="locales"
-                  @refresh-section="(data) => refreshSectionView(view, data)"
-                />
-              </div>
-            </div>
-          </section>
-          <!-- </transition-group> -->
-        </draggable>
-      </div>
-      <div v-else>
-        <component :is="getSelectedLayout()" :lang="lang" :locales="locales">
-          <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
-            <!-- Empty div injected to verify the slots              -->
-            <div class="flexSections flex-col">
-              <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
-              <div v-if="admin && editMode" class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
-                <button
-                    class="hp-button"
-                    @click.stop.prevent="
+				  <div class="flexSections sections-flex-row">
+					<button
+						 class="hp-button"
+						 @click="unAuthorizeSectionType(selectedSectionTypeAppId, selectedSectionTypeIndex)"
+					>
+					  <div class="btn-text">
+						{{ $t("Confirm") }}
+					  </div>
+					</button>
+					<button
+						 class="hp-button"
+						 @click="isUnAuthModalOpen = false;"
+					>
+					  <div class="btn-text">
+						{{ $t("Cancel") }}
+					  </div>
+					</button>
+				  </div>
+
+				</div>
+			  </div>
+			</div>
+		  </div>
+
+		  <!-- ------------------------------------------------------------------------------------------- -->
+
+		  <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
+		  <div v-if="errorInViews === true  && admin" class="error-section-loaded">
+			{{ $t('sectionsNotLoadedCorrectly') }}
+		  </div>
+		  <div v-if="errorInLayout === true && admin && editMode" class="views">
+			<div class="flexSections not-found-error">
+			  <div class="flexSections not-found-error-column">
+				<ErrorIcon class="error-icon" />
+				<div v-for="(error, index) in sectionsMainErrors" :key="`layout-error-${index}`" class="mainmsg not-found-error-column">
+				  {{ error }}
+				</div>
+				<div v-for="(layoutError, layoutIndex) in sectionsLayoutErrors" :key="`layout-region-error-${layoutIndex}`" class="mainmsg not-found-error-column">
+				  {{ layoutError }}
+				</div>
+			  </div>
+			</div>
+		  </div>
+		  <div v-else-if="selectedLayout === 'standard'" class="views">
+			<draggable
+				 v-model="currentViews"
+				 group="people"
+				 @start="drag = true"
+				 @end="drag = false"
+				 handle=".handle"
+			>
+			  <!-- <transition-group> -->
+			  <section
+				   v-for="(view, index) in currentViews"
+				   :key="index"
+				   :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
+				   :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
+			  >
+				<div class="section-view relativeSections">
+				  <div
+					   class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
+					   v-if="admin && editMode"
+				  >
+					<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+					  <AlertIcon />
+					</div>
+					<div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+					  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
+					</div>
+					<DragIcon class="drag-icon handle" />
+					<div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
+					  <TrashIcon class="trash-icon" />
+					</div>
+					<div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+					  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+					</div>
+				  </div>
+				  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+					<div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+					  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
+					</div>
+					<div v-else-if="admin && editMode && (view.error && view.status_code !== 404)" class="error-section-loaded error-section-empty">
+					</div>
+					<component
+						 v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
+						 :is="getComponent(view.name, view.type)"
+						 :section="view"
+						 :lang="lang"
+						 :locales="locales"
+						 @refresh-section="(data) => refreshSectionView(view, data)"
+					/>
+				  </div>
+				</div>
+			  </section>
+			  <!-- </transition-group> -->
+			</draggable>
+		  </div>
+		  <div v-else>
+			<component :is="getSelectedLayout()" :lang="lang" :locales="locales">
+			  <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
+				<!-- Empty div injected to verify the slots              -->
+				<div class="flexSections flex-col">
+				  <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
+				  <div v-if="admin && editMode" class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
+					<button
+						 class="hp-button"
+						 @click.stop.prevent="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName)
             "
-                >
-                  <div class="btn-icon plus-icon"><PlusIcon /></div>
-                  <div class="btn-text">{{ $t("Add") }}</div>
-                </button>
-                <div class="slot-name">
-                  {{ $t(slotName.toUpperCase()) }}
-                </div>
-              </div>
-              <div class="views">
-                <draggable
-                    v-model="viewsPerRegions[slotName]"
-                    group="people"
-                    @start="drag = true; highlightRegions = true;"
-                    @end="drag = false; highlightRegions = false;"
-                    @change="logDrag"
-                    handle=".handle"
-                    :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
-                >
-                  <!-- <transition-group> -->
-                  <section
-                      v-for="(view, index) in viewsPerRegions[slotName]"
-                      v-if="view.region[selectedLayout].slot === slotName"
-                      :key="index"
-                      :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-                      :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
-                  >
-                    <div class="section-view relativeSections">
-                      <div
-                          class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-                          v-if="admin && editMode"
-                      >
-                        <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                          <AlertIcon />
-                        </div>
-                        <div @click="edit(view); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                          <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
-                        </div>
-                        <DragIcon class="drag-icon handle" />
-                        <div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                          <TrashIcon class="trash-icon" />
-                        </div>
-                        <div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
-                          <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
-                        </div>
-                      </div>
-                      <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
-                        <div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
-                          {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
-                        </div>
-                        <component
-                            v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                            :is="getComponent(view.name, view.type)"
-                            :section="view"
-                            :lang="lang"
-                            :locales="locales"
-                            @refresh-section="(data) => refreshSectionView(view, data)"
-                        />
-                      </div>
-                    </div>
-                  </section>
-                  <!-- </transition-group> -->
-                </draggable>
-              </div>
-            </div>
-          </template>
-        </component>
-      </div>
+					>
+					  <div class="btn-icon plus-icon"><PlusIcon /></div>
+					  <div class="btn-text">{{ $t("Add") }}</div>
+					</button>
+					<div class="slot-name">
+					  {{ $t(slotName.toUpperCase()) }}
+					</div>
+				  </div>
+				  <div class="views">
+					<draggable
+						 v-model="viewsPerRegions[slotName]"
+						 group="people"
+						 @start="drag = true; highlightRegions = true;"
+						 @end="drag = false; highlightRegions = false;"
+						 @change="logDrag"
+						 handle=".handle"
+						 :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
+					>
+					  <!-- <transition-group> -->
+					  <section
+						   v-for="(view, index) in viewsPerRegions[slotName]"
+						   v-if="view.region[selectedLayout].slot === slotName"
+						   :key="index"
+						   :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
+						   :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
+					  >
+						<div class="section-view relativeSections">
+						  <div
+							   class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+							   v-if="admin && editMode"
+						  >
+							<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+							  <AlertIcon />
+							</div>
+							<div @click="edit(view); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+							  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
+							</div>
+							<DragIcon class="drag-icon handle" />
+							<div @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
+							  <TrashIcon class="trash-icon" />
+							</div>
+							<div @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+							  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
+							</div>
+						  </div>
+						  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
+							<div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
+							  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
+							</div>
+							<component
+								 v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
+								 :is="getComponent(view.name, view.type)"
+								 :section="view"
+								 :lang="lang"
+								 :locales="locales"
+								 @refresh-section="(data) => refreshSectionView(view, data)"
+							/>
+						  </div>
+						</div>
+					  </section>
+					  <!-- </transition-group> -->
+					</draggable>
+				  </div>
+				</div>
+			  </template>
+			</component>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- This is the popup to create a new static section type     -->
-      <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="section-modal-wrapper">
-              <div class="text-center h4 sectionTypeHeader">
-                <div class="title">{{ $t("section-title") }}:</div>
-                <div class="closeIcon" @click="staticModal = false">
-                  <CloseIcon />
-                </div>
-              </div>
-              <div class="flexSections w-full justify-center">
-                <div class="body" style="text-align: start;">
-                  <div class="sectionsFieldsLabels">
-                    {{ $t("section-input-title") }}
-                  </div>
-                  <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    type="text"
-                    v-model="sectionTypeName"
-                  />
-                  <div class="mt-2 sectionsFieldsLabels">
-                    {{ $t("fieldNames") }}
-                  </div>
-                  <div class="fieldsDescription">
-                    {{ $t("fieldDesc") }}
-                  </div>
-                  <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections flex-col mb-4">
-                    <div class="flexSections">
-                      <input
-                        v-model="field.name"
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                        type="text"
-                        :placeholder="`${$t('field')} #${k+1}`"
-                      />
-                      <span class="flexSections flex-row pl-2 items-center">
-                        <span v-show="k || ( !k && fieldsInputs.length > 1)" class="cursor-pointer text-3xl" @click="removeField(k)">-</span>
-                        <span v-show="k === fieldsInputs.length - 1" class="cursor-pointer text-3xl pl-3" @click="addField(k)">+</span>
+		  <!-- This is the popup to create a new static section type     -->
+		  <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="section-modal-wrapper">
+				  <div class="sections-text-center h4 sectionTypeHeader">
+					<div class="title">{{ $t("section-title") }}:</div>
+					<div class="closeIcon" @click="staticModal = false">
+					  <CloseIcon />
+					</div>
+				  </div>
+				  <div class="flexSections sections-w-full sections-justify-center">
+					<div class="body" style="text-align: start;">
+					  <div class="sectionsFieldsLabels">
+						{{ $t("section-input-title") }}
+					  </div>
+					  <input
+						   class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+						   type="text"
+						   v-model="sectionTypeName"
+					  />
+					  <div class="sections-mt-2 sectionsFieldsLabels">
+						{{ $t("fieldNames") }}
+					  </div>
+					  <div class="fieldsDescription">
+						{{ $t("fieldDesc") }}
+					  </div>
+					  <div v-for="(field,k) in fieldsInputs" :key="k" class="flexSections sections-flex-col sections-mb-4">
+						<div class="flexSections">
+						  <input
+							   v-model="field.name"
+							   class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+							   type="text"
+							   :placeholder="`${$t('field')} #${k+1}`"
+						  />
+						  <span class="flexSections sections-flex-row sections-pl-2 sections-items-center">
+                        <span v-show="k || ( !k && fieldsInputs.length > 1)" class="sections-cursor-pointer sections-text-3xl" @click="removeField(k)">-</span>
+                        <span v-show="k === fieldsInputs.length - 1" class="sections-cursor-pointer sections-text-3xl sections-pl-3" @click="addField(k)">+</span>
                       </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="footer">
-                <button class="hp-button" @click="addNewStaticType">
-                  <div class="btn-icon check-icon"></div>
-                  <div class="btn-text">
-                    {{ $t("Continue") }}
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+						</div>
+					  </div>
+					</div>
+				  </div>
+				  <div class="footer">
+					<button class="hp-button" @click="addNewStaticType">
+					  <div class="btn-icon check-icon"></div>
+					  <div class="btn-text">
+						{{ $t("Continue") }}
+					  </div>
+					</button>
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- This is the popup to updatethe page metadata     -->
-      <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="section-modal-wrapper">
-              <div class="text-center h4 sectionTypeHeader">
-                <div class="title">{{ $t("Metadata") }}</div>
-                <div class="closeIcon" @click="metadataModal = false; metadataFormLang = $i18n.locale.toString()">
-                  <CloseIcon />
-                </div>
-              </div>
-              <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
-              <div class="flexSections w-full justify-center">
-                <div class="body metadataFieldsContainer">
-                  <div class="sectionsFieldsLabels">
-                    {{ $t("pageUrl") }}
-                  </div>
-                  <div class="fieldsDescription">
-                    {{ $t("pathFieldDesc") }}
-                  </div>
-                  <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    type="text"
-                    v-model="pagePath"
-                  />
-                  <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
-                  <div class="flexSections metadataFields">
-                    <div class="metadataColumns">
-                      <div class="mt-2 sectionsFieldsLabels">
-                        {{ $t("pageTitle") }}
-                      </div>
-                      <input
-                        class="py-4 pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata[metadataFormLang].title"
-                      />
-                      <div class="mt-2 sectionsFieldsLabels">
-                        {{ $t("pageSeoDesc") }}
-                      </div>
-                      <textarea
-                        class="py-4 pl-6 border rounded-xl border-FieldGray w-full focus:outline-none"
-                        type="text"
-                        v-model="pageMetadata[metadataFormLang].description"
-                      />
-                    </div>
-                  </div>
+		  <!-- This is the popup to updatethe page metadata     -->
+		  <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true" :class="$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl" :class="$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
+				<div class="section-modal-wrapper">
+				  <div class="sections-text-center h4 sectionTypeHeader">
+					<div class="title">{{ $t("Metadata") }}</div>
+					<div class="closeIcon" @click="metadataModal = false; metadataFormLang = $i18n.locale.toString()">
+					  <CloseIcon />
+					</div>
+				  </div>
+				  <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"  @setFormLang="(locale) => metadataFormLang = locale"/>
+				  <div class="flexSections sections-w-full sections-justify-center" :class="$sections.cname === 'active' ? 'sections-page-settings' : ''">
+					<div class="body metadataFieldsContainer">
+					  <div class="flexSections sections-flex-row sections-gap-4">
+						<div class='sections-w-full'>
+						  <div class="sectionsFieldsLabels">
+							{{ $t("pageUrl") }}
+						  </div>
+						  <div class="fieldsDescription">
+							{{ $t("pathFieldDesc") }}
+						  </div>
+						  <input
+							   class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+							   type="text"
+							   v-model="pagePath"
+						  />
+						  <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+						  <div class="flexSections metadataFields">
+							<div class="metadataColumns">
+							  <div class="sections-mt-2 sectionsFieldsLabels">
+								{{ $t("pageTitle") }}
+							  </div>
+							  <input
+								   class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+								   type="text"
+								   v-model="pageMetadata[metadataFormLang].title"
+							  />
+							  <div class="sections-mt-2 sectionsFieldsLabels">
+								{{ $t("pageSeoDesc") }}
+							  </div>
+							  <textarea
+								   class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none"
+								   type="text"
+								   v-model="pageMetadata[metadataFormLang].description"
+							  />
+							  <div v-if="$sections.cname === 'active'" class="sections-mt-2 sectionsFieldsLabels">
+								{{ $t("sectionsLanguages") }}
+							  </div>
+							  <div v-if="$sections.cname === 'active'" class="sections-border sections-border-FieldGray rounded-xl overflow-y-scroll overflow-visible sections-mt-2">
+								<div v-for="(language, i) in supportedLanguages" :key="language.id">
+								  <div :class="[isSelectedLang(language.id) ? 'sections-bg-FieldGray sections-pl-4 sections-p-2 sections-cursor-pointer' : 'sections-pl-4 sections-p-2 sections-cursor-pointer', i === 0 ? 'sections-borders-top' : 'sections-borders-bottom']" @click="toggleLanguageSelection(language.id)">{{ language.label }}</div>
+								</div>
+							  </div>
+							  <div v-if="$sections.cname === 'active'" class="flexSections sections-mt-2 sections-flex-row">
+								<div class="sections-mt-2 sections-pr-3 sectionsFieldsLabels">
+								  {{ $t("activateCookieControl") }}
+								</div>
+								<input
+									 class="sections-checkbox"
+									 type="checkbox"
+									 v-model="pageMetadata['activateCookieControl']"
+								/>
+							  </div>
+							  <div v-if="pageMetadata['activateCookieControl'] === true">
+								<div class="sections-mt-2 sectionsFieldsLabels">
+								  {{ $t("gtmId")+'*' }}
+								</div>
+								<input
+									 class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+									 type="text"
+									 v-model="pageMetadata['gtmId']"
+								/>
+							  </div>
+							</div>
+						  </div>
+						</div>
+						<div v-if="$sections.cname === 'active'">
+						  <div class="flexSections metadata-media sections-flex-row sections-gap-4">
+							<div class="sections-mt-2 sectionsFieldsLabels">
+							  {{ $t("CSS") }}
+							</div>
+							<div
+								 v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name && pageMetadata['selectedCSSPreset'].name !== 'Other' && pageMetadata['selectedCSSPreset'].name !== 'None'"
+								 class="css-preset"
+								 @click="exportCSSFile(pageMetadata['selectedCSSPreset'])"
+							>
+							  {{ $t("Export CSS") }}
+							</div>
+						  </div>
+						  <AutoComplete
+							   :main-filter="pageMetadata['selectedCSSPreset']"
+							   :select-placeholder="$t('Presets')"
+							   :filter-label-prop="'name'"
+							   :filter-options="[
+									...computedCSSPreset || [],
+  								{
+  								    name: 'Other',
+  								    url: ''
+  								  },
+  								{
+  								    name: 'None',
+  								    url: ''
+  								  }
+							   ]"
+							   :filter-searchable="false"
+							   :track-by="'name'"
+							   :preselect-first="true"
+							   :multiple="false"
+							   @itemSelected="(val) => {$set(pageMetadata, 'selectedCSSPreset', val)}"
+						  ></AutoComplete>
 
-                </div>
-              </div>
-              <div class="footer">
-                <button class="hp-button" @click="updatePageMetaData">
-                  <div class="btn-icon check-icon"></div>
-                  <div class="btn-text">
-                    {{ $t("Save") }}
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+						  <div v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name === 'Other'" class="sections-mt-2 sectionsFieldsLabels">
+							{{ $t("mediaComponent.media") }}
+						  </div>
+						  <UploadMedia v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name === 'Other'" :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []" @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')" @removeUploadedImage="removeMedia('media')" />
+						  <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+						  <div class="sections-mt-2 sectionsFieldsLabels">
+							{{ $t("mediaComponent.favicon") }}
+						  </div>
+						  <UploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['favicon'] && Object.keys(pageMetadata['favicon']).length > 0 ? [pageMetadata['favicon']] : []" @uploadContainerClicked="selectedMediaType = 'favicon'; $refs.sectionsMediaComponent.openModal(pageMetadata['favicon'] && Object.keys(pageMetadata['favicon']).length > 0 ? pageMetadata['favicon'].media_id : null)" @removeUploadedImage="removeMedia('favicon')" />
+						</div>
+					  </div>
+					</div>
+				  </div>
+				  <div class="footer">
+					<button class="hp-button" @click="updatePageMetaData">
+					  <div class="btn-icon check-icon"></div>
+					  <div class="btn-text">
+						{{ $t("Save") }}
+					  </div>
+					</button>
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <!-- This is popup to show the successfully created new static section message      -->
-      <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
-            <div class="section-modal-wrapper success-section-type">
-              <div class="text-center h4 header">
-                <div class="icon-head">
-                  <CelebrateIcon />
-                </div>
-                <div class="title">
-                  {{ typesTab === 'types' ? $t("success-section-title") : $t("success-global-section-title") }}
-                </div>
-                <div class="closeIcon" @click="staticSuccess = false">
-                  <CloseIcon />
-                </div>
-              </div>
-              <div v-if="typesTab === 'types'" class="flexSections w-full justify-center">
-                <div class="body">
-                  <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
-                  <div class="section-list">
-                    <div class="dot"><DotIcon /></div>
-                    <div>
-                      {{ $t("success-section-instruction-1") }}
-                    </div>
-                  </div>
-                  <div class="section-list">
-                    <div class="dot"><DotIcon /></div>
-                    <div>
-                      {{ $t("success-section-instruction-2") }}
-                    </div>
-                  </div>
-                  <div class="section-list">
-                    <div class="dot"><DotIcon /></div>
-                    <div>
-                      {{ $t("success-section-instruction-3") }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="footer">
-                <button class="hp-button" @click="staticSuccess = false">
-                  <div class="btn-icon check-icon"></div>
-                  <div class="btn-text">{{ $t("Done") }}</div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+		  <!-- This is popup to show the successfully created new static section message      -->
+		  <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal" class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+			<div class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
+				<div class="section-modal-wrapper success-section-type">
+				  <div class="sections-text-center h4 header">
+					<div class="icon-head">
+					  <CelebrateIcon />
+					</div>
+					<div class="title">
+					  {{ typesTab === 'types' || typesTab === 'inventoryTypes' ? $t("success-section-title") : $t("success-global-section-title") }}
+					</div>
+					<div class="closeIcon" @click="staticSuccess = false">
+					  <CloseIcon />
+					</div>
+				  </div>
+				  <div v-if="typesTab === 'types' || typesTab === 'inventoryTypes'" class="flexSections sections-w-full sections-justify-center">
+					<div class="body">
+					  <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
+					  <div class="section-list">
+						<div class="dot"><DotIcon /></div>
+						<div>
+						  {{ $t("success-section-instruction-1") }}
+						</div>
+					  </div>
+					  <div class="section-list">
+						<div class="dot"><DotIcon /></div>
+						<div>
+						  {{ $t("success-section-instruction-2") }}
+						</div>
+					  </div>
+					  <div class="section-list">
+						<div class="dot"><DotIcon /></div>
+						<div>
+						  {{ $t("success-section-instruction-3") }}
+						</div>
+					  </div>
+					</div>
+				  </div>
+				  <div class="footer">
+					<button class="hp-button" @click="staticSuccess = false">
+					  <div class="btn-icon check-icon"></div>
+					  <div class="btn-text">{{ $t("Done") }}</div>
+					</button>
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
 
-      <!-- ------------------------------------------------------------------------------------------- -->
+		  <!-- ------------------------------------------------------------------------------------------- -->
 
-      <Loading :loading="loading" />
-    </div>
-    <div v-else>
-      <!-- This is to show the create a new page button when the page requested is not found     -->
-      <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
-        {{ $t("Create New Page") }}
-      </button>
-      <div class="flexSections not-found-error">
-        <div class="flexSections not-found-error-column">
-          <ErrorIcon class="error-icon" />
-          <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
-            {{ error }}
-          </div>
-        </div>
-      </div>
-    </div>
+		  <Loading :loading="loading" />
+		</div>
+		<div v-else>
+		  <!-- This is to show the create a new page button when the page requested is not found     -->
+		  <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
+			{{ $t("Create New Page") }}
+		  </button>
+		  <div class="flexSections not-found-error">
+			<div class="flexSections not-found-error-column">
+			  <ErrorIcon class="error-icon" />
+			  <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
+				{{ error }}
+			  </div>
+			</div>
+		  </div>
+		</div>
+	  </div>
+	</main>
   </div>
 </template>
 
 <script>
-import {formatName, importComp, parsePath, parseQS, validateQS, sectionHeader} from "../../utils";
+import Vue from "vue";
+import {
+  formatName,
+  formatTexts,
+  importComp,
+  parsePath,
+  parseQS,
+  validateQS,
+  sectionHeader,
+  populateWithDummyValues,
+  dummyDataPresets
+} from "../../utils";
 import draggable from "vuedraggable";
 
 // import sections types
@@ -922,6 +1132,9 @@ import camelCase from "lodash/camelCase";
 import upperFirst from "lodash/upperFirst";
 
 import TranslationComponent from "../../components/Translations/TranslationComponent";
+import UploadMedia from "../../components/Medias/UploadMedia";
+import MediaComponent from "../../components/Medias/MediaComponent";
+import AutoComplete from "@geeks.solutions/vue-components/components/AutoComplete.vue";
 
 export default {
   name: "Sections",
@@ -953,8 +1166,11 @@ export default {
     AlertIcon,
     SettingsIcon,
     TranslationComponent,
-    ErrorIcon,
-    InfoIcon
+	ErrorIcon,
+	InfoIcon,
+	UploadMedia,
+	MediaComponent,
+	AutoComplete
   },
   props: {
     pageName: {
@@ -983,6 +1199,12 @@ export default {
       type: String,
       default: "en",
     },
+    editorOptions: {
+      type: Object,
+      default() {
+        return {}
+      }
+    },
     viewsBgColor: {
       type: String,
       default: "transparent",
@@ -1000,13 +1222,17 @@ export default {
           name: 'description',
           content: this.computedDescription
         }
+      ],
+      link: [
+        this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
+        this.pageMetadata['favicon'] && this.pageMetadata['favicon'].url ? { rel: 'icon', type: 'image/png', href: this.pageMetadata['favicon'].url } : {},
       ]
     }
   },
   data() {
     return {
       locales: ['en', 'fr'],
-      translationComponentSupport: false,
+      translationComponentSupport: true,
       sectionSettings: {
         settings: {}
       },
@@ -1033,7 +1259,10 @@ export default {
       currentSection: null,
       isCreateInstance: false,
       isModalOpen: false,
+	  isSideBarOpen: false,
       isDeleteModalOpen: false,
+	  isRestoreSectionOpen: false,
+	  restoreType: 'section',
       isDeletePageModalOpen: false,
       isDeleteSectionModalOpen: false,
       deletedSectionId: null,
@@ -1080,23 +1309,38 @@ export default {
       computedTitle: '',
       computedDescription: '',
       sectionsUserId: '',
-      displayedErrorFormat: '',
-      invalidSectionsErrors: {},
-      sectionsFormatErrors: {},
-      layoutSlotNames: [],
-      availableLayouts: ['standard'],
-      selectedLayout: 'standard',
-      viewsPerRegions: {},
-      sectionslayout: 'standard',
-      selectedSlotRegion: '',
-      layoutMode: false,
-      errorInLayout: false,
-      errorInViews: false,
-      highlightRegions: false,
-      sectionsMainErrors: [],
-      sectionsLayoutErrors: [],
-      availableSectionsForms: [],
-      sectionsConfigurableTypeReference: null
+	  displayedErrorFormat: '',
+	  invalidSectionsErrors: {},
+	  sectionsFormatErrors: {},
+	  layoutSlotNames: [],
+	  availableLayouts: ['standard'],
+	  selectedLayout: 'standard',
+	  viewsPerRegions: {},
+	  sectionslayout: 'standard',
+	  selectedSlotRegion: '',
+	  layoutMode: false,
+	  errorInLayout: false,
+	  errorInViews: false,
+	  highlightRegions: false,
+	  sectionsMainErrors: [],
+	  sectionsLayoutErrors: [],
+	  availableSectionsForms: [],
+	  sectionsConfigurableTypeReference: null,
+	  supportedLanguages: [
+		{ id: 'fr', label: 'French (fr)', selected: false },
+		{ id: 'en', label: 'English (en)', selected: false }
+	  ],
+	  selectedLanguages: [],
+	  selectedMediaType: 'media',
+	  resizeData: {
+		tracking: false,
+		startWidth: null,
+		startCursorScreenX: null,
+		handleWidth: 10,
+		resizeTarget: null,
+		parentElement: null,
+		maxWidth: null,
+	  }
     }
   },
   computed: {
@@ -1145,7 +1389,18 @@ export default {
         return this.savedView.weight;
       }
       return null;
-    }
+    },
+	computedCSSPreset() {
+	  try {
+		if (Array.isArray(this.$sections.cssPreset)) {
+		  return this.$sections.cssPreset
+		} else {
+		  return JSON.parse(this.$sections.cssPreset.replace(/\\"/g, '"'))
+		}
+	  } catch {
+		return []
+	  }
+	}
   },
   mounted() {
     if(this.sectionsError !== "") {
@@ -1153,9 +1408,41 @@ export default {
     } else if (this.sectionsAdminError !== "") {
       this.showToast("Error", "error", this.sectionsAdminError);
     }
-    if (this.renderSectionError !== "") {
-      this.showToast("Error", "error", this.renderSectionError);
-    }
+	if (this.renderSectionError !== "") {
+	  this.showToast("Error", "error", this.renderSectionError);
+	}
+	if (this.$sections.cname === "active" && this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
+	  this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
+	}
+
+	let hrefLink = ''
+	let link = ''
+	if (this.pageMetadata['selectedCSSPreset'] || this.pageMetadata['media']) {
+	  // Dynamically add the CSS file to the DOM after the component is mounted to insure the imported css styles override all other css styles
+	  link = document.createElement('link');
+	  link.rel = 'stylesheet';
+	}
+	if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other' && this.pageMetadata['selectedCSSPreset'].name !== 'None') {
+	  hrefLink = this.pageMetadata['selectedCSSPreset'].url;
+	  link.href = hrefLink
+	  document.head.appendChild(link);
+	} else if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
+	  this.$set(this.pageMetadata, 'selectedCSSPreset', {
+		name: 'Other',
+		url: ''
+	  })
+	  hrefLink = this.pageMetadata['media'].url;
+	  link.href = hrefLink
+	  document.head.appendChild(link);
+	}
+
+	if (this.pageMetadata['activateCookieControl'] === true) {
+	  this.$nuxt.$emit('activateCookieControl', this.pageMetadata['gtmId'], true)
+	}
+  },
+  beforeDestroy() {
+	window.removeEventListener("mousemove", this.onMouseMove);
+	window.removeEventListener("mouseup", this.stopTracking);
   },
   async fetch() {
     this.getAvailableLayouts()
@@ -1187,11 +1474,27 @@ export default {
     // because during SSR no cors preflight request is sent
     const inBrowser = typeof window !== 'undefined';
 
+    let websiteDomain = ""
+    const isServer = process.server;
+    const scheme = isServer ? this.$nuxt.context.req.headers['x-forwarded-proto'] || 'http' : window.location.protocol.replace(':', '');
+
+    if (inBrowser) {
+      websiteDomain = window.location.host
+    } else {
+      websiteDomain = this.$nuxt.context.req.headers.host
+    }
+
+    this.$sections.projectUrl = websiteDomain
+
     const config = {
-      headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
+      headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
     };
 
-    const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
+    let URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
+
+    if (this.$sections.cname === "active") {
+      URL = `${this.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(this.pageName))}`;
+    }
 
     let payload = {}
 
@@ -1205,53 +1508,59 @@ export default {
     if (inBrowser) {
       try {
         const res = await this.$axios.post(URL, payload, config)
-        this.initializeSections(res);
-        this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
+		this.initializeSections(res);
+		this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } catch (error) {
-        if (error.response.status === 400) {
-          const res = error.response;
-          this.initializeSections(res);
-          return;
-        }
-        if(error.response.data.error) {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
-        } else {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
-        }
-        this.loading = false;
-        this.pageNotFound = true;
-        this.sectionsMainErrors.push(this.$t('404NotFound'));
-        this.$emit("load", false);
+		if (error.response.status === 400) {
+		  const res = error.response;
+		  this.initializeSections(res);
+		  return;
+		}
+		if(error.response.data.error) {
+		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
+		} else {
+		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
+		}
+		this.loading = false;
+		this.pageNotFound = true;
+		this.sectionsMainErrors.push(this.$t('404NotFound'));
+		this.$emit("load", false);
       }
     } else {
       const optionsRes = await this.$axios.options(URL, config)
       if (optionsRes.status === 200) {
         try {
           const res = await this.$axios.post(URL, payload, config)
-          this.initializeSections(res);
+		  this.initializeSections(res);
         } catch (error) {
-          if (error.response.status === 400) {
-            const res = error.response;
-            this.initializeSections(res);
-            return;
-          }
-          if (error.response.status === 404) {
-            this.$nuxt.context.res.statusCode = 404
-          }
-          if(error.response.data.error) {
-            this.sectionsError = error.response.data.error
-          } else {
-            this.sectionsError = error.response.data.message
-            this.sectionsErrorOptions = error.response.data.options
-          }
-          this.loading = false;
-          this.pageNotFound = true;
-          this.sectionsMainErrors.push(this.$t('404NotFound'));
-          this.$emit("load", false);
+		  if (error.response.status === 400) {
+			const res = error.response;
+			this.initializeSections(res);
+			return;
+		  }
+		  if (error.response.status === 404) {
+			this.$nuxt.context.res.statusCode = 404
+		  }
+		  if(error.response.data.error) {
+			this.sectionsError = error.response.data.error
+		  } else {
+			this.sectionsError = error.response.data.message
+			this.sectionsErrorOptions = error.response.data.options
+		  }
+		  this.loading = false;
+		  this.pageNotFound = true;
+		  this.sectionsMainErrors.push(this.$t('404NotFound'));
+		  this.$emit("load", false);
         }
       }
     }
-    this.computeLayoutData()
+	if (this.pageMetadata['languages'] && this.pageMetadata['languages'].length > 0) {
+	  this.locales = []
+	  this.locales = this.pageMetadata['languages']
+	} else {
+	  this.pageMetadata['languages'] = this.locales
+	  this.selectedLanguages = Array.from(this.locales)
+	}
   },
   watch: {
     isModalOpen(value) {
@@ -1264,72 +1573,131 @@ export default {
     }
   },
   methods: {
-    parsePath,
-    initializeSections(res) {
-      const sections = res.data.sections;
-      this.allSections = res.data.sections;
-      this.pageId = res.data.id;
-      this.pagePath = res.data.path;
-      this.sectionsPageName = res.data.page;
-      this.sectionslayout = res.data.layout;
-      this.selectedLayout = res.data.layout;
-      for (const lang of this.locales) {
-        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
-        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
-      }
-      this.computedTitle = this.pageMetadata[this.lang].title
-      this.computedDescription = this.pageMetadata[this.lang].description
-      const views = {};
-      sections.map((section) => {
-        this.trackSectionComp(section.name, section.type);
+	parsePath,
+	initializeSections(res) {
+	  const sections = res.data.sections;
+	  this.allSections = res.data.sections;
+	  this.pageId = res.data.id;
+	  this.pagePath = res.data.path;
+	  this.sectionsPageName = res.data.page;
+	  this.sectionslayout = res.data.layout;
+	  this.selectedLayout = res.data.layout;
+	  for (const lang of this.locales) {
+		if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
+		if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
+	  }
+	  if (res.data.metadata.media) {
+		this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+	  }
+	  if (res.data.metadata.selectedCSSPreset) {
+		this.$set(this.pageMetadata, 'selectedCSSPreset', res.data.metadata.selectedCSSPreset)
+	  }
+	  if (res.data.metadata.favicon) {
+		this.$set(this.pageMetadata, 'favicon', res.data.metadata.favicon)
+	  }
+	  if (res.data.metadata.languages) {
+		this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
+		this.selectedLanguages = res.data.metadata.languages
+	  }
+	  if (res.data.metadata.activateCookieControl === true) {
+		this.$set(this.pageMetadata, 'activateCookieControl', res.data.metadata.activateCookieControl, true)
+		this.$set(this.pageMetadata, 'gtmId', res.data.metadata.gtmId)
+	  }
+	  this.computedTitle = this.pageMetadata[this.lang].title
+	  this.computedDescription = this.pageMetadata[this.lang].description
+	  const views = {};
+	  sections.map((section) => {
+		this.trackSectionComp(section.name, section.type);
 
-        if (section.type === "configurable") {
-          // The below condition is set to replace old image fields in settings that were saved as objects,
-          // which was causing the section using this field to be discarded and no more saved to the page
-          // after the media content linking update on sections server that requires image field to be an array
-          if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
-            section.render_data[0].settings.image = []
-          }
-          section.settings = section.render_data[0].settings;
-          // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
-          // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
-          section.nameID = section.name;
-          section.name = section.name.split(":")[1];
-        } else if (section.settings) {
-          section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
-        }
-        if (section.query_string_keys && section.query_string_keys.length > 0) {
-          this.sectionsQsKeys.push(...section.query_string_keys)
-        }
-        if (section.id) {
-          views[section.id] = section;
-        } else {
-          views["test"] = section;
-        }
+		if (section.type === "configurable") {
+		  // The below condition is set to replace old image fields in settings that were saved as objects,
+		  // which was causing the section using this field to be discarded and no more saved to the page
+		  // after the media content linking update on sections server that requires image field to be an array
+		  if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
+			section.render_data[0].settings.image = []
+		  }
+		  section.settings = section.render_data[0].settings;
+		  // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
+		  // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
+		  section.nameID = section.name;
+		  section.name = section.name.split(":")[1];
+		} else if (section.settings) {
+		  section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
+		}
+		if (section.query_string_keys && section.query_string_keys.length > 0) {
+		  this.sectionsQsKeys.push(...section.query_string_keys)
+		}
+		if (section.id) {
+		  views[section.id] = section;
+		} else {
+		  views["test"] = section;
+		}
 
-        if (section.error || (section.settings === null || section.settings === undefined)) {
-          this.errorInViews = true;
-        } else {
-          this.errorInViews = false
-        }
-        sections.forEach((section) => {
-          if (section.status_code === 404) {
-            this.errorInViews = false;
-          } else {
-            this.errorInViews = false
-          }
-        })
-      });
-      this.$set(this.displayVariations, this.activeVariation.pageName, {
-        name: this.activeVariation.pageName,
-        views: { ...views },
-      });
-      this.selectedVariation = this.activeVariation.pageName;
-      this.loading = false;
-      this.$emit("load", true);
-      this.sectionsPageLastUpdated = res.data.last_updated;
-    },
+		if (section.error || (section.settings === null || section.settings === undefined)) {
+		  this.errorInViews = true;
+		} else {
+		  this.errorInViews = false
+		}
+		sections.forEach((section) => {
+		  if (section.status_code === 404) {
+			this.errorInViews = false;
+		  } else {
+			this.errorInViews = false
+		  }
+		})
+	  });
+	  this.$set(this.displayVariations, this.activeVariation.pageName, {
+		name: this.activeVariation.pageName,
+		views: { ...views },
+	  });
+	  this.selectedVariation = this.activeVariation.pageName;
+	  this.loading = false;
+	  this.$emit("load", true);
+	  this.sectionsPageLastUpdated = res.data.last_updated;
+	},
+	isSelectedLang(id) {
+	  const index = this.selectedLanguages.indexOf(id)
+	  return index !== -1;
+	},
+	toggleLanguageSelection(id) {
+	  const index = this.selectedLanguages.indexOf(id)
+	  if(index === -1) {
+		this.selectedLanguages.push(id)
+	  } else if (this.selectedLanguages.length > 1) {
+		this.selectedLanguages.splice(index, 1)
+	  }
+	},
+	selectedCSS(mediaObject, mediaFieldName) {
+	  const media = {
+		media_id: "",
+		url: "",
+		seo_tag: "",
+		filename: "",
+		headers: {}
+	  };
+	  media.filename = mediaObject.files[0].filename;
+	  media.media_id = mediaObject.id;
+	  media.url = mediaObject.files[0].url;
+	  media.seo_tag = mediaObject.seo_tag;
+	  if (mediaObject.files[0].headers) {
+		media.headers = mediaObject.files[0].headers
+	  }
+	  this.$set(this.pageMetadata, mediaFieldName, media);
+	  this.$refs.sectionsMediaComponent.closeModal()
+	},
+	removeMedia(media) {
+	  this.pageMetadata[media] = {}
+	},
     updatePageMetaData() {
+      if (this.pageMetadata['activateCookieControl'] === true && (!this.pageMetadata['gtmId'] || this.pageMetadata['gtmId'] === '')) {
+        this.showToast(
+          "Error saving your changes",
+          "error",
+          this.$t('gtmIdRequired')
+        );
+        return;
+      }
+
       this.loading = true
       this.metadataErrors.path[0] = ''
 
@@ -1405,7 +1773,7 @@ export default {
       const variables = {
         page: this.sectionsPageName,
         path: pagePath,
-        metadata: this.pageMetadata,
+        metadata: {...this.pageMetadata, languages: this.selectedLanguages},
         variations: [],
         sections
       };
@@ -1422,7 +1790,21 @@ export default {
           }
           this.sectionsPageLastUpdated = res.data.last_updated
           this.metadataModal = false
-          this.metadataFormLang = this.$i18n.locale.toString()
+		  this.metadataFormLang = this.$i18n.locale.toString()
+          if (res.data.metadata.languages) {
+            this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
+          }
+          if (res.data.metadata.activateCookieControl === true) {
+            this.$nuxt.$emit('activateCookieControl', res.data.metadata.gtmId, true)
+          } else {
+            this.$nuxt.$emit('activateCookieControl', res.data.metadata.gtmId, false)
+          }
+          if (this.pageMetadata['languages'] && this.pageMetadata['languages'].length > 0) {
+            this.locales = []
+            this.locales = this.pageMetadata['languages']
+          } else {
+            this.pageMetadata['languages'] = this.locales
+          }
           this.showToast(
             "Success",
             "success",
@@ -1438,7 +1820,9 @@ export default {
               baseURL = baseURL + routerBase
             }
             window.location.replace(`${baseURL}/${pagePath}`);
-          }
+          } else {
+			window.location.reload()
+		  }
         })
         .catch((error) => {
           this.loading = false
@@ -1464,6 +1848,15 @@ export default {
     },
     checkToken() {
       const auth_code = this.$route.query.auth_code;
+      if (this.$sections.cname === "active") {
+        if (this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
+          this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
+        } else {
+          const project_id = this.$route.query.project_id;
+          this.$sections.projectId = project_id
+          this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-project-id", project_id);
+        }
+      }
       if (auth_code) {
         const config = {
           headers: sectionHeader({}),
@@ -1596,6 +1989,7 @@ export default {
           this.sectionTypeName = "";
           this.currentSection = null
           this.isModalOpen = false
+          this.isSideBarOpen = false
           this.loading = false
           this.showToast(
               "Success",
@@ -1702,6 +2096,9 @@ export default {
         })
           .catch((error) => {
             this.loading = false;
+			this.types = [];
+			this.globalTypes = [];
+			this.getSectionTypes();
             this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
           });
       } else {
@@ -1726,20 +2123,72 @@ export default {
         );
       }
     },
-    getComponent(sectionName, sectionType) {
-      let path = "";
-      if (sectionName.includes(":") && sectionName.includes("_-_")) {
-        path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-        return importComp(path);
-      } else if (sectionName.includes(":")) {
-        path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-        return importComp(path);
-      } else if (sectionName.includes("_-_")) {
-        path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
-        return importComp(path);
+    getComponent(sectionName, sectionType, returnProps) {
+	  if (returnProps === true) {
+		let path = "";
+		if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+		  path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+		} else if (sectionName && sectionName.includes(":")) {
+		  path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+		} else if (sectionName && sectionName.includes("_-_")) {
+		  path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
+		} else {
+		  path = `/views/${sectionName}_${sectionType}`;
+		}
+		const moduleData = importComp(path);
+		if (moduleData && moduleData.props && moduleData.props.viewStructure && (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
+		  return { settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets), render_data: populateWithDummyValues(moduleData.props.viewStructure.render_data, dummyDataPresets), type: sectionType }
+		} else return {type: sectionType}
+	  } else if (this.$sections.cname === "active") {
+        let path = "";
+        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
+        } else if (sectionName && sectionName.includes(":")) {
+          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
+        } else if (sectionName && sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName.split("_-_")[0]}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
+        } else {
+          path = `/views/${sectionName}_${sectionType}`;
+          // if (process.client) {
+          //   Vue.component(`${sectionName}_${sectionType}`, {
+          //     extends: importComp(path)
+          //   })
+          // }
+          return importComp(path)
+        }
       } else {
-        path = `/views/${sectionName}_${sectionType}`;
-        return importComp(path);
+        let path = "";
+        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
+          return importComp(path);
+        } else if (sectionName && sectionName.includes(":")) {
+          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
+          return importComp(path);
+        } else if (sectionName && sectionName.includes("_-_")) {
+          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
+          return importComp(path);
+        } else {
+          path = `/views/${sectionName}_${sectionType}`;
+          return importComp(path);
+        }
       }
     },
     getAvailableLayouts() {
@@ -2339,6 +2788,7 @@ export default {
 
     },
     formatName,
+	formatTexts,
     editable(sectionType) {
       switch (sectionType) {
         case "local":
@@ -2455,6 +2905,7 @@ export default {
           ].views;
         this.displayVariations[this.selectedVariation].altered = true;
         this.isModalOpen = false;
+        this.isSideBarOpen = false;
         this.savedView = {};
         this.loading = false;
 
@@ -2619,6 +3070,7 @@ export default {
       });
 
       let integrityCheck = true
+
       if (sections.length > 0) {
         this.types.forEach(type => {
           if (type.fields && Array.isArray(type.fields) && type.fields.length > 0) {
@@ -2792,7 +3244,20 @@ export default {
 
       this.currentSection = view;
       this.savedView = view;
-      this.isModalOpen = true;
+      this.isSideBarOpen = true;
+	  this.$nextTick(() => {
+		this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+		this.resizeData.resizeTarget = this.$refs.resizeTarget;
+		setTimeout(() => {
+		  if (this.$refs.resizeTarget) {
+			this.$refs.resizeTarget.scrollTo({
+			  top: 0
+			});
+		  }
+		}, 600);
+		window.addEventListener("mousemove", this.onMouseMove);
+		window.addEventListener("mouseup", this.stopTracking);
+	  })
     },
     restoreVariations() {
       this.displayVariations = JSON.parse(
@@ -2953,7 +3418,9 @@ export default {
           );
           this.isAuthModalOpen = false;
           this.requirementsInputs = {}
-          this.types[index].app_status = "enabled"
+		  this.types.filter(type => type.application_id === sectionAppId).forEach(type => {
+			type.app_status = "enabled"
+		  })
           this.loading = false
           this.$emit("load", false);
         })
@@ -2991,7 +3458,9 @@ export default {
             this.$t("unAuthorizeSuccess", {appName: this.selectedAppName})
           );
           this.isUnAuthModalOpen = false;
-          this.types[index].app_status = "disabled"
+		  this.types.filter(type => type.application_id === sectionAppId).forEach(type => {
+			type.app_status = "disabled"
+		  })
           this.loading = false
           this.$emit("load", false);
         })
@@ -3041,7 +3510,83 @@ export default {
       } else if(type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
       } else this.currentSection = {...type, creation: true}
-    }
+    },
+	startTracking(event) {
+	  if (event.button !== 0) return;
+
+	  event.preventDefault();
+	  const handleElement = event.currentTarget;
+
+	  const targetSelector = handleElement.getAttribute("data-target");
+	  const targetElement = this.$refs.resizeTarget.closest(targetSelector);
+
+	  if (!targetElement) {
+		return;
+	  }
+
+	  this.resizeData.startWidth = targetElement.offsetWidth;
+	  this.resizeData.startCursorScreenX = event.screenX;
+	  this.resizeData.resizeTarget = targetElement;
+	  this.resizeData.maxWidth =
+		   this.resizeData.parentElement.offsetWidth - this.resizeData.handleWidth;
+	  this.resizeData.tracking = true;
+	},
+	onMouseMove(event) {
+	  if (!this.resizeData.tracking) return;
+
+	  const cursorScreenXDelta =
+		   event.screenX - this.resizeData.startCursorScreenX;
+	  const newWidth = Math.min(
+		   this.resizeData.startWidth + cursorScreenXDelta,
+		   this.resizeData.maxWidth
+	  );
+
+	  this.resizeData.resizeTarget.style.width = `${newWidth}px`;
+	},
+	stopTracking() {
+	  if (this.resizeData.tracking) {
+		this.resizeData.tracking = false;
+	  }
+	},
+	async exportCSSFile(file) {
+	  const response = await this.$axios.get(file.url, { responseType: 'blob' });
+
+	  if (response && response.data) {
+		const blob = response.data;
+		const url = window.URL.createObjectURL(blob);
+
+		const dlAnchorElem = document.getElementById('downloadAnchorElem');
+		dlAnchorElem.setAttribute("href", url);
+		dlAnchorElem.setAttribute("download", `${file.name}.css`);
+		dlAnchorElem.click();
+
+		// Clean up the URL object after the download
+		window.URL.revokeObjectURL(url);
+	  }
+	},
+	restoreSectionContent() {
+	  this.isSideBarOpen = false;
+	  this.isCreateInstance = false;
+	  this.isRestoreSectionOpen = false;
+	  if (this.restoreType === 'section') {
+		this.restoreSection();
+	  } else {
+		this.restoreVariations()
+	  }
+	},
+	restoreSection() {
+	  this.displayVariations[this.selectedVariation].altered = false;
+	  this.$set(
+		   this.displayVariations[this.selectedVariation].views,
+		   this.currentSection.id,
+		   this.originalVariations[this.selectedVariation].views[this.currentSection.id]
+	  );
+	  this.originalVariations = JSON.parse(
+		   JSON.stringify(this.displayVariations)
+	  );
+
+	  this.currentViews = this.displayVariations[this.selectedVariation].views;
+	}
   }
 }
 </script>
@@ -3087,7 +3632,7 @@ export default {
   background: #0881b3;
   transition: 0.2s;
 }
-button {
+.sections-config button {
   max-height: 64px;
   width: auto;
   min-width: auto;
@@ -3320,8 +3865,24 @@ span.handle {
 }
 .modalContainer .section-item {
   width: 100%;
-  height: 130px;
+  height: 330px;
   margin: 0px;
+}
+.modalContainer .section-item.active {
+  margin: 10px 0px;
+  border: 1px solid #31a9db;
+}
+.modalContainer .section-item .section-item-title {
+  font-size: 16px;
+  position: absolute;
+  padding: 3px;
+  place-content: center;
+  width: 300px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 300px;
+  white-space: nowrap;
 }
 .modalContainer .section-item-box {
   display: flex;
@@ -3332,8 +3893,8 @@ span.handle {
 }
 .modalContainer .type-items {
   display: grid;
-  grid-template-columns: repeat(4, 130px);
-  grid-gap: 35px;
+  grid-template-columns: repeat(2, 330px);
+  grid-gap: 25px;
   justify-content: center;
 }
 .bg-grey {
@@ -3387,7 +3948,7 @@ span.handle {
 .widthSpace {
   width: 45px;
 }
-.z-50 {
+.sections-z-50 {
   z-index: 2000 !important;
 }
 .section-modal-wrapper {
@@ -3504,7 +4065,7 @@ span.handle {
 @media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
-    height: 450px;
+    height: 350px;
   }
 }
 
@@ -3803,6 +4364,11 @@ span.handle {
   margin-right: 2px;
 }
 
+.section-top-separator {
+  margin-top: 3px;
+  height: 20px;
+}
+
 .global-section-info-icon {
   cursor: pointer;
   margin-top: 3px;
@@ -3878,5 +4444,362 @@ span.handle {
 
 .view-in-edit-mode {
   min-height: 54px;
+}
+
+.sections-justify-center {
+  justify-content: center;
+}
+
+.sections-items-center {
+  align-items: center;
+}
+
+.sections-flex-row {
+  flex-direction: row;
+}
+
+.sections-text-center {
+  text-align: center;
+}
+
+.sections-text-3xl {
+  font-size: 30px;
+}
+
+.sections-cursor-pointer {
+  cursor: pointer;
+}
+
+.sections-pt-3 {
+  padding-top: 12px;
+}
+
+.sections-pt-4 {
+  padding-top: 16px;
+}
+
+.sections-pb-1 {
+  padding-bottom: 4px;
+}
+
+.sections-pb-3 {
+  padding-bottom: 12px;
+}
+
+.sections-pb-4 {
+  padding-bottom: 16px;
+}
+
+.sections-pb-6 {
+  padding-bottom: 24px;
+}
+
+.sections-pb-20 {
+  padding-bottom: 80px;
+}
+
+.sections-pl-2 {
+  padding-left: 8px;
+}
+
+.sections-pl-3 {
+  padding-left: 12px;
+}
+
+.sections-pr-3 {
+  padding-right: 12px;
+}
+
+.sections-pl-4 {
+  padding-left: 16px;
+}
+
+.sections-p-2 {
+  padding: 8px;
+}
+
+.sections-pl-6 {
+  padding-left: 24px;
+}
+
+.sections-p-1 {
+  padding: 4px;
+}
+
+.sections-p-3 {
+  padding: 12px;
+}
+
+.sections-p-4 {
+  padding: 16px;
+}
+
+.sections-p-8 {
+  padding: 32px;
+}
+
+.sections-m-1 {
+  margin: 4px;
+}
+
+.sections-mt-2 {
+  margin-top: 8px;
+}
+
+.sections-mb-4 {
+  margin-bottom: 16px;
+}
+
+.sections-bg-white {
+  background-color: white;
+}
+
+.sections-px-4 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.sections-py-4 {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.sections-my-3 {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.sections-bg-opacity-25 {
+  --tw-bg-opacity: 0.25;
+}
+
+.sections-inset-0 {
+  inset: 0px;
+}
+
+.sections-fixed {
+  position: fixed;
+}
+
+.sections-absolute {
+  position: absolute;;
+}
+
+.sections-shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.sections-overflow-hidden {
+  overflow: hidden;
+}
+
+.sections-overflow-y-auto {
+  overflow-y: auto;
+}
+
+.sections-overflow-scroll {
+  overflow: scroll;
+}
+
+.sections-top-0 {
+  top: 0px;
+}
+
+.sections-right-2 {
+  right: 8px;
+}
+
+.sections-items-end {
+  align-items: end;
+}
+
+.sections-flex-col {
+  flex-direction: column;
+}
+
+.sections-gap-4 {
+  gap: 16px;
+}
+
+.sections-border {
+  border-width: 1px;
+}
+
+.sections-border-FieldGray {
+  border-color: #C2C2C2;
+}
+
+.sections-bg-FieldGray {
+  background-color: #C2C2C2;
+}
+
+.sections-h-48px {
+  height: 48px;
+}
+
+.sections-w-full {
+  width: 100%;
+}
+
+.sections-borders-bottom {
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.sections-borders-top {
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.sections-checkbox {
+  width: 20px;
+}
+
+.gtmError {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  color: rgb(216, 42, 42);
+}
+
+@media (min-width: 768px) {
+  .md\:flex-row {
+	flex-direction: row !important;
+  }
+}
+
+@media only screen and (max-height: 800px) {
+  .sections-page-settings {
+	overflow: scroll;
+	max-height: 350px;
+  }
+}
+
+.sections-container {
+  overflow: hidden;
+  background-color: white;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-content: stretch;
+  align-items: stretch;
+}
+
+.sections-container-edit-mode {
+  height: 100vh;
+}
+
+.sections-container > .sections-aside {
+  order: 0;
+  flex: 0 0 auto;
+  align-self: auto;
+  padding: 10px;
+  overflow: auto;
+
+  /* Make the sidebar sticky */
+  position: sticky;
+  top: 0;
+  height: 100vh; /* Ensures it stays full height */
+  width: 527px;
+  min-width: 422px;
+  max-width: 50%;
+  z-index: 200;
+}
+
+.sections-aside
+.closeIcon {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+}
+.sections-aside
+.closeIcon svg {
+  width: 35px;
+  height: 35px;
+  color: #31a9db;
+}
+.sections-aside
+.closeIcon svg:hover {
+  color: darken(#31a9db, 10%);
+}
+
+.sections-aside
+.anchorIcon {
+  position: absolute;
+  right: 55px;
+  top: 16px;
+  cursor: pointer;
+}
+.sections-aside
+.anchorIcon svg {
+  width: 25px;
+  height: 25px;
+  color: #31a9db;
+}
+.sections-aside
+.anchorIcon svg:hover {
+  color: darken(#31a9db, 10%);
+}
+
+.sections-container > .sections-main {
+  order: 0;
+  flex: 1 1 auto;
+  align-self: auto;
+  overflow: auto;
+}
+
+.sections-resize-handle--x {
+  flex: 0 0 auto;
+  position: relative;
+  box-sizing: border-box;
+  width: 3px;
+  height: 100%;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: black;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: black;
+  cursor: ew-resize;
+
+  user-select: none;
+}
+
+.sections-resize-handle--x::before,
+.sections-resize-handle--x::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  height: 18px;
+  width: 2px;
+  margin-top: -9px;
+  border-style: solid;
+}
+
+.sections-resize-handle--x::before {
+  right: 100%;
+  border-left-color: black;
+  border-left-width: 1px;
+}
+
+.sections-resize-handle--x::after {
+  left: 100%;
+  border-right-color: black;
+  border-right-width: 1px;
+}
+
+.metadata-media .css-preset {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #31a9db;
+  font-size: 14px;
+  align-content: center;
+}
+
+.sections-required-field-error {
+  padding-top: 4px;
+  color: rgb(216, 42, 42);
+  font-size: 14px;
 }
 </style>

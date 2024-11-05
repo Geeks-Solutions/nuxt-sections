@@ -2,7 +2,9 @@
   <div>
     <div class="input mt-8">
       <wysiwyg :key="quillKey" ref="myQuillEditor" class="wyzywig" :html="settings[0][selectedLang]" @wysiwygMedia="wysiwygMediaAdded" @settingsUpdate="updateContent" />
-    </div>
+	  <span v-if="errors.quill === true && selectedLang === 'en'" class="flexSections sections-required-field-error">{{ $t('requiredField') }}</span>
+	  <span v-else-if="errors.quill === true && selectedLang !== 'en'" id="required-fields" class="flexSections sections-required-field-error">{{ $t('checkRequiredField') }}</span>
+	</div>
   </div>
 </template>
 <script>
@@ -35,7 +37,10 @@ export default {
           en: "",
           fr: ""
         }
-      ]
+      ],
+	  errors: {
+		quill: false
+	  }
     };
   },
   watch: {
@@ -66,6 +71,7 @@ export default {
       })
     },
     validate() {
+	  this.errors.quill = false
       if (Array.isArray(this.settings)) {
         this.settings.forEach((ob, index) => {
           if (ob.wysiwygLang && this.settings[0][ob.wysiwygLang] !== undefined) {
@@ -75,7 +81,36 @@ export default {
           }
         })
       }
-      return true;
+	  try {
+		for(const lang of ['en', 'fr']) {
+		  const parser = new DOMParser();
+		  const doc = parser.parseFromString(this.settings[0][lang], 'text/html');
+		  const imgTags = doc.querySelectorAll('img');
+		  imgTags.forEach(img => {
+			const url = img.getAttribute('src')
+			let seo_tag = ""
+			if (this.settings[0][lang]) {
+			  const foundM = this.settings.find(m => {
+				return m.wysiwygMedia !== undefined && m.wysiwygMedia.url === url
+			  })
+			  if (foundM && foundM.wysiwygMedia && foundM.wysiwygMedia.seo_tag) {
+				seo_tag = foundM.wysiwygMedia.seo_tag
+			  }
+			}
+			if (!img.hasAttribute('alt')) {
+			  img.setAttribute('alt', seo_tag);
+			}
+			if (!img.hasAttribute('loading')) {
+			  img.setAttribute('loading', 'lazy');
+			}
+		  });
+		  this.settings[0][lang] = doc.body.innerHTML;
+		}
+	  } catch {}
+	  if (!this.settings[0].en) {
+		this.errors.quill = true
+		return false
+	  } else return true;
     }
   }
 };

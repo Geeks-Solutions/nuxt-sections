@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.0.11] - 2024-10-24
+
+### Added
+
+- Added cname website domain support issue Using Cname for section project eweev/geeks/kms#44
+
+- Meta data form needs css as additonal field #15
+
+- Introduced a preview of the sections from the listing #57
+
+- Introduce custom CSS and css presets in page settings #69
+
+### Updated
+
+- Section types listing updated tabs to Available sections, global Sections and Inventory #67
+
+- Update wysiwygs image with default alt and lazy loading #75 
+
 ## [1.0.11] - 2024-10-16
 
 ### Fixed

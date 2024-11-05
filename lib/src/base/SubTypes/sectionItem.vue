@@ -1,10 +1,15 @@
 <template>
   <div class="item text-center" :class="{ active }">
-    <div class="card-content">
-      <div class="icon">
-        <component :is="!base ? getIcon : getIconBase" />
+    <div class="card-content" :class="{'card-content-preview': (section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)}">
+      <div v-if="(section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)" class="comp-preview">
+		<component
+			 :is="componentItem"
+			 :section="section"
+			 :lang="lang"
+			 :locales="locales"
+		/>
       </div>
-      <div class="p3 text-capitalize px-1">
+      <div v-else class="p3 text-capitalize px-1">
         {{ formatText(title, " ") }}
       </div>
     </div>
@@ -12,7 +17,7 @@
 </template>
 
 <script>
-import { importComp, formatTexts } from "../../utils";
+import { formatTexts } from "../../utils";
 export default {
   props: {
     title: {
@@ -23,20 +28,28 @@ export default {
       type: Boolean,
       default: true,
     },
-    base: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  computed: {
-    getIcon() {
-      const path = "/type-icons/" + this.title.replace(/ /g, "_");
-      return importComp(path);
-    },
-    getIconBase() {
-      const path = "/type-icons/" + this.title.replace(/ /g, "_");
-      return importComp(path);
-    },
+	view: {
+	  type: Object,
+	  default: () => {},
+	},
+	section: {
+	  type: Object,
+	  default: () => {},
+	},
+	lang: {
+	  type: String,
+	  default: "en"
+	},
+	locales: {
+	  type: Array,
+	  default() {
+		return []
+	  }
+	},
+	componentItem: {
+	  type: [String, Object],
+	  required: true,
+	}
   },
   methods: {
     formatText(text, sep) {
@@ -72,10 +85,26 @@ export default {
   height: 60px;
 }
 .card-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-direction: column;
-  line-height: 1.85;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  align-content: center;
+}
+.card-content .comp-preview {
+  position: absolute;
+  width: 1736px;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  transform: scale(0.188);
+  transform-origin: top left;
+  pointer-events: none;
+  color: initial;
+  background: white;
+  padding: 20px 0;
+}
+.card-content-preview {
+  background: white;
 }
 </style>

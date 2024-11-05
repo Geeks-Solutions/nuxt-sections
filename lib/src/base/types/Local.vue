@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="sub-types">
     <h4 class="local-t">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
     <div v-if="globalSectionMode === true" class="mt-4">
       <div class="autoInsertRow">
@@ -91,7 +91,6 @@ export default {
           name: this.props.name,
           type: "local",
           id: this.id,
-          weight: this.weight,
           auto_insertion: this.autoInsert,
           instance_name: this.props.instance_name
         });

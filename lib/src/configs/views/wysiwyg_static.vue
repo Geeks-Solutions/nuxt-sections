@@ -20,7 +20,15 @@ export default {
     lang: {
       type: String,
       default: "en"
-    }
+    },
+	viewStructure: {
+	  settings: [
+		{
+		  en: 'wysiwyg',
+		  fr: 'wysiwyg'
+		}
+	  ]
+	}
   },
   data() {
     return {
