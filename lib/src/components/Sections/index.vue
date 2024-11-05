@@ -3509,10 +3509,10 @@ export default {
 	  }
 	},
 	async exportCSSFile(file) {
-	  const response = await fetch(file.url);
+	  const response = await this.$axios.get(file.url, { responseType: 'blob' });
 
-	  if (response) {
-		const blob = await response.blob();
+	  if (response && response.data) {
+		const blob = response.data;
 		const url = window.URL.createObjectURL(blob);
 
 		const dlAnchorElem = document.getElementById('downloadAnchorElem');
