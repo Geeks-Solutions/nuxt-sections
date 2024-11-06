@@ -51,7 +51,6 @@
   "dependencies": {
     "@geeks.solutions/vue-components": "^1.0.7",
     "lodash": "^4.17.21",
-    "fs": "^0.0.1-security",
     "@nuxtjs/axios": "^5.13.6",
     "cookie-universal-nuxt": "^2.2.2",
     "@nuxtjs/i18n": "^7.3.1",
@@ -60,10 +59,5 @@
     "vuedraggable": "^2.24.3",
     "vue-quill-editor": "^3.0.6",
     "quill-emoji": "^0.2.0"
-  },
-  "browser": {
-    "fs": false,
-    "os": false,
-    "path": false
   }
 }
