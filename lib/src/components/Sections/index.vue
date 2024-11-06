@@ -3584,7 +3584,9 @@ export default {
 	  this.originalVariations = JSON.parse(
 		   JSON.stringify(this.displayVariations)
 	  );
-
+	  if (this.displayVariations[this.selectedVariation].views[this.currentSection.id] === undefined) {
+		delete this.displayVariations[this.selectedVariation].views[this.currentSection.id]
+	  }
 	  this.currentViews = this.displayVariations[this.selectedVariation].views;
 	}
   }
