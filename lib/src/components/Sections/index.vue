@@ -1561,6 +1561,7 @@ export default {
 	  this.pageMetadata['languages'] = this.locales
 	  this.selectedLanguages = Array.from(this.locales)
 	}
+	this.computeLayoutData()
   },
   watch: {
     isModalOpen(value) {
