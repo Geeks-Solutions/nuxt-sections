@@ -1068,7 +1068,7 @@
 			{{ $t("Create New Page") }}
 		  </button>
 		  <div v-if="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')">
-			<component :is="errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'" :error-response="errorResponseData" />
+			<component :is="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')" :error-response="errorResponseData" :error-response-status="errorResponseStatus" />
 		  </div>
 		  <div v-else class="flexSections not-found-error">
 			<div class="flexSections not-found-error-column">
