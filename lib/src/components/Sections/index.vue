@@ -1064,10 +1064,13 @@
 		</div>
 		<div v-else>
 		  <!-- This is to show the create a new page button when the page requested is not found     -->
-		  <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
+		  <button v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
 			{{ $t("Create New Page") }}
 		  </button>
-		  <div class="flexSections not-found-error">
+		  <div v-if="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')">
+			<component :is="errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'" :error-response="errorResponseData" />
+		  </div>
+		  <div v-else class="flexSections not-found-error">
 			<div class="flexSections not-found-error-column">
 			  <ErrorIcon class="error-icon" />
 			  <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
@@ -1092,6 +1095,7 @@ import {
   validateQS,
   sectionHeader,
   populateWithDummyValues,
+  importJs,
   dummyDataPresets
 } from "../../utils";
 import draggable from "vuedraggable";
@@ -1340,7 +1344,9 @@ export default {
 		resizeTarget: null,
 		parentElement: null,
 		maxWidth: null,
-	  }
+	  },
+	  errorResponseStatus: 0,
+	  errorResponseData: null
     }
   },
   computed: {
@@ -1505,6 +1511,13 @@ export default {
       }
     }
 
+	let hooksJs = importJs(`/js/global-hooks`)
+	if (hooksJs['page_pre_load']) {
+	  if (hooksJs['page_pre_load'](payload)) {
+		payload = hooksJs['page_pre_load'](payload)
+	  }
+	}
+
     if (inBrowser) {
       try {
         const res = await this.$axios.post(URL, payload, config)
@@ -1516,14 +1529,20 @@ export default {
 		  this.initializeSections(res);
 		  return;
 		}
-		if(error.response.data.error) {
+		this.errorResponseStatus = error.response.status
+		if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
+		  this.errorResponseStatus = error.response.status
+		  this.errorResponseData = error.response.data
+		} else if(error.response.data.error) {
 		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
 		} else {
 		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
 		}
 		this.loading = false;
 		this.pageNotFound = true;
-		this.sectionsMainErrors.push(this.$t('404NotFound'));
+		if (this.errorResponseStatus === 404) {
+		  this.sectionsMainErrors.push(this.$t('404NotFound'));
+		}
 		this.$emit("load", false);
       }
     } else {
@@ -1541,7 +1560,12 @@ export default {
 		  if (error.response.status === 404) {
 			this.$nuxt.context.res.statusCode = 404
 		  }
-		  if(error.response.data.error) {
+
+		  this.errorResponseStatus = error.response.status
+		  if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
+			this.errorResponseStatus = error.response.status
+			this.errorResponseData = error.response.data
+		  } else if(error.response.data.error) {
 			this.sectionsError = error.response.data.error
 		  } else {
 			this.sectionsError = error.response.data.message
@@ -1549,7 +1573,9 @@ export default {
 		  }
 		  this.loading = false;
 		  this.pageNotFound = true;
-		  this.sectionsMainErrors.push(this.$t('404NotFound'));
+		  if (this.errorResponseStatus === 404) {
+			this.sectionsMainErrors.push(this.$t('404NotFound'));
+		  }
 		  this.$emit("load", false);
         }
       }
@@ -1576,6 +1602,7 @@ export default {
   methods: {
 	parsePath,
 	initializeSections(res) {
+	  this.$nuxt.$emit('page_pre_render', res)
 	  const sections = res.data.sections;
 	  this.allSections = res.data.sections;
 	  this.pageId = res.data.id;
@@ -2125,7 +2152,10 @@ export default {
       }
     },
     getComponent(sectionName, sectionType, returnProps) {
-	  if (returnProps === true) {
+	  let hooksJs = importJs(`/js/global-hooks`)
+	  if (hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
+		return hooksJs['section_pre_render']({sectionName, sectionType})
+	  } else if (returnProps === true) {
 		let path = "";
 		if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
 		  path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
@@ -3589,6 +3619,10 @@ export default {
 		delete this.displayVariations[this.selectedVariation].views[this.currentSection.id]
 	  }
 	  this.currentViews = this.displayVariations[this.selectedVariation].views;
+	},
+	registeredPage(type) {
+	  let path = `/page_components/${type}`
+	  return importComp(path);
 	}
   }
 }
