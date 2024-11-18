@@ -885,6 +885,9 @@
 					  <div class="flexSections sections-flex-row sections-gap-4">
 						<div class='sections-w-full'>
 						  <div class="sectionsFieldsLabels">
+							{{ $t("projectId") }}: {{ $sections.projectId }}
+						  </div>
+						  <div class="sectionsFieldsLabels">
 							{{ $t("pageUrl") }}
 						  </div>
 						  <div class="fieldsDescription">
