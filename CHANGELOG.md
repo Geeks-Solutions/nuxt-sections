@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [1.0.13] - 2024-11-11
 
+### Added
+
+- Lambda functions #88
+
 ### Fixed
 
 - Layout data initialization on page render
+
+- Fix Empty Edit section form when editing another section when one is already opened #87
 
 ### [1.0.12] - 2024-10-24
 

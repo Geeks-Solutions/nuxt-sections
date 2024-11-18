@@ -3249,46 +3249,54 @@ export default {
       });
     },
     edit(view) {
-      this.types.map((type) => {
-        if(view.type === "configurable") {
-          if (type.name.split(":")[1] === view.name) {
-            view.fields = type.fields;
-            view.multiple = type.multiple;
-            view.application_id = type.application_id;
-            if (type.dynamic_options) {
-              view.dynamic_options = true;
-            }
-          }
-        } else {
-          if (type.name === view.name) {
-            view.fields = type.fields;
-            view.multiple = type.multiple;
-            if (type.dynamic_options) {
-              view.dynamic_options = true;
-            }
-          }
-        }
-      });
-      if(view.linked_to !== "") {
-        view.instance = true
-      }
-
-      this.currentSection = view;
-      this.savedView = view;
-      this.isSideBarOpen = true;
-	  this.$nextTick(() => {
-		this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
-		this.resizeData.resizeTarget = this.$refs.resizeTarget;
-		setTimeout(() => {
-		  if (this.$refs.resizeTarget) {
-			this.$refs.resizeTarget.scrollTo({
-			  top: 0
-			});
+      if (this.isSideBarOpen !== true) {
+		this.types.map((type) => {
+		  if(view.type === "configurable") {
+			if (type.name.split(":")[1] === view.name) {
+			  view.fields = type.fields;
+			  view.multiple = type.multiple;
+			  view.application_id = type.application_id;
+			  if (type.dynamic_options) {
+				view.dynamic_options = true;
+			  }
+			}
+		  } else {
+			if (type.name === view.name) {
+			  view.fields = type.fields;
+			  view.multiple = type.multiple;
+			  if (type.dynamic_options) {
+				view.dynamic_options = true;
+			  }
+			}
 		  }
-		}, 600);
-		window.addEventListener("mousemove", this.onMouseMove);
-		window.addEventListener("mouseup", this.stopTracking);
-	  })
+		});
+		if(view.linked_to !== "") {
+		  view.instance = true
+		}
+
+		this.currentSection = view;
+		this.savedView = view;
+		this.isSideBarOpen = true;
+		this.$nextTick(() => {
+		  this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+		  this.resizeData.resizeTarget = this.$refs.resizeTarget;
+		  setTimeout(() => {
+			if (this.$refs.resizeTarget) {
+			  this.$refs.resizeTarget.scrollTo({
+				top: 0
+			  });
+			}
+		  }, 600);
+		  window.addEventListener("mousemove", this.onMouseMove);
+		  window.addEventListener("mouseup", this.stopTracking);
+		})
+	  } else if (this.currentSection.name !== view.name) {
+		this.showToast(
+			 "Edit",
+			 "error",
+			 this.$t("editingSection")
+		);
+	  }
     },
     restoreVariations() {
       this.displayVariations = JSON.parse(
