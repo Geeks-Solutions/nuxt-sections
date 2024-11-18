@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix Empty Edit section form when editing another section when one is already opened #87
 
+- Custom css bug fixed #86
+
 ### [1.0.12] - 2024-10-24
 
 ### Added

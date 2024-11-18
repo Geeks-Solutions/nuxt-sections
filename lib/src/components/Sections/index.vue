@@ -1228,7 +1228,7 @@ export default {
         }
       ],
       link: [
-        this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
+		this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other' && this.pageMetadata['selectedCSSPreset'].name !== 'None' ? { rel: 'stylesheet', href: this.pageMetadata['selectedCSSPreset'].url } : this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'None' && this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
         this.pageMetadata['favicon'] && this.pageMetadata['favicon'].url ? { rel: 'icon', type: 'image/png', href: this.pageMetadata['favicon'].url } : {},
       ]
     }
@@ -1432,7 +1432,7 @@ export default {
 	  hrefLink = this.pageMetadata['selectedCSSPreset'].url;
 	  link.href = hrefLink
 	  document.head.appendChild(link);
-	} else if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
+	} else if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'None' && this.pageMetadata['media'] && this.pageMetadata['media'].url) {
 	  this.$set(this.pageMetadata, 'selectedCSSPreset', {
 		name: 'Other',
 		url: ''
