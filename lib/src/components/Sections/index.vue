@@ -1412,7 +1412,7 @@ export default {
 	}
   },
   mounted() {
-    if(this.sectionsError !== "") {
+    if(this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
     } else if (this.sectionsAdminError !== "") {
       this.showToast("Error", "error", this.sectionsAdminError);
