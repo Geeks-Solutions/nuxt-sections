@@ -1070,10 +1070,10 @@
 		  <button v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
 			{{ $t("Create New Page") }}
 		  </button>
-		  <div v-if="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')">
+		  <div v-if="(errorResponseStatus === 404 || errorResponseStatus === 401) && registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')">
 			<component :is="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')" :error-response="errorResponseData" :error-response-status="errorResponseStatus" />
 		  </div>
-		  <div v-else class="flexSections not-found-error">
+		  <div v-else-if="errorResponseStatus !== 0" class="flexSections not-found-error">
 			<div class="flexSections not-found-error-column">
 			  <ErrorIcon class="error-icon" />
 			  <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
