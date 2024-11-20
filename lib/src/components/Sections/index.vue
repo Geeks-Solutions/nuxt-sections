@@ -271,7 +271,7 @@
 					   v-for="(type, index) in typesTab === 'types' ? types.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : types.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
 					   :key="type.name"
 				  >
-					<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+					<div v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
 					  {{ formatTexts(formatName(type.name), " ") }}
 					</div>
 					<div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
@@ -294,13 +294,13 @@
 					  </div>
 					</div>
 					<div v-else class="section-top-separator"></div>
-					<div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated !== true ? openCurrentSection(type) : null">
+					<div class="section-item" :class="[{active: type.notCreated !== true},{inactive: type.notCreated === true}]" @click="type.notCreated !== true ? openCurrentSection(type) : null">
 					  <SectionItem
 						   v-if="type.name"
 						   class="bg-light-blue"
 						   :title="formatName(type.name)"
-						   :component-item="getComponent(type.name, type.type)"
-						   :section="getComponent(type.name, type.type, true)"
+						   :component-item="getComponent(type.name, type.type ? type.type : 'static')"
+						   :section="getComponent(type.name, type.type ? type.type : 'static', true)"
 						   :active="type.notCreated !== true"
 					  />
 					</div>
@@ -3797,6 +3797,7 @@ button svg {
 .section-creation {
   text-align: -webkit-right;
   background: #adadad;
+  height: 40px;
 }
 
 .section-delete-icon {
@@ -3919,6 +3920,9 @@ span.handle {
 .modalContainer .section-item.active {
   margin: 10px 0px;
   border: 1px solid #31a9db;
+}
+.modalContainer .section-item.inactive {
+  border: 1px solid #adadad;
 }
 .modalContainer .section-item .section-item-title {
   font-size: 16px;
