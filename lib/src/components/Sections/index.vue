@@ -1258,6 +1258,7 @@ export default {
       sectionTypes: [],
       sectionsQsKeys: [],
       originalVariations: {},
+      updatedVariations: {},
       // current visible views
       views: {},
       getSections: [],
@@ -3301,6 +3302,9 @@ export default {
 			 this.$t("editingSection")
 		);
 	  }
+	  this.updatedVariations = JSON.parse(
+		   JSON.stringify(this.displayVariations)
+	  );
     },
     restoreVariations() {
       this.displayVariations = JSON.parse(
@@ -3622,14 +3626,11 @@ export default {
 	  this.$set(
 		   this.displayVariations[this.selectedVariation].views,
 		   this.currentSection.id,
-		   this.originalVariations[this.selectedVariation].views[this.currentSection.id]
+		   this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
 	  );
-	  this.originalVariations = JSON.parse(
+	  this.updatedVariations = JSON.parse(
 		   JSON.stringify(this.displayVariations)
 	  );
-	  if (this.displayVariations[this.selectedVariation].views[this.currentSection.id] === undefined) {
-		delete this.displayVariations[this.selectedVariation].views[this.currentSection.id]
-	  }
 	  this.currentViews = this.displayVariations[this.selectedVariation].views;
 	},
 	registeredPage(type) {
