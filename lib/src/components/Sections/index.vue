@@ -1070,7 +1070,7 @@
 		  <button v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
 			{{ $t("Create New Page") }}
 		  </button>
-		  <div v-if="(errorResponseStatus === 404 || errorResponseStatus === 401) && registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')">
+		  <div v-if="(errorResponseStatus === 404 || errorResponseStatus === 401) && (errorRegisteredPage === 'page_not_found' || errorRegisteredPage === 'project_not_found')">
 			<component :is="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')" :error-response="errorResponseData" :error-response-status="errorResponseStatus" />
 		  </div>
 		  <div v-else-if="errorResponseStatus !== 0" class="flexSections not-found-error">
@@ -1349,6 +1349,7 @@ export default {
 		maxWidth: null,
 	  },
 	  errorResponseStatus: 0,
+	  errorRegisteredPage: '',
 	  errorResponseData: null
     }
   },
@@ -1534,7 +1535,7 @@ export default {
 		}
 		this.errorResponseStatus = error.response.status
 		if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
-		  this.errorResponseStatus = error.response.status
+		  this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
 		  this.errorResponseData = error.response.data
 		} else if(error.response.data.error) {
 		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
@@ -1566,7 +1567,7 @@ export default {
 
 		  this.errorResponseStatus = error.response.status
 		  if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
-			this.errorResponseStatus = error.response.status
+			this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
 			this.errorResponseData = error.response.data
 		  } else if(error.response.data.error) {
 			this.sectionsError = error.response.data.error
