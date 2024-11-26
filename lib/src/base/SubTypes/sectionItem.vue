@@ -1,7 +1,7 @@
 <template>
   <div class="item text-center" :class="{ active }">
-    <div class="card-content" :class="{'card-content-preview': (section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)}">
-      <div v-if="(section && section.type === 'local') || (section && section.settings && active === true) || (section && section.render_data && active === true)" class="comp-preview">
+    <div class="card-content" :class="{'card-content-preview': (section && section.type === 'local') || (section && section.settings) || (section && section.render_data)}">
+      <div v-if="(section && section.type === 'local') || (section && section.settings) || (section && section.render_data)" class="comp-preview">
 		<component
 			 :is="componentItem"
 			 :section="section"

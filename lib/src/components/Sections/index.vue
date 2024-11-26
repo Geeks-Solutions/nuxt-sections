@@ -271,7 +271,7 @@
 					   v-for="(type, index) in typesTab === 'types' ? types.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : types.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
 					   :key="type.name"
 				  >
-					<div v-if="type.type === 'local' || getComponent(type.name, type.type, true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+					<div v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
 					  {{ formatTexts(formatName(type.name), " ") }}
 					</div>
 					<div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
@@ -294,13 +294,13 @@
 					  </div>
 					</div>
 					<div v-else class="section-top-separator"></div>
-					<div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated !== true ? openCurrentSection(type) : null">
+					<div class="section-item" :class="[{active: type.notCreated !== true},{inactive: type.notCreated === true}]" @click="type.notCreated !== true ? openCurrentSection(type) : null">
 					  <SectionItem
 						   v-if="type.name"
 						   class="bg-light-blue"
 						   :title="formatName(type.name)"
-						   :component-item="getComponent(type.name, type.type)"
-						   :section="getComponent(type.name, type.type, true)"
+						   :component-item="getComponent(type.name, type.type ? type.type : 'static')"
+						   :section="getComponent(type.name, type.type ? type.type : 'static', true)"
 						   :active="type.notCreated !== true"
 					  />
 					</div>
@@ -885,6 +885,9 @@
 					  <div class="flexSections sections-flex-row sections-gap-4">
 						<div class='sections-w-full'>
 						  <div class="sectionsFieldsLabels">
+							{{ $t("projectId") }}: {{ $sections.projectId }}
+						  </div>
+						  <div class="sectionsFieldsLabels">
 							{{ $t("pageUrl") }}
 						  </div>
 						  <div class="fieldsDescription">
@@ -1064,10 +1067,13 @@
 		</div>
 		<div v-else>
 		  <!-- This is to show the create a new page button when the page requested is not found     -->
-		  <button v-if="admin" class="hp-button btn-text" @click="createNewPage">
+		  <button v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
 			{{ $t("Create New Page") }}
 		  </button>
-		  <div class="flexSections not-found-error">
+		  <div v-if="(errorResponseStatus === 404 || errorResponseStatus === 401) && (errorRegisteredPage === 'page_not_found' || errorRegisteredPage === 'project_not_found')">
+			<component :is="registeredPage(errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')" :error-response="errorResponseData" :error-response-status="errorResponseStatus" />
+		  </div>
+		  <div v-else-if="errorResponseStatus !== 0" class="flexSections not-found-error">
 			<div class="flexSections not-found-error-column">
 			  <ErrorIcon class="error-icon" />
 			  <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
@@ -1092,6 +1098,7 @@ import {
   validateQS,
   sectionHeader,
   populateWithDummyValues,
+  importJs,
   dummyDataPresets
 } from "../../utils";
 import draggable from "vuedraggable";
@@ -1224,7 +1231,7 @@ export default {
         }
       ],
       link: [
-        this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
+		this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other' && this.pageMetadata['selectedCSSPreset'].name !== 'None' ? { rel: 'stylesheet', href: this.pageMetadata['selectedCSSPreset'].url } : this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'None' && this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
         this.pageMetadata['favicon'] && this.pageMetadata['favicon'].url ? { rel: 'icon', type: 'image/png', href: this.pageMetadata['favicon'].url } : {},
       ]
     }
@@ -1251,6 +1258,7 @@ export default {
       sectionTypes: [],
       sectionsQsKeys: [],
       originalVariations: {},
+      updatedVariations: {},
       // current visible views
       views: {},
       getSections: [],
@@ -1340,7 +1348,10 @@ export default {
 		resizeTarget: null,
 		parentElement: null,
 		maxWidth: null,
-	  }
+	  },
+	  errorResponseStatus: 0,
+	  errorRegisteredPage: '',
+	  errorResponseData: null
     }
   },
   computed: {
@@ -1403,7 +1414,7 @@ export default {
 	}
   },
   mounted() {
-    if(this.sectionsError !== "") {
+    if(this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
     } else if (this.sectionsAdminError !== "") {
       this.showToast("Error", "error", this.sectionsAdminError);
@@ -1426,7 +1437,7 @@ export default {
 	  hrefLink = this.pageMetadata['selectedCSSPreset'].url;
 	  link.href = hrefLink
 	  document.head.appendChild(link);
-	} else if (this.pageMetadata['media'] && this.pageMetadata['media'].url) {
+	} else if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'None' && this.pageMetadata['media'] && this.pageMetadata['media'].url) {
 	  this.$set(this.pageMetadata, 'selectedCSSPreset', {
 		name: 'Other',
 		url: ''
@@ -1498,12 +1509,29 @@ export default {
 
     let payload = {}
 
+	let language = undefined
+	try {
+	  if (this.$i18n.locale !== this.$i18n.defaultLocale) {
+		language = this.$i18n.locale
+	  }
+	} catch {}
+
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
       let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
       payload = {
-        query_string
+		query_string: {
+		  ...query_string,
+		  language
+		}
       }
     }
+
+	let hooksJs = importJs(`/js/global-hooks`)
+	if (hooksJs['page_pre_load']) {
+	  if (hooksJs['page_pre_load'](payload)) {
+		payload = hooksJs['page_pre_load'](payload)
+	  }
+	}
 
     if (inBrowser) {
       try {
@@ -1516,14 +1544,20 @@ export default {
 		  this.initializeSections(res);
 		  return;
 		}
-		if(error.response.data.error) {
+		this.errorResponseStatus = error.response.status
+		if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
+		  this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
+		  this.errorResponseData = error.response.data
+		} else if(error.response.data.error) {
 		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
 		} else {
 		  this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
 		}
 		this.loading = false;
 		this.pageNotFound = true;
-		this.sectionsMainErrors.push(this.$t('404NotFound'));
+		if (this.errorResponseStatus === 404) {
+		  this.sectionsMainErrors.push(this.$t('404NotFound'));
+		}
 		this.$emit("load", false);
       }
     } else {
@@ -1541,7 +1575,12 @@ export default {
 		  if (error.response.status === 404) {
 			this.$nuxt.context.res.statusCode = 404
 		  }
-		  if(error.response.data.error) {
+
+		  this.errorResponseStatus = error.response.status
+		  if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
+			this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
+			this.errorResponseData = error.response.data
+		  } else if(error.response.data.error) {
 			this.sectionsError = error.response.data.error
 		  } else {
 			this.sectionsError = error.response.data.message
@@ -1549,7 +1588,9 @@ export default {
 		  }
 		  this.loading = false;
 		  this.pageNotFound = true;
-		  this.sectionsMainErrors.push(this.$t('404NotFound'));
+		  if (this.errorResponseStatus === 404) {
+			this.sectionsMainErrors.push(this.$t('404NotFound'));
+		  }
 		  this.$emit("load", false);
         }
       }
@@ -1561,6 +1602,7 @@ export default {
 	  this.pageMetadata['languages'] = this.locales
 	  this.selectedLanguages = Array.from(this.locales)
 	}
+	this.computeLayoutData()
   },
   watch: {
     isModalOpen(value) {
@@ -1575,6 +1617,7 @@ export default {
   methods: {
 	parsePath,
 	initializeSections(res) {
+	  this.$nuxt.$emit('page_pre_render', res)
 	  const sections = res.data.sections;
 	  this.allSections = res.data.sections;
 	  this.pageId = res.data.id;
@@ -2124,7 +2167,10 @@ export default {
       }
     },
     getComponent(sectionName, sectionType, returnProps) {
-	  if (returnProps === true) {
+	  let hooksJs = importJs(`/js/global-hooks`)
+	  if (hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
+		return hooksJs['section_pre_render']({sectionName, sectionType})
+	  } else if (returnProps === true) {
 		let path = "";
 		if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
 		  path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
@@ -2757,11 +2803,21 @@ export default {
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
         let payload = {}
+		
+		let language = undefined
+		try {
+		  if (this.$i18n.locale !== this.$i18n.defaultLocale) {
+			language = this.$i18n.locale
+		  }
+		} catch {}
 
         if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
           let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
           payload = {
-            query_string
+            query_string: {
+			  ...query_string,
+			  language
+			}
           }
           if (this.sectionsQsKeys && this.sectionsQsKeys.length > 0) {
             payload["query_string"] = {
@@ -3218,46 +3274,57 @@ export default {
       });
     },
     edit(view) {
-      this.types.map((type) => {
-        if(view.type === "configurable") {
-          if (type.name.split(":")[1] === view.name) {
-            view.fields = type.fields;
-            view.multiple = type.multiple;
-            view.application_id = type.application_id;
-            if (type.dynamic_options) {
-              view.dynamic_options = true;
-            }
-          }
-        } else {
-          if (type.name === view.name) {
-            view.fields = type.fields;
-            view.multiple = type.multiple;
-            if (type.dynamic_options) {
-              view.dynamic_options = true;
-            }
-          }
-        }
-      });
-      if(view.linked_to !== "") {
-        view.instance = true
-      }
-
-      this.currentSection = view;
-      this.savedView = view;
-      this.isSideBarOpen = true;
-	  this.$nextTick(() => {
-		this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
-		this.resizeData.resizeTarget = this.$refs.resizeTarget;
-		setTimeout(() => {
-		  if (this.$refs.resizeTarget) {
-			this.$refs.resizeTarget.scrollTo({
-			  top: 0
-			});
+      if (this.isSideBarOpen !== true) {
+		this.types.map((type) => {
+		  if(view.type === "configurable") {
+			if (type.name.split(":")[1] === view.name) {
+			  view.fields = type.fields;
+			  view.multiple = type.multiple;
+			  view.application_id = type.application_id;
+			  if (type.dynamic_options) {
+				view.dynamic_options = true;
+			  }
+			}
+		  } else {
+			if (type.name === view.name) {
+			  view.fields = type.fields;
+			  view.multiple = type.multiple;
+			  if (type.dynamic_options) {
+				view.dynamic_options = true;
+			  }
+			}
 		  }
-		}, 600);
-		window.addEventListener("mousemove", this.onMouseMove);
-		window.addEventListener("mouseup", this.stopTracking);
-	  })
+		});
+		if(view.linked_to !== "") {
+		  view.instance = true
+		}
+
+		this.currentSection = view;
+		this.savedView = view;
+		this.isSideBarOpen = true;
+		this.$nextTick(() => {
+		  this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+		  this.resizeData.resizeTarget = this.$refs.resizeTarget;
+		  setTimeout(() => {
+			if (this.$refs.resizeTarget) {
+			  this.$refs.resizeTarget.scrollTo({
+				top: 0
+			  });
+			}
+		  }, 600);
+		  window.addEventListener("mousemove", this.onMouseMove);
+		  window.addEventListener("mouseup", this.stopTracking);
+		})
+	  } else if (this.currentSection.name !== view.name) {
+		this.showToast(
+			 "Edit",
+			 "error",
+			 this.$t("editingSection")
+		);
+	  }
+	  this.updatedVariations = JSON.parse(
+		   JSON.stringify(this.displayVariations)
+	  );
     },
     restoreVariations() {
       this.displayVariations = JSON.parse(
@@ -3579,15 +3646,16 @@ export default {
 	  this.$set(
 		   this.displayVariations[this.selectedVariation].views,
 		   this.currentSection.id,
-		   this.originalVariations[this.selectedVariation].views[this.currentSection.id]
+		   this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
 	  );
-	  this.originalVariations = JSON.parse(
+	  this.updatedVariations = JSON.parse(
 		   JSON.stringify(this.displayVariations)
 	  );
-	  if (this.displayVariations[this.selectedVariation].views[this.currentSection.id] === undefined) {
-		delete this.displayVariations[this.selectedVariation].views[this.currentSection.id]
-	  }
 	  this.currentViews = this.displayVariations[this.selectedVariation].views;
+	},
+	registeredPage(type) {
+	  let path = `/page_components/${type}`
+	  return importComp(path);
 	}
   }
 }
@@ -3751,6 +3819,7 @@ button svg {
 .section-creation {
   text-align: -webkit-right;
   background: #adadad;
+  height: 40px;
 }
 
 .section-delete-icon {
@@ -3873,6 +3942,9 @@ span.handle {
 .modalContainer .section-item.active {
   margin: 10px 0px;
   border: 1px solid #31a9db;
+}
+.modalContainer .section-item.inactive {
+  border: 1px solid #adadad;
 }
 .modalContainer .section-item .section-item-title {
   font-size: 16px;

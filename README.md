@@ -1088,6 +1088,45 @@ html {
 ```
 
 
+## Lambda functions
+
+### Events emitted by the library
+
+* `page_pre_render`: When a page is loaded and about to be rendered, will contain the response from your section page as a payload
+
+### Callbacks you can implement
+
+Inside `sections/js/global-hooks.js`
+
+* `page_pre_load`: When a page is about to be loaded, it allows you to update the payload sent for the render page API request
+
+* `section_pre_render`: When a view section component is being picked up for rendering (before rendering), it allows you to change the view component before rendering it.
+The callback is expected to return the path of the new view component.
+
+```js
+const page_pre_load = (payload) => {
+    return payload
+}
+
+const section_pre_render = (payload) => {
+    return false
+}
+
+module.exports = {
+    page_pre_load,
+    section_pre_render
+};
+```
+
+### The following will require a specific component to be implemented in your project:
+
+Inside `sections/page_components/page_not_found.vue` or `sections/page_components/project_not_found.vue`
+
+The two below components allow you to change the default behavior of the library for the two cases described below
+
+* `page_not_found.vue`: When a page was not found or it was requested for a non existing project, will contain the page name and qs requested as a prop
+* `project_not_found.vue`: When a page was requested for a non existing project, will contain the page name and qs requested as a prop
+
 
 ## Development
 
