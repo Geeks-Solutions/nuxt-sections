@@ -1094,13 +1094,14 @@ html {
 
 * `page_pre_render`: When a page is loaded and about to be rendered, will contain the response from your section page as a payload
 
-### Functions you can call
+### Callbacks you can implement
 
 Inside `sections/js/global-hooks.js`
 
-* `page_pre_load`: When a page is about to be loaded, it allow you to update the payload sent for the render page API request
+* `page_pre_load`: When a page is about to be loaded, it allows you to update the payload sent for the render page API request
 
-* `section_pre_render`: When a view section component is being picked up for rendering (before rendering), it allow to change the view component before rendering it
+* `section_pre_render`: When a view section component is being picked up for rendering (before rendering), it allows you to change the view component before rendering it.
+The callback is expected to return the path of the new view component.
 
 ```js
 const page_pre_load = (payload) => {
