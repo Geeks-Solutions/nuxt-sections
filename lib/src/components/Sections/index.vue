@@ -692,7 +692,7 @@
 				<div class="section-view relativeSections">
 				  <div
 					   class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
-					   v-if="admin && editMode"
+					   v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true"
 				  >
 					<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
 					  <AlertIcon />
@@ -708,6 +708,9 @@
 					  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 					</div>
 				  </div>
+          <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
+            <SettingsIcon :color="'currentColor'" class="settings-icon" />
+          </div>
 				  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
 					<div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
 					  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
@@ -769,7 +772,7 @@
 						<div class="section-view relativeSections">
 						  <div
 							   class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-							   v-if="admin && editMode"
+							   v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true"
 						  >
 							<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
 							  <AlertIcon />
@@ -785,6 +788,9 @@
 							  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 							</div>
 						  </div>
+              <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute">
+                <SettingsIcon :color="'currentColor'" class="settings-icon" />
+              </div>
 						  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
 							<div v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight" class="error-section-loaded">
 							  {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
@@ -1351,7 +1357,8 @@ export default {
 	  },
 	  errorResponseStatus: 0,
 	  errorRegisteredPage: '',
-	  errorResponseData: null
+	  errorResponseData: null,
+      sectionOptions: {}
     }
   },
   computed: {
@@ -1675,6 +1682,8 @@ export default {
 		} else {
 		  views["test"] = section;
 		}
+
+    this.sectionOptions[section.id] = false
 
 		if (section.error || (section.settings === null || section.settings === undefined)) {
 		  this.errorInViews = true;
@@ -3350,6 +3359,9 @@ export default {
         this.$t('revertPageSuccess')
       );
     },
+    toggleSectionsOptions(viewId) {
+      this.$set(this.sectionOptions, viewId, !this.sectionOptions[viewId])
+    },
     deleteView(id) {
       if (this.selectedVariation === this.pageName) {
         // We check if there are variations that contains a section linked to the one we are about to delete
@@ -3692,7 +3704,14 @@ export default {
 .section-view .controls {
   background: #f5f5f5;
   position: absolute !important;
-  right: 10px !important;
+  right: 45px !important;
+  top: 10px;
+  z-index: 50 !important;
+}
+.section-view .controls.optionsSettings {
+  background: #f5f5f5;
+  position: absolute !important;
+  right: 8px !important;
   top: 10px;
   z-index: 50 !important;
 }
@@ -3700,6 +3719,13 @@ export default {
   cursor: pointer;
   width: 40px;
   height: 40px;
+  color: #31a9db;
+  margin: 3px;
+}
+.section-view .controls svg.settings-icon {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
   color: #31a9db;
   margin: 3px;
 }

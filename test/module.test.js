@@ -37,6 +37,33 @@ describe('SectionsMain', () => {
   //   computeLayoutDataSpy.mockRestore()
   // })
 
+  let controlsWrapper;
+
+  beforeEach(() => {
+    controlsWrapper = shallowMount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          cname: true
+        }
+      },
+      propsData: {
+        admin: true
+      },
+      data() {
+        return {
+          editMode: true,
+          sectionOptions: {}, // Mock initial state
+          view: { id: 'view-id', name: 'section1', weight: 1, type: 'text' }, // Mock view object
+          currentViews: [
+            { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+            { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
+          ]
+        };
+      },
+    });
+  });
+
   it('addSectionType function should set section.weight if it is null, "null", or undefined', () => {
     const wrapper = shallowMount(SectionsMain, {
       mocks: {
@@ -126,6 +153,69 @@ describe('SectionsMain', () => {
       top: 300,
       behavior: 'smooth',
     });
+  });
+
+
+  it('renders a SettingsIcon for each view', () => {
+    // Find all instances of the SettingsIcon
+    const settingsIcons = controlsWrapper.findAll('.settings-icon-wrapper');
+    expect(settingsIcons.length).toBe(2); // Assert there are two icons (one per view)
+  });
+
+  it('toggles sectionOptions for the correct view when SettingsIcon is clicked', async () => {
+    // Initialize sectionOptions
+    controlsWrapper.setData({
+      sectionOptions: {
+        'view-1': false,
+        'view-2': false,
+      },
+    });
+
+    // Find the SettingsIcon for the first view and click it
+    const firstSettingsIcon = controlsWrapper.findAll('.settings-icon-wrapper').at(0);
+    await firstSettingsIcon.trigger('click');
+
+    // Assert that sectionOptions for 'view-1' is toggled
+    expect(controlsWrapper.vm.sectionOptions['view-1']).toBe(true);
+    // Assert that sectionOptions for 'view-2' is unchanged
+    expect(controlsWrapper.vm.sectionOptions['view-2']).toBe(false);
+
+    // Find the SettingsIcon for the second view and click it
+    const secondSettingsIcon = controlsWrapper.findAll('.settings-icon-wrapper').at(1);
+    await secondSettingsIcon.trigger('click');
+
+    // Assert that sectionOptions for 'view-2' is toggled
+    expect(controlsWrapper.vm.sectionOptions['view-2']).toBe(true);
+    // Assert that sectionOptions for 'view-1' remains unchanged
+    expect(controlsWrapper.vm.sectionOptions['view-1']).toBe(true); // Remains true from the earlier toggle
+  });
+
+  it('renders controls div only for the view with sectionOptions set to true', async () => {
+    // Set sectionOptions for only the first view
+    controlsWrapper.setData({
+      sectionOptions: {
+        'view-1': true,
+        'view-2': false,
+      },
+    });
+
+    // Assert that the controls div is rendered for the first view
+    const controls = controlsWrapper.findAll('.controls');
+    expect(controls.length).toBe(2);
+    expect(controls.at(0).element.closest('section').id).toBe('section1-view-1');
+
+    // Set sectionOptions for only the second view
+    await controlsWrapper.setData({
+      sectionOptions: {
+        'view-1': false,
+        'view-2': true,
+      },
+    });
+
+    // Assert that the controls div is now rendered for the second view
+    const updatedControls = controlsWrapper.findAll('.controls');
+    expect(updatedControls.length).toBe(3);
+    expect(updatedControls.at(0).element.closest('section').id).toBe('section1-view-1');
   });
 
 })
