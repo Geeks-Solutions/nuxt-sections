@@ -15,5 +15,6 @@ module.exports = {
   },
   collectCoverage: true,
   collectCoverageFrom: [],
-  testEnvironment: 'jsdom'
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['./jest.setup.js'],
 }
