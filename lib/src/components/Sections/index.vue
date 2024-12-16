@@ -2803,7 +2803,7 @@ export default {
           `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
         let payload = {}
-		
+
 		let language = undefined
 		try {
 		  if (this.$i18n.locale !== this.$i18n.defaultLocale) {
@@ -2907,7 +2907,7 @@ export default {
             return;
           }
         }
-        if (section.weight === null || section.weight === "null") {
+        if (section.weight === null || section.weight === "null" || section.weight === undefined) {
           section.weight = Object.keys(
             this.displayVariations[this.selectedVariation].views
           ).length;
