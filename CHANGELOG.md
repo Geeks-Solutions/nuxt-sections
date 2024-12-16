@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Weight problem for local sections #102 
+- Weight problem for local sections #102
+
+- Automatic scroll to the section when clicking to edit it #94 
 
 
 ### [1.0.13] - 2024-11-11

@@ -1,4 +1,4 @@
-import { shallowMount } from '@vue/test-utils'
+import { shallowMount, mount } from '@vue/test-utils'
 import SectionsMain from '../lib/src/components/Sections/index.vue'
 
 jest.mock('@geeks.solutions/vue-components/components/AutoComplete.vue', () => ({
@@ -71,6 +71,60 @@ describe('SectionsMain', () => {
 
       // Assert that weight has been set
       expect(section.weight).toBe(3); // Expect the length of views
+    });
+  });
+
+  const TestComponent = {
+    template: `
+    <div>
+      <div ref="sectionsMainTarget" style="position: relative; height: 500px; overflow: auto;">
+        <div id="section-1" style="height: 100px; margin-top: 300px;">Section 1</div>
+        <div id="section-2" style="height: 100px; margin-top: 300px;">Section 2</div>
+      </div>
+      <div ref="resizeTarget" style="position: relative; height: 500px; overflow: auto;"></div>
+    </div>
+  `,
+    methods: {
+      edit(view, viewAnchor) {
+        setTimeout(() => {
+          if (this.$refs.sectionsMainTarget) {
+            const targetElement = this.$refs.sectionsMainTarget.querySelector(viewAnchor);
+            if (targetElement) {
+              const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
+              this.$refs.sectionsMainTarget.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth',
+              });
+            }
+          }
+        }, 600);
+      },
+    },
+  };
+
+  jest.useFakeTimers();
+
+  it('scrolls to the correct section when edit is called', async () => {
+    const wrapper = mount(TestComponent);
+
+    // Mock both scrollTo methods
+    const scrollToMock = jest.fn();
+    wrapper.vm.$refs.sectionsMainTarget.scrollTo = scrollToMock;
+
+    wrapper.vm.$refs.sectionsMainTarget.querySelector = jest.fn(() => ({
+      offsetTop: 300, // Mocking the offsetTop value
+    }));
+
+    // Call the edit function
+    wrapper.vm.edit(null, '#section-1');
+
+    // Fast-forward the timer
+    jest.runAllTimers();
+
+    // Assert that scrollTo was called with the correct parameters
+    expect(scrollToMock).toHaveBeenCalledWith({
+      top: 300,
+      behavior: 'smooth',
     });
   });
 

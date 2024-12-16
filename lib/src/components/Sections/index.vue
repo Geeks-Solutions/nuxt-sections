@@ -74,7 +74,7 @@
 		 @mousedown="startTracking"
 		 data-target="aside"
 	></div>
-	<main class="sections-main">
+	<main ref="sectionsMainTarget" class="sections-main">
 	  <div class="sections-config sections-justify-center">
 		<div v-if="!pageNotFound">
 		  <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
@@ -697,7 +697,7 @@
 					<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
 					  <AlertIcon />
 					</div>
-					<div @click="edit(view)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+					<div @click="edit(view, view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
 					  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
 					</div>
 					<DragIcon class="drag-icon handle" />
@@ -774,7 +774,7 @@
 							<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
 							  <AlertIcon />
 							</div>
-							<div @click="edit(view); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+							<div @click="edit(view, view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
 							  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
 							</div>
 							<DragIcon class="drag-icon handle" />
@@ -3273,7 +3273,7 @@ export default {
         this.mutateVariation(variation.pageName);
       });
     },
-    edit(view) {
+    edit(view, viewAnchor) {
       if (this.isSideBarOpen !== true) {
 		this.types.map((type) => {
 		  if(view.type === "configurable") {
@@ -3315,6 +3315,18 @@ export default {
 		  window.addEventListener("mousemove", this.onMouseMove);
 		  window.addEventListener("mouseup", this.stopTracking);
 		})
+        setTimeout(() => {
+          if (this.$refs.sectionsMainTarget) {
+            const targetElement = this.$refs.sectionsMainTarget.querySelector(viewAnchor);
+            if (targetElement) {
+              const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
+              this.$refs.sectionsMainTarget.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth'
+              });
+            }
+          }
+        }, 600);
 	  } else if (this.currentSection.name !== view.name) {
 		this.showToast(
 			 "Edit",
