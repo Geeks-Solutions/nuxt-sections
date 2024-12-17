@@ -48,7 +48,14 @@ describe('SectionsMain', () => {
         }
       },
       propsData: {
-        admin: true
+        admin: true,
+        isModalOpen: true,
+        currentSection: false,
+        isCreateInstance: false,
+        typesTab: 'types',
+        sectionsFilterName: '',
+        sectionsFilterAppName: '',
+        appNames: []
       },
       data() {
         return {
@@ -216,6 +223,59 @@ describe('SectionsMain', () => {
     const updatedControls = controlsWrapper.findAll('.controls');
     expect(updatedControls.length).toBe(3);
     expect(updatedControls.at(0).element.closest('section').id).toBe('section1-view-1');
+  });
+
+  it('shows input and select filters for all tabs', async () => {
+
+    const tabsWrapper = shallowMount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          cname: true
+        }
+      },
+      propsData: {
+        admin: true
+      },
+      data() {
+        return {
+          editMode: true,
+          pageNotFound: false,
+          isModalOpen: true,
+          currentSection: false,
+          isCreateInstance: false,
+          typesTab: 'types',
+          sectionsFilterName: '',
+          sectionsFilterAppName: '',
+          appNames: ['sections'],
+          sectionOptions: {}, // Mock initial state
+          view: { id: 'view-id', name: 'section1', weight: 1, type: 'text' }, // Mock view object
+          currentViews: [
+            { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+            { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
+          ]
+        };
+      },
+    });
+
+    const tabs = ['types', 'globalTypes', 'inventoryTypes'];
+
+    for (const tab of tabs) {
+      // Set the active tab
+      await tabsWrapper.setData({ typesTab: tab });
+
+      // Assert input field is visible
+      const inputFilter = tabsWrapper.find('input.sectionsFilterName');
+      expect(inputFilter.exists()).toBe(true);
+
+      // Assert select dropdown is visible
+      const selectFilter = tabsWrapper.find('select#select');
+      expect(selectFilter.exists()).toBe(true);
+
+      // Assert the "clear filters" text is visible
+      const clearFilters = tabsWrapper.find('.slot-name');
+      expect(clearFilters.exists()).toBe(true);
+    }
   });
 
 })

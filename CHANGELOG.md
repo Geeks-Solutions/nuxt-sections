@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - For each section in admin & editMode a small button on the right and when clicking on it the edit options shows for the section #95
 
+- Filter management for the different section tabs #68
+
 
 ### [1.0.13] - 2024-11-11
 

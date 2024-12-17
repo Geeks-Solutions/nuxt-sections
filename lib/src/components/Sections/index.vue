@@ -138,7 +138,7 @@
             "
 			  >
 				<div class="btn-icon plus-icon"><PlusIcon /></div>
-				<div class="btn-text">{{ $t("AddGlobal") }}</div>
+				<div class="btn-text">{{ $t("createGlobal") }}</div>
 			  </button>
 			  <button class="hp-button" @click="saveVariation">
 				<div class="btn-icon check-icon"><CheckIcon /></div>
@@ -235,19 +235,43 @@
 			<div class="flexSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
 			  <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl">
 				<div class="flexSections sections-flex-row relativeSections sections-justify-center">
-				  <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center" v-if="!currentSection && isCreateInstance === false">
-					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
-					  {{ $t("availableSections") }}
-					</div>
-					<div class="sections-text-center h2 sections-px-4">/</div>
-					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'globalTypes'">
-					  {{ $t("AddGlobal") }}
-					</div>
-					<div class="sections-text-center h2 sections-px-4">/</div>
-					<div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'inventoryTypes'">
-					  {{ $t("typeInventory") }}
-					</div>
-				  </div>
+				  <div v-if="!currentSection && isCreateInstance === false" class="flexSections sections-flex-col sections-my-3 sections-pb-6 sections-gap-4">
+            <div class="flexSections sections-flex-row sections-justify-center">
+              <div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
+                {{ $t("availableSections") }}
+              </div>
+              <div class="sections-text-center h2 sections-px-4">/</div>
+              <div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'globalTypes'">
+                {{ $t("AddGlobal") }}
+              </div>
+              <div class="sections-text-center h2 sections-px-4">/</div>
+              <div class="sections-text-center h2 sections-cursor-pointer" :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''" @click="typesTab = 'inventoryTypes'">
+                {{ $t("typeInventory") }}
+              </div>
+            </div>
+            <div class="flexSections sections-flex-row sections-gap-4">
+              <input
+                class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none sectionsFilterName"
+                type="text"
+                :placeholder="$t('filterName')"
+                v-model="sectionsFilterName"
+              />
+              <div class="relativeSections">
+                <select v-model="sectionsFilterAppName" id="select" name="select" class="layoutSelect-select">
+                  <option disabled value="" class="sections-text-FieldGray">{{ `-- ${$t('Select app name')} --` }}</option>
+                  <option v-for="appName in appNames.filter((item, index) => appNames.indexOf(item) === index)" :value="appName">{{ appName }}</option>
+                </select>
+                <div class="layoutSelect-arrow-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M10 12L5 7h10l-5 5z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="slot-name" @click="clearSectionsFilters">
+                {{ $t('filterClear') }}
+              </div>
+            </div>
+          </div>
 				  <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center" v-else-if="!currentSection && isCreateInstance === true">
 					<div class="sections-text-center h2 sections-cursor-pointer selectSectionType">
 					  {{ $t("selectSectionType") }}
@@ -268,7 +292,7 @@
 				<div v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true" class="sections-m-1 sections-p-1 type-items content-wrapper">
 				  <div
 					   class="section-item section-item-box"
-					   v-for="(type, index) in typesTab === 'types' ? types.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : types.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
+					   v-for="(type, index) in typesTab === 'types' ? filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
 					   :key="type.name"
 				  >
 					<div v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
@@ -331,9 +355,20 @@
 				  </div>
 				</div>
 				<div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)" class="m-1 p-1 type-items content-wrapper">
-				  <div
+          <div v-if="isCreateInstance === false && globalTypes.filter(gt => gt.notCreated !== true).length === 0 && loading === false">
+            <button
+              class="hp-button"
+              @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
+            "
+            >
+              <div class="btn-icon plus-icon"><PlusIcon /></div>
+              <div class="btn-text">{{ $t("createGlobal") }}</div>
+            </button>
+          </div>
+          <div
 					   class="section-item section-item-box"
-					   v-for="(type, index) in isCreateInstance === true ? globalTypes.filter(gt => gt.notCreated === true) : globalTypes.filter(gt => gt.notCreated !== true)"
+					   v-for="(type, index) in isCreateInstance === true ? filteredGlobalTypes.filter(gt => gt.notCreated === true) : filteredGlobalTypes.filter(gt => gt.notCreated !== true)"
 					   :key="`${type.name}-${index}`"
 				  >
 					<div v-if="type.type === 'local' || getComponent(type && type.section ? type.section.name : type.name, type.type, true).settings || getComponent(type && type.section ? type.section.name : type.name, type.type, true).render_data" :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
@@ -349,7 +384,8 @@
 						<InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`" class="info-icon-style" />
 					  </div>
 					</div>
-					<div class="section-item" :class="{active: type.notCreated !== true}" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
+            <div v-else-if="isCreateInstance === true" class="section-top-separator"></div>
+					<div class="section-item" :class="{active: type.notCreated !== true || isCreateInstance === true}" @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
 					  <SectionItem
 						   v-if="type.name"
 						   class="bg-light-blue"
@@ -359,6 +395,9 @@
 						   :active="true"
 					  />
 					</div>
+            <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.type !== 'local'" class="flexSections sections-pl-2 sections-pb-1" style="font-size: 10px;">
+              {{ $t('by') + type.application }}
+            </div>
 				  </div>
 				</div>
 				<div v-else class="flexSections">
@@ -708,7 +747,7 @@
 					  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 					</div>
 				  </div>
-          <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
+          <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute">
             <SettingsIcon :color="'currentColor'" class="settings-icon" />
           </div>
 				  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -1358,7 +1397,10 @@ export default {
 	  errorResponseStatus: 0,
 	  errorRegisteredPage: '',
 	  errorResponseData: null,
-      sectionOptions: {}
+      sectionOptions: {},
+      sectionsFilterName: '',
+      sectionsFilterAppName: '',
+      appNames: []
     }
   },
   computed: {
@@ -1418,7 +1460,33 @@ export default {
 	  } catch {
 		return []
 	  }
-	}
+	},
+    filteredTypes() {
+      return this.types.filter(item => {
+        const nameMatch = this.sectionsFilterName
+          ? item.name.toLowerCase().includes(this.sectionsFilterName.toLowerCase())
+          : true;
+
+        const appNameMatch = this.sectionsFilterAppName
+          ? item.application && item.application.toLowerCase().includes(this.sectionsFilterAppName.toLowerCase())
+          : true;
+
+        return nameMatch && appNameMatch;
+      });
+    },
+    filteredGlobalTypes() {
+      return this.globalTypes.filter(item => {
+        const nameMatch = this.sectionsFilterName
+          ? item.name.toLowerCase().includes(this.sectionsFilterName.toLowerCase())
+          : true;
+
+        const appNameMatch = this.sectionsFilterAppName
+          ? item.application && item.application.toLowerCase().includes(this.sectionsFilterAppName.toLowerCase())
+          : true;
+
+        return nameMatch && appNameMatch;
+      });
+    }
   },
   mounted() {
     if(this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
@@ -2642,12 +2710,15 @@ export default {
                 type: this.types.find(t => t.name === d.section.name) ? this.types.find(t => t.name === d.section.name).type : undefined,
                 query_string_keys: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).query_string_keys ? this.types.find(t => t.name === d.section.name).query_string_keys : undefined,
                 fields: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).fields ? this.types.find(t => t.name === d.section.name).fields : undefined,
-                dynamic_options: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).dynamic_options ? this.types.find(t => t.name === d.section.name).dynamic_options : undefined
+                dynamic_options: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).dynamic_options ? this.types.find(t => t.name === d.section.name).dynamic_options : undefined,
+                application: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).application ? this.types.find(t => t.name === d.section.name).application : undefined,
               });
             });
             this.types.forEach(type => {
               this.globalTypes.push({
                 name: type.name,
+                type: type.type,
+                application: type.application,
                 notCreated: true
               })
             })
@@ -2679,6 +2750,7 @@ export default {
         return;
       }
       this.loading = true;
+      this.appNames = []
       const token = this.$cookies.get("sections-auth-token");
       const config = {
         headers: sectionHeader({
@@ -2691,6 +2763,9 @@ export default {
         .get(url, config)
         .then((res) => {
           res.data.data.map((d) => {
+            if (d.application) {
+              this.appNames.push(d.application)
+            }
             this.trackSectionComp(d.name, d.type);
             this.types.push({
               name: d.name,
@@ -3680,7 +3755,11 @@ export default {
 	registeredPage(type) {
 	  let path = `/page_components/${type}`
 	  return importComp(path);
-	}
+	},
+    clearSectionsFilters() {
+      this.sectionsFilterName = ''
+      this.sectionsFilterAppName = ''
+    },
   }
 }
 </script>
@@ -4745,6 +4824,10 @@ span.handle {
   background-color: #C2C2C2;
 }
 
+.sections-text-FieldGray {
+  color: #C2C2C2;
+}
+
 .sections-h-48px {
   height: 48px;
 }
@@ -4913,5 +4996,10 @@ span.handle {
   padding-top: 4px;
   color: rgb(216, 42, 42);
   font-size: 14px;
+}
+
+.section-modal-content .sectionsFilterName {
+  height: 38px;
+  width: 200px;
 }
 </style>
