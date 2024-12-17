@@ -747,7 +747,7 @@
 					  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 					</div>
 				  </div>
-          <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute">
+          <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
             <SettingsIcon :color="'currentColor'" class="settings-icon" />
           </div>
 				  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -827,7 +827,7 @@
 							  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 							</div>
 						  </div>
-              <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute">
+              <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
                 <SettingsIcon :color="'currentColor'" class="settings-icon" />
               </div>
 						  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -965,7 +965,7 @@
 							</div>
 						  </div>
 						</div>
-						<div v-if="$sections.cname === 'active'">
+						<div>
 						  <div class="sections-mt-2 sectionsFieldsLabels">
 							{{ $t('CSS') }}
 						  </div>
@@ -1681,6 +1681,7 @@ export default {
 		  }
 		})
 	  });
+    this.sectionOptions = {...this.sectionOptions}
 	  this.$set(this.displayVariations, this.activeVariation.pageName, {
 		name: this.activeVariation.pageName,
 		views: { ...views },
@@ -2416,12 +2417,20 @@ export default {
         base_path: this.pagePath
       };
 
+      let language = undefined
+      try {
+        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
+          language = this.$i18n.locale
+        }
+      } catch {}
+
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
         if (gt.query_string_keys && gt.query_string_keys.length > 0) {
           variables["query_string"] = {
             ...variables["query_string"],
-            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode)
+            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode),
+            language
           }
         }
       }
@@ -2499,12 +2508,20 @@ export default {
         base_path: this.pagePath
       };
 
+      let language = undefined
+      try {
+        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
+          language = this.$i18n.locale
+        }
+      } catch {}
+
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
         if (gt.query_string_keys && gt.query_string_keys.length > 0) {
           variables["query_string"] = {
             ...variables["query_string"],
-            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode)
+            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode),
+            language
           }
         }
       }
@@ -2957,10 +2974,21 @@ export default {
           base_path: this.pagePath
       }
 
+      let language = undefined
+      try {
+        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
+          language = this.$i18n.locale
+        }
+      } catch {}
+
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
         if (data.qs) {
           variables["query_string"] = { ...variables["query_string"], ...data.qs}
+        }
+        variables["query_string"] = {
+          ...variables["query_string"],
+          language
         }
       }
 

@@ -279,3 +279,111 @@ describe('SectionsMain', () => {
   });
 
 })
+
+describe('render call has language sent in qs when the condition is met', () => {
+  let wrapper;
+  let mockAxios;
+
+  beforeEach(() => {
+    mockAxios = {
+      post: jest.fn(() => Promise.resolve({ data: {} })),
+    };
+
+    wrapper = shallowMount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          serverUrl: 'https://mock.server',
+          projectId: 'mockProjectId',
+          queryStringSupport: 'enabled',
+        },
+        $axios: mockAxios,
+        $i18n: {
+          locale: 'fr',
+          defaultLocale: 'en',
+        },
+        $route: {
+          query: jest.fn(),
+          params: {
+            pathMatch: jest.fn()
+          }
+        },
+        sectionHeader: jest.fn().mockReturnValue({}),
+        parseQS: jest.fn((path, hasQuery, query) => ({ path, hasQuery, query })),
+        validateQS: jest.fn((queryString, keys, editMode) => ({ validated: true })),
+      },
+      propsData: {},
+    });
+  });
+
+  it('includes query_string and language in variables when queryStringSupport is enabled', async () => {
+    const gt = {
+      section: {
+        name: 'testSection',
+      },
+      query_string_keys: ['key1', 'key2'],
+    };
+    const options = { option1: true };
+
+    await wrapper.vm.renderConfigurableSection(gt, options);
+
+    // Assert axios.post is called with the correct URL and variables
+    expect(mockAxios.post).toHaveBeenCalledWith(
+      'https://mock.server/project/mockProjectId/section/render',
+      expect.objectContaining({
+        query_string: expect.objectContaining({
+          language: 'fr', // Assert language is included
+        }),
+      }),
+      expect.any(Object) // headers/config
+    );
+  });
+
+  it('does not include query_string if queryStringSupport is disabled', async () => {
+    wrapper.vm.$sections.queryStringSupport = 'disabled';
+
+    const gt = {
+      section: {
+        name: 'testSection',
+      },
+      query_string_keys: [],
+    };
+    const options = { option1: true };
+
+    await wrapper.vm.renderConfigurableSection(gt, options);
+
+    // Assert axios.post is called without query_string in variables
+    expect(mockAxios.post).toHaveBeenCalledWith(
+      'https://mock.server/project/mockProjectId/section/render',
+      expect.not.objectContaining({
+        query_string: expect.any(Object),
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('does not include language if locale matches defaultLocale', async () => {
+    wrapper.vm.$i18n.locale = 'en'; // Set to default locale
+
+    const gt = {
+      section: {
+        name: 'testSection',
+      },
+      query_string_keys: ['key1', 'key2'],
+    };
+    const options = { option1: true };
+
+    await wrapper.vm.renderConfigurableSection(gt, options);
+
+    // Assert axios.post is called with query_string but no language
+    expect(mockAxios.post).toHaveBeenCalledWith(
+      'https://mock.server/project/mockProjectId/section/render',
+      expect.objectContaining({
+        query_string: expect.not.objectContaining({
+          language: expect.any(String),
+        }),
+      }),
+      expect.any(Object)
+    );
+  });
+});

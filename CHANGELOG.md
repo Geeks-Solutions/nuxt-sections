@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Settings popup for the page to read project metadata and apply custom css #70
 
+- query string to include language when it is not the default one when rendering a section #101
+
 
 ### [1.0.13] - 2024-11-11
 
