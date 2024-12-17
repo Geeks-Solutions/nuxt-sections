@@ -962,81 +962,15 @@
 								   type="text"
 								   v-model="pageMetadata[metadataFormLang].description"
 							  />
-							  <div v-if="$sections.cname === 'active'" class="sections-mt-2 sectionsFieldsLabels">
-								{{ $t("sectionsLanguages") }}
-							  </div>
-							  <div v-if="$sections.cname === 'active'" class="sections-border sections-border-FieldGray rounded-xl overflow-y-scroll overflow-visible sections-mt-2">
-								<div v-for="(language, i) in supportedLanguages" :key="language.id">
-								  <div :class="[isSelectedLang(language.id) ? 'sections-bg-FieldGray sections-pl-4 sections-p-2 sections-cursor-pointer' : 'sections-pl-4 sections-p-2 sections-cursor-pointer', i === 0 ? 'sections-borders-top' : 'sections-borders-bottom']" @click="toggleLanguageSelection(language.id)">{{ language.label }}</div>
-								</div>
-							  </div>
-							  <div v-if="$sections.cname === 'active'" class="flexSections sections-mt-2 sections-flex-row">
-								<div class="sections-mt-2 sections-pr-3 sectionsFieldsLabels">
-								  {{ $t("activateCookieControl") }}
-								</div>
-								<input
-									 class="sections-checkbox"
-									 type="checkbox"
-									 v-model="pageMetadata['activateCookieControl']"
-								/>
-							  </div>
-							  <div v-if="pageMetadata['activateCookieControl'] === true">
-								<div class="sections-mt-2 sectionsFieldsLabels">
-								  {{ $t("gtmId")+'*' }}
-								</div>
-								<input
-									 class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
-									 type="text"
-									 v-model="pageMetadata['gtmId']"
-								/>
-							  </div>
 							</div>
 						  </div>
 						</div>
 						<div v-if="$sections.cname === 'active'">
-						  <div class="flexSections metadata-media sections-flex-row sections-gap-4">
-							<div class="sections-mt-2 sectionsFieldsLabels">
-							  {{ $t("CSS") }}
-							</div>
-							<div
-								 v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name && pageMetadata['selectedCSSPreset'].name !== 'Other' && pageMetadata['selectedCSSPreset'].name !== 'None'"
-								 class="css-preset"
-								 @click="exportCSSFile(pageMetadata['selectedCSSPreset'])"
-							>
-							  {{ $t("Export CSS") }}
-							</div>
-						  </div>
-						  <AutoComplete
-							   :main-filter="pageMetadata['selectedCSSPreset']"
-							   :select-placeholder="$t('Presets')"
-							   :filter-label-prop="'name'"
-							   :filter-options="[
-									...computedCSSPreset || [],
-  								{
-  								    name: 'Other',
-  								    url: ''
-  								  },
-  								{
-  								    name: 'None',
-  								    url: ''
-  								  }
-							   ]"
-							   :filter-searchable="false"
-							   :track-by="'name'"
-							   :preselect-first="true"
-							   :multiple="false"
-							   @itemSelected="(val) => {$set(pageMetadata, 'selectedCSSPreset', val)}"
-						  ></AutoComplete>
-
-						  <div v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name === 'Other'" class="sections-mt-2 sectionsFieldsLabels">
-							{{ $t("mediaComponent.media") }}
-						  </div>
-						  <UploadMedia v-if="pageMetadata['selectedCSSPreset'] && pageMetadata['selectedCSSPreset'].name === 'Other'" :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []" @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')" @removeUploadedImage="removeMedia('media')" />
-						  <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
 						  <div class="sections-mt-2 sectionsFieldsLabels">
-							{{ $t("mediaComponent.favicon") }}
+							{{ $t('CSS') }}
 						  </div>
-						  <UploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['favicon'] && Object.keys(pageMetadata['favicon']).length > 0 ? [pageMetadata['favicon']] : []" @uploadContainerClicked="selectedMediaType = 'favicon'; $refs.sectionsMediaComponent.openModal(pageMetadata['favicon'] && Object.keys(pageMetadata['favicon']).length > 0 ? pageMetadata['favicon'].media_id : null)" @removeUploadedImage="removeMedia('favicon')" />
+						  <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')" :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')" :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []" @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')" @removeUploadedImage="removeMedia('media')" />
+						  <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
 						</div>
 					  </div>
 					</div>
@@ -1276,8 +1210,9 @@ export default {
         }
       ],
       link: [
-		this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other' && this.pageMetadata['selectedCSSPreset'].name !== 'None' ? { rel: 'stylesheet', href: this.pageMetadata['selectedCSSPreset'].url } : this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'None' && this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
-        this.pageMetadata['favicon'] && this.pageMetadata['favicon'].url ? { rel: 'icon', type: 'image/png', href: this.pageMetadata['favicon'].url } : {},
+		    this.projectMetadata['selectedCSSPreset'] && this.projectMetadata['selectedCSSPreset'].name && this.projectMetadata['selectedCSSPreset'].name !== 'Other' && this.projectMetadata['selectedCSSPreset'].name !== 'None' ? { rel: 'stylesheet', href: this.projectMetadata['selectedCSSPreset'].url } : this.projectMetadata['selectedCSSPreset'] && this.projectMetadata['selectedCSSPreset'].name && this.projectMetadata['selectedCSSPreset'].name !== 'None' && this.projectMetadata['media'] && this.projectMetadata['media'].url ? { rel: 'stylesheet', href: this.projectMetadata['media'].url } : {},
+		    this.pageMetadata['media'] && this.pageMetadata['media'].url ? { rel: 'stylesheet', href: this.pageMetadata['media'].url } : {},
+        this.projectMetadata['favicon'] && this.projectMetadata['favicon'].url ? { rel: 'icon', type: 'image/png', href: this.projectMetadata['favicon'].url } : {},
       ]
     }
   },
@@ -1345,6 +1280,7 @@ export default {
       pagePath: "",
       sectionsPageName: "",
       pageMetadata: {},
+      projectMetadata: {},
       metadataErrors: {
         path: [""]
       },
@@ -1501,29 +1437,8 @@ export default {
 	  this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
 	}
 
-	let hrefLink = ''
-	let link = ''
-	if (this.pageMetadata['selectedCSSPreset'] || this.pageMetadata['media']) {
-	  // Dynamically add the CSS file to the DOM after the component is mounted to insure the imported css styles override all other css styles
-	  link = document.createElement('link');
-	  link.rel = 'stylesheet';
-	}
-	if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'Other' && this.pageMetadata['selectedCSSPreset'].name !== 'None') {
-	  hrefLink = this.pageMetadata['selectedCSSPreset'].url;
-	  link.href = hrefLink
-	  document.head.appendChild(link);
-	} else if (this.pageMetadata['selectedCSSPreset'] && this.pageMetadata['selectedCSSPreset'].name && this.pageMetadata['selectedCSSPreset'].name !== 'None' && this.pageMetadata['media'] && this.pageMetadata['media'].url) {
-	  this.$set(this.pageMetadata, 'selectedCSSPreset', {
-		name: 'Other',
-		url: ''
-	  })
-	  hrefLink = this.pageMetadata['media'].url;
-	  link.href = hrefLink
-	  document.head.appendChild(link);
-	}
-
-	if (this.pageMetadata['activateCookieControl'] === true) {
-	  this.$nuxt.$emit('activateCookieControl', this.pageMetadata['gtmId'], true)
+	if (this.projectMetadata['activateCookieControl'] === true) {
+	  this.$nuxt.$emit('activateCookieControl', this.projectMetadata['gtmId'], true)
 	}
   },
   beforeDestroy() {
@@ -1670,12 +1585,9 @@ export default {
         }
       }
     }
-	if (this.pageMetadata['languages'] && this.pageMetadata['languages'].length > 0) {
+	if (this.projectMetadata && this.projectMetadata['languages'] && this.projectMetadata['languages'].length > 0) {
 	  this.locales = []
-	  this.locales = this.pageMetadata['languages']
-	} else {
-	  this.pageMetadata['languages'] = this.locales
-	  this.selectedLanguages = Array.from(this.locales)
+	  this.locales = this.projectMetadata['languages']
 	}
 	this.computeLayoutData()
   },
@@ -1704,23 +1616,26 @@ export default {
 		if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
 		if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
 	  }
-	  if (res.data.metadata.media) {
-		this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+	  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
+		this.$set(this.projectMetadata, 'media', res.data.metadata.project_metadata.media)
 	  }
-	  if (res.data.metadata.selectedCSSPreset) {
-		this.$set(this.pageMetadata, 'selectedCSSPreset', res.data.metadata.selectedCSSPreset)
+	  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.selectedCSSPreset) {
+		this.$set(this.projectMetadata, 'selectedCSSPreset', res.data.metadata.project_metadata.selectedCSSPreset)
 	  }
-	  if (res.data.metadata.favicon) {
-		this.$set(this.pageMetadata, 'favicon', res.data.metadata.favicon)
+	  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.favicon) {
+		this.$set(this.projectMetadata, 'favicon', res.data.metadata.project_metadata.favicon)
 	  }
-	  if (res.data.metadata.languages) {
-		this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
-		this.selectedLanguages = res.data.metadata.languages
+	  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
+		this.$set(this.projectMetadata, 'languages', res.data.metadata.project_metadata.languages)
+		this.selectedLanguages = res.data.metadata.project_metadata.languages
 	  }
-	  if (res.data.metadata.activateCookieControl === true) {
-		this.$set(this.pageMetadata, 'activateCookieControl', res.data.metadata.activateCookieControl, true)
-		this.$set(this.pageMetadata, 'gtmId', res.data.metadata.gtmId)
+	  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
+		this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
+		this.$set(this.projectMetadata, 'gtmId', res.data.metadata.project_metadata.gtmId)
 	  }
+    if (res.data.metadata.media) {
+      this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+    }
 	  this.computedTitle = this.pageMetadata[this.lang].title
 	  this.computedDescription = this.pageMetadata[this.lang].description
 	  const views = {};
@@ -1775,18 +1690,6 @@ export default {
 	  this.$emit("load", true);
 	  this.sectionsPageLastUpdated = res.data.last_updated;
 	},
-	isSelectedLang(id) {
-	  const index = this.selectedLanguages.indexOf(id)
-	  return index !== -1;
-	},
-	toggleLanguageSelection(id) {
-	  const index = this.selectedLanguages.indexOf(id)
-	  if(index === -1) {
-		this.selectedLanguages.push(id)
-	  } else if (this.selectedLanguages.length > 1) {
-		this.selectedLanguages.splice(index, 1)
-	  }
-	},
 	selectedCSS(mediaObject, mediaFieldName) {
 	  const media = {
 		media_id: "",
@@ -1809,15 +1712,6 @@ export default {
 	  this.pageMetadata[media] = {}
 	},
     updatePageMetaData() {
-      if (this.pageMetadata['activateCookieControl'] === true && (!this.pageMetadata['gtmId'] || this.pageMetadata['gtmId'] === '')) {
-        this.showToast(
-          "Error saving your changes",
-          "error",
-          this.$t('gtmIdRequired')
-        );
-        return;
-      }
-
       this.loading = true
       this.metadataErrors.path[0] = ''
 
@@ -1893,7 +1787,7 @@ export default {
       const variables = {
         page: this.sectionsPageName,
         path: pagePath,
-        metadata: {...this.pageMetadata, languages: this.selectedLanguages},
+        metadata: {...this.pageMetadata},
         variations: [],
         sections
       };
@@ -1911,20 +1805,6 @@ export default {
           this.sectionsPageLastUpdated = res.data.last_updated
           this.metadataModal = false
 		  this.metadataFormLang = this.$i18n.locale.toString()
-          if (res.data.metadata.languages) {
-            this.$set(this.pageMetadata, 'languages', res.data.metadata.languages)
-          }
-          if (res.data.metadata.activateCookieControl === true) {
-            this.$nuxt.$emit('activateCookieControl', res.data.metadata.gtmId, true)
-          } else {
-            this.$nuxt.$emit('activateCookieControl', res.data.metadata.gtmId, false)
-          }
-          if (this.pageMetadata['languages'] && this.pageMetadata['languages'].length > 0) {
-            this.locales = []
-            this.locales = this.pageMetadata['languages']
-          } else {
-            this.pageMetadata['languages'] = this.locales
-          }
           this.showToast(
             "Success",
             "success",
