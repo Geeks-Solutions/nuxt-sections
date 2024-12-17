@@ -249,16 +249,17 @@
                 {{ $t("typeInventory") }}
               </div>
             </div>
-            <div class="flexSections sections-flex-row sections-gap-4">
+            <div class="flexSections sections-items-center sections-flex-row sections-gap-4">
+              <div>{{ $t('filterBy') }}</div>
               <input
                 class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none sectionsFilterName"
                 type="text"
                 :placeholder="$t('filterName')"
                 v-model="sectionsFilterName"
               />
-              <div class="relativeSections">
+              <div v-if="typesTab !== 'inventoryTypes'" class="relativeSections">
                 <select v-model="sectionsFilterAppName" id="select" name="select" class="layoutSelect-select">
-                  <option disabled value="" class="sections-text-FieldGray">{{ `-- ${$t('Select app name')} --` }}</option>
+                  <option disabled value="" class="sections-text-FieldGray">{{ `-- ${$t('sectionsAppName')} --` }}</option>
                   <option v-for="appName in appNames.filter((item, index) => appNames.indexOf(item) === index)" :value="appName">{{ appName }}</option>
                 </select>
                 <div class="layoutSelect-arrow-icon">
@@ -267,7 +268,7 @@
                   </svg>
                 </div>
               </div>
-              <div class="slot-name" @click="clearSectionsFilters">
+              <div class="slot-name sections-cursor-pointer" @click="clearSectionsFilters">
                 {{ $t('filterClear') }}
               </div>
             </div>
@@ -1386,17 +1387,6 @@ export default {
       }
       return null;
     },
-	computedCSSPreset() {
-	  try {
-		if (Array.isArray(this.$sections.cssPreset)) {
-		  return this.$sections.cssPreset
-		} else {
-		  return JSON.parse(this.$sections.cssPreset.replace(/\\"/g, '"'))
-		}
-	  } catch {
-		return []
-	  }
-	},
     filteredTypes() {
       return this.types.filter(item => {
         const nameMatch = this.sectionsFilterName
@@ -3620,22 +3610,6 @@ export default {
 	stopTracking() {
 	  if (this.resizeData.tracking) {
 		this.resizeData.tracking = false;
-	  }
-	},
-	async exportCSSFile(file) {
-	  const response = await this.$axios.get(file.url, { responseType: 'blob' });
-
-	  if (response && response.data) {
-		const blob = response.data;
-		const url = window.URL.createObjectURL(blob);
-
-		const dlAnchorElem = document.getElementById('downloadAnchorElem');
-		dlAnchorElem.setAttribute("href", url);
-		dlAnchorElem.setAttribute("download", `${file.name}.css`);
-		dlAnchorElem.click();
-
-		// Clean up the URL object after the download
-		window.URL.revokeObjectURL(url);
 	  }
 	},
 	restoreSectionContent() {
