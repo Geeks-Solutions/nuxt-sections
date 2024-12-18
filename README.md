@@ -1118,6 +1118,96 @@ module.exports = {
 };
 ```
 
+* `page_pre_render`: When a page is loaded and about to be rendered, will contain the response from your section page as a payload, the sections array, your website domain name.
+  It allows you to update the sections that will be seen on your page based on the condition you choose.
+  Note: When adding a new section to the payload make sure to add this key/value pair to this new section `"altered": true`
+
+ex.: 
+
+```js
+// eslint-disable-next-line camelcase
+const page_pre_render = (payload, sections, websiteDomain) => {
+  if (websiteDomain === 'projectcnamenov.k8s-dev.geeks.solutions') {
+    if (payload.page && payload.page === '/') {
+      sections.push({
+        "error": null,
+        "id": "6760071f3253f40006f2acfe",
+        "name": "SimpleCTA",
+        "type": "static",
+        "settings": [
+          {
+            "fr": {
+              "link": "/fr/test",
+              "title": "FR This section is generated using the page_pre_render hook",
+              "subTitle": "FR page_pre_render HOOK",
+              "buttonLabel": "FR Submit test HOOK"
+            },
+            "en": {
+              "link": "/test",
+              "title": "This section is generated using the page_pre_render hook",
+              "subTitle": "page_pre_render HOOK",
+              "buttonLabel": "Submit test HOOK"
+            }
+          }
+        ],
+        "status_code": null,
+        "region": {},
+        "query_string_keys": null,
+        "render_data": "",
+        "linked_to": "",
+        "weight": 9,
+        "altered": true
+      })
+      return sections
+    } else if (payload.page && payload.page === 'test') {
+      if (sections.right) {
+        sections.right.push({
+          "error": null,
+          "id": "6760071f3253f40006f2acfe",
+          "name": "SimpleCTA",
+          "type": "static",
+          "settings": [
+            {
+              "fr": {
+                "link": "/fr/test",
+                "title": "FR This section is generated using the page_pre_render hook",
+                "subTitle": "FR page_pre_render HOOK",
+                "buttonLabel": "FR Submit test HOOK"
+              },
+              "en": {
+                "link": "/test",
+                "title": "This section is generated using the page_pre_render hook",
+                "subTitle": "page_pre_render HOOK",
+                "buttonLabel": "Submit test HOOK"
+              }
+            }
+          ],
+          "status_code": null,
+          "region": {
+            "top-right-left-bottom": {
+              "slot": "right",
+              "weight": 8
+            }
+          },
+          "query_string_keys": null,
+          "render_data": "",
+          "linked_to": "",
+          "weight": 9,
+          "altered": true
+        })
+      }
+      return sections
+    } else return null
+  }
+  return null
+}
+
+module.exports = {
+  page_pre_render
+};
+
+```
+
 ### The following will require a specific component to be implemented in your project:
 
 Inside `sections/page_components/page_not_found.vue` or `sections/page_components/project_not_found.vue`

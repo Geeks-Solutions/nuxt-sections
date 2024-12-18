@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update wysiwygs image with default alt and lazy loading #75 
 
+- page_pre_render hook #97
+
 ## [1.0.11] - 2024-10-16
 
 ### Fixed
