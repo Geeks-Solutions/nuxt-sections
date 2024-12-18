@@ -724,7 +724,7 @@
 			>
 			  <!-- <transition-group> -->
 			  <section
-				   v-for="(view, index) in currentViews"
+				   v-for="(view, index) in alteredViews"
 				   :key="index"
 				   :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
 				   :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
@@ -732,12 +732,12 @@
 				<div class="section-view relativeSections">
 				  <div
 					   class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
-					   v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true"
+					   v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
 				  >
 					<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
 					  <AlertIcon />
 					</div>
-					<div @click="edit(view, view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+					<div @click="edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
 					  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
 					</div>
 					<DragIcon class="drag-icon handle" />
@@ -748,7 +748,7 @@
 					  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 					</div>
 				  </div>
-          <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
+          <div v-if="admin && editMode && view.altered !== true" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
             <SettingsIcon :color="'currentColor'" class="settings-icon" />
           </div>
 				  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -803,7 +803,7 @@
 					>
 					  <!-- <transition-group> -->
 					  <section
-						   v-for="(view, index) in viewsPerRegions[slotName]"
+						   v-for="(view, index) in alteredViewsPerRegions[slotName]"
 						   v-if="view.region[selectedLayout].slot === slotName"
 						   :key="index"
 						   :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
@@ -812,12 +812,12 @@
 						<div class="section-view relativeSections">
 						  <div
 							   class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-							   v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true"
+							   v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
 						  >
 							<div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)" @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
 							  <AlertIcon />
 							</div>
-							<div @click="edit(view, view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+							<div @click="edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName" v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
 							  <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined" class="edit-icon" />
 							</div>
 							<DragIcon class="drag-icon handle" />
@@ -828,7 +828,7 @@
 							  <AnchorIcon :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`" class="edit-icon" />
 							</div>
 						  </div>
-              <div v-if="admin && editMode" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
+              <div v-if="admin && editMode && view.altered !== true" @click="toggleSectionsOptions(view.id)" class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
                 <SettingsIcon :color="'currentColor'" class="settings-icon" />
               </div>
 						  <div class="view-component" :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''" :style="{ background: viewsBgColor }">
@@ -1337,7 +1337,9 @@ export default {
       sectionOptions: {},
       sectionsFilterName: '',
       sectionsFilterAppName: '',
-      appNames: []
+      appNames: [],
+      sectionsWebsiteDomain: '',
+      pageData: null
     }
   },
   computed: {
@@ -1374,6 +1376,34 @@ export default {
           );
         }
       },
+    },
+    alteredViews() {
+      let alteredSections = null
+      let hooksJs = importJs(`/js/global-hooks`)
+      if (hooksJs['page_pre_render'] && this.pageData) {
+        if (typeof hooksJs['page_pre_render'] === 'function') {
+          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.currentViews)), this.sectionsWebsiteDomain)
+        }
+      }
+      if (alteredSections) {
+        return alteredSections
+      } else {
+        return this.currentViews
+      }
+    },
+    alteredViewsPerRegions() {
+      let alteredSections = null
+      let hooksJs = importJs(`/js/global-hooks`)
+      if (hooksJs['page_pre_render'] && this.pageData && this.viewsPerRegions && Object.keys(this.viewsPerRegions).length > 0) {
+        if (typeof hooksJs['page_pre_render'] === 'function') {
+          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.viewsPerRegions)), this.sectionsWebsiteDomain)
+        }
+      }
+      if (alteredSections) {
+        return alteredSections
+      } else {
+        return this.viewsPerRegions
+      }
     },
     id() {
       if (this.savedView.id) {
@@ -1474,6 +1504,7 @@ export default {
     } else {
       websiteDomain = this.$nuxt.context.req.headers.host
     }
+    this.sectionsWebsiteDomain = websiteDomain
 
     this.$sections.projectUrl = websiteDomain
 
@@ -1596,6 +1627,7 @@ export default {
 	initializeSections(res) {
 	  this.$nuxt.$emit('page_pre_render', res)
 	  const sections = res.data.sections;
+	  this.pageData = res.data;
 	  this.allSections = res.data.sections;
 	  this.pageId = res.data.id;
 	  this.pagePath = res.data.path;
@@ -2265,6 +2297,7 @@ export default {
         })
         this.layoutSlotNames.forEach(slotName => {
           this.viewsPerRegions[slotName] = []
+          this.alteredViewsPerRegions[slotName] = []
           views.forEach(view => {
             if (view.region[this.selectedLayout].slot === slotName) {
               this.viewsPerRegions[slotName].push(view)

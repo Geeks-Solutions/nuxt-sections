@@ -387,3 +387,82 @@ describe('render call has language sent in qs when the condition is met', () => 
     );
   });
 });
+
+
+describe('alteredViews computed property', () => {
+  let wrapper;
+  let mockImportJs;
+
+  beforeEach(() => {
+    mockImportJs = jest.fn();
+    wrapper = mount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          serverUrl: 'https://mock.server',
+          projectId: 'mockProjectId',
+          queryStringSupport: 'enabled',
+        },
+        $i18n: {
+          locale: 'fr',
+          defaultLocale: 'en',
+        },
+        $route: {
+          query: jest.fn(),
+          params: {
+            pathMatch: jest.fn()
+          }
+        },
+        sectionHeader: jest.fn().mockReturnValue({}),
+        parseQS: jest.fn((path, hasQuery, query) => ({ path, hasQuery, query })),
+        validateQS: jest.fn((queryString, keys, editMode) => ({ validated: true })),
+      },
+      methods: {
+        importJs: mockImportJs,
+      },
+    });
+  });
+
+  it('returns alteredSections when page_pre_render is a function and returns a value', () => {
+    const mockPagePreRender = jest.fn().mockReturnValue([{ id: 1 }]);
+    mockImportJs.mockReturnValue({
+      page_pre_render: mockPagePreRender,
+    });
+
+    wrapper.setData({
+      pageData: [{ id: 1 }],
+      currentViews: [{ id: 2 }],
+    });
+
+    expect(wrapper.vm.alteredViews).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 2, weight: 0 })])
+    );
+  });
+
+  it('returns currentViews when page_pre_render is not a function', () => {
+    mockImportJs.mockReturnValue({
+      page_pre_render: 'not-a-function',
+    });
+
+    wrapper.setData({
+      pageData: [{ id: 1 }],
+      currentViews: [{ id: 2 }],
+    });
+
+    expect(wrapper.vm.alteredViews).toEqual([{ id: 2, weight: 0 }]);
+  });
+
+  it('returns currentViews when page_pre_render returns null', () => {
+    const mockPagePreRender = jest.fn().mockReturnValue(null);
+    mockImportJs.mockReturnValue({
+      page_pre_render: mockPagePreRender,
+    });
+
+    wrapper.setData({
+      pageData: [{ id: 1 }],
+      currentViews: [{ id: 2 }],
+    });
+
+    expect(wrapper.vm.alteredViews).toEqual([{ id: 2, weight: 0 }]);
+  });
+});
