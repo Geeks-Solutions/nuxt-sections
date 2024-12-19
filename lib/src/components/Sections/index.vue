@@ -2297,7 +2297,6 @@ export default {
         })
         this.layoutSlotNames.forEach(slotName => {
           this.viewsPerRegions[slotName] = []
-          this.alteredViewsPerRegions[slotName] = []
           views.forEach(view => {
             if (view.region[this.selectedLayout].slot === slotName) {
               this.viewsPerRegions[slotName].push(view)
@@ -2308,6 +2307,9 @@ export default {
             return a.region[selectedLay].weight - b.region[selectedLay].weight;
           });
         })
+
+        this.viewsPerRegions = {...this.viewsPerRegions}
+
         if (this.admin && this.editMode){
           this.verifySlots();
         }
