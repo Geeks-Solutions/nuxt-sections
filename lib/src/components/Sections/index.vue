@@ -1196,6 +1196,9 @@ export default {
     },
     _sectionsOptions: {
       type: Object
+    },
+    sectionsPageData: {
+      type: Object
     }
   },
   head() {
@@ -1542,7 +1545,35 @@ export default {
 	  }
 	}
 
-    if (inBrowser) {
+  if (this.sectionsPageData) {
+    const res = this.sectionsPageData.res
+    const error = this.sectionsPageData.error
+    if (res) {
+      this.initializeSections(res);
+      this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
+    } else if (error) {
+      if (error.response.status === 400) {
+        const res = error.response;
+        this.initializeSections(res);
+        return;
+      }
+      this.errorResponseStatus = error.response.status
+      if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
+        this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
+        this.errorResponseData = error.response.data
+      } else if(error.response.data.error) {
+        this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
+      } else {
+        this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
+      }
+      this.loading = false;
+      this.pageNotFound = true;
+      if (this.errorResponseStatus === 404) {
+        this.sectionsMainErrors.push(this.$t('404NotFound'));
+      }
+      this.$emit("load", false);
+    }
+  } else if (inBrowser) {
       try {
         const res = await this.$axios.post(URL, payload, config)
 		this.initializeSections(res);

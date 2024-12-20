@@ -5,12 +5,13 @@
       :page-name="pageName"
       :lang="lang"
       :variations="[]"
+      :sections-page-data="sectionsPageData"
     />
   </div>
 </template>
 
 <script>
-import {importJs} from "../utils";
+import {importJs, renderPageData} from "../utils";
 
 export default {
   name: "DynamicSectionsPage",
@@ -31,6 +32,11 @@ export default {
     },
     admin() {
       return !!this.$cookies.get("sections-auth-token")
+    }
+  },
+  async asyncData({ app }) {
+    if (process.client) {
+      return { sectionsPageData: await renderPageData(app) }
     }
   },
   mounted() {
