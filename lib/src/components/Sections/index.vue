@@ -1121,7 +1121,6 @@ import upperFirst from "lodash/upperFirst";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
 import UploadMedia from "../../components/Medias/UploadMedia";
 import MediaComponent from "../../components/Medias/MediaComponent";
-import AutoComplete from "@geeks.solutions/vue-components/components/AutoComplete.vue";
 
 export default {
   name: "Sections",
@@ -1156,8 +1155,7 @@ export default {
 	ErrorIcon,
 	InfoIcon,
 	UploadMedia,
-	MediaComponent,
-	AutoComplete
+	MediaComponent
   },
   props: {
     pageName: {

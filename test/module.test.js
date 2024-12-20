@@ -1,11 +1,6 @@
 import { shallowMount, mount } from '@vue/test-utils'
 import SectionsMain from '../lib/src/components/Sections/index.vue'
 
-jest.mock('@geeks.solutions/vue-components/components/AutoComplete.vue', () => ({
-  name: 'AutoComplete',
-  render: () => null
-}));
-
 describe('SectionsMain', () => {
   // test('calls initializeSections and computeLayoutData in fetch()', async () => {
   //   // Create a spy for both methods
