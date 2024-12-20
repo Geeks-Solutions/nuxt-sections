@@ -1380,7 +1380,7 @@ export default {
       let hooksJs = importJs(`/js/global-hooks`)
       if (hooksJs['page_pre_render'] && this.pageData) {
         if (typeof hooksJs['page_pre_render'] === 'function') {
-          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.currentViews)), this.sectionsWebsiteDomain)
+          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.currentViews)), this.sectionsWebsiteDomain, this.$sections, this.$config)
         }
       }
       if (alteredSections) {
@@ -1394,7 +1394,7 @@ export default {
       let hooksJs = importJs(`/js/global-hooks`)
       if (hooksJs['page_pre_render'] && this.pageData && this.viewsPerRegions && Object.keys(this.viewsPerRegions).length > 0) {
         if (typeof hooksJs['page_pre_render'] === 'function') {
-          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.viewsPerRegions)), this.sectionsWebsiteDomain)
+          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.viewsPerRegions)), this.sectionsWebsiteDomain, this.$sections, this.$config)
         }
       }
       if (alteredSections) {

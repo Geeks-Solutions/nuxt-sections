@@ -1126,7 +1126,7 @@ ex.:
 
 ```js
 // eslint-disable-next-line camelcase
-const page_pre_render = (payload, sections, websiteDomain) => {
+const page_pre_render = (payload, sections, websiteDomain, $sections, $config) => {
   if (websiteDomain === 'projectcnamenov.k8s-dev.geeks.solutions') {
     if (payload.page && payload.page === '/') {
       sections.push({
