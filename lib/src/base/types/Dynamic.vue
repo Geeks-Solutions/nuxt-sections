@@ -123,6 +123,13 @@ export default {
         base_path: this.basePath
       };
 
+      let language = undefined
+      try {
+        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
+          language = this.$i18n.locale
+        }
+      } catch {}
+
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
         variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
         if (this.props.query_string_keys && this.props.query_string_keys.length > 0) {
@@ -130,6 +137,10 @@ export default {
             ...variables["query_string"],
             ...validateQS(variables["query_string"], this.props.query_string_keys, true)
           }
+        }
+        variables["query_string"] = {
+          ...variables["query_string"],
+          language
         }
       }
 
