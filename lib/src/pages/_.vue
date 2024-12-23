@@ -18,7 +18,8 @@ export default {
   layout: 'defaults',
   data() {
     return {
-      pageName: this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'
+      pageName: this.$route.params.pathMatch ? this.$route.params.pathMatch : '/',
+      sectionsPageData: null
     }
   },
   head() {

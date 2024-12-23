@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Filter management for the different section tabs #68
 
+- Support for asyncData hook for better pages navigation experience #100
+
 ### Updated
 
 - Settings popup for the page to read project metadata and apply custom css #70

@@ -118,6 +118,7 @@ publicRuntimeConfig: {
     :page-name="pageName"
     :lang="lang"
     :variations="[]"
+    :sections-page-data="sectionsPageData"
   />
 </template>
 
@@ -126,7 +127,8 @@ export default {
   name: 'IndexPage',
   data() {
     return {
-      pageName: "Home"
+      pageName: "Home",
+      sectionsPageData: null
     };
   },
   computed: {
@@ -135,6 +137,12 @@ export default {
     },
     admin() {
       return !!this.$cookies.get("sections-auth-token")
+    }
+  },
+  async asyncData({ app }) {
+    if (process.client) {
+      const { renderPageData } = await import('@geeks.solutions/nuxt-sections/lib/src/utils/helpers');
+      return { sectionsPageData: await renderPageData(app, "testh") }
     }
   }
 }
@@ -148,7 +156,9 @@ To get the UserToken and have it stored in the above cookie, simply set sections
 
 If you now want to move on and start providing local and static sections for your website editor, or customize the display of dynamic or configurable ones, read below.
 
-When using the default dynamic Sections page, the library expose the mounted, created and fetch hooks of the pages. In order to use these hooks, your sections folder must have `js` folder and the `js` folder must have a `hooks.js` file containing the hooks **(Make sure to follow the same structure as showing below)**:   
+When using the default dynamic Sections page, the library expose the mounted, created and fetch hooks of the pages. In order to use these hooks, your sections folder must have `js` folder and the `js` folder must have a `hooks.js` file containing the hooks **(Make sure to follow the same structure as showing below)**:
+
+Note: sectionsPageData and the asyncData hook are optional but you can use them to leverage the power of asyncData hook for better pages navigation experience where the asyncData will pause the navigation to your page until the page response is returned and loaded
 
 ```js
 // sections/js/hooks.js
