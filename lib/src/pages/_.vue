@@ -5,19 +5,21 @@
       :page-name="pageName"
       :lang="lang"
       :variations="[]"
+      :sections-page-data="sectionsPageData"
     />
   </div>
 </template>
 
 <script>
-import {importJs} from "../utils";
+import {importJs, renderPageData} from "../utils";
 
 export default {
   name: "DynamicSectionsPage",
   layout: 'defaults',
   data() {
     return {
-      pageName: this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'
+      pageName: this.$route.params.pathMatch ? this.$route.params.pathMatch : '/',
+      sectionsPageData: null
     }
   },
   head() {
@@ -31,6 +33,11 @@ export default {
     },
     admin() {
       return !!this.$cookies.get("sections-auth-token")
+    }
+  },
+  async asyncData({ app }) {
+    if (process.client) {
+      return { sectionsPageData: await renderPageData(app) }
     }
   },
   mounted() {

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.0.14] - 2024-12-16
+
+### Fixed
+
+- Weight problem for local sections #102
+
+- Automatic scroll to the section when clicking to edit it #94
+
+### Added
+
+- For each section in admin & editMode a small button on the right and when clicking on it the edit options shows for the section #95
+
+- Filter management for the different section tabs #68
+
+- Support for asyncData hook for better pages navigation experience #100
+
+### Updated
+
+- Settings popup for the page to read project metadata and apply custom css #70
+
+- query string to include language when it is not the default one when rendering a section #101
+
+
 ### [1.0.13] - 2024-11-11
 
 ### Added
@@ -36,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Section types listing updated tabs to Available sections, global Sections and Inventory #67
 
 - Update wysiwygs image with default alt and lazy loading #75 
+
+- page_pre_render hook #97
 
 ## [1.0.11] - 2024-10-16
 

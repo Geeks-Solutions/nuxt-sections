@@ -6,6 +6,7 @@
     :variations="variations"
     :viewsBgColor="viewsBgColor"
     :_sections-options="_sectionsOptions"
+    :sections-page-data="sectionsPageData"
     @load="loaded"
   />
 </template>
@@ -38,6 +39,9 @@ export default {
       default: "transparent",
     },
     _sectionsOptions: {
+      type: Object
+    },
+    sectionsPageData: {
       type: Object
     }
   },

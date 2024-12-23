@@ -118,6 +118,7 @@ publicRuntimeConfig: {
     :page-name="pageName"
     :lang="lang"
     :variations="[]"
+    :sections-page-data="sectionsPageData"
   />
 </template>
 
@@ -126,7 +127,8 @@ export default {
   name: 'IndexPage',
   data() {
     return {
-      pageName: "Home"
+      pageName: "Home",
+      sectionsPageData: null
     };
   },
   computed: {
@@ -135,6 +137,12 @@ export default {
     },
     admin() {
       return !!this.$cookies.get("sections-auth-token")
+    }
+  },
+  async asyncData({ app }) {
+    if (process.client) {
+      const { renderPageData } = await import('@geeks.solutions/nuxt-sections/lib/src/utils/helpers');
+      return { sectionsPageData: await renderPageData(app, "testh") }
     }
   }
 }
@@ -148,7 +156,9 @@ To get the UserToken and have it stored in the above cookie, simply set sections
 
 If you now want to move on and start providing local and static sections for your website editor, or customize the display of dynamic or configurable ones, read below.
 
-When using the default dynamic Sections page, the library expose the mounted, created and fetch hooks of the pages. In order to use these hooks, your sections folder must have `js` folder and the `js` folder must have a `hooks.js` file containing the hooks **(Make sure to follow the same structure as showing below)**:   
+When using the default dynamic Sections page, the library expose the mounted, created and fetch hooks of the pages. In order to use these hooks, your sections folder must have `js` folder and the `js` folder must have a `hooks.js` file containing the hooks **(Make sure to follow the same structure as showing below)**:
+
+Note: sectionsPageData and the asyncData hook are optional but you can use them to leverage the power of asyncData hook for better pages navigation experience where the asyncData will pause the navigation to your page until the page response is returned and loaded
 
 ```js
 // sections/js/hooks.js
@@ -1116,6 +1126,96 @@ module.exports = {
     page_pre_load,
     section_pre_render
 };
+```
+
+* `page_pre_render`: When a page is loaded and about to be rendered, will contain the response from your section page as a payload, the sections array, your website domain name.
+  It allows you to update the sections that will be seen on your page based on the condition you choose.
+  Note: When adding a new section to the payload make sure to add this key/value pair to this new section `"altered": true`
+
+ex.: 
+
+```js
+// eslint-disable-next-line camelcase
+const page_pre_render = (payload, sections, websiteDomain, $sections, $config) => {
+  if (websiteDomain === 'projectcnamenov.k8s-dev.geeks.solutions') {
+    if (payload.page && payload.page === '/') {
+      sections.push({
+        "error": null,
+        "id": "6760071f3253f40006f2acfe",
+        "name": "SimpleCTA",
+        "type": "static",
+        "settings": [
+          {
+            "fr": {
+              "link": "/fr/test",
+              "title": "FR This section is generated using the page_pre_render hook",
+              "subTitle": "FR page_pre_render HOOK",
+              "buttonLabel": "FR Submit test HOOK"
+            },
+            "en": {
+              "link": "/test",
+              "title": "This section is generated using the page_pre_render hook",
+              "subTitle": "page_pre_render HOOK",
+              "buttonLabel": "Submit test HOOK"
+            }
+          }
+        ],
+        "status_code": null,
+        "region": {},
+        "query_string_keys": null,
+        "render_data": "",
+        "linked_to": "",
+        "weight": 9,
+        "altered": true
+      })
+      return sections
+    } else if (payload.page && payload.page === 'test') {
+      if (sections.right) {
+        sections.right.push({
+          "error": null,
+          "id": "6760071f3253f40006f2acfe",
+          "name": "SimpleCTA",
+          "type": "static",
+          "settings": [
+            {
+              "fr": {
+                "link": "/fr/test",
+                "title": "FR This section is generated using the page_pre_render hook",
+                "subTitle": "FR page_pre_render HOOK",
+                "buttonLabel": "FR Submit test HOOK"
+              },
+              "en": {
+                "link": "/test",
+                "title": "This section is generated using the page_pre_render hook",
+                "subTitle": "page_pre_render HOOK",
+                "buttonLabel": "Submit test HOOK"
+              }
+            }
+          ],
+          "status_code": null,
+          "region": {
+            "top-right-left-bottom": {
+              "slot": "right",
+              "weight": 8
+            }
+          },
+          "query_string_keys": null,
+          "render_data": "",
+          "linked_to": "",
+          "weight": 9,
+          "altered": true
+        })
+      }
+      return sections
+    } else return null
+  }
+  return null
+}
+
+module.exports = {
+  page_pre_render
+};
+
 ```
 
 ### The following will require a specific component to be implemented in your project:
