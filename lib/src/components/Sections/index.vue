@@ -1680,11 +1680,7 @@ export default {
       headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
     };
 
-    let URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
-
-    if (this.$sections.cname === "active") {
-      URL = `${this.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(this.pageName))}`;
-    }
+    let URL = `${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(this.pageName))}`;
 
     let payload = {}
 
@@ -2628,6 +2624,20 @@ export default {
         console.warn(this.$t('noFormsFolder'));
       }
     },
+    getSectionProjectIdentity() {
+      if (this.$sections.cname === "active") {
+        const inBrowser = typeof window !== 'undefined';
+        let websiteDomain = ""
+        if (inBrowser) {
+          websiteDomain = window.location.host
+        } else {
+          websiteDomain = this.$nuxt.context.req.headers.host
+        }
+        return websiteDomain
+      } else {
+        return this.$sections.projectId
+      }
+    },
     async renderConfigurableSection(gt, options) {
       this.$emit("load", true);
 
@@ -3238,7 +3248,7 @@ export default {
         }
       }
 
-      const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/render`;
+      const URL = `${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/section/render`;
 
       for (const sectionData of sectionDatas) {
         const sectionName = sectionData.nameID ? sectionData.nameID : sectionData.name
