@@ -1,3 +1,10 @@
+jest.mock('axios', () => ({
+  post: jest.fn(),
+  put: jest.fn(),
+  get: jest.fn(),
+  options: jest.fn(),
+}));
+
 global.mocks = {
     $cookies: {
         get: jest.fn(),
@@ -5,7 +12,9 @@ global.mocks = {
         remove: jest.fn()
     },
     $t: jest.fn((key) => key),
-    $i18n: jest.fn(),
+    $i18n: {
+      locale: jest.fn()
+    },
     $route: {
         query: jest.fn()
     },
@@ -16,4 +25,10 @@ global.mocks = {
         $emit: jest.fn()
     },
     $toast: { info: jest.fn() },
+    $axios: {
+        put: require('axios').put,
+        post: require('axios').post,
+        get: require('axios').get,
+        options: require('axios').options,
+    }
 };

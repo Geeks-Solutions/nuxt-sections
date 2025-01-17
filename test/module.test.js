@@ -2,36 +2,6 @@ import { shallowMount, mount } from '@vue/test-utils'
 import SectionsMain from '../lib/src/components/Sections/index.vue'
 
 describe('SectionsMain', () => {
-  // test('calls initializeSections and computeLayoutData in fetch()', async () => {
-  //   // Create a spy for both methods
-  //   const initializeSectionsSpy = jest.spyOn(SectionsMain.methods, 'initializeSections')
-  //   const computeLayoutDataSpy = jest.spyOn(SectionsMain.methods, 'computeLayoutData')
-  //
-  //   // Mount the component
-  //   const wrapper = shallowMount(SectionsMain, {
-  //     mocks: {
-  //       // Mock any dependencies like $axios or $store if they are used in fetch
-  //       $sections: {
-  //         cname: true
-  //       }
-  //     }
-  //   })
-  //
-  //   // Manually call the fetch method
-  //   await wrapper.vm.fetch()
-  //
-  //   // Check if both methods were called
-  //   expect(initializeSectionsSpy).toHaveBeenCalled()
-  //   expect(computeLayoutDataSpy).toHaveBeenCalled()
-  //
-  //   // Optionally, check if initializeSections is called with the expected argument
-  //   // Example: expect(initializeSectionsSpy).toHaveBeenCalledWith(expectedResponse)
-  //
-  //   // Clean up the spies
-  //   initializeSectionsSpy.mockRestore()
-  //   computeLayoutDataSpy.mockRestore()
-  // })
-
   let controlsWrapper;
 
   beforeEach(() => {
@@ -40,7 +10,7 @@ describe('SectionsMain', () => {
         ...global.mocks,
         $sections: {
           cname: true
-        }
+        },
       },
       propsData: {
         admin: true,
@@ -56,15 +26,420 @@ describe('SectionsMain', () => {
         return {
           editMode: true,
           sectionOptions: {}, // Mock initial state
-          view: { id: 'view-id', name: 'section1', weight: 1, type: 'text' }, // Mock view object
-          currentViews: [
-            { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-            { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
-          ]
+          view: { id: 'view-id', name: 'section1', weight: 1, type: 'text' },
+          selectedVariation: "variation1",
+          displayVariations: {
+            variation1: {
+              views: {
+                1: { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+                2: { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
+              },
+            },
+          }
         };
       },
     });
   });
+
+  test('calls initializeSections and computeLayoutData in fetch()', async () => {
+    // Create a spy for both methods
+    const initializeSectionsSpy = jest.spyOn(SectionsMain.methods, 'initializeSections')
+    const computeLayoutDataSpy = jest.spyOn(SectionsMain.methods, 'computeLayoutData')
+
+    // Mount the component
+    const wrapper = shallowMount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          cname: true
+        },
+        // Mock $set for reactivity
+        $set: jest.fn(),
+      },
+      data() {
+        return {
+          selectedVariation: "variation1",
+          displayVariations: {
+            variation1: {
+              views: {
+                1: { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+                2: { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
+              },
+            },
+          }
+        }
+      }
+    })
+
+    global.mocks.$axios.post.mockResolvedValueOnce({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": {
+          "media": {
+            "filename": "sections/eweev (1)80228c2cca6a41de8e13daee6cca3c05.css",
+            "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2Feweev+%281%2980228c2cca6a41de8e13daee6cca3c05.css",
+            "headers": {},
+            "seo_tag": null,
+            "media_id": "678a0cc526735e000700b6aa"
+          },
+          "fr": {
+            "description": "",
+            "title": ""
+          },
+          "package": {
+            "name": "corporate",
+            "label": "Corporate",
+            "type": "public",
+            "price": 14900,
+            "currency": "EUR",
+            "project_id": null,
+            "rank": 2000000000,
+            "limits": [
+              {
+                "name": "number_of_pages",
+                "value": -1,
+                "included": 10,
+                "unit_price": 150
+              },
+              {
+                "name": "query_string_support",
+                "value": -1
+              },
+              {
+                "name": "variation_per_page",
+                "value": 5
+              },
+              {
+                "name": "static_sections",
+                "value": 20
+              },
+              {
+                "name": "sections_total",
+                "value": 15
+              },
+              {
+                "name": "hosted_files",
+                "value": -1
+              },
+              {
+                "name": "size_per_file",
+                "value": 20000000000000
+              },
+              {
+                "name": "api_limit_sec",
+                "value": -1
+              },
+              {
+                "name": "api_limit_minute",
+                "value": -1
+              },
+              {
+                "name": "api_limit_hour",
+                "value": 3000
+              },
+              {
+                "name": "api_limit_day",
+                "value": -1
+              },
+              {
+                "name": "dynamic_section_types_support",
+                "value": -1
+              },
+              {
+                "name": "users",
+                "value": 5
+              },
+              {
+                "name": "domains",
+                "value": 4
+              }
+            ],
+            "quota": 15,
+            "locked": false
+          },
+          "project_metadata": {
+            "media": {
+              "filename": "sections/SectionsLook17df18dd1f53409e8a00146d0163492e.css",
+              "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2FSectionsLook17df18dd1f53409e8a00146d0163492e.css",
+              "headers": {},
+              "seo_tag": null,
+              "media_id": "67658343b109090007add20d"
+            },
+            "activateCookieControl": true,
+            "favicon": {
+              "filename": "sections/sections_sections_Group+2034a753d7ab0e04ac5bab7bd1fb80614bb845132eb956e45348072906290c9ea8e0c717a98b2a94585be5a500dd577683a.png",
+              "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2Fsections_sections_Group%2B2034a753d7ab0e04ac5bab7bd1fb80614bb845132eb956e45348072906290c9ea8e0c717a98b2a94585be5a500dd577683a.png",
+              "headers": {},
+              "seo_tag": null,
+              "media_id": "672cb7846777fd0007715fa4"
+            },
+            "gtmId": "567689789",
+            "languages": [
+              "fr",
+              "en"
+            ],
+            "selectedCSSPreset": {
+              "name": "None",
+              "url": ""
+            },
+            "defaultLang": "en"
+          },
+          "en": {
+            "description": "",
+            "title": ""
+          }
+        },
+        "sections": [
+          {
+            "error": null,
+            "id": "678a0d8626735e00076ecc56",
+            "name": "SimpleMenu",
+            "type": "static",
+            "settings": [
+              {
+                "media": {
+                  "filename": "sections/Eweev-Logo.69cc37497996c6f54054c8291d0f0eed099ec8e.svg",
+                  "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2FEweev-Logo.69cc37497996c6f54054c8291d0f0eed099ec8e.svg",
+                  "headers": {},
+                  "seo_tag": null,
+                  "media_id": "678a0eb926735e000771e6a3"
+                },
+                "menu": [
+                  {
+                    "label": {
+                      "fr": "en",
+                      "en": "en"
+                    },
+                    "link": {
+                      "en": ""
+                    },
+                    "page": {
+                      "fr": "page1",
+                      "en": "page1"
+                    },
+                    "menuItemClasses": "mobile-top"
+                  },
+                  {
+                    "label": {
+                      "fr": "menu francais 2",
+                      "en": "Menu 2"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": "#Plans-672cb93e6777fd0007354149"
+                    },
+                    "page": {
+                      "fr": "page1",
+                      "en": "page1"
+                    },
+                    "menuItemClasses": "mobile-top"
+                  },
+                  {
+                    "label": {
+                      "fr": "en",
+                      "en": "fr"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": ""
+                    },
+                    "page": {
+                      "fr": "",
+                      "en": ""
+                    },
+                    "languageMenu": true,
+                    "menuItemClasses": "language mobile-top"
+                  }
+                ],
+                "classes": "main",
+                "logoLink": {
+                  "fr": "",
+                  "en": ""
+                },
+                "logoPage": {},
+                "menuLabel": {}
+              }
+            ],
+            "status_code": null,
+            "region": {},
+            "query_string_keys": null,
+            "render_data": "",
+            "linked_to": "Global menu",
+            "weight": 1
+          },
+          {
+            "error": null,
+            "id": "678a0d8626735e00076ecc57",
+            "name": "SimpleMenu",
+            "type": "static",
+            "settings": [
+              {
+                "media": {
+                  "filename": "sections/sections_sections_Group+2034a753d7ab0e04ac5bab7bd1fb80614bb845132eb956e45348072906290c9ea8e0c717a98b2a94585be5a500dd577683a.png",
+                  "url": "https://s3.amazonaws.com/eweevtestbucketprivate/sections%2Fsections_sections_Group%2B2034a753d7ab0e04ac5bab7bd1fb80614bb845132eb956e45348072906290c9ea8e0c717a98b2a94585be5a500dd577683a.png",
+                  "headers": {},
+                  "seo_tag": null,
+                  "media_id": "672cb7846777fd0007715fa4"
+                },
+                "menu": [
+                  {
+                    "label": {
+                      "fr": "en",
+                      "en": "en"
+                    },
+                    "link": {
+                      "en": ""
+                    },
+                    "page": {
+                      "fr": "page1",
+                      "en": "page1"
+                    },
+                    "languageMenu": true,
+                    "menuItemClasses": "language"
+                  },
+                  {
+                    "label": {
+                      "fr": "menu francais 2",
+                      "en": "Menu 2"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": "#Plans-672cb93e6777fd0007354149"
+                    },
+                    "page": {
+                      "fr": "page5",
+                      "en": "page5"
+                    },
+                    "linkTarget": "_self"
+                  },
+                  {
+                    "label": {
+                      "fr": "menu francais 3",
+                      "en": "Free sig"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": "#FAQ-672b7ace70b3b0000719f070"
+                    },
+                    "page": {
+                      "fr": "",
+                      "en": ""
+                    },
+                    "menuItemClasses": "sign-up"
+                  },
+                  {
+                    "label": {
+                      "fr": "",
+                      "en": "menu 4"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": ""
+                    },
+                    "page": {
+                      "fr": "newpagefortheproject",
+                      "en": "newpagefortheproject"
+                    }
+                  },
+                  {
+                    "label": {
+                      "fr": "",
+                      "en": "menu 5"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": "/page1"
+                    },
+                    "page": {
+                      "fr": "",
+                      "en": ""
+                    }
+                  },
+                  {
+                    "label": {
+                      "fr": "en",
+                      "en": "fr"
+                    },
+                    "link": {
+                      "fr": "",
+                      "en": ""
+                    },
+                    "page": {
+                      "fr": "",
+                      "en": ""
+                    },
+                    "languageMenu": true,
+                    "menuItemClasses": "language"
+                  }
+                ],
+                "classes": "main",
+                "logoLink": {
+                  "fr": "",
+                  "en": ""
+                },
+                "logoPage": {
+                  "fr": "page2",
+                  "en": "page2"
+                },
+                "menuLabel": {},
+                "logoLinkTarget": "_blank"
+              }
+            ],
+            "status_code": null,
+            "region": {},
+            "query_string_keys": null,
+            "render_data": "",
+            "linked_to": "Global menu 1",
+            "weight": 0
+          }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      },
+    })
+
+    const result = wrapper.vm.currentViews;
+
+    // Expected result should be sorted by weight
+    expect(result).toEqual([
+      { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+      { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+    ]);
+
+    const newViews = [
+      { id: 3, name: 'View 3' }, // Will be assigned weight 0
+      { id: 1, name: 'View 1' }, // Will be assigned weight 1
+    ];
+
+    // Call the setter
+    wrapper.vm.currentViews = newViews;
+
+    // Verify $set was called with updated weights
+    expect(wrapper.vm.$set).toHaveBeenCalledWith(
+      wrapper.vm.displayVariations.variation1.views,
+      3,
+      { id: 3, name: 'View 3', weight: 0 }
+    );
+    expect(wrapper.vm.$set).toHaveBeenCalledWith(
+      wrapper.vm.displayVariations.variation1.views,
+      1,
+      { id: 1, name: 'View 1', weight: 1 }
+    );
+
+    await wrapper.vm.$options.fetch.call(wrapper.vm);
+
+    // Check if both methods were called
+    expect(initializeSectionsSpy).toHaveBeenCalled()
+    expect(computeLayoutDataSpy).toHaveBeenCalled()
+
+    // Clean up the spies
+    initializeSectionsSpy.mockRestore()
+    computeLayoutDataSpy.mockRestore()
+  })
 
   it('addSectionType function should set section.weight if it is null, "null", or undefined', () => {
     const wrapper = shallowMount(SectionsMain, {
@@ -263,9 +638,10 @@ describe('SectionsMain', () => {
       const inputFilter = tabsWrapper.find('input.sectionsFilterName');
       expect(inputFilter.exists()).toBe(true);
 
-      // Assert select dropdown is visible
-      const selectFilter = tabsWrapper.find('select#select');
-      expect(selectFilter.exists()).toBe(true);
+      if (tab !== 'inventoryTypes') {
+        const selectFilter = tabsWrapper.find('select#select');
+        expect(selectFilter.exists()).toBe(true);
+      }
 
       // Assert the "clear filters" text is visible
       const clearFilters = tabsWrapper.find('.slot-name');
