@@ -141,7 +141,7 @@
               <button
                 class="hp-button"
                 @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
               >
                 <div class="btn-icon plus-icon">
@@ -408,7 +408,7 @@
                     <button
                       class="hp-button"
                       @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
                     >
                       <div class="btn-icon plus-icon">
@@ -1507,7 +1507,8 @@ export default {
       sectionsFilterAppName: '',
       appNames: [],
       sectionsWebsiteDomain: '',
-      pageData: null
+      pageData: null,
+      canPromote: false
     }
   },
   computed: {
@@ -2268,8 +2269,27 @@ export default {
               name: ""
             }
           ]
+
+          if (this.canPromote === true) {
+            section.linkedTo = section.instance_name;
+            section.linked_to = section.instance_name;
+            section.instance = true;
+            this.$set(
+              this.displayVariations[this.selectedVariation].views,
+              section.id,
+              section
+            );
+            this.displayVariations[this.selectedVariation].altered = true;
+            this.showToast(
+              "Success",
+              "info",
+              this.$t('successAddedSection')
+            );
+          }
+
           this.currentSection = null
           this.isCreateInstance = false
+          this.isSideBarOpen = false
           this.typesTab = 'globalTypes'
         })
           .catch((error) => {
@@ -3532,6 +3552,7 @@ export default {
     },
     edit(view, viewAnchor) {
       if (this.isSideBarOpen !== true) {
+        this.canPromote = true
         this.types.map((type) => {
           if (view.type === "configurable") {
             if (type.name.split(":")[1] === view.name) {

@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Wysiwyg Editor component to use the one coming from vue-components library Wysiwyg Component update needed #110
 
+### Fixed
+
+- Replace old section when it gets promoted to global: Promoting a section to global is keeping the simple one on the page #113
+
 ### [1.0.15] - 2024-12-24
 
 ### Fixed
