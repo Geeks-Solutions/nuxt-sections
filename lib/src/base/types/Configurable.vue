@@ -74,7 +74,7 @@
                 </div>
                 <div v-if="field.type === 'wysiwyg'">
                   <div class="input">
-                    <quill-editor v-model="optionsData[field.key]" :ref="field.type+'Editor'" class="wyzywig" @change="onEditorChange($event, idx, field.key)" />
+                    <wysiwyg :ref="field.type+'Editor'" class="wyzywig" :html="optionsData[field.key]" @settingsUpdate="(content) => onEditorChange(content, idx, field.key)" />
                   </div>
                 </div>
                 <div v-else-if="field.type === 'textarea'" class="w-full">
@@ -185,6 +185,7 @@ import UploadMedia from "../../components/Medias/UploadMedia.vue";
 import MediaComponent from "../../components/Medias/MediaComponent.vue";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
+import wysiwyg from "@geeks.solutions/nuxt-sections/lib/src/components/Editor/wysiwyg";
 
 export default {
   components: {
@@ -193,7 +194,8 @@ export default {
     TranslationComponent,
     GlobalReferences,
     loadingCircle,
-    CloseIcon
+    CloseIcon,
+    wysiwyg
   },
   props: {
     props: {
@@ -443,7 +445,7 @@ export default {
       this.optionsData[name][0].url = ""
       this.options[0][name] = []
     },
-    onEditorChange({ quill, html, text }, idx, fieldname) {
+    onEditorChange(html, idx, fieldname) {
       this.options[0][fieldname] = html;
     },
     addAnother() {

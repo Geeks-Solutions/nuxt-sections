@@ -1612,7 +1612,14 @@ export default {
       });
     }
   },
-  mounted() {
+  async mounted() {
+
+    // const introJs = await import('intro.js/minified/intro.min.js');
+    // await import('intro.js/minified/introjs.min.css');
+    // const intro = introJs.default()
+    // intro.start();
+    // intro.addHints();
+
     if (this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
     } else if (this.sectionsAdminError !== "") {

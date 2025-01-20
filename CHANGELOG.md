@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Automated test coverage for the fetch hook Fix automated test for the fetch hook #107
 
+### Changed
+
+- Wysiwyg Editor component to use the one coming from vue-components library Wysiwyg Component update needed #110
+
 ### [1.0.15] - 2024-12-24
 
 ### Fixed
