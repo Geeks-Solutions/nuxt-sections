@@ -8,7 +8,7 @@
   </div>
 </template>
 <script>
-import wysiwyg from "@geeks.solutions/nuxt-sections/lib/src/components/Editor/wysiwyg";
+import wysiwyg from "../../components/Editor/wysiwyg.vue";
 
 export default {
   components: {

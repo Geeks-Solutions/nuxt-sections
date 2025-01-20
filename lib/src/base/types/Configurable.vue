@@ -183,9 +183,9 @@ import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 import UploadMedia from "../../components/Medias/UploadMedia.vue";
 import MediaComponent from "../../components/Medias/MediaComponent.vue";
+import wysiwyg from "../../components/Editor/wysiwyg.vue";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
-import wysiwyg from "@geeks.solutions/nuxt-sections/lib/src/components/Editor/wysiwyg";
 
 export default {
   components: {
