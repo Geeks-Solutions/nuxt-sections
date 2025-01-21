@@ -352,10 +352,12 @@
                       </div>
                     </div>
                     <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
-                      <div class="section-info-icon">
-                        <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
-                                  class="info-icon-style"/>
-                      </div>
+                      <ClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                        <div class="section-info-icon">
+                          <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                                    class="info-icon-style" />
+                        </div>
+                      </ClickableTooltip>
                     </div>
                     <div v-else class="section-top-separator"></div>
                     <div class="section-item"
@@ -433,10 +435,12 @@
                       </div>
                     </div>
                     <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
-                      <div class="global-section-info-icon">
-                        <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
-                                  class="info-icon-style"/>
-                      </div>
+                      <ClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                        <div class="global-section-info-icon">
+                          <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                                    class="info-icon-style"/>
+                        </div>
+                      </ClickableTooltip>
                     </div>
                     <div v-else-if="isCreateInstance === true" class="section-top-separator"></div>
                     <div class="section-item" :class="{active: type.notCreated !== true || isCreateInstance === true}"
@@ -1275,6 +1279,7 @@ import upperFirst from "lodash/upperFirst";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
 import UploadMedia from "../../components/Medias/UploadMedia";
 import MediaComponent from "../../components/Medias/MediaComponent";
+import ClickableTooltip from "../../components/Tooltip/ClickableTooltip";
 
 export default {
   name: "Sections",
@@ -1309,7 +1314,8 @@ export default {
     ErrorIcon,
     InfoIcon,
     UploadMedia,
-    MediaComponent
+    MediaComponent,
+    ClickableTooltip
   },
   props: {
     pageName: {
@@ -1508,7 +1514,8 @@ export default {
       appNames: [],
       sectionsWebsiteDomain: '',
       pageData: null,
-      canPromote: false
+      canPromote: false,
+      intro: null
     }
   },
   computed: {
@@ -1615,11 +1622,17 @@ export default {
   },
   async mounted() {
 
-    // const introJs = await import('intro.js/minified/intro.min.js');
-    // await import('intro.js/minified/introjs.min.css');
-    // const intro = introJs.default()
-    // intro.start();
-    // intro.addHints();
+    // if (this.admin) {
+    //   const introJs = await import('intro.js/minified/intro.min.js');
+    //   await import('intro.js/minified/introjs.min.css');
+    //   this.intro = introJs.default()
+    //   this.intro.setOptions({
+    //     hintAutoRefreshInterval: -1,
+    //     hintShowButton: false,
+    //     hintAnimation: true
+    //   })
+    //   this.intro.start
+    // }
 
     if (this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
