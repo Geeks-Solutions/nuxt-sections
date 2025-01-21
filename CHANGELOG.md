@@ -15,9 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Wysiwyg Editor component to use the one coming from vue-components library Wysiwyg Component update needed #110
 
+- Condition to send the language when it is not default to always send it: Send the language query string even though the Sections site is in its default language #114
+
 ### Fixed
 
 - Replace old section when it gets promoted to global: Promoting a section to global is keeping the simple one on the page #113
+
+- Fixed token expiration duration: When the token is expired and I access a Section site that was in edit mode, the edit mode must no more show #106
+
+- Fix info icon to show the details on click: When there is an information icon for a section, in the section listing, have the info shown while clicking on it and not hovering #92
 
 ### [1.0.15] - 2024-12-24
 

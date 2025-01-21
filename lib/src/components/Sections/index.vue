@@ -1707,13 +1707,12 @@ export default {
 
     let language = undefined
     try {
-      if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-        language = this.$i18n.locale
-      }
+      language = this.$i18n.locale
     } catch {
     }
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
+      console.log('got heress 2')
       let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
       payload = {
         query_string: {
@@ -2701,9 +2700,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {
       }
 
@@ -2793,9 +2790,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {
       }
 
@@ -3081,9 +3076,7 @@ export default {
 
         let language = undefined
         try {
-          if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-            language = this.$i18n.locale
-          }
+          language = this.$i18n.locale
         } catch {
         }
 
@@ -3272,9 +3265,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {
       }
 

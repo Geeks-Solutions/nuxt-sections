@@ -55,6 +55,12 @@ describe('SectionsMain', () => {
         },
         // Mock $set for reactivity
         $set: jest.fn(),
+        $route: {
+          query: jest.fn(),
+          params: {
+            pathMatch: jest.fn()
+          }
+        }
       },
       data() {
         return {
@@ -430,7 +436,20 @@ describe('SectionsMain', () => {
       { id: 1, name: 'View 1', weight: 1 }
     );
 
+    wrapper.vm.$i18n.locale = 'en';
+    wrapper.vm.$sections.queryStringSupport = 'enabled';
+
     await wrapper.vm.$options.fetch.call(wrapper.vm);
+
+    expect(global.mocks.$axios.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        query_string: expect.objectContaining({
+          language: 'en'
+        }),
+      }),
+      expect.any(Object) // headers/config
+    );
 
     // Check if both methods were called
     expect(initializeSectionsSpy).toHaveBeenCalled()
@@ -831,8 +850,9 @@ describe('render call has language sent in qs when the condition is met', () => 
     );
   });
 
-  it('does not include language if locale matches defaultLocale', async () => {
-    wrapper.vm.$i18n.locale = 'en'; // Set to default locale
+  it('include language if locale matches defaultLocale', async () => {
+    wrapper.vm.$i18n.locale = 'en';
+    wrapper.vm.$sections.queryStringSupport = "enabled";
 
     const gt = {
       section: {
@@ -848,7 +868,7 @@ describe('render call has language sent in qs when the condition is met', () => 
     expect(mockAxios.post).toHaveBeenCalledWith(
       'https://mock.server/project/mockProjectId/section/render',
       expect.objectContaining({
-        query_string: expect.not.objectContaining({
+        query_string: expect.objectContaining({
           language: expect.any(String),
         }),
       }),
@@ -856,7 +876,6 @@ describe('render call has language sent in qs when the condition is met', () => 
     );
   });
 });
-
 
 describe('alteredViews computed property', () => {
   let wrapper;
