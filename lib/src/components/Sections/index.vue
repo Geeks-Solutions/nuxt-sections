@@ -2107,7 +2107,8 @@ export default {
           .then((res) => {
             const token = res.data.token;
             const date = new Date();
-            date.setDate(date.getDate() + 7);
+            date.setDate(date.getDate() + 14);
+            date.setHours(date.getHours() - 4)
             this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {
               expires: date,
               path: '/'
