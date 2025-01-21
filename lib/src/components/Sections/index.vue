@@ -21,6 +21,7 @@
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             :savedView="savedView"
             :locales="locales"
+            :default-lang="defaultLang"
             :translation-component-support="translationComponentSupport"
             :sections-user-id="sectionsUserId"
             :instance="currentSection.instance === true"
@@ -50,6 +51,8 @@
             :props="currentSection"
             :savedView="savedView"
             :headers="headers"
+            :locales="locales"
+            :default-lang="defaultLang"
             :sections-user-id="sectionsUserId"
             :sections-configurable-type="sectionsConfigurableTypeReference"
             :translation-component-support="translationComponentSupport"
@@ -470,6 +473,7 @@
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       :savedView="savedView"
                       :locales="locales"
+                      :default-lang="defaultLang"
                       :translation-component-support="translationComponentSupport"
                       :sections-user-id="sectionsUserId"
                       :instance="currentSection.instance === true"
@@ -497,6 +501,8 @@
                       :props="currentSection"
                       :savedView="savedView"
                       :headers="headers"
+                      :locales="locales"
+                      :default-lang="defaultLang"
                       :sections-user-id="sectionsUserId"
                       :sections-configurable-type="sectionsConfigurableTypeReference"
                       :translation-component-support="translationComponentSupport"
@@ -866,6 +872,7 @@
                       :section="view"
                       :lang="lang"
                       :locales="locales"
+                      :default-lang="defaultLang"
                       @refresh-section="(data) => refreshSectionView(view, data)"
                     />
                   </div>
@@ -875,7 +882,7 @@
             </draggable>
           </div>
           <div v-else>
-            <component :is="getSelectedLayout()" :lang="lang" :locales="locales">
+            <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang">
               <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
                 <!-- Empty div injected to verify the slots              -->
                 <div class="flexSections flex-col">
@@ -963,6 +970,7 @@
                               :section="view"
                               :lang="lang"
                               :locales="locales"
+                              :default-lang="defaultLang"
                               @refresh-section="(data) => refreshSectionView(view, data)"
                             />
                           </div>
@@ -1060,7 +1068,7 @@
                       <CloseIcon/>
                     </div>
                   </div>
-                  <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"
+                  <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
                                         @setFormLang="(locale) => metadataFormLang = locale"/>
                   <div class="flexSections sections-w-full sections-justify-center"
                        :class="$sections.cname === 'active' ? 'sections-page-settings' : ''">
@@ -1495,6 +1503,7 @@ export default {
         {id: 'en', label: 'English (en)', selected: false}
       ],
       selectedLanguages: [],
+      defaultLang: 'en',
       selectedMediaType: 'media',
       resizeData: {
         tracking: false,
@@ -1712,7 +1721,6 @@ export default {
     }
 
     if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-      console.log('got heress 2')
       let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
       payload = {
         query_string: {
@@ -1863,6 +1871,10 @@ export default {
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
         this.$set(this.projectMetadata, 'languages', res.data.metadata.project_metadata.languages)
         this.selectedLanguages = res.data.metadata.project_metadata.languages
+      }
+      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
+        this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
+        this.defaultLang = res.data.metadata.project_metadata.defaultLang
       }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
         this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)

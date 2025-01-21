@@ -23,7 +23,7 @@
       <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
       <form>
         <div>
-          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
+          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :default-lang="defaultLang" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
             <slot />
           </subType>
         </div>
@@ -58,6 +58,10 @@ export default {
       default() {
         return ['en', 'fr']
       }
+    },
+    defaultLang: {
+      type: String,
+      default: 'en'
     },
     translationComponentSupport: {
       type: Boolean,

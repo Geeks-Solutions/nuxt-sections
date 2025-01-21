@@ -53,7 +53,7 @@
               <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
             </div>
             <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
-            <TranslationComponent v-if="translationComponentSupport" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
+            <TranslationComponent v-if="translationComponentSupport" :locales="locales" :default-lang="defaultLang" @setFormLang="(locale) => formLang = locale"/>
             <div
               :key="idx"
               v-for="(field, idx) in props.fields"
@@ -224,6 +224,10 @@ export default {
       default() {
         return ['en', 'fr']
       }
+    },
+    defaultLang: {
+      type: String,
+      default: 'en'
     },
     translationComponentSupport: {
       type: Boolean,

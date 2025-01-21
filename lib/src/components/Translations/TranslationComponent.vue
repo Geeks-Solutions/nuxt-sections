@@ -25,6 +25,10 @@ export default {
       default() {
         return ['en', 'fr']
       }
+    },
+    defaultLang: {
+      type: String,
+      default: 'en'
     }
   },
   data() {

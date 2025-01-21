@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [1.0.16] - 2025-01-17
 
+### Added
+
+- defaultLang support value can be set in Sections BO: Read the new default language field from project metadata #117
+
 ### Updated
 
 - Automated test coverage for the fetch hook Fix automated test for the fetch hook #107
