@@ -651,6 +651,104 @@ describe('SectionsMain', () => {
 
 })
 
+describe('Types tests', () => {
+
+  const typesWrapper = shallowMount(SectionsMain, {
+    mocks: {
+      ...global.mocks,
+      $sections: {
+        cname: true
+      }
+    },
+    propsData: {
+      admin: true
+    },
+    data() {
+      return {
+        editMode: true,
+        pageNotFound: false,
+        isModalOpen: true,
+        currentSection: false,
+        isCreateInstance: false,
+        typesTab: 'types',
+        sectionsFilterName: '',
+        sectionsFilterAppName: '',
+        appNames: ['sections'],
+        sectionOptions: {}, // Mock initial state
+        view: { id: 'view-id', name: 'section1', weight: 1, type: 'text' }, // Mock view object
+        currentViews: [
+          { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
+        ],
+        globalTypes: [],
+        types: [
+          {
+            name: 'Section1',
+            type: 'configurable',
+            query_string_keys: ['key1', 'key2'],
+            fields: ['field1'],
+            dynamic_options: ['option1'],
+            application: 'app1',
+          },
+        ],
+        loading: false,
+        allSections: [],
+      };
+    },
+  });
+
+  it('should not proceed if globalTypes already has data', async () => {
+    typesWrapper.setData({ globalTypes: [{ id: 1, name: 'Test' }] });
+
+    await typesWrapper.vm.getGlobalSectionTypes(false);
+
+    expect(global.mocks.$axios.get).not.toHaveBeenCalled();
+    expect(typesWrapper.vm.loading).toBe(false);
+  });
+
+  it('should fetch and process global types if not already loaded', async () => {
+    const mockResponse = {
+      data: {
+        data: [
+          {
+            id: 1,
+            name: 'Section1',
+            section: { name: 'Section1', options: [{ setting: 'option1' }] },
+            regions: ['Region1'],
+            auto_insertion: true,
+            pages: ['Page1'],
+          },
+        ],
+      },
+    };
+
+    typesWrapper.setData({ globalTypes: [] });
+
+    global.mocks.$axios.get.mockResolvedValue(mockResponse);
+
+    await typesWrapper.vm.getGlobalSectionTypes(false);
+
+    expect(global.mocks.$axios.get).toHaveBeenCalled();
+    expect(typesWrapper.vm.globalTypes).toHaveLength(2);
+    expect(typesWrapper.vm.globalTypes[0]).toMatchObject({
+      name: 'Section1',
+      type: 'configurable',
+      regions: ['Region1'],
+      auto_insertion: true,
+    });
+    expect(typesWrapper.vm.loading).toBe(false);
+  });
+
+  it('should handle errors gracefully', async () => {
+    global.mocks.$axios.get.mockRejectedValue(new Error('Fetch failed'));
+
+    await typesWrapper.vm.getGlobalSectionTypes(false);
+
+    expect(typesWrapper.vm.loading).toBe(false);
+  });
+
+});
+
 describe('render call has language sent in qs when the condition is met', () => {
   let wrapper;
   let mockAxios;

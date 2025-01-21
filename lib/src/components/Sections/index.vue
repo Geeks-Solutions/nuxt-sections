@@ -406,7 +406,7 @@
                 <div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)"
                      class="m-1 p-1 type-items content-wrapper">
                   <div
-                    v-if="isCreateInstance === false && globalTypes.filter(gt => gt.notCreated !== true).length === 0 && loading === false">
+                    v-if="isCreateInstance === false && globalTypes.filter(gt => gt.id !== undefined).length === 0 && loading === false">
                     <button
                       class="hp-button"
                       @click="
@@ -421,7 +421,7 @@
                   </div>
                   <div
                     class="section-item section-item-box"
-                    v-for="(type, index) in isCreateInstance === true ? filteredGlobalTypes.filter(gt => gt.notCreated === true) : filteredGlobalTypes.filter(gt => gt.notCreated !== true)"
+                    v-for="(type, index) in isCreateInstance === true ? filteredGlobalTypes.filter(gt => gt.notCreated === true) : filteredGlobalTypes.filter(gt => gt.id !== undefined)"
                     :key="`${type.name}-${index}`"
                   >
                     <div
@@ -2900,7 +2900,7 @@ export default {
               name: type.name,
               type: type.type,
               application: type.application,
-              notCreated: true
+              notCreated: type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
             })
           })
           this.loading = false
