@@ -2731,7 +2731,6 @@ export default {
           }
           this.intro.setDontShowAgain(false)
         }
-        console.log(this.$refs['intro-simple-CTA-section-form'])
         if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
           this.addIntroSteps(topic)
         } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
@@ -2742,7 +2741,8 @@ export default {
       }
     },
     addIntroSteps(topic) {
-      if (this.currentPages !== null && this.currentPages != 0) {
+      console.log('got heress 1')
+      if (this.currentPages !== null && this.currentPages === 0) {
         this.intro.setOptions({
           steps: this.introSteps(topic)
         })
