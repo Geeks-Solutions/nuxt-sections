@@ -2153,8 +2153,12 @@ export default {
           this.sectionsUserId = res.data.id
           this.loading = false;
         })
-        .catch((err) => {
-          this.loading = false;
+        .catch((error) => {
+          this.loading = false
+          this.$emit("load", false);
+          this.$cookies.remove('sections-auth-token');
+          this.admin = false
+          this.showToast("Error", "error", this.$t('tokenInvalidReconnect'));
         });
     },
     exportSections() {
@@ -2690,7 +2694,13 @@ export default {
         const token = this.$cookies.get("sections-auth-token");
         const response = await this.$axios.get(`${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/dashboard`, {
           headers: sectionHeader({ token })
-        })
+        }).catch((error) => {
+          this.loading = false
+          this.$emit("load", false);
+          this.$cookies.remove('sections-auth-token');
+          this.admin = false
+          this.showToast("Error", "error", this.$t('tokenInvalidReconnect'));
+        });
         this.currentPages = response.data.current_pages
         if (this.currentPages !== null && this.currentPages === 0) {
           if (this.pageNotFound) {
@@ -3166,7 +3176,6 @@ export default {
         .catch((error) => {
           this.loading = false
           this.$emit("load", false);
-          this.showToast("Error", "error", error.toString());
         });
     },
     addSystemTypes() {
