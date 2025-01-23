@@ -86,6 +86,7 @@
         <div v-if="!pageNotFound">
           <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
           <button
+            :ref="!editMode ? 'intro-edit-page' : undefined"
             @click="openEditMode()"
             v-if="admin && !isSideBarOpen"
             class="bg-blue control-button hide-mobile btn-text"
@@ -98,6 +99,7 @@
             </div>
 
             <div
+              ref="intro-top-bar"
               class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
               v-if="admin && editMode"
             >
@@ -130,10 +132,11 @@
                 <label for="highlightRegions"></label>
               </div>
               <button
+                ref="intro-add-new-section"
                 v-if="selectedLayout === 'standard'"
                 class="hp-button"
                 @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal'))
             "
               >
                 <div class="btn-icon plus-icon">
@@ -152,7 +155,13 @@
                 </div>
                 <div class="btn-text">{{ $t("createGlobal") }}</div>
               </button>
-              <button class="hp-button" @click="saveVariation">
+              <button
+                class="hp-button globalTour"
+                @click="runIntro('globalTour', true)"
+              >
+                <div class="btn-text intro">?</div>
+              </button>
+              <button ref="intro-save-changes" class="hp-button" @click="saveVariation">
                 <div class="btn-icon check-icon">
                   <CheckIcon/>
                 </div>
@@ -197,6 +206,12 @@
                   <SettingsIcon/>
                 </button>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
+                <button
+                  class="hp-button"
+                  @click="runIntro('topBar', true)"
+                >
+                  <div class="btn-text intro">?</div>
+                </button>
                 <button
                   @click="$cookies.remove('sections-auth-token'), (admin = false)"
                   v-if="admin"
@@ -262,8 +277,8 @@
                   <div v-if="!currentSection && isCreateInstance === false"
                        class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                     <div class="flexSections sections-flex-row sections-justify-center">
-                      <div class="sections-text-center h2 sections-cursor-pointer"
-                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
+                      <div ref="intro-available-sections" class="sections-text-center h2 sections-cursor-pointer"
+                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened')">
                         {{ $t("availableSections") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
@@ -273,9 +288,9 @@
                         {{ $t("AddGlobal") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
-                      <div class="sections-text-center h2 sections-cursor-pointer"
+                      <div ref="intro-inventory" class="sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                           @click="typesTab = 'inventoryTypes'">
+                           @click="typesTab = 'inventoryTypes'; runIntro('inventoryOpened')">
                         {{ $t("typeInventory") }}
                       </div>
                     </div>
@@ -333,6 +348,7 @@
                     class="section-item section-item-box"
                     v-for="(type, index) in typesTab === 'types' ? filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
                     :key="type.name"
+                    :ref="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
                   >
                     <div
                       v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data"
@@ -464,7 +480,7 @@
                   </div>
                 </div>
                 <div v-else class="flexSections">
-                  <div class="component-view">
+                  <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
                     <Static
@@ -1195,7 +1211,7 @@
                     </div>
                   </div>
                   <div class="footer">
-                    <button class="hp-button" @click="staticSuccess = false">
+                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed')">
                       <div class="btn-icon check-icon"></div>
                       <div class="btn-text">{{ $t("Done") }}</div>
                     </button>
@@ -1211,7 +1227,7 @@
         </div>
         <div v-else>
           <!-- This is to show the create a new page button when the page requested is not found     -->
-          <button v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
+          <button ref="intro-create-page" v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
             {{ $t("Create New Page") }}
           </button>
           <div
@@ -1524,7 +1540,8 @@ export default {
       sectionsWebsiteDomain: '',
       pageData: null,
       canPromote: false,
-      intro: null
+      intro: null,
+      currentPages: null
     }
   },
   computed: {
@@ -1630,18 +1647,9 @@ export default {
     }
   },
   async mounted() {
-
-    // if (this.admin) {
-    //   const introJs = await import('intro.js/minified/intro.min.js');
-    //   await import('intro.js/minified/introjs.min.css');
-    //   this.intro = introJs.default()
-    //   this.intro.setOptions({
-    //     hintAutoRefreshInterval: -1,
-    //     hintShowButton: false,
-    //     hintAnimation: true
-    //   })
-    //   this.intro.start
-    // }
+    if (this.admin) {
+      this.initiateIntroJs()
+    }
 
     if (this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
@@ -2624,6 +2632,7 @@ export default {
           this.sectionsPageName = res.data.page;
           this.pagePath = res.data.path;
           this.allSections = []
+          this.runIntro('editPage')
           this.showToast(
             "Success",
             "success",
@@ -2674,6 +2683,164 @@ export default {
         }
       } catch (error) {
         console.warn(this.$t('noFormsFolder'));
+      }
+    },
+    async initiateIntroJs() {
+      try {
+        const token = this.$cookies.get("sections-auth-token");
+        const response = await this.$axios.get(`${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/dashboard`, {
+          headers: sectionHeader({ token })
+        })
+        this.currentPages = response.data.current_pages
+        if (this.pageNotFound && this.currentPages !== null && this.currentPages === 0) {
+          if (this.pageNotFound) {
+            await this.runIntro('createPage')
+          }
+        }
+      } catch {
+      }
+    },
+    async runIntro(topic, rerun) {
+      if (this.intro) {
+        this.intro.exit(true)
+      }
+      let introJs = await import('intro.js/minified/intro.min.js');
+      await import('intro.js/minified/introjs.min.css');
+      this.intro = null
+      this.intro = introJs.default()
+      this.intro.setOption("dontShowAgain", true)
+      if (rerun === true) {
+        if (topic === 'globalTour') {
+          this.intro.setOption("dontShowAgain", false)
+          this.intro.onexit(() => {
+            this.intro.setDontShowAgain(true)
+          });
+        } else {
+          this.intro.setOption("dontShowAgain", true)
+        }
+        this.intro.setDontShowAgain(false)
+      }
+      console.log(this.$refs['intro-simple-CTA-section-form'])
+      if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
+        this.addIntroSteps(topic)
+      } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
+        this.addIntroSteps(topic)
+      } else if (topic === 'availableSectionOpened' && this.$refs['intro-simple-CTA-section-available'] && this.$refs['intro-simple-CTA-section-available'][0]) {
+        this.addIntroSteps(topic)
+      }
+    },
+    addIntroSteps(topic) {
+      if (this.currentPages !== null && this.currentPages != 0) {
+        this.intro.setOptions({
+          steps: this.introSteps(topic)
+        })
+        this.intro.refresh(true)
+        this.intro.start()
+        if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
+          window.runIntro = this.runIntro.bind(this);
+          window.setTypesTab = (value) => {
+            this.typesTab = value;
+          };
+        } else if (topic === 'inventoryOpened') {
+          window.addNewStaticType = this.addNewStaticType.bind(this);
+          window.closeIntro = () => {
+            this.intro.exit(true)
+          };
+        } else if (topic === 'availableSectionOpened') {
+          window.simpleCTAType = this.filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled').find(type => type.name === 'SimpleCTA')
+          window.openCurrentSection = this.openCurrentSection.bind(this);
+          window.closeIntro = () => {
+            this.intro.exit(true)
+          };
+        }
+      }
+    },
+    introSteps(topic) {
+      const simpleCTAIndex = this.filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled').findIndex(type => type.name === 'SimpleCTA')
+      switch (topic) {
+        case 'createPage':
+          return [
+            {
+              element: this.$refs['intro-create-page'],
+              intro: this.$t('intro.createPage')
+            }
+          ]
+        case 'editPage':
+          return [
+            {
+              element: this.$refs['intro-edit-page'],
+              intro: this.$t('intro.editPage')
+            }
+          ]
+        case 'topBar':
+          return [
+            {
+              element: this.$refs['intro-top-bar'],
+              intro: this.$t('intro.topBarButtons')
+            },
+            {
+              element: this.$refs['intro-add-new-section'],
+              intro: this.$t('intro.addNewSection')
+            }
+          ]
+        case 'addNewSectionModal':
+          return [
+            {
+              element: this.$refs['intro-available-sections'],
+              intro: this.$t('intro.availableSections')
+            },
+            {
+              element: this.$refs['intro-inventory'],
+              intro: simpleCTAIndex === -1 ? this.$t('intro.inventoryDesc') : `${this.$t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${this.$t('intro.checkIt')}</span>`
+            }
+          ]
+        case 'inventoryOpened':
+          return [
+            {
+              element: this.$refs['intro-simple-CTA-section-inventory'][0],
+              intro: `${this.$t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${this.$t('intro.createSection')}</span>`
+            }
+          ]
+        case 'sectionCreationConfirmed':
+          return [
+            {
+              element: this.$refs['intro-available-sections'],
+              intro: `${this.$t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened');">${this.$t('intro.openAvailableSections')}</span>`
+            }
+          ]
+        case 'availableSectionOpened':
+          return [
+            {
+              element: this.$refs['intro-simple-CTA-section-available'][0],
+              intro: `${this.$t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened');">${this.$t('intro.confirm')}</span>`
+            }
+          ]
+        case 'sectionFormOpened':
+          return [
+            {
+              element: this.$refs['intro-simple-CTA-section-form'],
+              intro: this.$t('intro.simpleCTAForm')
+            }
+          ]
+        case 'sectionSubmitted':
+          return [
+            {
+              element: this.$refs['intro-save-changes'],
+              intro: this.$t('intro.saveChanges')
+            }
+          ]
+        case 'globalTour':
+          return [
+            {
+              intro: this.$t('intro.globalSections')
+            },
+            {
+              intro: this.$t('intro.creatingGlobalSection')
+            },
+            {
+              intro: this.$t('intro.promoteSection')
+            }
+          ]
       }
     },
     getSectionProjectIdentity() {
@@ -3075,6 +3242,9 @@ export default {
       this.editMode = !this.editMode;
 
       if (this.editMode === true) {
+
+        this.runIntro('topBar')
+
         this.loading = true;
         const inBrowser = typeof window !== 'undefined';
         const config = {
@@ -3220,6 +3390,10 @@ export default {
           section.id,
           section
         );
+
+        if (section.name === 'SimpleCTA') {
+          this.runIntro('sectionSubmitted')
+        }
 
         if (this.selectedVariation === this.pageName) {
           // We check if there are variations that contains a section linked to the one we just edited
@@ -3566,6 +3740,10 @@ export default {
       this.variations.map((variation) => {
         this.mutateVariation(variation.pageName);
       });
+      if (this.intro) {
+        this.intro.exit(true)
+        this.intro.setDontShowAgain(true)
+      }
     },
     edit(view, viewAnchor) {
       if (this.isSideBarOpen !== true) {
@@ -4050,6 +4228,10 @@ button svg {
   justify-content: center;
 }
 
+.hp-button.globalTour {
+  margin-left: 0;
+}
+
 .hp-button:hover {
   background: #298cb6;
   transition: 0.1s;
@@ -4133,6 +4315,10 @@ button svg {
 
 .btn-text {
   font-size: 16px;
+}
+
+.btn-text.intro {
+  width: 20px;
 }
 
 .danger {
