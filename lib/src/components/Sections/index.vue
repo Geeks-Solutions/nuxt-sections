@@ -131,19 +131,20 @@
                 </label>
                 <label for="highlightRegions"></label>
               </div>
-              <button
-                ref="intro-add-new-section"
-                v-if="selectedLayout === 'standard'"
-                class="hp-button"
-                @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal'))
+              <div ref="intro-add-new-section">
+                <button
+                  v-if="selectedLayout === 'standard'"
+                  class="hp-button"
+                  @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun))
             "
-              >
-                <div class="btn-icon plus-icon">
-                  <PlusIcon/>
-                </div>
-                <div class="btn-text">{{ $t("Add") }}</div>
-              </button>
+                >
+                  <div class="btn-icon plus-icon">
+                    <PlusIcon/>
+                  </div>
+                  <div class="btn-text">{{ $t("Add") }}</div>
+                </button>
+              </div>
               <button
                 class="hp-button"
                 @click="
@@ -1541,7 +1542,8 @@ export default {
       pageData: null,
       canPromote: false,
       intro: null,
-      currentPages: null
+      currentPages: null,
+      introRerun: false
     }
   },
   computed: {
@@ -2711,7 +2713,12 @@ export default {
       }
     },
     async runIntro(topic, rerun) {
-      if (this.currentPages !== null && this.currentPages === 0) {
+      if (rerun === true) {
+        this.introRerun = true
+      } else {
+        this.introRerun = false
+      }
+      if ((this.currentPages !== null && this.currentPages === 0) || rerun === true) {
         if (this.intro) {
           this.intro.exit(true)
         }
@@ -2725,24 +2732,24 @@ export default {
             this.intro.setOption("dontShowAgain", false)
             this.intro.onexit(() => {
               this.intro.setDontShowAgain(true)
+              this.introRerun = false
             });
           } else {
-            this.intro.setOption("dontShowAgain", true)
+            this.intro.setOption("dontShowAgain", false)
           }
           this.intro.setDontShowAgain(false)
         }
         if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
-          this.addIntroSteps(topic)
+          this.addIntroSteps(topic, rerun)
         } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
-          this.addIntroSteps(topic)
+          this.addIntroSteps(topic, rerun)
         } else if (topic === 'availableSectionOpened' && this.$refs['intro-simple-CTA-section-available'] && this.$refs['intro-simple-CTA-section-available'][0]) {
-          this.addIntroSteps(topic)
+          this.addIntroSteps(topic, rerun)
         }
       }
     },
-    addIntroSteps(topic) {
-      console.log('got heress 1')
-      if (this.currentPages !== null && this.currentPages === 0) {
+    addIntroSteps(topic, rerun) {
+      if ((this.currentPages !== null && this.currentPages === 0) || rerun === true) {
         this.intro.setOptions({
           steps: this.introSteps(topic)
         })
