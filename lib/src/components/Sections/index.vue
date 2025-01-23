@@ -2692,7 +2692,7 @@ export default {
           headers: sectionHeader({ token })
         })
         this.currentPages = response.data.current_pages
-        if (this.pageNotFound && this.currentPages !== null && this.currentPages === 0) {
+        if (this.currentPages !== null && this.currentPages === 0) {
           if (this.pageNotFound) {
             await this.runIntro('createPage')
           }
@@ -2701,32 +2701,34 @@ export default {
       }
     },
     async runIntro(topic, rerun) {
-      if (this.intro) {
-        this.intro.exit(true)
-      }
-      let introJs = await import('intro.js/minified/intro.min.js');
-      await import('intro.js/minified/introjs.min.css');
-      this.intro = null
-      this.intro = introJs.default()
-      this.intro.setOption("dontShowAgain", true)
-      if (rerun === true) {
-        if (topic === 'globalTour') {
-          this.intro.setOption("dontShowAgain", false)
-          this.intro.onexit(() => {
-            this.intro.setDontShowAgain(true)
-          });
-        } else {
-          this.intro.setOption("dontShowAgain", true)
+      if (this.currentPages !== null && this.currentPages === 0) {
+        if (this.intro) {
+          this.intro.exit(true)
         }
-        this.intro.setDontShowAgain(false)
-      }
-      console.log(this.$refs['intro-simple-CTA-section-form'])
-      if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
-        this.addIntroSteps(topic)
-      } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
-        this.addIntroSteps(topic)
-      } else if (topic === 'availableSectionOpened' && this.$refs['intro-simple-CTA-section-available'] && this.$refs['intro-simple-CTA-section-available'][0]) {
-        this.addIntroSteps(topic)
+        let introJs = await import('intro.js/minified/intro.min.js');
+        await import('intro.js/minified/introjs.min.css');
+        this.intro = null
+        this.intro = introJs.default()
+        this.intro.setOption("dontShowAgain", true)
+        if (rerun === true) {
+          if (topic === 'globalTour') {
+            this.intro.setOption("dontShowAgain", false)
+            this.intro.onexit(() => {
+              this.intro.setDontShowAgain(true)
+            });
+          } else {
+            this.intro.setOption("dontShowAgain", true)
+          }
+          this.intro.setDontShowAgain(false)
+        }
+        console.log(this.$refs['intro-simple-CTA-section-form'])
+        if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
+          this.addIntroSteps(topic)
+        } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
+          this.addIntroSteps(topic)
+        } else if (topic === 'availableSectionOpened' && this.$refs['intro-simple-CTA-section-available'] && this.$refs['intro-simple-CTA-section-available'][0]) {
+          this.addIntroSteps(topic)
+        }
       }
     },
     addIntroSteps(topic) {
