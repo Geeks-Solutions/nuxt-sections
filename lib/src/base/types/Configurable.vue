@@ -53,14 +53,14 @@
               <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
             </div>
             <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
-            <TranslationComponent v-if="translationComponentSupport" :locales="locales" :default-lang="defaultLang" @setFormLang="(locale) => formLang = locale"/>
+            <TranslationComponent v-if="translationComponentSupport" :locales="locales" :default-lang="defaultLang" @setFormLang="updateLocale"/>
             <div
               :key="idx"
               v-for="(field, idx) in props.fields"
               :class="getType(field.type) !== 'file' ? '' : ''"
             >
               <div v-if="registeredType(field.type, field.key)" class="element d-inline-block">
-                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" :option-values="optionValues" />
+                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" :default-lang="defaultLang" :option-values="optionValues" />
               </div>
               <div v-else-if="!getType(field.type)" class="element w-full unsupportedFieldType">
                 {{ $t('unsupportedFieldType', { name: `"${field.type}_${field.key}"`, type: `"${field.type}"`}) }}
@@ -74,14 +74,24 @@
                 </div>
                 <div v-if="field.type === 'wysiwyg'">
                   <div class="input">
-                    <wysiwyg :ref="field.type+'Editor'" class="wyzywig" :html="optionsData[field.key]" @settingsUpdate="(content) => onEditorChange(content, idx, field.key)" />
+                    <wysiwyg :ref="field.type+'Editor'" class="wyzywig" :html="computedWysiwygValue(field)" @settingsUpdate="(content) => onEditorChange(content, idx, field.key)" />
                   </div>
                 </div>
                 <div v-else-if="field.type === 'textarea'" class="w-full">
                   <textarea
-                    v-model="optionsData[field.key]"
+                    v-model="optionsData[field.key][formLang]"
                     class="d-input py-4 pl-6 border rounded-xl border-FieldGray text-area-field w-full focus:outline-none"
                     :name="field.name"
+                    :placeholder="changeFieldLabel(field)"
+                    @change="changeFieldValue($event, idx, field.type, field.key)"
+                  />
+                </div>
+                <div v-else-if="stringType(field.key)" class="w-full">
+                  <input
+                    v-model="optionsData[field.key][formLang]"
+                    class="d-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                    :name="field.name"
+                    :placeholder="changeFieldLabel(field)"
                     @change="changeFieldValue($event, idx, field.type, field.key)"
                   />
                 </div>
@@ -118,13 +128,15 @@
                     </div>
                   </div>
                   <component
-                    v-show="!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === '')))))"                    :value="optionsData[field.key]"
+                    v-show="(field.type === 'string' || field.type === 'textfield') || (!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === ''))))))"
+                    :value="computedComponentValue(field)"
                     :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
                     :id="field.key"
                     :is="getTag(field.type, field.name && field.name.includes(':') ? field.name.split(':')[1] : field.name)"
                     :type="getType(field.type)"
                     :name="field.name"
                     :title="'choose'"
+                    :placeholder="changeFieldLabel(field)"
                     :multiple="optionValues.field === field.name && optionValues.option_values"
                     @input="changeFieldValue($event, idx, field.type, field.key)"
                   >
@@ -132,7 +144,7 @@
                       v-for="option in optionValues.option_values"
                       :key="option.id"
                       :value="option.id"
-                      :selected="optionsData[field.key] && optionsData[field.key].indexOf(option.id) !== -1"
+                      :selected="optionValues.field === field.name && optionValues.option_values && optionsData[field.key] && optionsData[field.key].indexOf(option.id) !== -1"
                     >{{ option.title }}</option
                     >
                   </component>
@@ -277,6 +289,29 @@ export default {
     },
     html() {
       this.settings = this.html
+    },
+    props: {
+      handler(v) {
+        if (v && v.fields) {
+          v.fields.forEach((field) => {
+            if (this.options[0][field.key] === undefined) {
+              this.$set(this.options[0], field.key, null);
+            }
+            if (this.optionsData[field.key] === undefined) {
+              if (this.stringType(field.type)) {
+                this.$set(this.optionsData, field.key, {})
+                this.locales.forEach(locale => {
+                  this.$set(this.optionsData[field.key], locale, '');
+                })
+              } else {
+                this.$set(this.optionsData, field.key, null);
+              }
+            }
+          });
+        }
+      },
+      deep: true,
+      immediate: true
     }
   },
   computed: {
@@ -333,12 +368,49 @@ export default {
         }
       });
       this.options = options;
+
+      let alteredOptions = null
+      let hooksJs = importJs(`/js/configurable-hooks`)
+      if (hooksJs['configurable_pre_render']) {
+        if (typeof hooksJs['configurable_pre_render'] === 'function') {
+          alteredOptions = hooksJs['configurable_pre_render'](JSON.parse(JSON.stringify(this.options)), this.defaultLang, this.locales, this.props)
+        }
+      }
+
+      if (alteredOptions) {
+        this.$set(this, ['options'], alteredOptions);
+      }
+
+      this.props.fields.forEach((field) => {
+        if (this.options[0][field.key] === undefined) {
+          if (this.stringType(field.type)) {
+            this.$set(this.options[0], field.key, {});
+            this.locales.forEach(locale => {
+              this.$set(this.options[0][field.key], locale, '');
+            })
+          } else {
+            this.$set(this.options[0], field.key, null);
+          }
+        }
+      });
+
       Object.assign(this.optionsData, this.options[0])
-      this.$set(this, ['optionsData'], this.options[0]);
+      Object.keys(this.options[0]).forEach(key => {
+        this.$set(this.optionsData, key, this.options[0][key]);
+      })
       this.props.fields = [...fields[0]];
     } else {
       this.props.fields.forEach((field) => {
-        this.options[0][field.key] = null;
+        if (this.options[0][field.key] === undefined || this.options[0][field.key] === null) {
+          if (this.stringType(field.type)) {
+            this.$set(this.options[0], field.key, {});
+            this.locales.forEach(locale => {
+              this.$set(this.options[0][field.key], locale, '');
+            })
+          } else {
+            this.$set(this.options[0], field.key, null);
+          }
+        }
       });
     }
 
@@ -405,6 +477,9 @@ export default {
       this.options.splice(idx, 1);
       this.props.fields.splice(idx, 1);
     },
+    stringType(type, name) {
+      return ['wysiwyg', 'string', 'textfield', 'textarea'].includes(type)
+    },
     async changeFieldValue(e, idx, type, fieldname) {
       const value = type === "media" ? e : e.target.value;
       const name = type === "media" ? fieldname : e.target.name;
@@ -413,7 +488,9 @@ export default {
       } else if(type === 'integer') {
         this.options[0][name] = parseInt(value);
       } else if(type === 'textarea') {
-        this.options[0][name] = value;
+        this.options[0][name][this.formLang] = value;
+      } else if(this.stringType(type) && !(this.optionValues.field === fieldname && this.optionValues.option_values)) {
+        this.options[0][name][this.formLang] = value;
       } else {
         this.options[0][name] = value;
       }
@@ -450,7 +527,7 @@ export default {
       this.options[0][name] = []
     },
     onEditorChange(html, idx, fieldname) {
-      this.options[0][fieldname] = html;
+      this.options[0][fieldname][this.formLang] = html;
     },
     addAnother() {
       this.errorMessage = "";
@@ -544,9 +621,9 @@ export default {
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields.find(field => field.key === key);
         let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
-        if (!this.options[0][key] && typeof this.options[0][key] !== "boolean") {
+        if (((typeof this.options[0][key] === 'string' && !this.options[0][key]) || (typeof this.options[0][key] === 'object' && this.stringType(fields.type) && !this.options[0][key][this.defaultLang])) && typeof this.options[0][key] !== "boolean") {
           errorMessage =
-            this.$t('fillRequiredFields') + ` (${key})`;
+            this.$t('fillRequiredFields') + ` (${key})` + ` / (${this.defaultLang})`;
         } else if (typeComp && typeComp.methods) {
           try {
             let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
@@ -697,7 +774,7 @@ export default {
       this.options[0]['whitelist_id'] = id;
     },
     isSelected(id, name) {
-      return this.optionsData[name] !== undefined && this.optionsData[name].indexOf(id) !== -1;
+      return this.optionsData[name] !== undefined && this.optionsData[name] !== null && this.optionsData[name].indexOf(id) !== -1;
     },
     selectOption(value, name) {
       if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) === -1) {
@@ -718,6 +795,22 @@ export default {
     registeredType(type, key) {
       let path = `/configurable_components/${type}_${key}`
       return importComp(path);
+    },
+    updateLocale(locale) {
+      this.$set(this, 'formLang', locale)
+      this.$set(this.props, 'fields', [...this.props.fields])
+      this.$set(this, 'optionsData', {...this.optionsData})
+      this.$set(this, 'options', [...this.options])
+    },
+    computedWysiwygValue(field) {
+      return this.optionsData[field.key][this.formLang]
+    },
+    computedComponentValue(field) {
+      if (this.optionValues.field === field.name && this.optionValues.option_values) {
+        return this.optionsData[field.key]
+      } else if (this.stringType(field.type, field.name)) {
+        return this.optionsData[field.key][this.formLang]
+      } else return this.optionsData[field.key]
     },
     changeFieldLabel(field) {
       let importedHook = this.importHooks('updateFieldLabel', field)
