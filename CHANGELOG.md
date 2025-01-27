@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sections Tutorial: Interactive user guides #115
 
+- Translation management for configurable fields #109
+
 ### Updated
 
 - Automated test coverage for the fetch hook Fix automated test for the fetch hook #107

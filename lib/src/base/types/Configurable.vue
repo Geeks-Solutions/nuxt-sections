@@ -621,9 +621,23 @@ export default {
       Object.keys(this.options[0]).map((key, i) => {
         const fields = this.props.fields.find(field => field.key === key);
         let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
-        if (((typeof this.options[0][key] === 'string' && !this.options[0][key]) || (typeof this.options[0][key] === 'object' && this.stringType(fields.type) && !this.options[0][key][this.defaultLang])) && typeof this.options[0][key] !== "boolean") {
+        if (fields.type ==='boolean' && this.options[0][key] === null) {
+          this.options[0][key] = false
+        }
+        if (((typeof this.options[0][key] === 'string' && !this.options[0][key]) || (typeof this.options[0][key] === 'object' && this.stringType(fields.type) && !this.options[0][key][this.defaultLang])) && typeof this.options[0][key] !== "boolean" && !Array.isArray(this.options[0][key])) {
+          if (typeof this.options[0][key] === 'string') {
+            errorMessage =
+              this.$t('fillRequiredFields') + ` (${key})`;
+          } else {
+            errorMessage =
+              this.$t('fillRequiredFields') + ` (${key})` + ` / (${this.defaultLang})`;
+          }
+        } else if (fields.type ==='integer' && !Array.isArray(this.options[0][key]) && (this.options[0][key] === null || isNaN(this.options[0][key]))) {
           errorMessage =
-            this.$t('fillRequiredFields') + ` (${key})` + ` / (${this.defaultLang})`;
+            this.$t('fillRequiredFields') + ` (${key})`;
+        } else if (this.options[0][key] === null) {
+          errorMessage =
+            this.$t('fillRequiredFields') + ` (${key})`;
         } else if (typeComp && typeComp.methods) {
           try {
             let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
