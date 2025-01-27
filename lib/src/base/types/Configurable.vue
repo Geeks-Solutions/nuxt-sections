@@ -817,7 +817,9 @@ export default {
       this.$set(this, 'options', [...this.options])
     },
     computedWysiwygValue(field) {
-      return this.optionsData[field.key][this.formLang]
+      if (this.options && this.options[0] && this.options[0][field.key] && this.options[0][field.key][this.formLang]) {
+        return this.options[0][field.key][this.formLang]
+      }
     },
     computedComponentValue(field) {
       if (this.optionValues.field === field.name && this.optionValues.option_values) {
