@@ -9,21 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- defaultLang support value can be set in Sections BO: Read the new default language field from project metadata #117
+- defaultLang support value can be set in Sections BO: Read the new default language field from project metadata #117.
+Value of this field is now exposed to all sections views and forms for a better management of `Language Translations`
 
 - Sections Tutorial: Interactive user guides #115
 
-- Translation management for configurable fields #109
+- Translation management for configurable fields #109: Dynamic fields of configurable section forms are now translatable by default for the following types 'wysiwyg', 'string', 'textfield', 'textarea' 
 
 ### Updated
 
 - Automated test coverage for the fetch hook Fix automated test for the fetch hook #107
 
+- Performance update: Loaded scripts size decreased by shifting the current wysiwyg editor component to the global editor component from vue-components library.
+Which is using lazy load import of the quill libraries to only include the component where it is used
+
 ### Changed
 
-- Wysiwyg Editor component to use the one coming from vue-components library Wysiwyg Component update needed #110
+- Wysiwyg Editor component to use the one coming from vue-components library: Wysiwyg Component update needed #110
 
-- Condition to send the language when it is not default to always send it: Send the language query string even though the Sections site is in its default language #114
+- Condition to send the language when it is not default to always send it: Send the language query string even though the Sections site is in its default language #114:
+Current language of the site will now always be sent in the payload query strings
 
 ### Fixed
 
