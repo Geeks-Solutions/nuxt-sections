@@ -99,81 +99,83 @@
             </div>
 
             <div
-              ref="intro-top-bar"
               class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
               v-if="admin && editMode"
             >
-              <button
-                class="hp-button"
-                @click="layoutMode = !layoutMode"
-              >
-                <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
-              </button>
-              <div v-if="layoutMode === true" class="layoutSelect-container">
-                <div class="layoutSelect-select-wrapper">
-                  <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                          @change="computeLayoutData">
-                    <option disabled value="">-- Select layout --</option>
-                    <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-                  </select>
-                  <div class="layoutSelect-arrow-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path d="M10 12L5 7h10l-5 5z"/>
-                    </svg>
+              <div ref="intro-top-bar" class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
+                <button
+                  class="hp-button"
+                  @click="layoutMode = !layoutMode"
+                >
+                  <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                </button>
+                <div v-if="layoutMode === true" class="layoutSelect-container">
+                  <div class="layoutSelect-select-wrapper">
+                    <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                            @change="computeLayoutData">
+                      <option disabled value="">-- Select layout --</option>
+                      <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+                    </select>
+                    <div class="layoutSelect-arrow-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M10 12L5 7h10l-5 5z"/>
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div v-if="layoutMode === true" class="custom-checkbox">
-                <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                <label class="switch">
-                  <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                  <span class="slider round"></span>
-                </label>
-                <label for="highlightRegions"></label>
-              </div>
-              <div ref="intro-add-new-section">
+                <div v-if="layoutMode === true" class="custom-checkbox">
+                  <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                  <label class="switch">
+                    <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                    <span class="slider round"></span>
+                  </label>
+                  <label for="highlightRegions"></label>
+                </div>
+                <div ref="intro-add-new-section">
+                  <button
+                    v-if="selectedLayout === 'standard'"
+                    class="hp-button"
+                    @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun))
+            "
+                  >
+                    <div class="btn-icon plus-icon">
+                      <PlusIcon/>
+                    </div>
+                    <div class="btn-text">{{ $t("Add") }}</div>
+                  </button>
+                </div>
                 <button
-                  v-if="selectedLayout === 'standard'"
                   class="hp-button"
                   @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun))
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
                 >
                   <div class="btn-icon plus-icon">
                     <PlusIcon/>
                   </div>
-                  <div class="btn-text">{{ $t("Add") }}</div>
+                  <div class="btn-text">{{ $t("createGlobal") }}</div>
+                </button>
+                <button
+                  ref="intro-find-more-blobal"
+                  class="hp-button globalTour"
+                  @click="runIntro('globalTour', true)"
+                >
+                  <div class="btn-text intro">?</div>
+                </button>
+                <button ref="intro-save-changes" class="hp-button" @click="saveVariation">
+                  <div class="btn-icon check-icon">
+                    <CheckIcon/>
+                  </div>
+                  <div class="btn-text">{{ $t("Save") }}</div>
+                </button>
+                <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+                  <div class="btn-icon back-icon">
+                    <BackIcon/>
+                  </div>
+                  <div class="btn-text">{{ $t("Restore") }}</div>
                 </button>
               </div>
-              <button
-                class="hp-button"
-                @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
-            "
-              >
-                <div class="btn-icon plus-icon">
-                  <PlusIcon/>
-                </div>
-                <div class="btn-text">{{ $t("createGlobal") }}</div>
-              </button>
-              <button
-                class="hp-button globalTour"
-                @click="runIntro('globalTour', true)"
-              >
-                <div class="btn-text intro">?</div>
-              </button>
-              <button ref="intro-save-changes" class="hp-button" @click="saveVariation">
-                <div class="btn-icon check-icon">
-                  <CheckIcon/>
-                </div>
-                <div class="btn-text">{{ $t("Save") }}</div>
-              </button>
-              <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
-                <div class="btn-icon back-icon">
-                  <BackIcon/>
-                </div>
-                <div class="btn-text">{{ $t("Restore") }}</div>
-              </button>
               <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
                 <button
                   class="hp-button "
@@ -208,6 +210,7 @@
                 </button>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
                 <button
+                  ref="intro-relaunch"
                   class="hp-button"
                   @click="runIntro('topBar', true)"
                 >
@@ -279,7 +282,7 @@
                        class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                     <div class="flexSections sections-flex-row sections-justify-center">
                       <div ref="intro-available-sections" class="sections-text-center h2 sections-cursor-pointer"
-                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened')">
+                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun)">
                         {{ $t("availableSections") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
@@ -291,7 +294,7 @@
                       <div class="sections-text-center h2 sections-px-4">/</div>
                       <div ref="intro-inventory" class="sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                           @click="typesTab = 'inventoryTypes'; runIntro('inventoryOpened')">
+                           @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened')">
                         {{ $t("typeInventory") }}
                       </div>
                     </div>
@@ -1183,36 +1186,9 @@
                   </div>
                   <div v-if="typesTab === 'types' || typesTab === 'inventoryTypes'"
                        class="flexSections sections-w-full sections-justify-center">
-                    <div class="body">
-                      <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
-                      <div class="section-list">
-                        <div class="dot">
-                          <DotIcon/>
-                        </div>
-                        <div>
-                          {{ $t("success-section-instruction-1") }}
-                        </div>
-                      </div>
-                      <div class="section-list">
-                        <div class="dot">
-                          <DotIcon/>
-                        </div>
-                        <div>
-                          {{ $t("success-section-instruction-2") }}
-                        </div>
-                      </div>
-                      <div class="section-list">
-                        <div class="dot">
-                          <DotIcon/>
-                        </div>
-                        <div>
-                          {{ $t("success-section-instruction-3") }}
-                        </div>
-                      </div>
-                    </div>
                   </div>
                   <div class="footer">
-                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed')">
+                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun)">
                       <div class="btn-icon check-icon"></div>
                       <div class="btn-text">{{ $t("Done") }}</div>
                     </button>
@@ -2713,6 +2689,9 @@ export default {
       }
     },
     async runIntro(topic, rerun) {
+      if (this.intro && topic === 'blobalToor') {
+        this.intro.setDontShowAgain(true)
+      }
       if (rerun === true) {
         this.introRerun = true
       } else {
@@ -2727,6 +2706,10 @@ export default {
         this.intro = null
         this.intro = introJs.default()
         this.intro.setOption("dontShowAgain", true)
+        this.intro.setOption("nextLabel", this.$t('intro.nextLabel'))
+        this.intro.setOption("prevLabel", this.$t('intro.prevLabel'))
+        this.intro.setOption("doneLabel", this.$t('intro.doneLabel'))
+        this.intro.setOption("dontShowAgainLabel", this.$t('intro.dontShowAgainLabel'))
         if (rerun === true) {
           if (topic === 'globalTour') {
             this.intro.setOption("dontShowAgain", false)
@@ -2757,6 +2740,7 @@ export default {
         this.intro.start()
         if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
           window.runIntro = this.runIntro.bind(this);
+          window.introRerun = this.introRerun;
           window.setTypesTab = (value) => {
             this.typesTab = value;
           };
@@ -2768,6 +2752,7 @@ export default {
         } else if (topic === 'availableSectionOpened') {
           window.simpleCTAType = this.filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled').find(type => type.name === 'SimpleCTA')
           window.openCurrentSection = this.openCurrentSection.bind(this);
+          window.introRerun = this.introRerun
           window.closeIntro = () => {
             this.intro.exit(true)
           };
@@ -2824,14 +2809,14 @@ export default {
           return [
             {
               element: this.$refs['intro-available-sections'],
-              intro: `${this.$t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened');">${this.$t('intro.openAvailableSections')}</span>`
+              intro: `${this.$t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened', introRerun);">${this.$t('intro.openAvailableSections')}</span>`
             }
           ]
         case 'availableSectionOpened':
           return [
             {
               element: this.$refs['intro-simple-CTA-section-available'][0],
-              intro: `${this.$t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened');">${this.$t('intro.confirm')}</span>`
+              intro: `${this.$t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${this.$t('intro.here')}</span>`
             }
           ]
         case 'sectionFormOpened':
@@ -2846,6 +2831,17 @@ export default {
             {
               element: this.$refs['intro-save-changes'],
               intro: this.$t('intro.saveChanges')
+            }
+          ]
+        case 'pageSaved':
+          return [
+            {
+              element: this.$refs['intro-relaunch'],
+              intro: this.$t('intro.relaunch')
+            },
+            {
+              element: this.$refs['intro-find-more-blobal'],
+              intro: this.$t('intro.findMoreGlobal')
             }
           ]
         case 'globalTour':
@@ -3410,7 +3406,7 @@ export default {
         );
 
         if (section.name === 'SimpleCTA') {
-          this.runIntro('sectionSubmitted')
+          this.runIntro('sectionSubmitted', this.introRerun)
         }
 
         if (this.selectedVariation === this.pageName) {
@@ -3712,6 +3708,7 @@ export default {
                 JSON.stringify(this.displayVariations)
               );
               this.sectionslayout = res.data.layout;
+              this.runIntro('pageSaved', this.introRerun)
               this.loading = false;
               if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
                 this.showToast(
@@ -3758,10 +3755,6 @@ export default {
       this.variations.map((variation) => {
         this.mutateVariation(variation.pageName);
       });
-      if (this.intro) {
-        this.intro.exit(true)
-        this.intro.setDontShowAgain(true)
-      }
     },
     edit(view, viewAnchor) {
       if (this.isSideBarOpen !== true) {
