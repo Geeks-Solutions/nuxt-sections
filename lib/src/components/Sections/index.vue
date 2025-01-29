@@ -2689,7 +2689,7 @@ export default {
       }
     },
     async runIntro(topic, rerun) {
-      if (this.intro && topic === 'blobalToor') {
+      if (this.intro && topic === 'globalTour') {
         this.intro.setDontShowAgain(true)
       }
       if (rerun === true) {
@@ -2718,9 +2718,11 @@ export default {
               this.introRerun = false
             });
           } else {
-            this.intro.setOption("dontShowAgain", false)
+            if (topic === 'topBar') {
+              this.intro.setDontShowAgain(false)
+            }
+            this.intro.setOption("dontShowAgain", true)
           }
-          this.intro.setDontShowAgain(false)
         }
         if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
           this.addIntroSteps(topic, rerun)
