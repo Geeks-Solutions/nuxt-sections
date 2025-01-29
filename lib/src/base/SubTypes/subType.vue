@@ -2,8 +2,8 @@
   <div class="sub-types">
     <div>
       <div class="text-video" :class="{'content-wrapper': isSideBarOpen === false}" v-show="name">
-        <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"  @setFormLang="(locale) => formLang = locale"/>
-        <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" :selected-media="selectedMedia" @openMediaModal="(mediaId, category) => $refs.sectionsMediaComponent.openModal(mediaId, category)" @closeMediaModal="$refs.sectionsMediaComponent.closeModal()" />
+        <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang" @setFormLang="(locale) => formLang = locale"/>
+        <component :is="getComponentForm" :ref="name" :locales="locales" :selectedLang="formLang" :default-lang="defaultLang" :selected-media="selectedMedia" @openMediaModal="(mediaId, category) => $refs.sectionsMediaComponent.openModal(mediaId, category)" @closeMediaModal="$refs.sectionsMediaComponent.closeModal()" />
         <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
       </div>
     </div>
@@ -47,6 +47,10 @@ export default {
       default() {
         return ['en', 'fr']
       }
+    },
+    defaultLang: {
+      type: String,
+      default: 'en'
     },
     translationComponentSupport: {
       type: Boolean,

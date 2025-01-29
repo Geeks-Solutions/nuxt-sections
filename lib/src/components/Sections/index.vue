@@ -21,6 +21,7 @@
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             :savedView="savedView"
             :locales="locales"
+            :default-lang="defaultLang"
             :translation-component-support="translationComponentSupport"
             :sections-user-id="sectionsUserId"
             :instance="currentSection.instance === true"
@@ -50,6 +51,8 @@
             :props="currentSection"
             :savedView="savedView"
             :headers="headers"
+            :locales="locales"
+            :default-lang="defaultLang"
             :sections-user-id="sectionsUserId"
             :sections-configurable-type="sectionsConfigurableTypeReference"
             :translation-component-support="translationComponentSupport"
@@ -83,6 +86,7 @@
         <div v-if="!pageNotFound">
           <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
           <button
+            :ref="!editMode ? 'intro-edit-page' : undefined"
             @click="openEditMode()"
             v-if="admin && !isSideBarOpen"
             class="bg-blue control-button hide-mobile btn-text"
@@ -98,69 +102,80 @@
               class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
               v-if="admin && editMode"
             >
-              <button
-                class="hp-button"
-                @click="layoutMode = !layoutMode"
-              >
-                <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
-              </button>
-              <div v-if="layoutMode === true" class="layoutSelect-container">
-                <div class="layoutSelect-select-wrapper">
-                  <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                          @change="computeLayoutData">
-                    <option disabled value="">-- Select layout --</option>
-                    <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-                  </select>
-                  <div class="layoutSelect-arrow-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path d="M10 12L5 7h10l-5 5z"/>
-                    </svg>
+              <div ref="intro-top-bar" class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
+                <button
+                  class="hp-button"
+                  @click="layoutMode = !layoutMode"
+                >
+                  <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                </button>
+                <div v-if="layoutMode === true" class="layoutSelect-container">
+                  <div class="layoutSelect-select-wrapper">
+                    <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                            @change="computeLayoutData">
+                      <option disabled value="">-- Select layout --</option>
+                      <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+                    </select>
+                    <div class="layoutSelect-arrow-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M10 12L5 7h10l-5 5z"/>
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div v-if="layoutMode === true" class="custom-checkbox">
-                <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                <label class="switch">
-                  <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                  <span class="slider round"></span>
-                </label>
-                <label for="highlightRegions"></label>
-              </div>
-              <button
-                v-if="selectedLayout === 'standard'"
-                class="hp-button"
-                @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false)
+                <div v-if="layoutMode === true" class="custom-checkbox">
+                  <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                  <label class="switch">
+                    <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                    <span class="slider round"></span>
+                  </label>
+                  <label for="highlightRegions"></label>
+                </div>
+                <div ref="intro-add-new-section">
+                  <button
+                    v-if="selectedLayout === 'standard'"
+                    class="hp-button"
+                    @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun))
             "
-              >
-                <div class="btn-icon plus-icon">
-                  <PlusIcon/>
+                  >
+                    <div class="btn-icon plus-icon">
+                      <PlusIcon/>
+                    </div>
+                    <div class="btn-text">{{ $t("Add") }}</div>
+                  </button>
                 </div>
-                <div class="btn-text">{{ $t("Add") }}</div>
-              </button>
-              <button
-                class="hp-button"
-                @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
+                <button
+                  class="hp-button"
+                  @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
-              >
-                <div class="btn-icon plus-icon">
-                  <PlusIcon/>
-                </div>
-                <div class="btn-text">{{ $t("createGlobal") }}</div>
-              </button>
-              <button class="hp-button" @click="saveVariation">
-                <div class="btn-icon check-icon">
-                  <CheckIcon/>
-                </div>
-                <div class="btn-text">{{ $t("Save") }}</div>
-              </button>
-              <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
-                <div class="btn-icon back-icon">
-                  <BackIcon/>
-                </div>
-                <div class="btn-text">{{ $t("Restore") }}</div>
-              </button>
+                >
+                  <div class="btn-icon plus-icon">
+                    <PlusIcon/>
+                  </div>
+                  <div class="btn-text">{{ $t("createGlobal") }}</div>
+                </button>
+                <button
+                  ref="intro-find-more-blobal"
+                  class="hp-button globalTour"
+                  @click="runIntro('globalTour', true)"
+                >
+                  <div class="btn-text intro">?</div>
+                </button>
+                <button ref="intro-save-changes" class="hp-button" @click="saveVariation">
+                  <div class="btn-icon check-icon">
+                    <CheckIcon/>
+                  </div>
+                  <div class="btn-text">{{ $t("Save") }}</div>
+                </button>
+                <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+                  <div class="btn-icon back-icon">
+                    <BackIcon/>
+                  </div>
+                  <div class="btn-text">{{ $t("Restore") }}</div>
+                </button>
+              </div>
               <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
                 <button
                   class="hp-button "
@@ -194,6 +209,13 @@
                   <SettingsIcon/>
                 </button>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
+                <button
+                  ref="intro-relaunch"
+                  class="hp-button"
+                  @click="runIntro('topBar', true)"
+                >
+                  <div class="btn-text intro">?</div>
+                </button>
                 <button
                   @click="$cookies.remove('sections-auth-token'), (admin = false)"
                   v-if="admin"
@@ -250,17 +272,17 @@
 
           <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
           <div v-if="isModalOpen && admin && editMode" ref="modal"
-               class="sections-fixed section-modal-content sections-z-50 bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer"
+               class="sections-fixed section-modal-content sections-z-50 bg-grey sections-bg-opacity-25 sections-inset-0 modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
-              class="flexSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+              class="flexSections sections-items-center sections-justify-center sections-px-4 sections-pb-20 sections-text-center">
               <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl">
                 <div class="flexSections sections-flex-row relativeSections sections-justify-center">
                   <div v-if="!currentSection && isCreateInstance === false"
-                       class="flexSections sections-flex-col sections-my-3 sections-pb-6 sections-gap-4">
+                       class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                     <div class="flexSections sections-flex-row sections-justify-center">
-                      <div class="sections-text-center h2 sections-cursor-pointer"
-                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'">
+                      <div ref="intro-available-sections" class="sections-text-center h2 sections-cursor-pointer"
+                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun)">
                         {{ $t("availableSections") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
@@ -270,9 +292,9 @@
                         {{ $t("AddGlobal") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
-                      <div class="sections-text-center h2 sections-cursor-pointer"
+                      <div ref="intro-inventory" class="sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                           @click="typesTab = 'inventoryTypes'">
+                           @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened')">
                         {{ $t("typeInventory") }}
                       </div>
                     </div>
@@ -330,6 +352,7 @@
                     class="section-item section-item-box"
                     v-for="(type, index) in typesTab === 'types' ? filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
                     :key="type.name"
+                    :ref="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
                   >
                     <div
                       v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data"
@@ -352,10 +375,12 @@
                       </div>
                     </div>
                     <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
-                      <div class="section-info-icon">
-                        <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
-                                  class="info-icon-style"/>
-                      </div>
+                      <ClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                        <div class="section-info-icon">
+                          <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                                    class="info-icon-style" />
+                        </div>
+                      </ClickableTooltip>
                     </div>
                     <div v-else class="section-top-separator"></div>
                     <div class="section-item"
@@ -404,11 +429,11 @@
                 <div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)"
                      class="m-1 p-1 type-items content-wrapper">
                   <div
-                    v-if="isCreateInstance === false && globalTypes.filter(gt => gt.notCreated !== true).length === 0 && loading === false">
+                    v-if="isCreateInstance === false && globalTypes.filter(gt => gt.id !== undefined).length === 0 && loading === false">
                     <button
                       class="hp-button"
                       @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
                     >
                       <div class="btn-icon plus-icon">
@@ -419,7 +444,7 @@
                   </div>
                   <div
                     class="section-item section-item-box"
-                    v-for="(type, index) in isCreateInstance === true ? filteredGlobalTypes.filter(gt => gt.notCreated === true) : filteredGlobalTypes.filter(gt => gt.notCreated !== true)"
+                    v-for="(type, index) in isCreateInstance === true ? filteredGlobalTypes.filter(gt => gt.notCreated === true) : filteredGlobalTypes.filter(gt => gt.id !== undefined)"
                     :key="`${type.name}-${index}`"
                   >
                     <div
@@ -433,10 +458,12 @@
                       </div>
                     </div>
                     <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
-                      <div class="global-section-info-icon">
-                        <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
-                                  class="info-icon-style"/>
-                      </div>
+                      <ClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                        <div class="global-section-info-icon">
+                          <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                                    class="info-icon-style"/>
+                        </div>
+                      </ClickableTooltip>
                     </div>
                     <div v-else-if="isCreateInstance === true" class="section-top-separator"></div>
                     <div class="section-item" :class="{active: type.notCreated !== true || isCreateInstance === true}"
@@ -457,7 +484,7 @@
                   </div>
                 </div>
                 <div v-else class="flexSections">
-                  <div class="component-view">
+                  <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
                     <Static
@@ -466,6 +493,7 @@
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       :savedView="savedView"
                       :locales="locales"
+                      :default-lang="defaultLang"
                       :translation-component-support="translationComponentSupport"
                       :sections-user-id="sectionsUserId"
                       :instance="currentSection.instance === true"
@@ -493,6 +521,8 @@
                       :props="currentSection"
                       :savedView="savedView"
                       :headers="headers"
+                      :locales="locales"
+                      :default-lang="defaultLang"
                       :sections-user-id="sectionsUserId"
                       :sections-configurable-type="sectionsConfigurableTypeReference"
                       :translation-component-support="translationComponentSupport"
@@ -862,6 +892,7 @@
                       :section="view"
                       :lang="lang"
                       :locales="locales"
+                      :default-lang="defaultLang"
                       @refresh-section="(data) => refreshSectionView(view, data)"
                     />
                   </div>
@@ -871,7 +902,7 @@
             </draggable>
           </div>
           <div v-else>
-            <component :is="getSelectedLayout()" :lang="lang" :locales="locales">
+            <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang">
               <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
                 <!-- Empty div injected to verify the slots              -->
                 <div class="flexSections flex-col">
@@ -959,6 +990,7 @@
                               :section="view"
                               :lang="lang"
                               :locales="locales"
+                              :default-lang="defaultLang"
                               @refresh-section="(data) => refreshSectionView(view, data)"
                             />
                           </div>
@@ -1056,7 +1088,7 @@
                       <CloseIcon/>
                     </div>
                   </div>
-                  <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales"
+                  <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
                                         @setFormLang="(locale) => metadataFormLang = locale"/>
                   <div class="flexSections sections-w-full sections-justify-center"
                        :class="$sections.cname === 'active' ? 'sections-page-settings' : ''">
@@ -1154,36 +1186,9 @@
                   </div>
                   <div v-if="typesTab === 'types' || typesTab === 'inventoryTypes'"
                        class="flexSections sections-w-full sections-justify-center">
-                    <div class="body">
-                      <div class="subtitle">{{ $t("success-section-subtitle") }}:</div>
-                      <div class="section-list">
-                        <div class="dot">
-                          <DotIcon/>
-                        </div>
-                        <div>
-                          {{ $t("success-section-instruction-1") }}
-                        </div>
-                      </div>
-                      <div class="section-list">
-                        <div class="dot">
-                          <DotIcon/>
-                        </div>
-                        <div>
-                          {{ $t("success-section-instruction-2") }}
-                        </div>
-                      </div>
-                      <div class="section-list">
-                        <div class="dot">
-                          <DotIcon/>
-                        </div>
-                        <div>
-                          {{ $t("success-section-instruction-3") }}
-                        </div>
-                      </div>
-                    </div>
                   </div>
                   <div class="footer">
-                    <button class="hp-button" @click="staticSuccess = false">
+                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun)">
                       <div class="btn-icon check-icon"></div>
                       <div class="btn-text">{{ $t("Done") }}</div>
                     </button>
@@ -1199,7 +1204,7 @@
         </div>
         <div v-else>
           <!-- This is to show the create a new page button when the page requested is not found     -->
-          <button v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
+          <button ref="intro-create-page" v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
             {{ $t("Create New Page") }}
           </button>
           <div
@@ -1275,6 +1280,7 @@ import upperFirst from "lodash/upperFirst";
 import TranslationComponent from "../../components/Translations/TranslationComponent";
 import UploadMedia from "../../components/Medias/UploadMedia";
 import MediaComponent from "../../components/Medias/MediaComponent";
+import ClickableTooltip from "../../components/Tooltip/ClickableTooltip";
 
 export default {
   name: "Sections",
@@ -1309,7 +1315,8 @@ export default {
     ErrorIcon,
     InfoIcon,
     UploadMedia,
-    MediaComponent
+    MediaComponent,
+    ClickableTooltip
   },
   props: {
     pageName: {
@@ -1489,6 +1496,7 @@ export default {
         {id: 'en', label: 'English (en)', selected: false}
       ],
       selectedLanguages: [],
+      defaultLang: 'en',
       selectedMediaType: 'media',
       resizeData: {
         tracking: false,
@@ -1507,7 +1515,11 @@ export default {
       sectionsFilterAppName: '',
       appNames: [],
       sectionsWebsiteDomain: '',
-      pageData: null
+      pageData: null,
+      canPromote: false,
+      intro: null,
+      currentPages: null,
+      introRerun: false
     }
   },
   computed: {
@@ -1612,7 +1624,11 @@ export default {
       });
     }
   },
-  mounted() {
+  async mounted() {
+    if (this.admin) {
+      this.initiateIntroJs()
+    }
+
     if (this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
       this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
     } else if (this.sectionsAdminError !== "") {
@@ -1686,9 +1702,7 @@ export default {
 
     let language = undefined
     try {
-      if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-        language = this.$i18n.locale
-      }
+      language = this.$i18n.locale
     } catch {
     }
 
@@ -1843,6 +1857,10 @@ export default {
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
         this.$set(this.projectMetadata, 'languages', res.data.metadata.project_metadata.languages)
         this.selectedLanguages = res.data.metadata.project_metadata.languages
+      }
+      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
+        this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
+        this.defaultLang = res.data.metadata.project_metadata.defaultLang
       }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
         this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
@@ -2086,7 +2104,8 @@ export default {
           .then((res) => {
             const token = res.data.token;
             const date = new Date();
-            date.setDate(date.getDate() + 7);
+            date.setDate(date.getDate() + 14);
+            date.setHours(date.getHours() - 4)
             this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {
               expires: date,
               path: '/'
@@ -2112,8 +2131,12 @@ export default {
           this.sectionsUserId = res.data.id
           this.loading = false;
         })
-        .catch((err) => {
-          this.loading = false;
+        .catch((error) => {
+          this.loading = false
+          this.$emit("load", false);
+          this.$cookies.remove('sections-auth-token');
+          this.admin = false
+          this.showToast("Error", "error", this.$t('tokenInvalidReconnect'));
         });
     },
     exportSections() {
@@ -2261,8 +2284,27 @@ export default {
               name: ""
             }
           ]
+
+          if (this.canPromote === true) {
+            section.linkedTo = section.instance_name;
+            section.linked_to = section.instance_name;
+            section.instance = true;
+            this.$set(
+              this.displayVariations[this.selectedVariation].views,
+              section.id,
+              section
+            );
+            this.displayVariations[this.selectedVariation].altered = true;
+            this.showToast(
+              "Success",
+              "info",
+              this.$t('successAddedSection')
+            );
+          }
+
           this.currentSection = null
           this.isCreateInstance = false
+          this.isSideBarOpen = false
           this.typesTab = 'globalTypes'
         })
           .catch((error) => {
@@ -2572,6 +2614,7 @@ export default {
           this.sectionsPageName = res.data.page;
           this.pagePath = res.data.path;
           this.allSections = []
+          this.runIntro('editPage')
           this.showToast(
             "Success",
             "success",
@@ -2624,6 +2667,199 @@ export default {
         console.warn(this.$t('noFormsFolder'));
       }
     },
+    async initiateIntroJs() {
+      try {
+        const token = this.$cookies.get("sections-auth-token");
+        const response = await this.$axios.get(`${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/dashboard`, {
+          headers: sectionHeader({ token })
+        }).catch((error) => {
+          this.loading = false
+          this.$emit("load", false);
+          this.$cookies.remove('sections-auth-token');
+          this.admin = false
+          this.showToast("Error", "error", this.$t('tokenInvalidReconnect'));
+        });
+        this.currentPages = response.data.current_pages
+        if (this.currentPages !== null && this.currentPages === 0) {
+          if (this.pageNotFound) {
+            await this.runIntro('createPage')
+          }
+        }
+      } catch {
+      }
+    },
+    async runIntro(topic, rerun) {
+      if (this.intro && topic === 'globalTour') {
+        this.intro.setDontShowAgain(true)
+      }
+      if (rerun === true) {
+        this.introRerun = true
+      } else {
+        this.introRerun = false
+      }
+      if ((this.currentPages !== null && this.currentPages === 0) || rerun === true) {
+        if (this.intro) {
+          this.intro.exit(true)
+        }
+        let introJs = await import('intro.js/minified/intro.min.js');
+        await import('intro.js/minified/introjs.min.css');
+        this.intro = null
+        this.intro = introJs.default()
+        this.intro.setOption("dontShowAgain", true)
+        this.intro.setOption("nextLabel", this.$t('intro.nextLabel'))
+        this.intro.setOption("prevLabel", this.$t('intro.prevLabel'))
+        this.intro.setOption("doneLabel", this.$t('intro.doneLabel'))
+        this.intro.setOption("dontShowAgainLabel", this.$t('intro.dontShowAgainLabel'))
+        if (rerun === true) {
+          if (topic === 'globalTour') {
+            this.intro.setOption("dontShowAgain", false)
+            this.intro.onexit(() => {
+              this.intro.setDontShowAgain(true)
+              this.introRerun = false
+            });
+          } else {
+            if (topic === 'topBar') {
+              this.intro.setDontShowAgain(false)
+            }
+            this.intro.setOption("dontShowAgain", true)
+          }
+        }
+        if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
+          this.addIntroSteps(topic, rerun)
+        } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
+          this.addIntroSteps(topic, rerun)
+        } else if (topic === 'availableSectionOpened' && this.$refs['intro-simple-CTA-section-available'] && this.$refs['intro-simple-CTA-section-available'][0]) {
+          this.addIntroSteps(topic, rerun)
+        }
+      }
+    },
+    addIntroSteps(topic, rerun) {
+      if ((this.currentPages !== null && this.currentPages === 0) || rerun === true) {
+        this.intro.setOptions({
+          steps: this.introSteps(topic)
+        })
+        this.intro.refresh(true)
+        this.intro.start()
+        if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
+          window.runIntro = this.runIntro.bind(this);
+          window.introRerun = this.introRerun;
+          window.setTypesTab = (value) => {
+            this.typesTab = value;
+          };
+        } else if (topic === 'inventoryOpened') {
+          window.addNewStaticType = this.addNewStaticType.bind(this);
+          window.closeIntro = () => {
+            this.intro.exit(true)
+          };
+        } else if (topic === 'availableSectionOpened') {
+          window.simpleCTAType = this.filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled').find(type => type.name === 'SimpleCTA')
+          window.openCurrentSection = this.openCurrentSection.bind(this);
+          window.introRerun = this.introRerun
+          window.closeIntro = () => {
+            this.intro.exit(true)
+          };
+        }
+      }
+    },
+    introSteps(topic) {
+      const simpleCTAIndex = this.filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled').findIndex(type => type.name === 'SimpleCTA')
+      switch (topic) {
+        case 'createPage':
+          return [
+            {
+              element: this.$refs['intro-create-page'],
+              intro: this.$t('intro.createPage')
+            }
+          ]
+        case 'editPage':
+          return [
+            {
+              element: this.$refs['intro-edit-page'],
+              intro: this.$t('intro.editPage')
+            }
+          ]
+        case 'topBar':
+          return [
+            {
+              element: this.$refs['intro-top-bar'],
+              intro: this.$t('intro.topBarButtons')
+            },
+            {
+              element: this.$refs['intro-add-new-section'],
+              intro: this.$t('intro.addNewSection')
+            }
+          ]
+        case 'addNewSectionModal':
+          return [
+            {
+              element: this.$refs['intro-available-sections'],
+              intro: this.$t('intro.availableSections')
+            },
+            {
+              element: this.$refs['intro-inventory'],
+              intro: simpleCTAIndex === -1 ? this.$t('intro.inventoryDesc') : `${this.$t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${this.$t('intro.checkIt')}</span>`
+            }
+          ]
+        case 'inventoryOpened':
+          return [
+            {
+              element: this.$refs['intro-simple-CTA-section-inventory'][0],
+              intro: `${this.$t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${this.$t('intro.createSection')}</span>`
+            }
+          ]
+        case 'sectionCreationConfirmed':
+          return [
+            {
+              element: this.$refs['intro-available-sections'],
+              intro: `${this.$t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened', introRerun);">${this.$t('intro.openAvailableSections')}</span>`
+            }
+          ]
+        case 'availableSectionOpened':
+          return [
+            {
+              element: this.$refs['intro-simple-CTA-section-available'][0],
+              intro: `${this.$t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${this.$t('intro.here')}</span>`
+            }
+          ]
+        case 'sectionFormOpened':
+          return [
+            {
+              element: this.$refs['intro-simple-CTA-section-form'],
+              intro: this.$t('intro.simpleCTAForm')
+            }
+          ]
+        case 'sectionSubmitted':
+          return [
+            {
+              element: this.$refs['intro-save-changes'],
+              intro: this.$t('intro.saveChanges')
+            }
+          ]
+        case 'pageSaved':
+          return [
+            {
+              element: this.$refs['intro-relaunch'],
+              intro: this.$t('intro.relaunch')
+            },
+            {
+              element: this.$refs['intro-find-more-blobal'],
+              intro: this.$t('intro.findMoreGlobal')
+            }
+          ]
+        case 'globalTour':
+          return [
+            {
+              intro: this.$t('intro.globalSections')
+            },
+            {
+              intro: this.$t('intro.creatingGlobalSection')
+            },
+            {
+              intro: this.$t('intro.promoteSection')
+            }
+          ]
+      }
+    },
     getSectionProjectIdentity() {
       if (this.$sections.cname === "active") {
         const inBrowser = typeof window !== 'undefined';
@@ -2660,9 +2896,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {
       }
 
@@ -2752,9 +2986,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {
       }
 
@@ -2859,7 +3091,7 @@ export default {
               name: type.name,
               type: type.type,
               application: type.application,
-              notCreated: true
+              notCreated: type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
             })
           })
           this.loading = false
@@ -2949,7 +3181,6 @@ export default {
         .catch((error) => {
           this.loading = false
           this.$emit("load", false);
-          this.showToast("Error", "error", error.toString());
         });
     },
     addSystemTypes() {
@@ -3027,6 +3258,9 @@ export default {
       this.editMode = !this.editMode;
 
       if (this.editMode === true) {
+
+        this.runIntro('topBar')
+
         this.loading = true;
         const inBrowser = typeof window !== 'undefined';
         const config = {
@@ -3040,9 +3274,7 @@ export default {
 
         let language = undefined
         try {
-          if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-            language = this.$i18n.locale
-          }
+          language = this.$i18n.locale
         } catch {
         }
 
@@ -3175,6 +3407,10 @@ export default {
           section
         );
 
+        if (section.name === 'SimpleCTA') {
+          this.runIntro('sectionSubmitted', this.introRerun)
+        }
+
         if (this.selectedVariation === this.pageName) {
           // We check if there are variations that contains a section linked to the one we just edited
           // If there are, we edit them too so they stay in sync
@@ -3231,9 +3467,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {
       }
 
@@ -3476,6 +3710,7 @@ export default {
                 JSON.stringify(this.displayVariations)
               );
               this.sectionslayout = res.data.layout;
+              this.runIntro('pageSaved', this.introRerun)
               this.loading = false;
               if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
                 this.showToast(
@@ -3525,6 +3760,7 @@ export default {
     },
     edit(view, viewAnchor) {
       if (this.isSideBarOpen !== true) {
+        this.canPromote = true
         this.types.map((type) => {
           if (view.type === "configurable") {
             if (type.name.split(":")[1] === view.name) {
@@ -4005,6 +4241,10 @@ button svg {
   justify-content: center;
 }
 
+.hp-button.globalTour {
+  margin-left: 0;
+}
+
 .hp-button:hover {
   background: #298cb6;
   transition: 0.1s;
@@ -4088,6 +4328,10 @@ button svg {
 
 .btn-text {
   font-size: 16px;
+}
+
+.btn-text.intro {
+  width: 20px;
 }
 
 .danger {

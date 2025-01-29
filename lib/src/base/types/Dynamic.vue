@@ -125,9 +125,7 @@ export default {
 
       let language = undefined
       try {
-        if (this.$i18n.locale !== this.$i18n.defaultLocale) {
-          language = this.$i18n.locale
-        }
+        language = this.$i18n.locale
       } catch {}
 
       if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {

@@ -272,6 +272,39 @@ module.exports = {
 };
 ```
 
+- New hook exposed to alter the configurable fields data before they get rendered `configurable_pre_render`
+
+```js
+// sections/js/configurable-hooks.js
+
+const configurable_pre_render = (options, defaultLang, locales, props) => {
+  if (props.name === "selective_articles") {
+    let optionsUpdated = null
+    if (options && options[0]) {
+      optionsUpdated = options
+      Object.keys(optionsUpdated[0]).forEach(key => {
+        if ((key === 'cta_label' || key === 'title' || key === 'description' || key === 'text') && typeof optionsUpdated[0][key] === 'string') {
+          const stringValue = optionsUpdated[0][key]
+          optionsUpdated[0][key] = {}
+          locales.forEach(locale => {
+            if (locale === defaultLang) {
+              optionsUpdated[0][key][locale] = stringValue
+            } else optionsUpdated[0][key][locale] = ''
+          })
+        }
+      })
+    }
+    if (optionsUpdated) {
+      return optionsUpdated
+    }
+  }
+}
+
+module.exports = {
+  configurable_pre_render
+};
+```
+
 # Media sections
 
 - `globalFileUpload` A function that uses media to upload images replacing the base64 format and removing old media.
