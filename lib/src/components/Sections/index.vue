@@ -20,6 +20,7 @@
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             :savedView="savedView"
+            :createdView="createdView"
             :locales="locales"
             :default-lang="defaultLang"
             :translation-component-support="translationComponentSupport"
@@ -492,6 +493,7 @@
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       :savedView="savedView"
+                      :createdView="createdView"
                       :locales="locales"
                       :default-lang="defaultLang"
                       :translation-component-support="translationComponentSupport"
@@ -999,9 +1001,17 @@
                       <!-- </transition-group> -->
                     </draggable>
                   </div>
+                  <div v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName">
+                    <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
+                  </div>
                 </div>
+
               </template>
             </component>
+          </div>
+
+          <div v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" class="creation-view-standard">
+            <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
           </div>
 
           <!-- ------------------------------------------------------------------------------------------- -->
@@ -1435,6 +1445,7 @@ export default {
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
       synched: false,
+      createdView: {},
       savedView: {},
       // all saved variations
       displayVariations: {
@@ -1519,7 +1530,8 @@ export default {
       canPromote: false,
       intro: null,
       currentPages: null,
-      introRerun: false
+      introRerun: false,
+      creationView: false
     }
   },
   computed: {
@@ -1622,6 +1634,14 @@ export default {
 
         return nameMatch && appNameMatch;
       });
+    },
+    getCreationComponent() {
+      try {
+        const path = `/views/${this.currentSection.name}_${this.currentSection.type}`;
+        return importComp(path);
+      } catch {
+        return ''
+      }
     }
   },
   async mounted() {
@@ -3435,6 +3455,8 @@ export default {
         this.isModalOpen = false;
         this.isSideBarOpen = false;
         this.savedView = {};
+        this.createdView = {}
+        this.creationView = false
         this.loading = false;
 
         this.computeLayoutData();
@@ -4077,7 +4099,54 @@ export default {
         }
       } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
-      } else this.currentSection = {...type, creation: true}
+      } else {
+        if (type.type === 'static' || type.type === 'configurable') {
+          this.isModalOpen = false
+          this.isSideBarOpen = true
+
+          let settingsDeclaration = undefined
+          if (type.name && type.type === 'static') {
+            let path = "";
+            path = `/forms/${type.name}`;
+            let formComp = importComp(path);
+            if (formComp.data && formComp.data() && formComp.data().settings) {
+              settingsDeclaration = formComp.data().settings;
+              this.$nextTick(() => {
+                this.currentSection = {...type, creation: true, settings: settingsDeclaration}
+                this.createdView = this.currentSection
+                this.creationView = true
+                this.sideBarSizeManagement()
+              })
+            }
+          } else if (type.name && type.type === 'configurable') {
+            this.$nextTick(() => {
+              this.currentSection = {...type, creation: true}
+              this.createdView = this.currentSection
+              this.creationView = true
+              this.sideBarSizeManagement()
+            })
+          }
+        } else {
+          this.currentSection = {...type, creation: true}
+        }
+      }
+    },
+    sideBarSizeManagement() {
+      try {
+        this.$nextTick(() => {
+          this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+          this.resizeData.resizeTarget = this.$refs.resizeTarget;
+          setTimeout(() => {
+            if (this.$refs.resizeTarget) {
+              this.$refs.resizeTarget.scrollTo({
+                top: 0
+              });
+            }
+          }, 600);
+          window.addEventListener("mousemove", this.onMouseMove);
+          window.addEventListener("mouseup", this.stopTracking);
+        })
+      } catch {}
     },
     startTracking(event) {
       if (event.button !== 0) return;
@@ -4120,7 +4189,10 @@ export default {
       this.isSideBarOpen = false;
       this.isCreateInstance = false;
       this.isRestoreSectionOpen = false;
-      if (this.restoreType === 'section') {
+      if (this.creationView === true) {
+        this.createdView = {}
+        this.creationView = false
+      } else if (this.restoreType === 'section') {
         this.restoreSection();
       } else {
         this.restoreVariations()

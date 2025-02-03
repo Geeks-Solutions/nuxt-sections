@@ -954,3 +954,54 @@ describe('alteredViews computed property', () => {
     expect(wrapper.vm.alteredViews).toEqual([{ id: 2, weight: 0 }]);
   });
 });
+
+
+describe('Add section type side bar view', () => {
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = mount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          serverUrl: 'https://mock.server',
+          projectId: 'mockProjectId',
+          queryStringSupport: 'enabled',
+        },
+        $i18n: {
+          locale: 'fr',
+          defaultLocale: 'en',
+        },
+        $route: {
+          query: jest.fn(),
+          params: {
+            pathMatch: jest.fn()
+          }
+        },
+        sectionHeader: jest.fn().mockReturnValue({}),
+        parseQS: jest.fn((path, hasQuery, query) => ({ path, hasQuery, query })),
+        validateQS: jest.fn((queryString, keys, editMode) => ({ validated: true })),
+      }
+    });
+  });
+
+  it('Add section popup shows on the sidebar', async () => {
+    wrapper.setData({
+      isSideBarOpen: false,
+      admin: true,
+      editMode: true,
+      creationView: true,
+      selectedLayout: 'standard'
+    });
+
+    await wrapper.vm.openCurrentSection({type: 'static'});
+
+    expect(wrapper.vm.isSideBarOpen).toBe(true);
+
+    const creationView = wrapper.find('.creation-view-standard')
+
+    expect(creationView.exists()).toBe(true);
+
+  });
+
+});

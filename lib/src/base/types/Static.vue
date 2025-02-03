@@ -53,6 +53,10 @@ export default {
       type: Object,
       default: () => {},
     },
+    createdView: {
+      type: Object,
+      default: () => {},
+    },
     locales: {
       type: Array,
       default() {
@@ -123,6 +127,12 @@ export default {
         this.$refs.viewSaved.$refs[
           this.props.name
         ].settings = this.savedView.settings;
+      }, 500);
+    } else if (this.createdView && this.createdView.settings) {
+      setTimeout(() => {
+        this.$refs.viewSaved.$refs[
+          this.props.name
+        ].settings = this.createdView.settings;
       }, 500);
     }
     setTimeout(() => {
