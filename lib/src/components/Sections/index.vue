@@ -1001,16 +1001,15 @@
                       <!-- </transition-group> -->
                     </draggable>
                   </div>
-                  <div v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName">
+                  <div v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :class="`creation-view-${selectedLayout}-${slotName}`">
                     <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
                   </div>
                 </div>
-
               </template>
             </component>
           </div>
 
-          <div v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" class="creation-view-standard">
+          <div v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" class="creation-view-standard">
             <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
           </div>
 
@@ -4112,7 +4111,7 @@ export default {
             if (formComp.data && formComp.data() && formComp.data().settings) {
               settingsDeclaration = formComp.data().settings;
               this.$nextTick(() => {
-                this.currentSection = {...type, creation: true, settings: settingsDeclaration}
+                this.currentSection = {...type, creation: true, settings: settingsDeclaration, id: 'creation-view'}
                 this.createdView = this.currentSection
                 this.creationView = true
                 this.sideBarSizeManagement()
@@ -4120,7 +4119,7 @@ export default {
             }
           } else if (type.name && type.type === 'configurable') {
             this.$nextTick(() => {
-              this.currentSection = {...type, creation: true}
+              this.currentSection = {...type, creation: true, id: 'creation-view'}
               this.createdView = this.currentSection
               this.creationView = true
               this.sideBarSizeManagement()
@@ -4140,6 +4139,12 @@ export default {
             if (this.$refs.resizeTarget) {
               this.$refs.resizeTarget.scrollTo({
                 top: 0
+              });
+            }
+            if (this.$refs.sectionsMainTarget) {
+              this.$refs.sectionsMainTarget.scrollTo({
+                top: this.$refs.sectionsMainTarget.scrollHeight,
+                behavior: 'smooth'
               });
             }
           }, 600);
