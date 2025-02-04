@@ -1,5 +1,6 @@
 import { shallowMount, mount } from '@vue/test-utils'
 import SectionsMain from '../lib/src/components/Sections/index.vue'
+import FieldSets from '../lib/src/components/SectionsForms/FieldSets.vue';
 
 describe('SectionsMain', () => {
   let controlsWrapper;
@@ -1005,3 +1006,79 @@ describe('Add section type side bar view', () => {
   });
 
 });
+
+const mockData = [
+  { id: 0, name: 'Item 1' },
+  { id: 1, name: 'Item 2' },
+  { id: 2, name: 'Item 3' }
+]
+
+describe('FieldSets.vue', () => {
+  let wrapper
+
+  const createComponent = (propsData = {}, slots = {}) => {
+    wrapper = mount(FieldSets, {
+      propsData: {
+        arrayDataPop: mockData,
+        legendLabel: 'Test Legend',
+        ...propsData
+      },
+      slots
+    })
+  }
+
+  afterEach(() => {
+    wrapper.destroy()
+  })
+
+  it('renders fieldsets based on arrayDataPop', () => {
+    createComponent()
+    const fieldsets = wrapper.findAll('fieldset')
+    expect(fieldsets.length).toBe(3)
+  })
+
+  it('renders custom legend labels using alterLengendLabel', () => {
+    createComponent()
+    const legends = wrapper.findAll('legend')
+    legends.wrappers.forEach((legend, idx) => {
+      expect(legend.text()).toBe(`Test Legend #${idx + 1}:`)
+    })
+  })
+
+  it('emits "remove-fieldset" event when trash icon is clicked', async () => {
+    createComponent()
+    const trashIcons = wrapper.findAll('.trash-icon')
+    await trashIcons.at(0).trigger('click')
+
+    expect(wrapper.emitted('remove-fieldset')).toBeTruthy()
+    expect(wrapper.emitted('remove-fieldset')[0]).toEqual([mockData[0], 0])
+  })
+
+  it('emits "array-updated" when arrayData changes', async () => {
+    createComponent()
+    const newArray = [...mockData, { id: 3, name: 'Item 4' }]
+    await wrapper.setData({ arrayData: newArray })
+
+    expect(wrapper.emitted('array-updated')).toBeTruthy()
+    expect(wrapper.emitted('array-updated')[0][0].length).toBe(4)
+  })
+
+  it('applies custom classes from props', () => {
+    createComponent({
+      draggableClasses: 'custom-draggable',
+      mainWrapperClasses: 'main-wrapper',
+      wrapperClasses: 'custom-wrapper',
+      legendClasses: 'custom-legend'
+    })
+
+    expect(wrapper.find('.custom-draggable').exists()).toBe(true)
+    expect(wrapper.find('.main-wrapper').exists()).toBe(true)
+    expect(wrapper.find('.custom-wrapper').exists()).toBe(true)
+    expect(wrapper.find('.custom-legend').exists()).toBe(true)
+  })
+
+  it('renders slot content correctly', () => {
+    createComponent({}, { default: '<div class="custom-slot">Slot Content</div>' })
+    expect(wrapper.findAll('.custom-slot').length).toBe(3)
+  })
+})

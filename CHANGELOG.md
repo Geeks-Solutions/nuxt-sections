@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [1.0.17] - 2025-02-03
 
+### Added
+
+- Introduced a new Form component (Draggable/Dynamic FieldSets component): Sections with multiple items must be enhanced to be more flexible #34
+
 ### Updated
 
 - Add section updated to show in side bar: When adding a section, have it work like in edit mode and have a visual of it on the site when entering the data #78
