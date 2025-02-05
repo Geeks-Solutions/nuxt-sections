@@ -666,7 +666,7 @@
 
           <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
           <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal"
-               class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
+               class="fixed sections-z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -4234,7 +4234,7 @@ export default {
 
 .sections-config .control-button.config-buttons {
   position: absolute;
-  z-index: 999;
+  z-index: 190;
   left: 0;
   top: 60px;
 }

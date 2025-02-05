@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add section updated to show in side bar: When adding a section, have it work like in edit mode and have a visual of it on the site when entering the data #78
 
+### Fixed
+
+- Display bugs: When a layout is selected and you have added several section in the left layout for example, when you click to delete a section the display of the popup is not correct #132 + When you are in edit mode and you edit a section with a media and then you click to edit the media, the display of the options of the page are blocking the one of the editor #126
+
 ### [1.0.16] - 2025-01-17
 
 ### Added

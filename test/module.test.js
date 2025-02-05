@@ -720,6 +720,7 @@ describe('Types tests', () => {
   it('should not proceed if globalTypes already has data', async () => {
     typesWrapper.setData({ globalTypes: [{ id: 1, name: 'Test' }] });
 
+    await jest.resetAllMocks();
     await typesWrapper.vm.getGlobalSectionTypes(false);
 
     expect(global.mocks.$axios.get).not.toHaveBeenCalled();
@@ -987,17 +988,27 @@ describe('Add section type side bar view', () => {
   });
 
   it('Add section popup shows on the sidebar', async () => {
-    wrapper.setData({
-      isSideBarOpen: false,
-      admin: true,
-      editMode: true,
-      creationView: true,
-      selectedLayout: 'standard'
+    wrapper.setProps({
+      admin: true
     });
 
-    await wrapper.vm.openCurrentSection({type: 'static'});
+    wrapper.setData({
+      isSideBarOpen: false,
+      editMode: true,
+      creationView: true,
+      selectedLayout: 'standard',
+      currentSection: {name: 'wysiwyg', type: 'static'}
+    });
+
+    await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
 
     expect(wrapper.vm.isSideBarOpen).toBe(true);
+
+    console.log(wrapper.vm.creationView)
+    console.log(wrapper.vm.admin)
+    console.log(wrapper.vm.editMode)
+    console.log(wrapper.vm.selectedLayout)
+    console.log(wrapper.vm.pageNotFound)
 
     const creationView = wrapper.find('.creation-view-standard')
 
@@ -1082,3 +1093,27 @@ describe('FieldSets.vue', () => {
     expect(wrapper.findAll('.custom-slot').length).toBe(3)
   })
 })
+
+describe('Z-index Test', () => {
+
+  const TestComponent = {
+    template: `
+    <div>
+      <div class="media-container" style="position: relative; z-index: 10;">Media container</div>
+      <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0; position: relative; z-index: 5;">Target Div</div>
+    </div>
+  `
+  };
+
+  it('ensures the target controls div does not display above the Media container div', () => {
+    const wrapper = shallowMount(TestComponent);
+
+    const backgroundDiv = wrapper.find('.media-container');
+    const targetDiv = wrapper.find('.control-button.config-buttons');
+
+    const backgroundZIndex = window.getComputedStyle(backgroundDiv.element).zIndex;
+    const targetZIndex = window.getComputedStyle(targetDiv.element).zIndex;
+
+    expect(Number(targetZIndex)).toBeLessThan(Number(backgroundZIndex));
+  });
+});
