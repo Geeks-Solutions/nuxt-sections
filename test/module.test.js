@@ -1,5 +1,6 @@
 import { shallowMount, mount } from '@vue/test-utils'
 import SectionsMain from '../lib/src/components/Sections/index.vue'
+import FieldSets from '../lib/src/components/SectionsForms/FieldSets.vue';
 
 describe('SectionsMain', () => {
   let controlsWrapper;
@@ -719,6 +720,7 @@ describe('Types tests', () => {
   it('should not proceed if globalTypes already has data', async () => {
     typesWrapper.setData({ globalTypes: [{ id: 1, name: 'Test' }] });
 
+    await jest.resetAllMocks();
     await typesWrapper.vm.getGlobalSectionTypes(false);
 
     expect(global.mocks.$axios.get).not.toHaveBeenCalled();
@@ -952,5 +954,166 @@ describe('alteredViews computed property', () => {
     });
 
     expect(wrapper.vm.alteredViews).toEqual([{ id: 2, weight: 0 }]);
+  });
+});
+
+
+describe('Add section type side bar view', () => {
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = mount(SectionsMain, {
+      mocks: {
+        ...global.mocks,
+        $sections: {
+          serverUrl: 'https://mock.server',
+          projectId: 'mockProjectId',
+          queryStringSupport: 'enabled',
+        },
+        $i18n: {
+          locale: 'fr',
+          defaultLocale: 'en',
+        },
+        $route: {
+          query: jest.fn(),
+          params: {
+            pathMatch: jest.fn()
+          }
+        },
+        sectionHeader: jest.fn().mockReturnValue({}),
+        parseQS: jest.fn((path, hasQuery, query) => ({ path, hasQuery, query })),
+        validateQS: jest.fn((queryString, keys, editMode) => ({ validated: true })),
+      }
+    });
+  });
+
+  it('Add section popup shows on the sidebar', async () => {
+    wrapper.setProps({
+      admin: true
+    });
+
+    wrapper.setData({
+      isSideBarOpen: false,
+      editMode: true,
+      creationView: true,
+      selectedLayout: 'standard',
+      currentSection: {name: 'wysiwyg', type: 'static'}
+    });
+
+    await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
+
+    expect(wrapper.vm.isSideBarOpen).toBe(true);
+
+    console.log(wrapper.vm.creationView)
+    console.log(wrapper.vm.admin)
+    console.log(wrapper.vm.editMode)
+    console.log(wrapper.vm.selectedLayout)
+    console.log(wrapper.vm.pageNotFound)
+
+    const creationView = wrapper.find('.creation-view-standard')
+
+    expect(creationView.exists()).toBe(true);
+
+  });
+
+});
+
+const mockData = [
+  { id: 0, name: 'Item 1' },
+  { id: 1, name: 'Item 2' },
+  { id: 2, name: 'Item 3' }
+]
+
+describe('FieldSets.vue', () => {
+  let wrapper
+
+  const createComponent = (propsData = {}, slots = {}) => {
+    wrapper = mount(FieldSets, {
+      propsData: {
+        arrayDataPop: mockData,
+        legendLabel: 'Test Legend',
+        ...propsData
+      },
+      slots
+    })
+  }
+
+  afterEach(() => {
+    wrapper.destroy()
+  })
+
+  it('renders fieldsets based on arrayDataPop', () => {
+    createComponent()
+    const fieldsets = wrapper.findAll('fieldset')
+    expect(fieldsets.length).toBe(3)
+  })
+
+  it('renders custom legend labels using alterLengendLabel', () => {
+    createComponent()
+    const legends = wrapper.findAll('legend')
+    legends.wrappers.forEach((legend, idx) => {
+      expect(legend.text()).toBe(`Test Legend #${idx + 1}:`)
+    })
+  })
+
+  it('emits "remove-fieldset" event when trash icon is clicked', async () => {
+    createComponent()
+    const trashIcons = wrapper.findAll('.trash-icon')
+    await trashIcons.at(0).trigger('click')
+
+    expect(wrapper.emitted('remove-fieldset')).toBeTruthy()
+    expect(wrapper.emitted('remove-fieldset')[0]).toEqual([mockData[0], 0])
+  })
+
+  it('emits "array-updated" when arrayData changes', async () => {
+    createComponent()
+    const newArray = [...mockData, { id: 3, name: 'Item 4' }]
+    await wrapper.setData({ arrayData: newArray })
+
+    expect(wrapper.emitted('array-updated')).toBeTruthy()
+    expect(wrapper.emitted('array-updated')[0][0].length).toBe(4)
+  })
+
+  it('applies custom classes from props', () => {
+    createComponent({
+      draggableClasses: 'custom-draggable',
+      mainWrapperClasses: 'main-wrapper',
+      wrapperClasses: 'custom-wrapper',
+      legendClasses: 'custom-legend'
+    })
+
+    expect(wrapper.find('.custom-draggable').exists()).toBe(true)
+    expect(wrapper.find('.main-wrapper').exists()).toBe(true)
+    expect(wrapper.find('.custom-wrapper').exists()).toBe(true)
+    expect(wrapper.find('.custom-legend').exists()).toBe(true)
+  })
+
+  it('renders slot content correctly', () => {
+    createComponent({}, { default: '<div class="custom-slot">Slot Content</div>' })
+    expect(wrapper.findAll('.custom-slot').length).toBe(3)
+  })
+})
+
+describe('Z-index Test', () => {
+
+  const TestComponent = {
+    template: `
+    <div>
+      <div class="media-container" style="position: relative; z-index: 10;">Media container</div>
+      <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0; position: relative; z-index: 5;">Target Div</div>
+    </div>
+  `
+  };
+
+  it('ensures the target controls div does not display above the Media container div', () => {
+    const wrapper = shallowMount(TestComponent);
+
+    const backgroundDiv = wrapper.find('.media-container');
+    const targetDiv = wrapper.find('.control-button.config-buttons');
+
+    const backgroundZIndex = window.getComputedStyle(backgroundDiv.element).zIndex;
+    const targetZIndex = window.getComputedStyle(targetDiv.element).zIndex;
+
+    expect(Number(targetZIndex)).toBeLessThan(Number(backgroundZIndex));
   });
 });

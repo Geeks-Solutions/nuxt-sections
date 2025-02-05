@@ -20,6 +20,7 @@
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             :savedView="savedView"
+            :createdView="createdView"
             :locales="locales"
             :default-lang="defaultLang"
             :translation-component-support="translationComponentSupport"
@@ -492,6 +493,7 @@
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       :savedView="savedView"
+                      :createdView="createdView"
                       :locales="locales"
                       :default-lang="defaultLang"
                       :translation-component-support="translationComponentSupport"
@@ -664,7 +666,7 @@
 
           <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
           <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal"
-               class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
+               class="fixed sections-z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -854,7 +856,7 @@
                       <AlertIcon/>
                     </div>
                     <div
-                      @click="edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
+                      @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
                       v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                       <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
                                 class="edit-icon"/>
@@ -952,7 +954,7 @@
                               <AlertIcon/>
                             </div>
                             <div
-                              @click="edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
+                              @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
                               v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                               <EditIcon
                                 :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
@@ -999,9 +1001,16 @@
                       <!-- </transition-group> -->
                     </draggable>
                   </div>
+                  <div v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :class="`creation-view-${selectedLayout}-${slotName}`">
+                    <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
+                  </div>
                 </div>
               </template>
             </component>
+          </div>
+
+          <div v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" class="creation-view-standard">
+            <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
           </div>
 
           <!-- ------------------------------------------------------------------------------------------- -->
@@ -1435,6 +1444,7 @@ export default {
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
       synched: false,
+      createdView: {},
       savedView: {},
       // all saved variations
       displayVariations: {
@@ -1519,7 +1529,8 @@ export default {
       canPromote: false,
       intro: null,
       currentPages: null,
-      introRerun: false
+      introRerun: false,
+      creationView: false
     }
   },
   computed: {
@@ -1622,6 +1633,14 @@ export default {
 
         return nameMatch && appNameMatch;
       });
+    },
+    getCreationComponent() {
+      try {
+        const path = `/views/${this.currentSection.name}_${this.currentSection.type}`;
+        return importComp(path);
+      } catch {
+        return ''
+      }
     }
   },
   async mounted() {
@@ -3435,6 +3454,8 @@ export default {
         this.isModalOpen = false;
         this.isSideBarOpen = false;
         this.savedView = {};
+        this.createdView = {}
+        this.creationView = false
         this.loading = false;
 
         this.computeLayoutData();
@@ -4077,7 +4098,60 @@ export default {
         }
       } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
-      } else this.currentSection = {...type, creation: true}
+      } else {
+        if (type.type === 'static' || type.type === 'configurable') {
+          this.isModalOpen = false
+          this.isSideBarOpen = true
+
+          let settingsDeclaration = undefined
+          if (type.name && type.type === 'static') {
+            let path = "";
+            path = `/forms/${type.name}`;
+            let formComp = importComp(path);
+            if (formComp.data && formComp.data() && formComp.data().settings) {
+              settingsDeclaration = formComp.data().settings;
+              this.$nextTick(() => {
+                this.currentSection = {...type, creation: true, settings: settingsDeclaration, id: 'creation-view'}
+                this.createdView = this.currentSection
+                this.creationView = true
+                this.sideBarSizeManagement()
+              })
+            }
+          } else if (type.name && type.type === 'configurable') {
+            this.$nextTick(() => {
+              this.currentSection = {...type, creation: true, id: 'creation-view'}
+              this.createdView = this.currentSection
+              this.creationView = true
+              this.sideBarSizeManagement()
+            })
+          }
+        } else {
+          this.currentSection = {...type, creation: true}
+        }
+      }
+    },
+    sideBarSizeManagement() {
+      try {
+        this.$nextTick(() => {
+          this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+          this.resizeData.resizeTarget = this.$refs.resizeTarget;
+          setTimeout(() => {
+            if (this.$refs.resizeTarget) {
+              this.$refs.resizeTarget.scrollTo({
+                top: 0
+              });
+            }
+            if (this.$refs.sectionsMainTarget) {
+              this.$refs.sectionsMainTarget.scrollTo({
+                top: this.$refs.sectionsMainTarget.scrollHeight,
+                behavior: 'smooth'
+              });
+            }
+          }, 600);
+          window.addEventListener("mousemove", this.onMouseMove);
+          window.addEventListener("mouseup", this.stopTracking);
+        })
+      } catch {}
     },
     startTracking(event) {
       if (event.button !== 0) return;
@@ -4120,7 +4194,10 @@ export default {
       this.isSideBarOpen = false;
       this.isCreateInstance = false;
       this.isRestoreSectionOpen = false;
-      if (this.restoreType === 'section') {
+      if (this.creationView === true) {
+        this.createdView = {}
+        this.creationView = false
+      } else if (this.restoreType === 'section') {
         this.restoreSection();
       } else {
         this.restoreVariations()
@@ -4157,7 +4234,7 @@ export default {
 
 .sections-config .control-button.config-buttons {
   position: absolute;
-  z-index: 999;
+  z-index: 190;
   left: 0;
   top: 60px;
 }
@@ -4175,6 +4252,11 @@ export default {
   right: 45px !important;
   top: 10px;
   z-index: 50 !important;
+  --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+  box-shadow: 0 0 rgba(0, 0, 0, 0), 0 0 rgba(0, 0, 0, 0), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-ring-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-shadow);
+  border-width: 1px;
 }
 
 .section-view .controls.optionsSettings {
