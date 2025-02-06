@@ -121,7 +121,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .flip-list-move {
   transition: transform 0.5s;
 }
