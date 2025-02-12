@@ -2,6 +2,13 @@
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
+      <div
+        class="step-back-aside"
+        v-if="currentSection && creationView"
+        @click="backToAddSectionList = true; restoreType = 'section'; isRestoreSectionOpen = true;"
+      >
+        <BackIcon/>
+      </div>
       <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
         <CloseIcon/>
       </div>
@@ -12,7 +19,7 @@
           class="edit-icon"/>
       </a>
       <div class="flexSections">
-        <div class="component-view">
+        <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
           <Static
@@ -95,13 +102,13 @@
             {{ !editMode ? $t("Edit page") : $t("View page") }}
           </button>
           <div class="bg-light-grey-hp hide-mobile section-wrapper">
-            <div v-if="admin && editMode" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
+            <div v-if="admin && editMode && !isSideBarOpen" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
               {{ $t('changesPublished') }}
             </div>
 
             <div
               class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
-              v-if="admin && editMode"
+              v-if="admin && editMode && !isSideBarOpen"
             >
               <div ref="intro-top-bar" class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
                 <button
@@ -233,7 +240,7 @@
           </div>
           <div
             class="bg-light-grey-hp sections-p-3 flexSections sections-flex-row sections-justify-center part2 hide-mobile"
-            v-if="admin && editMode"
+            v-if="admin && editMode && !isSideBarOpen"
           >
             <button
               class="hp-button "
@@ -1433,6 +1440,7 @@ export default {
       isCreateInstance: false,
       isModalOpen: false,
       isSideBarOpen: false,
+      backToAddSectionList: false,
       isDeleteModalOpen: false,
       isRestoreSectionOpen: false,
       restoreType: 'section',
@@ -4197,6 +4205,14 @@ export default {
       if (this.creationView === true) {
         this.createdView = {}
         this.creationView = false
+        if (this.backToAddSectionList === true) {
+          this.backToAddSectionList = false;
+          this.currentSection = null
+          this.isModalOpen = true
+          this.savedView = {}
+          this.isCreateInstance = false
+          this.isSideBarOpen = false
+        }
       } else if (this.restoreType === 'section') {
         this.restoreSection();
       } else {
@@ -5485,7 +5501,7 @@ span.handle {
   width: 527px;
   min-width: 422px;
   max-width: 50%;
-  z-index: 200;
+  z-index: 100000000000000;
 }
 
 .sections-aside
@@ -5611,5 +5627,15 @@ span.handle {
   cursor: pointer;
   color: #31a9db;
   margin: 3px;
+}
+.sections-container .sections-aside .step-back-aside {
+  cursor: pointer;
+  color: #31a9db;
+  position: absolute;
+}
+.sections-container .sections-aside .step-back-aside svg {
+  width: 35px;
+  height: 35px;
+  transition: 0.2s;
 }
 </style>
