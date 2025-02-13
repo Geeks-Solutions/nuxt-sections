@@ -5626,4 +5626,7 @@ span.handle {
   height: 35px;
   transition: 0.2s;
 }
+.ql-editor.ql-snow img {
+  display: inline !important;
+}
 </style>
