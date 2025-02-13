@@ -27,7 +27,7 @@
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             :savedView="savedView"
-            :createdView="createdView"
+            :creationView="creationView"
             :locales="locales"
             :default-lang="defaultLang"
             :translation-component-support="translationComponentSupport"
@@ -37,6 +37,7 @@
             :is-side-bar-open="isSideBarOpen"
             @load="(value) => loading = value"
             @promote-section="currentSection = {...currentSection, instance: true}"
+            @creationViewLoaded="updateCreationView"
           />
           <Dynamic
             v-if="currentSection.type === 'dynamic'"
@@ -500,7 +501,7 @@
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       :savedView="savedView"
-                      :createdView="createdView"
+                      :creationView="creationView"
                       :locales="locales"
                       :default-lang="defaultLang"
                       :translation-component-support="translationComponentSupport"
@@ -509,6 +510,7 @@
                       :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                       @load="(value) => loading = value"
                       @promote-section="currentSection = {...currentSection, instance: true}"
+                      @creationViewLoaded="updateCreationView"
                     />
                     <Dynamic
                       v-if="currentSection.type === 'dynamic'"
@@ -4111,32 +4113,18 @@ export default {
           this.isModalOpen = false
           this.isSideBarOpen = true
 
-          let settingsDeclaration = undefined
-          if (type.name && type.type === 'static') {
-            let path = "";
-            path = `/forms/${type.name}`;
-            let formComp = importComp(path);
-            if (formComp.data && formComp.data() && formComp.data().settings) {
-              settingsDeclaration = formComp.data().settings;
-              this.$nextTick(() => {
-                this.currentSection = {...type, creation: true, settings: settingsDeclaration, id: 'creation-view'}
-                this.createdView = this.currentSection
-                this.creationView = true
-                this.sideBarSizeManagement()
-              })
-            }
-          } else if (type.name && type.type === 'configurable') {
-            this.$nextTick(() => {
-              this.currentSection = {...type, creation: true, id: 'creation-view'}
-              this.createdView = this.currentSection
-              this.creationView = true
-              this.sideBarSizeManagement()
-            })
-          }
+          this.currentSection = {...type, creation: true, settings: [], id: 'creation-view'}
+          this.createdView = this.currentSection
+          this.creationView = true
+          this.sideBarSizeManagement()
         } else {
           this.currentSection = {...type, creation: true}
         }
       }
+    },
+    updateCreationView(settings) {
+      this.createdView.settings = settings;
+      this.createdView = {...this.createdView}
     },
     sideBarSizeManagement() {
       try {

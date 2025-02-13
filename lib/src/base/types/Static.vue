@@ -23,7 +23,7 @@
       <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
       <form>
         <div>
-          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :default-lang="defaultLang" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
+          <subType :name="props.name" :creationView="creationView" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :default-lang="defaultLang" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId" @creationViewLoaded="(settings) => $emit('creationViewLoaded', settings)">
             <slot />
           </subType>
         </div>
@@ -53,9 +53,9 @@ export default {
       type: Object,
       default: () => {},
     },
-    createdView: {
-      type: Object,
-      default: () => {},
+    creationView: {
+      type: Boolean,
+      default: false
     },
     locales: {
       type: Array,
@@ -127,12 +127,6 @@ export default {
         this.$refs.viewSaved.$refs[
           this.props.name
         ].settings = this.savedView.settings;
-      }, 500);
-    } else if (this.createdView && this.createdView.settings) {
-      setTimeout(() => {
-        this.$refs.viewSaved.$refs[
-          this.props.name
-        ].settings = this.createdView.settings;
       }, 500);
     }
     setTimeout(() => {

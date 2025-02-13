@@ -67,6 +67,10 @@ export default {
 	isSideBarOpen: {
       type: Boolean,
       default: false
+    },
+	creationView: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -86,6 +90,9 @@ export default {
     this.$root.$on("toggleWithTabs", (val) => {
       this.withTabs = val;
     });
+    if (this.creationView) {
+      this.$emit('creationViewLoaded', this.$refs[this.name].settings)
+    }
   },
   methods: {
     sendJsonData() {
