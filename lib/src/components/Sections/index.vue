@@ -4705,7 +4705,7 @@ span.handle {
 }
 
 .sections-z-50 {
-  z-index: 2000 !important;
+  z-index: 20000000000  !important;
 }
 
 .section-modal-wrapper {
