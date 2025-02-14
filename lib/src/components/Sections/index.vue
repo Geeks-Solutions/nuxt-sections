@@ -2054,6 +2054,7 @@ export default {
         path: pagePath,
         metadata: {...this.pageMetadata},
         variations: [],
+        layout: this.sectionslayout,
         sections
       };
       const URL =
@@ -2606,6 +2607,12 @@ export default {
     logDrag(evt) {
       Object.keys(this.viewsPerRegions).forEach(slotName => {
         this.viewsPerRegions[slotName].forEach((view, index) => {
+          if (view.region[this.selectedLayout] === undefined) {
+            view.region[this.selectedLayout] = {}
+          }
+          if (view.region[this.selectedLayout]['slot'] === undefined) {
+            view.region[this.selectedLayout]['slot'] = ''
+          }
           if (view.region[this.selectedLayout]['slot'] !== slotName) {
             view.region[this.selectedLayout]['slot'] = slotName
           }
@@ -3333,6 +3340,7 @@ export default {
             );
           }
           this.initializeSections(res);
+          this.computeLayoutData()
         }).catch(() => {
         })
         this.getUserData();
@@ -3411,10 +3419,12 @@ export default {
         }
 
         if (this.selectedLayout !== 'standard') {
-          section.region = {};
+          if (section.region[this.selectedLayout] === undefined || section.region[this.selectedLayout] === null) {
+            section.region = {};
+          }
           section.region[this.selectedLayout] = {
             slot: this.selectedSlotRegion,
-            weight: this.viewsPerRegions[this.selectedSlotRegion] ? this.viewsPerRegions[this.selectedSlotRegion].length : Object.keys(
+            weight: section.region && section.region[this.selectedLayout] && section.region[this.selectedLayout].weight !== undefined && section.region[this.selectedLayout].weight !== null ? section.region[this.selectedLayout].weight : this.viewsPerRegions[this.selectedSlotRegion] ? this.viewsPerRegions[this.selectedSlotRegion].length : Object.keys(
               this.displayVariations[this.selectedVariation].views
             ).length
           };

@@ -151,7 +151,8 @@ export default {
         id: this.id,
         weight: this.weight,
         auto_insertion: this.autoInsert,
-        instance_name: this.instanceName
+        instance_name: this.instanceName,
+        region: this.props.region
       });
     },
     async getGlobalType() {
