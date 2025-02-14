@@ -36,7 +36,19 @@ describe('SectionsMain', () => {
                 2: { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
               },
             },
-          }
+          },
+          originalVariations: {
+            testPage: {
+              views: {
+                'test-section': {
+                  id: 'test-section',
+                  type: 'custom',
+                  region: { customLayout: { slot: 'main', weight: 3 } },
+                },
+              },
+            },
+          },
+          pageName: 'testPage',
         };
       },
     });
@@ -552,7 +564,6 @@ describe('SectionsMain', () => {
     });
   });
 
-
   it('renders a SettingsIcon for each view', () => {
     // Find all instances of the SettingsIcon
     const settingsIcons = controlsWrapper.findAll('.settings-icon-wrapper');
@@ -667,6 +678,18 @@ describe('SectionsMain', () => {
       const clearFilters = tabsWrapper.find('.slot-name');
       expect(clearFilters.exists()).toBe(true);
     }
+  });
+
+  it('should maintain region weight and stay in position when editing a section in a non-standard layout', () => {
+    const section = {
+      id: 'test-section',
+      type: 'custom',
+      region: { customLayout: { slot: 'main', weight: 3 } },
+    };
+
+    controlsWrapper.vm.addSectionType(section, false, false);
+
+    expect(controlsWrapper.vm.displayVariations[controlsWrapper.vm.selectedVariation].views[section.id].region.customLayout.weight).toBe(3);
   });
 
 })
@@ -956,7 +979,6 @@ describe('alteredViews computed property', () => {
     expect(wrapper.vm.alteredViews).toEqual([{ id: 2, weight: 0 }]);
   });
 });
-
 
 describe('Add section type side bar view', () => {
   let wrapper;

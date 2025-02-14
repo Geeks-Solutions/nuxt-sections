@@ -1988,7 +1988,8 @@ export default {
             weight: view.weight,
             name: view.name,
             type: view.type,
-            linkedTo: view.linkedTo
+            linkedTo: view.linkedTo,
+            region: view.region
           };
           if (view.settings && view.type === "configurable") {
             refactorView.name = view.nameID;

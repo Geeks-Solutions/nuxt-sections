@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Display bugs: When a layout is selected and you have added several section in the left layout for example, when you click to delete a section the display of the popup is not correct #132 + When you are in edit mode and you edit a section with a media and then you click to edit the media, the display of the options of the page are blocking the one of the editor #126
 
+- Bug of loosing layout data when saving page metadata + Bug of changing section weight when editing it inside a layout region: Losing sections weight when editing and using a specific layout #135 +  you add a section in a region and then ou move it to another region, it vanish #138
+
 ### [1.0.16] - 2025-01-17
 
 ### Added
