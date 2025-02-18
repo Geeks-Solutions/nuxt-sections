@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="input mt-8">
-      <wysiwyg :key="quillKey" ref="myQuillEditor" class="wyzywig" :html="settings[0][selectedLang]" @wysiwygMedia="wysiwygMediaAdded" @settingsUpdate="updateContent" />
+      <wysiwyg :key="quillKey" ref="myQuillEditor" class="wyzywig" :html="settings[0][selectedLang]" :css-classes-prop="settings[0].classes" @wysiwygMedia="wysiwygMediaAdded" @settingsUpdate="updateContent" @cssClassesChanged="(v) => $set(settings[0], 'classes', v)" />
 	  <span v-if="errors.quill === true && selectedLang === 'en'" class="flexSections sections-required-field-error">{{ $t('requiredField') }}</span>
 	  <span v-else-if="errors.quill === true && selectedLang !== 'en'" id="required-fields" class="flexSections sections-required-field-error">{{ $t('checkRequiredField') }}</span>
 	</div>
@@ -35,7 +35,8 @@ export default {
       settings: [
         {
           en: "",
-          fr: ""
+          fr: "",
+          classes: ""
         }
       ],
 	  errors: {

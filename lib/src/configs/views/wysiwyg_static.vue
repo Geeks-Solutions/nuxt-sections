@@ -4,7 +4,7 @@
     :class="html && html.length > 2 ? 'mtitle' + html.charAt(2) : 'mtitle'"
     v-if="html"
   >
-    <div class="ql-editor ql-snow" :class="{ 'slide-up': isVisible }">
+    <div class="ql-editor ql-snow" :class="[{ 'slide-up': isVisible }, cssClasses]">
       <div v-html="html" />
     </div>
   </div>
@@ -47,6 +47,11 @@ export default {
         } else return this.section.settings
       }
       return "not found";
+    },
+    cssClasses() {
+      if (this.section.settings && Array.isArray(this.section.settings) && this.section.settings.length > 0 && this.section.settings[0].classes !== undefined) {
+        return this.section.settings[0].classes
+      } else return ''
     }
   }
 };

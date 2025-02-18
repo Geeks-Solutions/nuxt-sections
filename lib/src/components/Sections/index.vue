@@ -3420,7 +3420,7 @@ export default {
         }
 
         if (this.selectedLayout !== 'standard') {
-          if (section.region[this.selectedLayout] === undefined || section.region[this.selectedLayout] === null) {
+          if (section.region === undefined || section.region === null || section.region[this.selectedLayout] === undefined || section.region[this.selectedLayout] === null) {
             section.region = {};
           }
           section.region[this.selectedLayout] = {
@@ -4124,7 +4124,7 @@ export default {
           this.isModalOpen = false
           this.isSideBarOpen = true
 
-          this.currentSection = {...type, creation: true, settings: [], id: 'creation-view'}
+          this.currentSection = {...type, creation: true, id: 'creation-view'}
           this.createdView = this.currentSection
           this.creationView = true
           this.sideBarSizeManagement()
@@ -5639,5 +5639,18 @@ span.handle {
 }
 .ql-editor.ql-snow img {
   display: inline !important;
+}
+.cssClassesInput {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 1.5rem;
+  border: 1px solid #C2C2C2;
+  border-radius: 0.75rem;
+  height: 48px;
+  width: 100%;
+  outline: none;
+}
+section .ql-editor.ql-snow.grey-bg {
+  background: grey;
 }
 </style>
