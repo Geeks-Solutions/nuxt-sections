@@ -5500,7 +5500,7 @@ span.handle {
   width: 527px;
   min-width: 422px;
   max-width: 50%;
-  z-index: 100000000000000;
+  z-index: 9999;
 }
 
 .sections-aside
