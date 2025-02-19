@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Introduced a new Form component (Draggable/Dynamic FieldSets component): Sections with multiple items must be enhanced to be more flexible #34
 
+- A new hook `update_section_name` that allow to update the display of a section name. The hook is expected to be added to the `sections/js/global-hooks.js`
+
 ### Updated
 
 - Add section updated to show in side bar: When adding a section, have it work like in edit mode and have a visual of it on the site when entering the data #78

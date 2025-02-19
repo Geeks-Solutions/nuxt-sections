@@ -1,6 +1,6 @@
 <template>
   <div class="sub-types dynamic-s">
-    <h4 :class="{'dynamic-t': isSideBarOpen === false}">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
+    <h4 :class="{'dynamic-t': isSideBarOpen === false}">{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : $t('Adding section') }}</h4>
     <div v-if="globalSectionMode === true" class="mt-4">
       <div class="autoInsertRow">
         <div>
@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import {formatName, sectionHeader, parseQS, validateQS, getGlobalTypeData} from "../../utils";
+import {formatName, sectionHeader, parseQS, validateQS, getGlobalTypeData, formatTexts } from "../../utils";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
 
 export default {
@@ -104,6 +104,7 @@ export default {
     }
   },
   methods: {
+    formatTexts,
     formatName,
     renderSection(name) {
       this.$emit("load", true);

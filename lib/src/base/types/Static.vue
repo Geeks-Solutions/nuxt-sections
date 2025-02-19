@@ -1,7 +1,7 @@
 <template>
   <div class="text-center">
     <div class="element-type">
-      <h3>{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</h3>
+      <h3>{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : formatTexts(formatName(props.name, " / ")) }}</h3>
       <div v-if="globalSectionMode === true">
         <div class="autoInsertRow">
           <div>
@@ -37,7 +37,7 @@
 <script>
 import subType from "../SubTypes/subType.vue";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
-import {formatName, getGlobalTypeData, importComp} from "../../utils";
+import {formatName, formatTexts, getGlobalTypeData, importComp} from "../../utils";
 
 export default {
   components: {
@@ -137,6 +137,7 @@ export default {
     }
   },
   methods: {
+    formatTexts,
     formatName,
     addStatic(settings) {
       this.instanceNameError = false

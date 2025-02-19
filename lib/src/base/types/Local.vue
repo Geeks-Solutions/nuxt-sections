@@ -1,6 +1,6 @@
 <template>
   <div class="sub-types">
-    <h4 class="local-t">{{ props.linked_to ? formatName(props.linked_to, '/') : $t('Adding section') }}</h4>
+    <h4 class="local-t">{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : $t('Adding section') }}</h4>
     <div v-if="globalSectionMode === true" class="mt-4">
       <div class="autoInsertRow">
         <div>
@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import {formatName, getGlobalTypeData} from "../../utils";
+import {formatName, getGlobalTypeData, formatTexts} from "../../utils";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
 
 export default {
@@ -101,6 +101,7 @@ export default {
     }
   },
   methods: {
+    formatTexts,
     formatName,
     addLocal() {
       this.instanceNameError = false
