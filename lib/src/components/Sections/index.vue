@@ -918,7 +918,7 @@
                 <!-- Empty div injected to verify the slots              -->
                 <div class="flexSections flex-col">
                   <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
-                  <div v-if="admin && editMode"
+                  <div v-if="admin && editMode && !isSideBarOpen"
                        class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
                     <button
                       class="hp-button"
@@ -4225,6 +4225,15 @@ export default {
         this.currentSection.id,
         this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
       );
+      if (this.selectedLayout !== 'standard') {
+        try {
+          this.$set(
+            this.viewsPerRegions[this.selectedSlotRegion],
+            this.viewsPerRegions[this.selectedSlotRegion].findIndex(view => view.id === this.currentSection.id),
+            this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
+          );
+        } catch {}
+      }
       this.updatedVariations = JSON.parse(
         JSON.stringify(this.displayVariations)
       );

@@ -47,8 +47,7 @@ describe('SectionsMain', () => {
                 },
               },
             },
-          },
-          pageName: 'testPage',
+          }
         };
       },
     });
@@ -692,6 +691,82 @@ describe('SectionsMain', () => {
     expect(controlsWrapper.vm.displayVariations[controlsWrapper.vm.selectedVariation].views[section.id].region.customLayout.weight).toBe(3);
   });
 
+  it('should restore the section from updatedVariations', async () => {
+
+    await jest.resetAllMocks();
+
+    controlsWrapper.setProps({
+      pageName: 'testPage',
+      variations: [{ name: 'testPage', active: true }],
+    })
+
+    controlsWrapper.setData({
+      selectedVariation: 'testPage',
+      currentSection: { id: 'section1' },
+      displayVariations: {
+        testPage: {
+          altered: true,
+          views: {
+            section1: { id: 'section1', content: 'Old Content' },
+          },
+        },
+      },
+      updatedVariations: {
+        testPage: {
+          views: {
+            section1: { id: 'section1', content: 'Restored Content' },
+          },
+        },
+      },
+      currentViews: [{ id: 'section1', content: 'Old Content' }],
+      selectedLayout: 'standard',
+      viewsPerRegions: {
+        region1: [{ id: 'section1', content: 'Old Content' }],
+      }
+    })
+
+    controlsWrapper.vm.restoreSection();
+
+    expect(controlsWrapper.vm.displayVariations.testPage.altered).toBe(false);
+    expect(controlsWrapper.vm.displayVariations.testPage.views.section1.content).toBe(
+      'Restored Content'
+    );
+    expect(controlsWrapper.vm.currentViews[0].content).toBe('Restored Content');
+
+
+    await jest.resetAllMocks();
+
+    controlsWrapper.setData({
+      selectedVariation: 'testPage',
+      currentSection: { id: 'section1' },
+      displayVariations: {
+        testPage: {
+          altered: true,
+          views: {
+            section1: { id: 'section1', content: 'Old Content' },
+          },
+        },
+      },
+      updatedVariations: {
+        testPage: {
+          views: {
+            section1: { id: 'section1', content: 'Restored Content' },
+          },
+        },
+      },
+      currentViews: [{ id: 'section1', content: 'Old Content' }],
+      viewsPerRegions: {
+        region1: [{ id: 'section1', content: 'Old Content' }],
+      },
+      selectedSlotRegion: 'region1',
+      selectedLayout: 'custom-layout'
+    })
+
+    controlsWrapper.vm.restoreSection();
+
+    expect(controlsWrapper.vm.viewsPerRegions.region1[0].content).toBe('Restored Content');
+  });
+
 })
 
 describe('Types tests', () => {
@@ -1025,12 +1100,6 @@ describe('Add section type side bar view', () => {
     await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
 
     expect(wrapper.vm.isSideBarOpen).toBe(true);
-
-    console.log(wrapper.vm.creationView)
-    console.log(wrapper.vm.admin)
-    console.log(wrapper.vm.editMode)
-    console.log(wrapper.vm.selectedLayout)
-    console.log(wrapper.vm.pageNotFound)
 
     const creationView = wrapper.find('.creation-view-standard')
 

@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bug of loosing layout data when saving page metadata + Bug of changing section weight when editing it inside a layout region: Losing sections weight when editing and using a specific layout #135 +  you add a section in a region and then ou move it to another region, it vanish #138
 
+- Bug fix when adding or editing a section in a layout: When you are in a layout like extended-layout and you are editing or adding a section, the add new section button is showing for all region and they are clickable, they should not #140
+
+- Bug fix When performing changes on a section inside a layout specifically then closing the section and confirm in the popup, the changes are still there instead of having the original section data #139
+
 ### [1.0.16] - 2025-01-17
 
 ### Added
