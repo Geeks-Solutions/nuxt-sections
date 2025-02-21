@@ -9,7 +9,7 @@
         v-model="cssClasses"
         type="text"
         value=""
-        :placeholder="$t('forms.logoCssClasses')"
+        :placeholder="$t('forms.cssClasses')"
         class="cssClassesInput"
         @input="(v) => $emit('cssClassesChanged', v.target.value)"
       />
