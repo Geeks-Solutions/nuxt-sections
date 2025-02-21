@@ -8,7 +8,7 @@
               class="font-light mt-2 mb-2"
               :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
           >
-            <div class="text-capitalize ">{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</div>
+            <div class="text-capitalize ">{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : formatTexts(formatName(props.name, " / ")) }}</div>
           </div>
         </div>
       </div>
@@ -189,7 +189,7 @@ import {
   importJs,
   parseQS,
   validateQS,
-  getGlobalTypeData
+  getGlobalTypeData, formatTexts
 } from "../../utils";
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
@@ -467,6 +467,7 @@ export default {
     }
   },
   methods: {
+    formatTexts,
     formatFileName(name) {
       if (!name) {
         return "Choose a file...";

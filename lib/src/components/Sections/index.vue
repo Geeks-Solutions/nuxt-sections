@@ -2,6 +2,13 @@
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
+      <div
+        class="step-back-aside"
+        v-if="currentSection && creationView"
+        @click="backToAddSectionList = true; restoreType = 'section'; isRestoreSectionOpen = true;"
+      >
+        <BackIcon/>
+      </div>
       <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
         <CloseIcon/>
       </div>
@@ -12,7 +19,7 @@
           class="edit-icon"/>
       </a>
       <div class="flexSections">
-        <div class="component-view">
+        <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
           <Static
@@ -20,6 +27,7 @@
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             :savedView="savedView"
+            :creationView="creationView"
             :locales="locales"
             :default-lang="defaultLang"
             :translation-component-support="translationComponentSupport"
@@ -29,6 +37,7 @@
             :is-side-bar-open="isSideBarOpen"
             @load="(value) => loading = value"
             @promote-section="currentSection = {...currentSection, instance: true}"
+            @creationViewLoaded="updateCreationView"
           />
           <Dynamic
             v-if="currentSection.type === 'dynamic'"
@@ -94,13 +103,13 @@
             {{ !editMode ? $t("Edit page") : $t("View page") }}
           </button>
           <div class="bg-light-grey-hp hide-mobile section-wrapper">
-            <div v-if="admin && editMode" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
+            <div v-if="admin && editMode && !isSideBarOpen" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
               {{ $t('changesPublished') }}
             </div>
 
             <div
               class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
-              v-if="admin && editMode"
+              v-if="admin && editMode && !isSideBarOpen"
             >
               <div ref="intro-top-bar" class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
                 <button
@@ -232,7 +241,7 @@
           </div>
           <div
             class="bg-light-grey-hp sections-p-3 flexSections sections-flex-row sections-justify-center part2 hide-mobile"
-            v-if="admin && editMode"
+            v-if="admin && editMode && !isSideBarOpen"
           >
             <button
               class="hp-button "
@@ -492,6 +501,7 @@
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       :savedView="savedView"
+                      :creationView="creationView"
                       :locales="locales"
                       :default-lang="defaultLang"
                       :translation-component-support="translationComponentSupport"
@@ -500,6 +510,7 @@
                       :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                       @load="(value) => loading = value"
                       @promote-section="currentSection = {...currentSection, instance: true}"
+                      @creationViewLoaded="updateCreationView"
                     />
                     <Dynamic
                       v-if="currentSection.type === 'dynamic'"
@@ -664,7 +675,7 @@
 
           <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
           <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal"
-               class="fixed z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
+               class="fixed sections-z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -854,7 +865,7 @@
                       <AlertIcon/>
                     </div>
                     <div
-                      @click="edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
+                      @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
                       v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                       <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
                                 class="edit-icon"/>
@@ -907,7 +918,7 @@
                 <!-- Empty div injected to verify the slots              -->
                 <div class="flexSections flex-col">
                   <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
-                  <div v-if="admin && editMode"
+                  <div v-if="admin && editMode && !isSideBarOpen"
                        class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
                     <button
                       class="hp-button"
@@ -952,7 +963,7 @@
                               <AlertIcon/>
                             </div>
                             <div
-                              @click="edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
+                              @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
                               v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
                               <EditIcon
                                 :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
@@ -999,10 +1010,17 @@
                       <!-- </transition-group> -->
                     </draggable>
                   </div>
+                  <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :class="`creation-view-${selectedLayout}-${slotName}`">
+                    <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
+                  </section>
                 </div>
               </template>
             </component>
           </div>
+
+          <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" class="creation-view-standard">
+            <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
+          </section>
 
           <!-- ------------------------------------------------------------------------------------------- -->
 
@@ -1424,6 +1442,7 @@ export default {
       isCreateInstance: false,
       isModalOpen: false,
       isSideBarOpen: false,
+      backToAddSectionList: false,
       isDeleteModalOpen: false,
       isRestoreSectionOpen: false,
       restoreType: 'section',
@@ -1435,6 +1454,7 @@ export default {
       isAuthModalOpen: false,
       isUnAuthModalOpen: false,
       synched: false,
+      createdView: {},
       savedView: {},
       // all saved variations
       displayVariations: {
@@ -1519,7 +1539,8 @@ export default {
       canPromote: false,
       intro: null,
       currentPages: null,
-      introRerun: false
+      introRerun: false,
+      creationView: false
     }
   },
   computed: {
@@ -1622,6 +1643,14 @@ export default {
 
         return nameMatch && appNameMatch;
       });
+    },
+    getCreationComponent() {
+      try {
+        const path = `/views/${this.currentSection.name}_${this.currentSection.type}`;
+        return importComp(path);
+      } catch {
+        return ''
+      }
     }
   },
   async mounted() {
@@ -1959,7 +1988,8 @@ export default {
             weight: view.weight,
             name: view.name,
             type: view.type,
-            linkedTo: view.linkedTo
+            linkedTo: view.linkedTo,
+            region: view.region
           };
           if (view.settings && view.type === "configurable") {
             refactorView.name = view.nameID;
@@ -2025,6 +2055,7 @@ export default {
         path: pagePath,
         metadata: {...this.pageMetadata},
         variations: [],
+        layout: this.sectionslayout,
         sections
       };
       const URL =
@@ -2577,6 +2608,12 @@ export default {
     logDrag(evt) {
       Object.keys(this.viewsPerRegions).forEach(slotName => {
         this.viewsPerRegions[slotName].forEach((view, index) => {
+          if (view.region[this.selectedLayout] === undefined) {
+            view.region[this.selectedLayout] = {}
+          }
+          if (view.region[this.selectedLayout]['slot'] === undefined) {
+            view.region[this.selectedLayout]['slot'] = ''
+          }
           if (view.region[this.selectedLayout]['slot'] !== slotName) {
             view.region[this.selectedLayout]['slot'] = slotName
           }
@@ -3304,6 +3341,7 @@ export default {
             );
           }
           this.initializeSections(res);
+          this.computeLayoutData()
         }).catch(() => {
         })
         this.getUserData();
@@ -3382,10 +3420,12 @@ export default {
         }
 
         if (this.selectedLayout !== 'standard') {
-          section.region = {};
+          if (section.region === undefined || section.region === null || section.region[this.selectedLayout] === undefined || section.region[this.selectedLayout] === null) {
+            section.region = {};
+          }
           section.region[this.selectedLayout] = {
             slot: this.selectedSlotRegion,
-            weight: this.viewsPerRegions[this.selectedSlotRegion] ? this.viewsPerRegions[this.selectedSlotRegion].length : Object.keys(
+            weight: section.region && section.region[this.selectedLayout] && section.region[this.selectedLayout].weight !== undefined && section.region[this.selectedLayout].weight !== null ? section.region[this.selectedLayout].weight : this.viewsPerRegions[this.selectedSlotRegion] ? this.viewsPerRegions[this.selectedSlotRegion].length : Object.keys(
               this.displayVariations[this.selectedVariation].views
             ).length
           };
@@ -3435,6 +3475,8 @@ export default {
         this.isModalOpen = false;
         this.isSideBarOpen = false;
         this.savedView = {};
+        this.createdView = {}
+        this.creationView = false
         this.loading = false;
 
         this.computeLayoutData();
@@ -4077,7 +4119,46 @@ export default {
         }
       } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
         this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
-      } else this.currentSection = {...type, creation: true}
+      } else {
+        if (type.type === 'static' || type.type === 'configurable') {
+          this.isModalOpen = false
+          this.isSideBarOpen = true
+
+          this.currentSection = {...type, creation: true, id: 'creation-view'}
+          this.createdView = this.currentSection
+          this.creationView = true
+          this.sideBarSizeManagement()
+        } else {
+          this.currentSection = {...type, creation: true}
+        }
+      }
+    },
+    updateCreationView(settings) {
+      this.createdView.settings = settings;
+      this.createdView = {...this.createdView}
+    },
+    sideBarSizeManagement() {
+      try {
+        this.$nextTick(() => {
+          this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
+          this.resizeData.resizeTarget = this.$refs.resizeTarget;
+          setTimeout(() => {
+            if (this.$refs.resizeTarget) {
+              this.$refs.resizeTarget.scrollTo({
+                top: 0
+              });
+            }
+            if (this.$refs.sectionsMainTarget) {
+              this.$refs.sectionsMainTarget.scrollTo({
+                top: this.$refs.sectionsMainTarget.scrollHeight,
+                behavior: 'smooth'
+              });
+            }
+          }, 600);
+          window.addEventListener("mousemove", this.onMouseMove);
+          window.addEventListener("mouseup", this.stopTracking);
+        })
+      } catch {}
     },
     startTracking(event) {
       if (event.button !== 0) return;
@@ -4120,7 +4201,18 @@ export default {
       this.isSideBarOpen = false;
       this.isCreateInstance = false;
       this.isRestoreSectionOpen = false;
-      if (this.restoreType === 'section') {
+      if (this.creationView === true) {
+        this.createdView = {}
+        this.creationView = false
+        if (this.backToAddSectionList === true) {
+          this.backToAddSectionList = false;
+          this.currentSection = null
+          this.isModalOpen = true
+          this.savedView = {}
+          this.isCreateInstance = false
+          this.isSideBarOpen = false
+        }
+      } else if (this.restoreType === 'section') {
         this.restoreSection();
       } else {
         this.restoreVariations()
@@ -4133,6 +4225,15 @@ export default {
         this.currentSection.id,
         this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
       );
+      if (this.selectedLayout !== 'standard') {
+        try {
+          this.$set(
+            this.viewsPerRegions[this.selectedSlotRegion],
+            this.viewsPerRegions[this.selectedSlotRegion].findIndex(view => view.id === this.currentSection.id),
+            this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
+          );
+        } catch {}
+      }
       this.updatedVariations = JSON.parse(
         JSON.stringify(this.displayVariations)
       );
@@ -4157,7 +4258,7 @@ export default {
 
 .sections-config .control-button.config-buttons {
   position: absolute;
-  z-index: 999;
+  z-index: 190;
   left: 0;
   top: 60px;
 }
@@ -4175,6 +4276,11 @@ export default {
   right: 45px !important;
   top: 10px;
   z-index: 50 !important;
+  --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+  box-shadow: 0 0 rgba(0, 0, 0, 0), 0 0 rgba(0, 0, 0, 0), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-ring-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-shadow);
+  border-width: 1px;
 }
 
 .section-view .controls.optionsSettings {
@@ -4607,7 +4713,7 @@ span.handle {
 }
 
 .sections-z-50 {
-  z-index: 2000 !important;
+  z-index: 20000000000  !important;
 }
 
 .section-modal-wrapper {
@@ -5403,7 +5509,7 @@ span.handle {
   width: 527px;
   min-width: 422px;
   max-width: 50%;
-  z-index: 200;
+  z-index: 9999;
 }
 
 .sections-aside
@@ -5510,5 +5616,50 @@ span.handle {
 .section-modal-content .sectionsFilterName {
   height: 38px;
   width: 200px;
+}
+
+.flip-list-move {
+  transition: transform 0.5s;
+}
+.no-move {
+  transition: transform 0s;
+}
+.fieldsets .controls {
+  --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+  box-shadow: 0 0 rgba(0, 0, 0, 0), 0 0 rgba(0, 0, 0, 0), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-ring-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-shadow);
+  border-width: 1px;
+}
+.fieldsets .controls svg {
+  cursor: pointer;
+  color: #31a9db;
+  margin: 3px;
+}
+.sections-container .sections-aside .step-back-aside {
+  cursor: pointer;
+  color: #31a9db;
+  position: absolute;
+}
+.sections-container .sections-aside .step-back-aside svg {
+  width: 35px;
+  height: 35px;
+  transition: 0.2s;
+}
+.ql-editor.ql-snow img {
+  display: inline !important;
+}
+.cssClassesInput {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 1.5rem;
+  border: 1px solid #C2C2C2;
+  border-radius: 0.75rem;
+  height: 48px;
+  width: 100%;
+  outline: none;
+}
+section .ql-editor.ql-snow.grey-bg {
+  background: grey;
 }
 </style>

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.0.17] - 2025-02-03
+
+### Added
+
+- Introduced a new Form component (Draggable/Dynamic FieldSets component): Sections with multiple items must be enhanced to be more flexible #34
+
+- A new hook `update_section_name` that allow to update the display of a section name. The hook is expected to be added to the `sections/js/global-hooks.js`
+
+### Updated
+
+- Add section updated to show in side bar: When adding a section, have it work like in edit mode and have a visual of it on the site when entering the data #78
+
+### Fixed
+
+- Display bugs: When a layout is selected and you have added several section in the left layout for example, when you click to delete a section the display of the popup is not correct #132 + When you are in edit mode and you edit a section with a media and then you click to edit the media, the display of the options of the page are blocking the one of the editor #126
+
+- Bug of loosing layout data when saving page metadata + Bug of changing section weight when editing it inside a layout region: Losing sections weight when editing and using a specific layout #135 +  you add a section in a region and then ou move it to another region, it vanish #138
+
+- Bug fix when adding or editing a section in a layout: When you are in a layout like extended-layout and you are editing or adding a section, the add new section button is showing for all region and they are clickable, they should not #140
+
+- Bug fix When performing changes on a section inside a layout specifically then closing the section and confirm in the popup, the changes are still there instead of having the original section data #139
+
 ### [1.0.16] - 2025-01-17
 
 ### Added

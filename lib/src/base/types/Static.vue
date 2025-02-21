@@ -1,7 +1,7 @@
 <template>
   <div class="text-center">
     <div class="element-type">
-      <h3>{{ props.linked_to ? formatName(props.linked_to, '/') : formatName(props.name, " / ") }}</h3>
+      <h3>{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : formatTexts(formatName(props.name, " / ")) }}</h3>
       <div v-if="globalSectionMode === true">
         <div class="autoInsertRow">
           <div>
@@ -23,7 +23,7 @@
       <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
       <form>
         <div>
-          <subType :name="props.name" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :default-lang="defaultLang" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId">
+          <subType :name="props.name" :creationView="creationView" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :default-lang="defaultLang" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId" @creationViewLoaded="(settings) => $emit('creationViewLoaded', settings)">
             <slot />
           </subType>
         </div>
@@ -37,7 +37,7 @@
 <script>
 import subType from "../SubTypes/subType.vue";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
-import {formatName, getGlobalTypeData, importComp} from "../../utils";
+import {formatName, formatTexts, getGlobalTypeData, importComp} from "../../utils";
 
 export default {
   components: {
@@ -52,6 +52,10 @@ export default {
     savedView: {
       type: Object,
       default: () => {},
+    },
+    creationView: {
+      type: Boolean,
+      default: false
     },
     locales: {
       type: Array,
@@ -133,6 +137,7 @@ export default {
     }
   },
   methods: {
+    formatTexts,
     formatName,
     addStatic(settings) {
       this.instanceNameError = false
@@ -147,7 +152,8 @@ export default {
         id: this.id,
         weight: this.weight,
         auto_insertion: this.autoInsert,
-        instance_name: this.instanceName
+        instance_name: this.instanceName,
+        region: this.props.region
       });
     },
     async getGlobalType() {
