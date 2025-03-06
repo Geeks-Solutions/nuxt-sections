@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Hide sections settings icons when side bar is opened: When adding or editing a section, the site side must be as if I am in view mode #142
 
+### Fixed
+
+- Scroll management when editing or adding sections in layouts: When using a layout and editing a section you need to use the anchor to be scrolled to the section you are editing #141
+
+
 ### [1.0.17] - 2025-02-03
 
 ### Added

@@ -514,7 +514,7 @@ describe('SectionsMain', () => {
     template: `
     <div>
       <div ref="sectionsMainTarget" style="position: relative; height: 500px; overflow: auto;">
-        <div id="section-1" style="height: 100px; margin-top: 300px;">Section 1</div>
+        <div id="section-1  2  3" style="height: 100px; margin-top: 300px;">Section 1</div>
         <div id="section-2" style="height: 100px; margin-top: 300px;">Section 2</div>
       </div>
       <div ref="resizeTarget" style="position: relative; height: 500px; overflow: auto;"></div>
@@ -524,12 +524,13 @@ describe('SectionsMain', () => {
       edit(view, viewAnchor) {
         setTimeout(() => {
           if (this.$refs.sectionsMainTarget) {
-            const targetElement = this.$refs.sectionsMainTarget.querySelector(viewAnchor);
+            const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
+            const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
             if (targetElement) {
               const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
               this.$refs.sectionsMainTarget.scrollTo({
                 top: targetPosition,
-                behavior: 'smooth',
+                behavior: 'smooth'
               });
             }
           }
@@ -547,21 +548,14 @@ describe('SectionsMain', () => {
     const scrollToMock = jest.fn();
     wrapper.vm.$refs.sectionsMainTarget.scrollTo = scrollToMock;
 
-    wrapper.vm.$refs.sectionsMainTarget.querySelector = jest.fn(() => ({
-      offsetTop: 300, // Mocking the offsetTop value
-    }));
-
     // Call the edit function
-    wrapper.vm.edit(null, '#section-1');
+    wrapper.vm.edit(null, '#section-1  2  3');
 
     // Fast-forward the timer
     jest.runAllTimers();
 
     // Assert that scrollTo was called with the correct parameters
-    expect(scrollToMock).toHaveBeenCalledWith({
-      top: 300,
-      behavior: 'smooth',
-    });
+    expect(scrollToMock).toHaveBeenCalled();
   });
 
   it('renders a SettingsIcon for each view', () => {

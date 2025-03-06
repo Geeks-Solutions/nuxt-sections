@@ -3845,7 +3845,8 @@ export default {
         })
         setTimeout(() => {
           if (this.$refs.sectionsMainTarget) {
-            const targetElement = this.$refs.sectionsMainTarget.querySelector(viewAnchor);
+            const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
+            const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
             if (targetElement) {
               const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
               this.$refs.sectionsMainTarget.scrollTo({
@@ -4149,10 +4150,20 @@ export default {
               });
             }
             if (this.$refs.sectionsMainTarget) {
-              this.$refs.sectionsMainTarget.scrollTo({
-                top: this.$refs.sectionsMainTarget.scrollHeight,
-                behavior: 'smooth'
-              });
+              const safeViewAnchor = `#${`${this.currentSection.name}-${this.currentSection.id}`.replace(/ /g, '\\ ')}`;
+              const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
+              if (targetElement) {
+                const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
+                this.$refs.sectionsMainTarget.scrollTo({
+                  top: targetPosition,
+                  behavior: 'smooth'
+                });
+              } else {
+                this.$refs.sectionsMainTarget.scrollTo({
+                  top: this.$refs.sectionsMainTarget.scrollHeight,
+                  behavior: 'smooth'
+                });
+              }
             }
           }, 600);
           window.addEventListener("mousemove", this.onMouseMove);
