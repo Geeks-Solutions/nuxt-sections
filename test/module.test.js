@@ -47,7 +47,8 @@ describe('SectionsMain', () => {
                 },
               },
             },
-          }
+          },
+          isSideBarOpen: false
         };
       },
     });
@@ -765,6 +766,16 @@ describe('SectionsMain', () => {
     controlsWrapper.vm.restoreSection();
 
     expect(controlsWrapper.vm.viewsPerRegions.region1[0].content).toBe('Restored Content');
+  });
+
+  it('Hide SettingsIcon for the views when sidebar is opened', async () => {
+
+    controlsWrapper.vm.isSideBarOpen = true
+
+    controlsWrapper.vm.$nextTick(() => {
+      const settingsIcons = controlsWrapper.findAll('.settings-icon-wrapper');
+      expect(settingsIcons.length).toBe(0);
+    })
   });
 
 })
