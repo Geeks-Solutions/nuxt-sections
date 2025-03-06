@@ -1,6 +1,7 @@
 import { shallowMount, mount } from '@vue/test-utils'
 import SectionsMain from '../lib/src/components/Sections/index.vue'
 import FieldSets from '../lib/src/components/SectionsForms/FieldSets.vue';
+import WysiwygStatic from '../lib/src/configs/views/wysiwyg_static.vue';
 
 describe('SectionsMain', () => {
   let controlsWrapper;
@@ -1212,4 +1213,22 @@ describe('Z-index Test', () => {
 
     expect(Number(targetZIndex)).toBeLessThan(Number(backgroundZIndex));
   });
+});
+
+describe("WysiwygStatic", () => {
+
+  it("renders the .ql-snow .ql-editor class when html exists", () => {
+    const wrapper = shallowMount(WysiwygStatic, {
+      propsData: {
+        section: {
+          settings: [{ en: "<p>Test content</p>" }],
+        },
+        lang: "en",
+      },
+    });
+
+    // Check if the element with .ql-snow and .ql-editor classes exists
+    expect(wrapper.find(".ql-snow .ql-editor").exists()).toBe(true);
+  });
+  
 });

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Scroll management when editing or adding sections in layouts: When using a layout and editing a section you need to use the anchor to be scrolled to the section you are editing #141
 
+- Wysiwyg Headings styles not applied in view mode: When adding a wysiwyg or editing one in a page without css, idf you apply headings on the text , it is not reflected in the view mode #144
+
 
 ### [1.0.17] - 2025-02-03
 

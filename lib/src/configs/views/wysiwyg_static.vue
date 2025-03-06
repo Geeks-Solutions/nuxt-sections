@@ -1,6 +1,6 @@
 <template>
   <div
-    class="wys-wrapper view-section-component"
+    class="wys-wrapper view-section-component ql-snow"
     :class="html && html.length > 2 ? 'mtitle' + html.charAt(2) : 'mtitle'"
     v-if="html"
   >
