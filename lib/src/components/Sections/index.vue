@@ -1759,6 +1759,11 @@ export default {
         this.initializeSections(res);
         this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } else if (error) {
+        const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
+        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
+          this.pageNotFoundManagement(error)
+          return
+        }
         if (error.response.status === 400) {
           const res = error.response;
           this.initializeSections(res);
@@ -1786,6 +1791,11 @@ export default {
         this.initializeSections(res);
         this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } catch (error) {
+        const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
+        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
+          this.pageNotFoundManagement(error)
+          return
+        }
         if (error.response.status === 400) {
           const res = error.response;
           this.initializeSections(res);
@@ -1813,7 +1823,12 @@ export default {
         try {
           const res = await this.$axios.post(URL, payload, config)
           this.initializeSections(res);
-        } catch (error) {
+        } catch (error)  {
+          const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
+          if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
+            this.pageNotFoundManagement(error, true)
+            return
+          }
           if (error.response.status === 400) {
             const res = error.response;
             this.initializeSections(res);
@@ -1952,6 +1967,25 @@ export default {
       this.loading = false;
       this.$emit("load", true);
       this.sectionsPageLastUpdated = res.data.last_updated;
+    },
+    pageNotFoundManagement(error, server) {
+      if (server) {
+        if (error.response.data.error) {
+          this.sectionsError = error.response.data.error
+        } else {
+          this.sectionsError = error.response.data.message
+          this.sectionsErrorOptions = error.response.data.options
+        }
+        this.$nuxt.context.res.statusCode = 404
+        this.$nuxt.context.redirect(this.$nuxt.localePath(error.response.data.options.project_metadata.pagePath404))
+      } else {
+        if (error.response.data.error) {
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
+        } else {
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
+        }
+        this.$router.push(this.localePath(error.response.data.options.project_metadata.pagePath404))
+      }
     },
     selectedCSS(mediaObject, mediaFieldName) {
       const media = {

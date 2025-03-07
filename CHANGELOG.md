@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [1.0.18] - 2025-03-06
 
+### Added
+
+- Support for custom sections 404 page that its path can be set through Sections BO: Ability to create a page on section for a project and use it when we have a 404 page not found #145
+
+
 ### Updated
 
 - Sections settings icon to show the section name when hovered: When hovering an the gear icon of a section, have its name showing #143 
