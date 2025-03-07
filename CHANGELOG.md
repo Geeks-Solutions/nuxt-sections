@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.0.18] - 2025-03-06
+
+### Added
+
+- Support for custom sections 404 page that its path can be set through Sections BO: Ability to create a page on section for a project and use it when we have a 404 page not found #145
+
+### Updated
+
+- Sections settings icon to show the section name when hovered: When hovering an the gear icon of a section, have its name showing #143 
+
+- Hide sections settings icons when side bar is opened: When adding or editing a section, the site side must be as if I am in view mode #142
+
+- Upgrade vue-components library version to v1.0.12
+
+### Fixed
+
+- Scroll management when editing or adding sections in layouts: When using a layout and editing a section you need to use the anchor to be scrolled to the section you are editing #141
+
+- Wysiwyg Headings styles not applied in view mode: When adding a wysiwyg or editing one in a page without css, idf you apply headings on the text , it is not reflected in the view mode #144
+
+
 ### [1.0.17] - 2025-02-03
 
 ### Added

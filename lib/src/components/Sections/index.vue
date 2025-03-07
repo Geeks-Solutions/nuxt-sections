@@ -882,8 +882,8 @@
                         class="edit-icon"/>
                     </div>
                   </div>
-                  <div v-if="admin && editMode && view.altered !== true" @click="toggleSectionsOptions(view.id)"
-                       class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
+                  <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                       class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
                     <SettingsIcon :color="'currentColor'" class="settings-icon"/>
                   </div>
                   <div class="view-component"
@@ -981,8 +981,8 @@
                                 class="edit-icon"/>
                             </div>
                           </div>
-                          <div v-if="admin && editMode && view.altered !== true" @click="toggleSectionsOptions(view.id)"
-                               class="controls optionsSettings flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper">
+                          <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                               class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
                             <SettingsIcon :color="'currentColor'" class="settings-icon"/>
                           </div>
                           <div class="view-component"
@@ -1759,6 +1759,11 @@ export default {
         this.initializeSections(res);
         this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } else if (error) {
+        const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
+        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
+          this.pageNotFoundManagement(error)
+          return
+        }
         if (error.response.status === 400) {
           const res = error.response;
           this.initializeSections(res);
@@ -1786,6 +1791,11 @@ export default {
         this.initializeSections(res);
         this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
       } catch (error) {
+        const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
+        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
+          this.pageNotFoundManagement(error)
+          return
+        }
         if (error.response.status === 400) {
           const res = error.response;
           this.initializeSections(res);
@@ -1813,7 +1823,12 @@ export default {
         try {
           const res = await this.$axios.post(URL, payload, config)
           this.initializeSections(res);
-        } catch (error) {
+        } catch (error)  {
+          const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
+          if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
+            this.pageNotFoundManagement(error, true)
+            return
+          }
           if (error.response.status === 400) {
             const res = error.response;
             this.initializeSections(res);
@@ -1952,6 +1967,25 @@ export default {
       this.loading = false;
       this.$emit("load", true);
       this.sectionsPageLastUpdated = res.data.last_updated;
+    },
+    pageNotFoundManagement(error, server) {
+      if (server) {
+        if (error.response.data.error) {
+          this.sectionsError = error.response.data.error
+        } else {
+          this.sectionsError = error.response.data.message
+          this.sectionsErrorOptions = error.response.data.options
+        }
+        this.$nuxt.context.res.statusCode = 404
+        this.$nuxt.context.redirect(this.$nuxt.localePath(error.response.data.options.project_metadata.pagePath404))
+      } else {
+        if (error.response.data.error) {
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
+        } else {
+          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
+        }
+        this.$router.push(this.localePath(error.response.data.options.project_metadata.pagePath404))
+      }
     },
     selectedCSS(mediaObject, mediaFieldName) {
       const media = {
@@ -3845,7 +3879,8 @@ export default {
         })
         setTimeout(() => {
           if (this.$refs.sectionsMainTarget) {
-            const targetElement = this.$refs.sectionsMainTarget.querySelector(viewAnchor);
+            const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
+            const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
             if (targetElement) {
               const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
               this.$refs.sectionsMainTarget.scrollTo({
@@ -4149,10 +4184,20 @@ export default {
               });
             }
             if (this.$refs.sectionsMainTarget) {
-              this.$refs.sectionsMainTarget.scrollTo({
-                top: this.$refs.sectionsMainTarget.scrollHeight,
-                behavior: 'smooth'
-              });
+              const safeViewAnchor = `#${`${this.currentSection.name}-${this.currentSection.id}`.replace(/ /g, '\\ ')}`;
+              const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
+              if (targetElement) {
+                const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
+                this.$refs.sectionsMainTarget.scrollTo({
+                  top: targetPosition,
+                  behavior: 'smooth'
+                });
+              } else {
+                this.$refs.sectionsMainTarget.scrollTo({
+                  top: this.$refs.sectionsMainTarget.scrollHeight,
+                  behavior: 'smooth'
+                });
+              }
             }
           }, 600);
           window.addEventListener("mousemove", this.onMouseMove);
