@@ -4,9 +4,7 @@
     :class="html && html.length > 2 ? 'mtitle' + html.charAt(2) : 'mtitle'"
     v-if="html"
   >
-    <div class="ql-editor ql-snow" :class="[{ 'slide-up': isVisible }, cssClasses]">
-      <div v-html="html" />
-    </div>
+    <gWysiwygContent tag="div" :wrapper-classes="`${isVisible ? 'slide-up' : ''} ${cssClasses}`" :html-content="html" />
   </div>
 </template>
 
