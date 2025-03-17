@@ -53,7 +53,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@geeks.solutions/vue-components": "geeks.solutions-vue-components-1.0.13.tgz",
+    "@geeks.solutions/vue-components": "^1.0.13",
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/i18n": "^7.3.1",
     "cookie-universal-nuxt": "^2.2.2",
