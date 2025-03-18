@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use the new introduced component to display the wysiwyg content
 `<gWysiwygContent :html-content="html" />`
 
+### Added
+
+- Inject transpile quill 2 support in host project from module.js, required to have quill v2 working
+
+
 ### [1.0.18] - 2025-03-06
 
 ### Added
