@@ -876,7 +876,7 @@
                       <TrashIcon class="trash-icon"/>
                     </div>
                     <div
-                      @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                      @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
                       <AnchorIcon
                         :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                         class="edit-icon"/>
@@ -975,7 +975,7 @@
                               <TrashIcon class="trash-icon"/>
                             </div>
                             <div
-                              @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                              @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
                               <AnchorIcon
                                 :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                                 class="edit-icon"/>
@@ -3942,8 +3942,33 @@ export default {
       );
       this.computeLayoutData();
     },
-    copyAnchor(anchor) {
-      navigator.clipboard.writeText(anchor);
+    copyAnchor(anchor, event) {
+      try {
+        if (window.location.protocol.replace(':', '') === 'http') {
+          console.log("Got here", window.location.protocol)
+          this.showToast("", "error", this.$t('copyAnchorFailed'));
+          return
+        }
+
+        navigator.clipboard.writeText(anchor);
+
+        const tooltip = document.createElement("div");
+        tooltip.innerText = this.$t("anchorCopied");
+        tooltip.className =
+          "anchor-copied-tooltip";
+        document.body.appendChild(tooltip);
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY}px`;
+        setTimeout(() => {
+          tooltip.classList.add("copied-opacity-100");
+        }, 10);
+        setTimeout(() => {
+          tooltip.classList.remove("copied-opacity-100");
+          setTimeout(() => tooltip.remove(), 300);
+        }, 1500);
+      } catch {
+        this.showToast("", "error", this.$t('copyAnchorFailed'));
+      }
     },
     errorAddingSection(error) {
       this.isModalOpen = !error.closeModal;
@@ -5706,5 +5731,23 @@ span.handle {
 }
 section .ql-editor.ql-snow.grey-bg {
   background: grey;
+}
+.copied-opacity-100 {
+  opacity: 1 !important;
+}
+.anchor-copied-tooltip {
+  position: fixed;
+  background-color: #31a9db;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: 0.25rem;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 50;
+  transform: translate(-100%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
 }
 </style>

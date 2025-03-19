@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Inject transpile quill 2 support in host project from module.js, required to have quill v2 working
 
+- Tooltip copied message when anchor is clicked: Make sure that when you copy the anchor of a section there is a message copied to the clipboard #148
+
 
 ### [1.0.18] - 2025-03-06
 
