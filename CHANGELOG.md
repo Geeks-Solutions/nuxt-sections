@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Tooltip copied message when anchor is clicked: Make sure that when you copy the anchor of a section there is a message copied to the clipboard #148
 
+- Support for dynamic default language configured from Sections BO: Changes needed to make nuxt sections library able of configuring the defaultlocale of the nuxt/i18n library configuration #112
 
 ### [1.0.18] - 2025-03-06
 

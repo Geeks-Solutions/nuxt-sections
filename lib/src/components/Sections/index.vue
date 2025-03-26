@@ -1822,7 +1822,7 @@ export default {
       if (optionsRes.status === 200) {
         try {
           const res = await this.$axios.post(URL, payload, config)
-          this.initializeSections(res);
+          this.initializeSections(res, true);
         } catch (error)  {
           const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
           if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
@@ -1831,7 +1831,7 @@ export default {
           }
           if (error.response.status === 400) {
             const res = error.response;
-            this.initializeSections(res);
+            this.initializeSections(res, true);
             return;
           }
           if (error.response.status === 404) {
@@ -1875,7 +1875,7 @@ export default {
   },
   methods: {
     parsePath,
-    initializeSections(res) {
+    initializeSections(res, onServer) {
       this.$nuxt.$emit('page_pre_render', res)
       const sections = res.data.sections;
       this.pageData = res.data;
@@ -1905,6 +1905,18 @@ export default {
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
         this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
         this.defaultLang = res.data.metadata.project_metadata.defaultLang
+        try {
+          if (this.defaultLang && this.$sections.cname === "active" && onServer && !this.$cookies.get('sections-default-lang')) {
+            this.$cookies.set('sections-default-lang', this.defaultLang)
+            let path = ""
+            if (this.$route.params) {
+              path = `/${this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'}`
+            }
+            this.$nuxt.context.redirect({ path: this.$nuxt.localePath(path, this.defaultLang), query: this.$route.query })
+          } else if (this.defaultLang && this.$sections.cname === "active" && onServer) {
+            this.$cookies.set('sections-default-lang', this.defaultLang)
+          }
+        } catch {}
       }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
         this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
@@ -3945,7 +3957,6 @@ export default {
     copyAnchor(anchor, event) {
       try {
         if (window.location.protocol.replace(':', '') === 'http') {
-          console.log("Got here", window.location.protocol)
           this.showToast("", "error", this.$t('copyAnchorFailed'));
           return
         }
