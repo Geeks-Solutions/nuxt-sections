@@ -1851,7 +1851,7 @@ export default {
       if (optionsRes.status === 200) {
         try {
           const res = await this.$axios.post(URL, payload, config)
-          this.initializeSections(res, true);
+          this.initializeSections(res);
         } catch (error)  {
           const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
           if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
@@ -1860,7 +1860,7 @@ export default {
           }
           if (error.response.status === 400) {
             const res = error.response;
-            this.initializeSections(res, true);
+            this.initializeSections(res);
             return;
           }
           if (error.response.status === 404) {
@@ -1904,7 +1904,7 @@ export default {
   },
   methods: {
     parsePath,
-    initializeSections(res, onServer) {
+    initializeSections(res) {
       this.$nuxt.$emit('page_pre_render', res)
       const sections = res.data.sections;
       this.pageData = res.data;
@@ -1931,28 +1931,9 @@ export default {
         this.$set(this.projectMetadata, 'languages', res.data.metadata.project_metadata.languages)
         this.selectedLanguages = res.data.metadata.project_metadata.languages
       }
-      let path = ""
-      if (this.$route.params) {
-        path = `${this.$route.params.pathMatch ? `/${this.$route.params.pathMatch}` : '/'}`
-      }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
         this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
         this.defaultLang = res.data.metadata.project_metadata.defaultLang
-        try {
-          if (this.$sections.cname === "active" && this.selectedLanguages.length === 1 && !this.$route.fullPath.startsWith(`/${this.selectedLanguages[0]}/`)) {
-            this.defaultLang = this.selectedLanguages[0]
-            this.$nuxt.context.redirect({ path: `/${this.defaultLang}${path}`, query: this.$route.query })
-          } else if (this.defaultLang && this.$sections.cname === "active" && onServer && !this.locales.some(locale => this.$route.fullPath.startsWith(`/${locale}/`))) {
-            this.$nuxt.context.redirect({ path: `/${this.defaultLang}${path}`, query: this.$route.query })
-          }
-        } catch {}
-      } else if (this.$sections.cname === "active") {
-        if (this.selectedLanguages.length === 1 && !this.$route.fullPath.startsWith(`/${this.selectedLanguages[0]}/`)) {
-          this.defaultLang = this.selectedLanguages[0]
-          this.$nuxt.context.redirect({ path: `/${this.defaultLang}${path}`, query: this.$route.query })
-        } else if (this.$route.fullPath === '/') {
-          this.$nuxt.context.redirect({ path: `/en${path}`, query: this.$route.query })
-        }
       }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
         this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
