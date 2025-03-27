@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for dynamic default language configured from Sections BO: Changes needed to make nuxt sections library able of configuring the defaultlocale of the nuxt/i18n library configuration #112
 
+- Metatag adjustments #149
+
+
 ### [1.0.18] - 2025-03-06
 
 ### Added

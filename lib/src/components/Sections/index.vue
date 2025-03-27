@@ -1151,16 +1151,28 @@
                           </div>
                         </div>
                         <div>
-                          <div class="sections-mt-2 sectionsFieldsLabels">
-                            {{ $t('CSS') }}
+                          <div>
+                            <div class="sections-mt-2 sectionsFieldsLabels">
+                              {{ $t('Image Metatag') }}
+                            </div>
+                            <UploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
+                                         :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"
+                                         @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"
+                                         @removeUploadedImage="removeMedia('mediaMetatag')"/>
                           </div>
-                          <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
-                                       :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
-                                       :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
-                                       @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
-                                       @removeUploadedImage="removeMedia('media')"/>
-                          <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
-                                          @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+                          <div>
+                            <div class="sections-mt-2 sectionsFieldsLabels">
+                              {{ $t('CSS') }}
+                            </div>
+                            <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
+                                         :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
+                                         @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
+                                         @removeUploadedImage="removeMedia('media')" />
+                            <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
+                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1381,14 +1393,31 @@ export default {
     }
   },
   head() {
+    const baseURL = process.server
+      ? (this.$nuxt.context.req.headers['x-forwarded-proto'] || 'http') + '://' + this.$nuxt.context.req?.headers.host
+      : window.location.origin;
+
+    const fullURL = baseURL + this.$route.fullPath;
+
     return {
+      htmlAttrs: {
+        title: this.computedTitle
+      },
       title: this.computedTitle,
       meta: [
         {
           hid: 'description',
           name: 'description',
           content: this.computedDescription
-        }
+        },
+        { hid: "og:title", property: "og:title", content: this.computedTitle },
+        { hid: "og:description", property: "og:description", content: this.computedDescription },
+        this.pageMetadata['mediaMetatag'] && this.pageMetadata['mediaMetatag'].url ? {
+          hid: "og:image",
+          property: "og:image",
+          content: this.pageMetadata['mediaMetatag'].url
+        } : {},
+        { hid: "og:url", property: "og:url", content: fullURL },
       ],
       link: [
         this.projectMetadata['selectedCSSPreset'] && this.projectMetadata['selectedCSSPreset'].name && this.projectMetadata['selectedCSSPreset'].name !== 'Other' && this.projectMetadata['selectedCSSPreset'].name !== 'None' ? {
@@ -1931,6 +1960,9 @@ export default {
       }
       if (res.data.metadata.media) {
         this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+      }
+      if (res.data.metadata.mediaMetatag) {
+        this.$set(this.pageMetadata, 'mediaMetatag', res.data.metadata.mediaMetatag)
       }
       this.computedTitle = this.pageMetadata[this.lang].title
       this.computedDescription = this.pageMetadata[this.lang].description
