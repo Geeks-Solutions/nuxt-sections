@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.1.0] - 2025-03-17
+
+### Removed
+
+- Optimization update: Global css import for quill editor is moved to the form and view components to only load the css when the components are used
+
+**Breaking Change**
+- Using `v-html` to display the wysiwyg content will still work, but it will no more have the wysiwyg styles `headings, aligments etc...`
+- Use the new introduced component to display the wysiwyg content
+`<gWysiwygContent :html-content="html" />`
+
+### Added
+
+- Inject transpile quill 2 support in host project from module.js, required to have quill v2 working
+
+- Tooltip copied message when anchor is clicked: Make sure that when you copy the anchor of a section there is a message copied to the clipboard #148
+
+- Support for dynamic default language configured from Sections BO: Changes needed to make nuxt sections library able of configuring the defaultlocale of the nuxt/i18n library configuration #112
+
+- Metatag adjustments #149
+
+
 ### [1.0.18] - 2025-03-06
 
 ### Added

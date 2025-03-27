@@ -876,7 +876,7 @@
                       <TrashIcon class="trash-icon"/>
                     </div>
                     <div
-                      @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                      @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
                       <AnchorIcon
                         :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                         class="edit-icon"/>
@@ -975,7 +975,7 @@
                               <TrashIcon class="trash-icon"/>
                             </div>
                             <div
-                              @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)">
+                              @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
                               <AnchorIcon
                                 :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                                 class="edit-icon"/>
@@ -1151,16 +1151,28 @@
                           </div>
                         </div>
                         <div>
-                          <div class="sections-mt-2 sectionsFieldsLabels">
-                            {{ $t('CSS') }}
+                          <div>
+                            <div class="sections-mt-2 sectionsFieldsLabels">
+                              {{ $t('Image Metatag') }}
+                            </div>
+                            <UploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
+                                         :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"
+                                         @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"
+                                         @removeUploadedImage="removeMedia('mediaMetatag')"/>
                           </div>
-                          <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
-                                       :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
-                                       :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
-                                       @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
-                                       @removeUploadedImage="removeMedia('media')"/>
-                          <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
-                                          @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+                          <div>
+                            <div class="sections-mt-2 sectionsFieldsLabels">
+                              {{ $t('CSS') }}
+                            </div>
+                            <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
+                                         :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
+                                         @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
+                                         @removeUploadedImage="removeMedia('media')" />
+                            <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
+                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1381,14 +1393,31 @@ export default {
     }
   },
   head() {
+    const baseURL = process.server
+      ? (this.$nuxt.context.req.headers['x-forwarded-proto'] || 'http') + '://' + this.$nuxt.context.req?.headers.host
+      : window.location.origin;
+
+    const fullURL = baseURL + this.$route.fullPath;
+
     return {
+      htmlAttrs: {
+        title: this.computedTitle
+      },
       title: this.computedTitle,
       meta: [
         {
           hid: 'description',
           name: 'description',
           content: this.computedDescription
-        }
+        },
+        { hid: "og:title", property: "og:title", content: this.computedTitle },
+        { hid: "og:description", property: "og:description", content: this.computedDescription },
+        this.pageMetadata['mediaMetatag'] && this.pageMetadata['mediaMetatag'].url ? {
+          hid: "og:image",
+          property: "og:image",
+          content: this.pageMetadata['mediaMetatag'].url
+        } : {},
+        { hid: "og:url", property: "og:url", content: fullURL },
       ],
       link: [
         this.projectMetadata['selectedCSSPreset'] && this.projectMetadata['selectedCSSPreset'].name && this.projectMetadata['selectedCSSPreset'].name !== 'Other' && this.projectMetadata['selectedCSSPreset'].name !== 'None' ? {
@@ -1912,6 +1941,9 @@ export default {
       }
       if (res.data.metadata.media) {
         this.$set(this.pageMetadata, 'media', res.data.metadata.media)
+      }
+      if (res.data.metadata.mediaMetatag) {
+        this.$set(this.pageMetadata, 'mediaMetatag', res.data.metadata.mediaMetatag)
       }
       this.computedTitle = this.pageMetadata[this.lang].title
       this.computedDescription = this.pageMetadata[this.lang].description
@@ -3942,8 +3974,32 @@ export default {
       );
       this.computeLayoutData();
     },
-    copyAnchor(anchor) {
-      navigator.clipboard.writeText(anchor);
+    copyAnchor(anchor, event) {
+      try {
+        if (window.location.protocol.replace(':', '') === 'http') {
+          this.showToast("", "error", this.$t('copyAnchorFailed'));
+          return
+        }
+
+        navigator.clipboard.writeText(anchor);
+
+        const tooltip = document.createElement("div");
+        tooltip.innerText = this.$t("anchorCopied");
+        tooltip.className =
+          "anchor-copied-tooltip";
+        document.body.appendChild(tooltip);
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY}px`;
+        setTimeout(() => {
+          tooltip.classList.add("copied-opacity-100");
+        }, 10);
+        setTimeout(() => {
+          tooltip.classList.remove("copied-opacity-100");
+          setTimeout(() => tooltip.remove(), 300);
+        }, 1500);
+      } catch {
+        this.showToast("", "error", this.$t('copyAnchorFailed'));
+      }
     },
     errorAddingSection(error) {
       this.isModalOpen = !error.closeModal;
@@ -5706,5 +5762,23 @@ span.handle {
 }
 section .ql-editor.ql-snow.grey-bg {
   background: grey;
+}
+.copied-opacity-100 {
+  opacity: 1 !important;
+}
+.anchor-copied-tooltip {
+  position: fixed;
+  background-color: #31a9db;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: 0.25rem;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 50;
+  transform: translate(-100%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
 }
 </style>

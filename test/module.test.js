@@ -5,6 +5,7 @@ import WysiwygStatic from '../lib/src/configs/views/wysiwyg_static.vue';
 
 describe('SectionsMain', () => {
   let controlsWrapper;
+  let tooltip;
 
   beforeEach(() => {
     controlsWrapper = shallowMount(SectionsMain, {
@@ -13,6 +14,7 @@ describe('SectionsMain', () => {
         $sections: {
           cname: true
         },
+        showToast: jest.fn()
       },
       propsData: {
         admin: true,
@@ -53,6 +55,17 @@ describe('SectionsMain', () => {
         };
       },
     });
+
+    global.navigator.clipboard = {
+      writeText: jest.fn(),
+    };
+    delete window.location;
+    window.location = { protocol: 'https:' };
+    tooltip = document.createElement('div');
+    tooltip.className = 'anchor-copied-tooltip';
+    tooltip.style.left = '100px';
+    tooltip.style.top = '200px';
+    document.body.appendChild = jest.fn().mockImplementation(() => tooltip);
   });
 
   test('calls initializeSections and computeLayoutData in fetch()', async () => {
@@ -773,6 +786,28 @@ describe('SectionsMain', () => {
     })
   });
 
+  it('Copy anchor should display the tooltip with correct styles when copyAnchor is called', async () => {
+    const anchor = 'http://example.com';  // Example anchor to copy
+    const event = { clientX: 100, clientY: 200 }; // Example mouse event
+
+    await controlsWrapper.vm.copyAnchor(anchor, event);
+
+    expect(document.body.appendChild).toHaveBeenCalled();
+
+    expect(document.body.appendChild).toHaveBeenCalledWith(expect.objectContaining({
+      className: 'anchor-copied-tooltip',
+      style: expect.objectContaining({
+        left: '100px',
+        top: '200px',
+      }),
+    }));
+
+    jest.advanceTimersByTime(10);
+
+    expect(tooltip.style.left).toBe('100px');
+    expect(tooltip.style.top).toBe('200px');
+  });
+
 })
 
 describe('Types tests', () => {
@@ -1226,9 +1261,6 @@ describe("WysiwygStatic", () => {
         lang: "en",
       },
     });
-
-    // Check if the element with .ql-snow and .ql-editor classes exists
-    expect(wrapper.find(".ql-snow .ql-editor").exists()).toBe(true);
   });
-  
+
 });
