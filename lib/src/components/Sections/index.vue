@@ -1902,21 +1902,28 @@ export default {
         this.$set(this.projectMetadata, 'languages', res.data.metadata.project_metadata.languages)
         this.selectedLanguages = res.data.metadata.project_metadata.languages
       }
+      let path = ""
+      if (this.$route.params) {
+        path = `${this.$route.params.pathMatch ? `/${this.$route.params.pathMatch}` : '/'}`
+      }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
         this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
         this.defaultLang = res.data.metadata.project_metadata.defaultLang
         try {
-          if (this.defaultLang && this.$sections.cname === "active" && onServer && !this.$cookies.get('sections-default-lang')) {
-            this.$cookies.set('sections-default-lang', this.defaultLang)
-            let path = ""
-            if (this.$route.params) {
-              path = `/${this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'}`
-            }
-            this.$nuxt.context.redirect({ path: this.$nuxt.localePath(path, this.defaultLang), query: this.$route.query })
-          } else if (this.defaultLang && this.$sections.cname === "active" && onServer) {
-            this.$cookies.set('sections-default-lang', this.defaultLang)
+          if (this.$sections.cname === "active" && this.selectedLanguages.length === 1 && !this.$route.fullPath.startsWith(`/${this.selectedLanguages[0]}/`)) {
+            this.defaultLang = this.selectedLanguages[0]
+            this.$nuxt.context.redirect({ path: `/${this.defaultLang}${path}`, query: this.$route.query })
+          } else if (this.defaultLang && this.$sections.cname === "active" && onServer && !this.locales.some(locale => this.$route.fullPath.startsWith(`/${locale}/`))) {
+            this.$nuxt.context.redirect({ path: `/${this.defaultLang}${path}`, query: this.$route.query })
           }
         } catch {}
+      } else if (this.$sections.cname === "active") {
+        if (this.selectedLanguages.length === 1 && !this.$route.fullPath.startsWith(`/${this.selectedLanguages[0]}/`)) {
+          this.defaultLang = this.selectedLanguages[0]
+          this.$nuxt.context.redirect({ path: `/${this.defaultLang}${path}`, query: this.$route.query })
+        } else if (this.$route.fullPath === '/') {
+          this.$nuxt.context.redirect({ path: `/en${path}`, query: this.$route.query })
+        }
       }
       if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
         this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
