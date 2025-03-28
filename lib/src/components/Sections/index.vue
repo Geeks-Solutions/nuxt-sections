@@ -2781,6 +2781,15 @@ export default {
     },
     async initiateIntroJs() {
       try {
+        let hooksJavascript = importJs(`/js/global-hooks`)
+        if (hooksJavascript['init_params']) {
+          const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {}, url: window.location.host })
+          if (paramsUpdate) {
+            this.$sections = paramsUpdate
+          }
+        }
+      } catch {}
+      try {
         const token = this.$cookies.get("sections-auth-token");
         const response = await this.$axios.get(`${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/dashboard`, {
           headers: sectionHeader({ token })
