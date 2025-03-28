@@ -1708,6 +1708,15 @@ export default {
     window.removeEventListener("mouseup", this.stopTracking);
   },
   async fetch() {
+    try {
+      let hooksJavascript = importJs(`/js/global-hooks`)
+      if (hooksJavascript['init_params']) {
+        const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {} })
+        if (paramsUpdate) {
+          this.$sections = paramsUpdate
+        }
+      }
+    } catch {}
     this.getAvailableLayouts()
     this.getAvailableSections()
     this.sectionsMainErrors = []
@@ -3730,7 +3739,7 @@ export default {
                       if (Object.keys(option).includes(field.name)) {
                         if (option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
                           if (Array.isArray(option[field.name])) {
-                            if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
+                            if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0] || !option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
                               integrityCheck = false
                               this.loading = false;
                               this.showToast(
