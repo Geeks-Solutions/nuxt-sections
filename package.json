@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -53,7 +53,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@geeks.solutions/vue-components": "^1.0.13",
+    "@geeks.solutions/vue-components": "^1.0.14",
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/i18n": "^7.3.1",
     "cookie-universal-nuxt": "^2.2.2",
