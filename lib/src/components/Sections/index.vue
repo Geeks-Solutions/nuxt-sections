@@ -1711,7 +1711,7 @@ export default {
     try {
       let hooksJavascript = importJs(`/js/global-hooks`)
       if (hooksJavascript['init_params']) {
-        const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {} })
+        const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {}, url: this.$nuxt.context && this.$nuxt.context.req && this.$nuxt.context.req.headers ? this.$nuxt.context.req.headers.host : '' })
         if (paramsUpdate) {
           this.$sections = paramsUpdate
         }
