@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.1.2] - 2025-04-01
+
+### Added
+
+- introduced a new hook `ssr_disabled` that is called from the sections dynamic page to allow disabling SSR for a page or multiple pages,
+it takes a params configuration and some context including query strings, page name and request headers & body and set the SSR based on the returned value that must be true (to disable SSR) or false (default value): Possibility to deactivate the SSR through the library #161
+
+
 ### [1.1.1] - 2025-03-28
 
 ### Added

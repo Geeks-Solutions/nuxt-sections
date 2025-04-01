@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <component :is="wrapperTag">
     <Sections
       :admin="admin"
       :page-name="pageName"
@@ -7,7 +7,7 @@
       :variations="[]"
       :sections-page-data="sectionsPageData"
     />
-  </div>
+  </component>
 </template>
 
 <script>
@@ -19,7 +19,8 @@ export default {
   data() {
     return {
       pageName: this.$route.params.pathMatch ? this.$route.params.pathMatch : '/',
-      sectionsPageData: null
+      sectionsPageData: null,
+      wrapperTag: "div"
     }
   },
   head() {
@@ -45,6 +46,20 @@ export default {
   },
   created() {
     this.importHooks('created')
+    const inBrowser = typeof window !== 'undefined';
+    let websiteDomain = ""
+    if (inBrowser) {
+      websiteDomain = window.location.host
+    } else {
+      websiteDomain = this.$nuxt.context.req.headers.host
+    }
+    let hooksJs = importJs(`/js/global-hooks`)
+    let ssrDisabledJs = hooksJs['ssr_disabled']
+    if (ssrDisabledJs) {
+      if (ssrDisabledJs({ pageName: this.pageName, route: this.$route, url: websiteDomain, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {} }) === true) {
+        this.wrapperTag = "client-only"
+      }
+    }
   },
   fetch() {
     this.importHooks('fetch')
