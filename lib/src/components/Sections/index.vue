@@ -1616,8 +1616,10 @@ export default {
         }
       }
       if (alteredSections) {
+        this.fire_js("page_payload_preprocess", alteredSections);
         return alteredSections
       } else {
+        this.fire_js("page_payload_preprocess", this.currentViews);
         return this.currentViews
       }
     },
@@ -1630,8 +1632,10 @@ export default {
         }
       }
       if (alteredSections) {
+        this.fire_js("page_payload_preprocess", alteredSections);
         return alteredSections
       } else {
+        this.fire_js("page_payload_preprocess", this.viewsPerRegions);
         return this.viewsPerRegions
       }
     },
@@ -1698,10 +1702,7 @@ export default {
     if (this.$sections.cname === "active" && this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
       this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
     }
-
-    if (this.projectMetadata['activateCookieControl'] === true) {
-      this.$nuxt.$emit('activateCookieControl', this.projectMetadata['gtmId'], true)
-    }
+    this.fire_js("page_payload_postprocess", document.documentElement.outerHTML);
   },
   beforeDestroy() {
     window.removeEventListener("mousemove", this.onMouseMove);
@@ -1944,8 +1945,10 @@ export default {
         this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
         this.defaultLang = res.data.metadata.project_metadata.defaultLang
       }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
-        this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
+      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl !== undefined && res.data.metadata.project_metadata.activateCookieControl !== null) {
+        this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl)
+      }
+      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.gtmId !== undefined && res.data.metadata.project_metadata.gtmId !== null) {
         this.$set(this.projectMetadata, 'gtmId', res.data.metadata.project_metadata.gtmId)
       }
       if (res.data.metadata.media) {
@@ -4366,6 +4369,12 @@ export default {
       this.sectionsFilterName = ''
       this.sectionsFilterAppName = ''
     },
+    fire_js(event_name, event_data) {
+      if (process.client) {
+        const event = new CustomEvent(event_name, { detail: event_data });
+        window.dispatchEvent(event);
+      }
+    }
   }
 }
 </script>
