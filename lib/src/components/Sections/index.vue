@@ -3584,7 +3584,20 @@ export default {
     },
     async refreshSectionView(sectionView, data) {
       let sectionDatas = []
-      sectionDatas = this.allSections.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
+      const reRenderMultipleSections = data.sections && Array.isArray(data.sections) && data.sections.length > 0
+      if (reRenderMultipleSections === true) {
+        sectionDatas = this.allSections.filter(section => {
+          const valueToCompare = section.nameID || section.name;
+          return data.sections.some(filteredSection => filteredSection.name === valueToCompare)
+        })
+        sectionDatas.map(section => {
+          const valueToCompare = section.nameID || section.name;
+          section.qs = data.sections.find(sec => sec.name === valueToCompare) && data.sections.find(sec => sec.name === valueToCompare).qs ? data.sections.find(sec => sec.name === valueToCompare).qs : null
+          return section
+        })
+      } else {
+        sectionDatas = this.allSections.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
+      }
 
       const config = {
         headers: sectionHeader({}),
@@ -3622,6 +3635,14 @@ export default {
         if (sectionData.type === 'configurable') {
           variables['section']['options'] = [sectionData.render_data[0].settings]
         }
+
+        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
+          variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+          if (sectionData.qs) {
+            variables["query_string"] = {...variables["query_string"], ...sectionData.qs}
+          }
+        }
+
         const inBrowser = typeof window !== 'undefined';
         if (inBrowser) {
           try {
