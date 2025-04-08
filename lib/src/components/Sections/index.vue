@@ -1687,6 +1687,7 @@ export default {
     }
   },
   async mounted() {
+    this.initializeSectionsCMSEvents()
     if (this.admin) {
       this.initiateIntroJs()
     }
@@ -1914,6 +1915,12 @@ export default {
   },
   methods: {
     parsePath,
+    initializeSectionsCMSEvents() {
+      if (!window.SectionsCMS) {
+        window.SectionsCMS = new Vue()
+        window.SectionsCMS.reRenderSection = (data) => this.refreshSectionView('SectionView', data);
+      }
+    },
     initializeSections(res) {
       this.$nuxt.$emit('page_pre_render', res)
       const sections = res.data.sections;

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update vue-components library version and fix to new version 1.0.15
 - Implemented 2 events that fires on page render `page_payload_preprocess` and `page_payload_postprocess` and that can be listened to by any external js code: Foundation for Js events firing + fire on page render #166
+- Exposed a re-render section function that is added to window and can be called from any script in the site `window.SectionsCMS.reRenderSection`, it takes as params a list of section names and qs for each section
 
 ### Updated
 
