@@ -699,6 +699,55 @@ this.$emit('refresh-section', {
   }
 })
 ```
+
+* The `refresh-section` event has been updated to support multiple sections refresh based on a list of section names and qs for each section.
+qs object outside the array can still be used to have common qs sent for all sections
+
+```js
+this.$emit('refresh-section', {
+        sections: [
+          {
+            name: '60df8a48d66ef20008f8e03a:categories_articles',
+            qs: {
+              'categories_titles': Array.isArray(item) ? categoriesTitles.split(',') : [categoriesTitles],
+              sort: {},
+              additonalQs: "qs string",
+              ...qs
+            }
+          }
+        ],
+        qs: {
+          'categories_titles': Array.isArray(item) ? categoriesTitles.split(',') : [categoriesTitles],
+          sort: {},
+          ...qs
+        }
+      })
+```
+
+* A re-render sections function has been exposed and added to window, it can be called from any script in the site `window.SectionsCMS.reRenderSection`, it takes as params a list of section names and qs for each section:
+
+```js
+window.SectionsCMS.reRenderSection(
+        {
+          sections: [
+            {
+              name: "60df8a48d66ef20008f8e03a:categories_articles",
+              qs: {
+                "page_path": "blogs",
+                "categories_titles": [
+                  "Eweev"
+                ],
+                "sort": {},
+                "offset_ca": 0,
+                "language": "en"
+              }
+            }
+          ]
+        }
+      )
+```
+
+
 * In the example above, all configurable or dynamic sections in the page that are using the `offset` query string will be refreshed with the new value `offset: '12'`
 
 ## Enabling the preview of the sections in the listing when adding one to the page

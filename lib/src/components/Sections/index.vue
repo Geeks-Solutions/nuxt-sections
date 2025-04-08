@@ -1616,8 +1616,10 @@ export default {
         }
       }
       if (alteredSections) {
+        this.fire_js("page_payload_preprocess", alteredSections);
         return alteredSections
       } else {
+        this.fire_js("page_payload_preprocess", this.currentViews);
         return this.currentViews
       }
     },
@@ -1630,8 +1632,10 @@ export default {
         }
       }
       if (alteredSections) {
+        this.fire_js("page_payload_preprocess", alteredSections);
         return alteredSections
       } else {
+        this.fire_js("page_payload_preprocess", this.viewsPerRegions);
         return this.viewsPerRegions
       }
     },
@@ -1683,6 +1687,16 @@ export default {
     }
   },
   async mounted() {
+    try {
+      let hooksJavascript = importJs(`/js/global-hooks`)
+      if (hooksJavascript['init_params']) {
+        const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {}, url: window.location.host })
+        if (paramsUpdate) {
+          this.$sections = paramsUpdate
+        }
+      }
+    } catch {}
+    this.initializeSectionsCMSEvents()
     if (this.admin) {
       this.initiateIntroJs()
     }
@@ -1698,10 +1712,7 @@ export default {
     if (this.$sections.cname === "active" && this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
       this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
     }
-
-    if (this.projectMetadata['activateCookieControl'] === true) {
-      this.$nuxt.$emit('activateCookieControl', this.projectMetadata['gtmId'], true)
-    }
+    this.fire_js("page_payload_postprocess", document.documentElement.outerHTML);
   },
   beforeDestroy() {
     window.removeEventListener("mousemove", this.onMouseMove);
@@ -1913,6 +1924,12 @@ export default {
   },
   methods: {
     parsePath,
+    initializeSectionsCMSEvents() {
+      if (!window.SectionsCMS) {
+        window.SectionsCMS = new Vue()
+        window.SectionsCMS.reRenderSection = (data) => this.refreshSectionView('SectionView', data);
+      }
+    },
     initializeSections(res) {
       this.$nuxt.$emit('page_pre_render', res)
       const sections = res.data.sections;
@@ -1944,8 +1961,10 @@ export default {
         this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
         this.defaultLang = res.data.metadata.project_metadata.defaultLang
       }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl === true) {
-        this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl, true)
+      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl !== undefined && res.data.metadata.project_metadata.activateCookieControl !== null) {
+        this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl)
+      }
+      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.gtmId !== undefined && res.data.metadata.project_metadata.gtmId !== null) {
         this.$set(this.projectMetadata, 'gtmId', res.data.metadata.project_metadata.gtmId)
       }
       if (res.data.metadata.media) {
@@ -2781,15 +2800,6 @@ export default {
     },
     async initiateIntroJs() {
       try {
-        let hooksJavascript = importJs(`/js/global-hooks`)
-        if (hooksJavascript['init_params']) {
-          const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {}, url: window.location.host })
-          if (paramsUpdate) {
-            this.$sections = paramsUpdate
-          }
-        }
-      } catch {}
-      try {
         const token = this.$cookies.get("sections-auth-token");
         const response = await this.$axios.get(`${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/dashboard`, {
           headers: sectionHeader({ token })
@@ -3581,7 +3591,20 @@ export default {
     },
     async refreshSectionView(sectionView, data) {
       let sectionDatas = []
-      sectionDatas = this.allSections.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
+      const reRenderMultipleSections = data.sections && Array.isArray(data.sections) && data.sections.length > 0
+      if (reRenderMultipleSections === true) {
+        sectionDatas = this.allSections.filter(section => {
+          const valueToCompare = section.nameID || section.name;
+          return data.sections.some(filteredSection => filteredSection.name === valueToCompare)
+        })
+        sectionDatas.map(section => {
+          const valueToCompare = section.nameID || section.name;
+          section.qs = data.sections.find(sec => sec.name === valueToCompare) && data.sections.find(sec => sec.name === valueToCompare).qs ? data.sections.find(sec => sec.name === valueToCompare).qs : null
+          return section
+        })
+      } else {
+        sectionDatas = this.allSections.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
+      }
 
       const config = {
         headers: sectionHeader({}),
@@ -3619,6 +3642,14 @@ export default {
         if (sectionData.type === 'configurable') {
           variables['section']['options'] = [sectionData.render_data[0].settings]
         }
+
+        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
+          variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+          if (sectionData.qs) {
+            variables["query_string"] = {...variables["query_string"], ...sectionData.qs}
+          }
+        }
+
         const inBrowser = typeof window !== 'undefined';
         if (inBrowser) {
           try {
@@ -4366,6 +4397,12 @@ export default {
       this.sectionsFilterName = ''
       this.sectionsFilterAppName = ''
     },
+    fire_js(event_name, event_data) {
+      if (process.client) {
+        const event = new CustomEvent(event_name, { detail: event_data });
+        window.dispatchEvent(event);
+      }
+    }
   }
 }
 </script>

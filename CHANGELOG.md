@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [1.1.2] - 2025-04-01
+
+### Added
+
+- Update vue-components library version and fix to new version 1.0.15
+- Implemented 2 events that fires on page render `page_payload_preprocess` and `page_payload_postprocess` and that can be listened to by any external js code: Foundation for Js events firing + fire on page render #166
+- Exposed a re-render section function that is added to window and can be called from any script in the site `window.SectionsCMS.reRenderSection`, it takes as params a list of section names and qs for each section
+
+### Updated
+
+- `refresh-section` is updated to support multiple sections refresh based on a list of section names and qs for each section: Possibility to re render a section while an event is triggered by the widget #41
+
 ### [1.1.1] - 2025-03-28
 
 ### Added
