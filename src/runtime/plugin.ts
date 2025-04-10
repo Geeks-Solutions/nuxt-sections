@@ -2,7 +2,7 @@ import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 
 export default defineNuxtPlugin((_nuxtApp) => {
   const config = useRuntimeConfig()
-  const sectionsConfig = config.public.sections
+  const sectionsConfig : any = config.public.sections
 
   const $sections = {
     projectId: sectionsConfig.projectId,
@@ -19,5 +19,5 @@ export default defineNuxtPlugin((_nuxtApp) => {
   }
 
   // Provide it globally via Nuxt app context
-  nuxtApp.provide('sections', $sections)
+  _nuxtApp.provide('$sections', $sections)
 })

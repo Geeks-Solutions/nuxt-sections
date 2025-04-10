@@ -1,8 +1,4 @@
-import { useNuxtApp } from "#app";
-
-const $nuxt = useNuxtApp();
-
-console.log("$NUXT", $nuxt)
+import { useNuxtApp, useCookie } from "#app";
 
 export function formatName(name: string): string {
   switch (name) {
@@ -60,6 +56,7 @@ export const sectionHeader = (header: Record<string, string>): Record<string, st
 }
 
 export async function globalFileUpload(file: File, oldMediaID?: string): Promise<{ data: any, success: boolean, error: any }> {
+  const $nuxt : any = useNuxtApp();
   if (oldMediaID) {
     try {
       await deleteMedia(oldMediaID);
@@ -67,7 +64,7 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
       return { data: '', success: false, error: e };
     }
   }
-  const token = $nuxt.$cookies.get("sections-auth-token");
+  const token : any = useCookie("sections-auth-token").value;
   const data = new FormData();
   data.append('files[1][file]', file);
   data.append('type', "image");
@@ -92,7 +89,8 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
 }
 
 export async function deleteMedia(id: string): Promise<{ data: any, success: boolean, error: any }> {
-  const token = $nuxt.$cookies.get("sections-auth-token");
+  const $nuxt : any = useNuxtApp();
+  const token : any = useCookie("sections-auth-token").value;
   try {
     const config = {
       headers: sectionHeader({ token }),
@@ -107,8 +105,9 @@ export async function deleteMedia(id: string): Promise<{ data: any, success: boo
 }
 
 export async function addNewStaticType(sectionTypeName: string): Promise<{ status: string, message: any }> {
+  const $nuxt : any = useNuxtApp();
   if (sectionTypeName !== "") {
-    const token = $nuxt.$cookies.get("sections-auth-token");
+    const token : any = useCookie("sections-auth-token").value;
     const config = {
       headers: sectionHeader({ token })
     };
@@ -220,7 +219,8 @@ export const parseQS = (path: string, routeQueries: boolean, queries: Record<str
 }
 
 export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, error: any }> {
-  const token = $nuxt.$cookies.get("sections-auth-token");
+  const $nuxt : any = useNuxtApp();
+  const token : any = useCookie("sections-auth-token").value;
   const config = {
     headers: sectionHeader({ token }),
   };

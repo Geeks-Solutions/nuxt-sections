@@ -14,7 +14,7 @@
     "Content authoring"
   ],
   "description": "A NuxtJS module to interface with Sections Serverless Page Building and rendering engine",
-  "license": "MIT",
+  "license": "ISC",
   "homepage": "https://sections.geeks.solutions",
   "contributors": [],
   "type": "module",

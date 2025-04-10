@@ -1,4 +1,4 @@
-import {defineNuxtModule, createResolver, extendPages, addComponentsDir, addImportsDir} from '@nuxt/kit'
+import {defineNuxtModule, createResolver, extendPages, addComponentsDir, addImportsDir, addPluginTemplate} from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {}
@@ -53,6 +53,9 @@ export default defineNuxtModule<ModuleOptions>({
     addImportsDir(resolve('./runtime/utils'), {
       prepend: true
     })
+
+    // Register $sections configuration plugin
+    addPluginTemplate(resolve('./runtime/plugin'))
 
     // Detect Tailwind installation
     // const isTailwindInstalled = ['@nuxtjs/tailwindcss'].some(pkg =>

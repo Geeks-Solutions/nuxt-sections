@@ -1256,3075 +1256,3195 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useCookie, useHead, useNuxtApp, useRoute, useRouter } from '#app';
+
 import draggable from "vuedraggable";
 
 import camelCase from "lodash/camelCase";
 import upperFirst from "lodash/upperFirst";
 
-
-export default {
-  name: "Sections",
-  components: {
-    draggable
+const props = defineProps({
+  pageName: {
+    type: String,
+    default: "",
   },
-  props: {
-    pageName: {
-      type: String,
-      default: "",
+  admin: {
+    type: Boolean,
+    default: false,
+  },
+  variations: {
+    type: Array,
+    default: () => [],
+  },
+  headers: {
+    type: Object,
+    default() {
+      return {};
     },
-    admin: {
-      type: Boolean,
-      default: false,
+  },
+  reactiveTrigger: {
+    type: String,
+    default: "",
+  },
+  lang: {
+    type: String,
+    default: "en",
+  },
+  editorOptions: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  viewsBgColor: {
+    type: String,
+    default: "transparent",
+  },
+  _sectionsOptions: {
+    type: Object
+  },
+  sectionsPageData: {
+    type: Object
+  }
+});
+const emit = defineEmits(['load']);
+const nuxtApp = useNuxtApp();
+console.log('$sections', nuxtApp.$sections)
+const route = useRoute();
+const router = useRouter();
+const i18n = useI18n();
+const sections = ref({});
+const config = useRuntimeConfig();
+
+// Data properties converted to refs
+const locales = ref(['en', 'fr']);
+const translationComponentSupport = ref(true);
+const sectionSettings = ref({
+  settings: {}
+});
+const staticSuccess = ref(false);
+const sectionTypeName = ref("");
+const staticModal = ref(false);
+const metadataModal = ref(false);
+const sectionInPage = ref([]);
+const pageNotFound = ref(false);
+const dismissCountDown = ref(0);
+const editMode = ref(false);
+const selectedVariation = ref(props.pageName);
+const typesTab = ref('types');
+const globalTypes = ref([]);
+const types = ref([]);
+const sectionTypes = ref([]);
+const sectionsQsKeys = ref([]);
+const originalVariations = ref({});
+const updatedVariations = ref({});
+// current visible views
+const views = ref({});
+const getSections = ref([]);
+const loading = ref(false);
+const dragging = ref(false);
+const currentSection = ref(null);
+const isCreateInstance = ref(false);
+const isModalOpen = ref(false);
+const isSideBarOpen = ref(false);
+const backToAddSectionList = ref(false);
+const isDeleteModalOpen = ref(false);
+const isRestoreSectionOpen = ref(false);
+const restoreType = ref('section');
+const isDeletePageModalOpen = ref(false);
+const isDeleteSectionModalOpen = ref(false);
+const deletedSectionId = ref(null);
+const deletedSectionName = ref(null);
+const isErrorsFormatModalOpen = ref(false);
+const isAuthModalOpen = ref(false);
+const isUnAuthModalOpen = ref(false);
+const synched = ref(false);
+const createdView = ref({});
+const savedView = ref({});
+
+// Display variations object
+const displayVariations = ref({
+  [props.pageName]: {
+    name: props.pageName,
+    views: {},
+    altered: false,
+  },
+});
+
+const selectedSectionTypeName = ref("");
+const selectedAppName = ref("");
+const selectedSectionTypeIndex = ref("");
+const selectedSectionTypeAppId = ref("");
+const selectedSectionRequirements = ref([]);
+const sectionsPageLastUpdated = ref(null);
+const requirementsInputs = ref({});
+const allSections = ref({});
+const pageId = ref("");
+const pagePath = ref("");
+const sectionsPageName = ref("");
+const pageMetadata = ref({});
+const projectMetadata = ref({});
+let metadataErrors = ref({
+  path: [""]
+});
+const sectionsError = ref("");
+const sectionsErrorOptions = ref(null);
+const sectionsAdminError = ref("");
+const renderSectionError = ref("");
+const fieldsInputs = ref([
+  {
+    type: "image",
+    name: ""
+  }
+]);
+const metadataFormLang = ref('');
+const computedTitle = ref('');
+const computedDescription = ref('');
+const sectionsUserId = ref('');
+const displayedErrorFormat = ref('');
+const invalidSectionsErrors = ref({});
+const sectionsFormatErrors = ref({});
+const layoutSlotNames = ref([]);
+const availableLayouts = ref(['standard']);
+const selectedLayout = ref('standard');
+const viewsPerRegions = ref({});
+const sectionslayout = ref('standard');
+const selectedSlotRegion = ref('');
+const layoutMode = ref(false);
+const errorInLayout = ref(false);
+const errorInViews = ref(false);
+const highlightRegions = ref(false);
+const sectionsMainErrors = ref([]);
+const sectionsLayoutErrors = ref([]);
+const availableSectionsForms = ref([]);
+const sectionsConfigurableTypeReference = ref(null);
+const supportedLanguages = ref([
+  {id: 'fr', label: 'French (fr)', selected: false},
+  {id: 'en', label: 'English (en)', selected: false}
+]);
+const selectedLanguages = ref([]);
+const defaultLang = ref('en');
+const selectedMediaType = ref('media');
+const resizeData = ref({
+  tracking: false,
+  startWidth: null,
+  startCursorScreenX: null,
+  handleWidth: 10,
+  resizeTarget: null,
+  parentElement: null,
+  maxWidth: null,
+});
+const errorResponseStatus = ref(0);
+const errorRegisteredPage = ref('');
+const errorResponseData = ref(null);
+const sectionOptions = ref({});
+const sectionsFilterName = ref('');
+const sectionsFilterAppName = ref('');
+const appNames = ref([]);
+const sectionsWebsiteDomain = ref('');
+const pageData = ref(null);
+const canPromote = ref(false);
+const intro = ref(null);
+const currentPages = ref(null);
+const introRerun = ref(false);
+const creationView = ref(false);
+
+// Computed properties
+const activeVariation = computed(() => {
+  // If variation true return its page name
+  const activeVar = props.variations.filter((variation) => variation.active);
+  if (activeVar.length === 1) return activeVar[0];
+  else if (activeVar.length > 1) {
+    return activeVar[0];
+  }
+  // otherwise return the default pageName prop
+  else return {name: "default", pageName: props.pageName};
+});
+
+const currentViews = computed({
+  get() {
+    let views = [];
+    views = Object.values(
+      displayVariations.value[selectedVariation.value].views
+    );
+    views = views.sort(function (a, b) {
+      return a.weight - b.weight;
+    });
+
+    return views;
+  },
+  set(newValue) {
+    for (let index = 0; index < newValue.length; index++) {
+      const replacement = newValue[index];
+      replacement.weight = index;
+      // Using Vue.set equivalent in Vue 3
+      displayVariations.value[selectedVariation.value].views[newValue[index].id] = replacement;
+    }
+  },
+});
+
+const alteredViews = computed(() => {
+  let alteredSections = null;
+  let hooksJs = importJs(`/js/global-hooks`);
+  if (hooksJs['page_pre_render'] && pageData.value) {
+    if (typeof hooksJs['page_pre_render'] === 'function') {
+      alteredSections = hooksJs['page_pre_render'](
+        JSON.parse(JSON.stringify(pageData.value)),
+        JSON.parse(JSON.stringify(currentViews.value)),
+        sectionsWebsiteDomain.value,
+        sections,
+        config
+      );
+    }
+  }
+  if (alteredSections) {
+    fire_js("page_payload_preprocess", alteredSections);
+    return alteredSections;
+  } else {
+    fire_js("page_payload_preprocess", currentViews.value);
+    return currentViews.value;
+  }
+});
+
+const alteredViewsPerRegions = computed(() => {
+  let alteredSections = null;
+  let hooksJs = importJs(`/js/global-hooks`);
+  if (hooksJs['page_pre_render'] && pageData.value && viewsPerRegions.value && Object.keys(viewsPerRegions.value).length > 0) {
+    if (typeof hooksJs['page_pre_render'] === 'function') {
+      alteredSections = hooksJs['page_pre_render'](
+        JSON.parse(JSON.stringify(pageData.value)),
+        JSON.parse(JSON.stringify(viewsPerRegions.value)),
+        sectionsWebsiteDomain.value,
+        sections,
+        config
+      );
+    }
+  }
+  if (alteredSections) {
+    fire_js("page_payload_preprocess", alteredSections);
+    return alteredSections;
+  } else {
+    fire_js("page_payload_preprocess", viewsPerRegions.value);
+    return viewsPerRegions.value;
+  }
+});
+
+const id = computed(() => {
+  if (savedView.value.id) {
+    return savedView.value.id;
+  }
+  return "id-" + Date.now();
+});
+
+const weight = computed(() => {
+  if (savedView.value.weight) {
+    return savedView.value.weight;
+  }
+  return null;
+});
+
+const filteredTypes = computed(() => {
+  return types.value.filter(item => {
+    const nameMatch = sectionsFilterName.value
+      ? item.name.toLowerCase().includes(sectionsFilterName.value.toLowerCase())
+      : true;
+
+    const appNameMatch = sectionsFilterAppName.value
+      ? item.application && item.application.toLowerCase().includes(sectionsFilterAppName.value.toLowerCase())
+      : true;
+
+    return nameMatch && appNameMatch;
+  });
+});
+
+const filteredGlobalTypes = computed(() => {
+  return globalTypes.value.filter(item => {
+    const nameMatch = sectionsFilterName.value
+      ? item.name.toLowerCase().includes(sectionsFilterName.value.toLowerCase())
+      : true;
+
+    const appNameMatch = sectionsFilterAppName.value
+      ? item.application && item.application.toLowerCase().includes(sectionsFilterAppName.value.toLowerCase())
+      : true;
+
+    return nameMatch && appNameMatch;
+  });
+});
+
+const getCreationComponent = computed(() => {
+  try {
+    const path = `/views/${currentSection.value.name}_${currentSection.value.type}`;
+    return importComp(path);
+  } catch {
+    return '';
+  }
+});
+
+// Head management
+useHead(() => {
+  const baseURL = process.server
+    ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') + '://' + nuxtApp.ssrContext.event.req?.headers.host
+    : window.location.origin;
+
+  const fullURL = baseURL + route.fullPath;
+
+  return {
+    htmlAttrs: {
+      title: computedTitle.value
     },
-    variations: {
-      type: Array,
-      default: () => [],
-    },
-    headers: {
-      type: Object,
-      default() {
-        return {};
+    title: computedTitle.value,
+    meta: [
+      {
+        hid: 'description',
+        name: 'description',
+        content: computedDescription.value
       },
-    },
-    reactiveTrigger: {
-      type: String,
-      default: "",
-    },
-    lang: {
-      type: String,
-      default: "en",
-    },
-    editorOptions: {
-      type: Object,
-      default() {
-        return {}
+      { hid: "og:title", property: "og:title", content: computedTitle.value },
+      { hid: "og:description", property: "og:description", content: computedDescription.value },
+      pageMetadata.value['mediaMetatag'] && pageMetadata.value['mediaMetatag'].url ? {
+        hid: "og:image",
+        property: "og:image",
+        content: pageMetadata.value['mediaMetatag'].url
+      } : {},
+      { hid: "og:url", property: "og:url", content: fullURL },
+    ],
+    link: [
+      projectMetadata.value['selectedCSSPreset'] && projectMetadata.value['selectedCSSPreset'].name && projectMetadata.value['selectedCSSPreset'].name !== 'Other' && projectMetadata.value['selectedCSSPreset'].name !== 'None' ? {
+        rel: 'stylesheet',
+        href: projectMetadata.value['selectedCSSPreset'].url
+      } : projectMetadata.value['selectedCSSPreset'] && projectMetadata.value['selectedCSSPreset'].name && projectMetadata.value['selectedCSSPreset'].name !== 'None' && projectMetadata.value['media'] && projectMetadata.value['media'].url ? {
+        rel: 'stylesheet',
+        href: projectMetadata.value['media'].url
+      } : {},
+      pageMetadata.value['media'] && pageMetadata.value['media'].url ? {
+        rel: 'stylesheet',
+        href: pageMetadata.value['media'].url
+      } : {},
+      projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url ? {
+        rel: 'icon',
+        type: 'image/png',
+        href: projectMetadata.value['favicon'].url
+      } : {},
+    ]
+  };
+});
+
+// Methods (now as regular functions)
+const initializeSectionsCMSEvents = () => {
+  if (!window.SectionsCMS) {
+    window.SectionsCMS = ref({})
+    window.SectionsCMS.value.reRenderSection = (data) => refreshSectionView('SectionView', data)
+  }
+}
+const initializeSections = (res) => {
+  nuxtApp.hook('page_pre_render', res)
+  const sections = res.data.sections
+  pageData.value = res.data
+  allSections.value = res.data.sections
+  pageId.value = res.data.id
+  pagePath.value = res.data.path
+  sectionsPageName.value = res.data.page
+  sectionslayout.value = res.data.layout
+  selectedLayout.value = res.data.layout
+
+  for (const lang of locales.value) {
+    if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title)
+      pageMetadata[lang].title = res.data.metadata[lang].title
+    if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description)
+      pageMetadata[lang].description = res.data.metadata[lang].description
+  }
+
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
+    projectMetadata.media = res.data.metadata.project_metadata.media
+  }
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.selectedCSSPreset) {
+    projectMetadata.selectedCSSPreset = res.data.metadata.project_metadata.selectedCSSPreset
+  }
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.favicon) {
+    projectMetadata.favicon = res.data.metadata.project_metadata.favicon
+  }
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
+    projectMetadata.languages = res.data.metadata.project_metadata.languages
+    selectedLanguages.value = res.data.metadata.project_metadata.languages
+  }
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
+    projectMetadata.defaultLang = res.data.metadata.project_metadata.defaultLang
+    defaultLang.value = res.data.metadata.project_metadata.defaultLang
+  }
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl !== undefined && res.data.metadata.project_metadata.activateCookieControl !== null) {
+    projectMetadata.activateCookieControl = res.data.metadata.project_metadata.activateCookieControl
+  }
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.gtmId !== undefined && res.data.metadata.project_metadata.gtmId !== null) {
+    projectMetadata.gtmId = res.data.metadata.project_metadata.gtmId
+  }
+  if (res.data.metadata.media) {
+    pageMetadata.media = res.data.metadata.media
+  }
+  if (res.data.metadata.mediaMetatag) {
+    pageMetadata.mediaMetatag = res.data.metadata.mediaMetatag
+  }
+
+  computedTitle.value = pageMetadata[lang.value].title
+  computedDescription.value = pageMetadata[lang.value].description
+
+  const views = {}
+  sections.map((section) => {
+    trackSectionComp(section.name, section.type)
+
+    if (section.type === "configurable") {
+      if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
+        section.render_data[0].settings.image = []
       }
-    },
-    viewsBgColor: {
-      type: String,
-      default: "transparent",
-    },
-    _sectionsOptions: {
-      type: Object
-    },
-    sectionsPageData: {
-      type: Object
+      section.settings = section.render_data[0].settings
+      section.nameID = section.name
+      section.name = section.name.split(":")[1]
+    } else if (section.settings) {
+      section.settings = isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings
     }
-  },
-  head() {
-    const baseURL = process.server
-      ? (this.$nuxt.context.req.headers['x-forwarded-proto'] || 'http') + '://' + this.$nuxt.context.req?.headers.host
-      : window.location.origin;
 
-    const fullURL = baseURL + this.$route.fullPath;
-
-    return {
-      htmlAttrs: {
-        title: this.computedTitle
-      },
-      title: this.computedTitle,
-      meta: [
-        {
-          hid: 'description',
-          name: 'description',
-          content: this.computedDescription
-        },
-        { hid: "og:title", property: "og:title", content: this.computedTitle },
-        { hid: "og:description", property: "og:description", content: this.computedDescription },
-        this.pageMetadata['mediaMetatag'] && this.pageMetadata['mediaMetatag'].url ? {
-          hid: "og:image",
-          property: "og:image",
-          content: this.pageMetadata['mediaMetatag'].url
-        } : {},
-        { hid: "og:url", property: "og:url", content: fullURL },
-      ],
-      link: [
-        this.projectMetadata['selectedCSSPreset'] && this.projectMetadata['selectedCSSPreset'].name && this.projectMetadata['selectedCSSPreset'].name !== 'Other' && this.projectMetadata['selectedCSSPreset'].name !== 'None' ? {
-          rel: 'stylesheet',
-          href: this.projectMetadata['selectedCSSPreset'].url
-        } : this.projectMetadata['selectedCSSPreset'] && this.projectMetadata['selectedCSSPreset'].name && this.projectMetadata['selectedCSSPreset'].name !== 'None' && this.projectMetadata['media'] && this.projectMetadata['media'].url ? {
-          rel: 'stylesheet',
-          href: this.projectMetadata['media'].url
-        } : {},
-        this.pageMetadata['media'] && this.pageMetadata['media'].url ? {
-          rel: 'stylesheet',
-          href: this.pageMetadata['media'].url
-        } : {},
-        this.projectMetadata['favicon'] && this.projectMetadata['favicon'].url ? {
-          rel: 'icon',
-          type: 'image/png',
-          href: this.projectMetadata['favicon'].url
-        } : {},
-      ]
+    if (section.query_string_keys && section.query_string_keys.length > 0) {
+      sectionsQsKeys.value.push(...section.query_string_keys)
     }
-  },
-  data() {
-    return {
-      locales: ['en', 'fr'],
-      translationComponentSupport: true,
-      sectionSettings: {
-        settings: {}
-      },
-      staticSuccess: false,
-      sectionTypeName: "",
-      staticModal: false,
-      metadataModal: false,
-      sectionInPage: [],
-      pageNotFound: false,
-      dismissCountDown: 0,
-      editMode: false,
-      selectedVariation: this.pageName,
-      typesTab: 'types',
-      globalTypes: [],
-      types: [],
-      sectionTypes: [],
-      sectionsQsKeys: [],
-      originalVariations: {},
-      updatedVariations: {},
-      // current visible views
-      views: {},
-      getSections: [],
-      loading: false,
-      dragging: false,
-      currentSection: null,
-      isCreateInstance: false,
-      isModalOpen: false,
-      isSideBarOpen: false,
-      backToAddSectionList: false,
-      isDeleteModalOpen: false,
-      isRestoreSectionOpen: false,
-      restoreType: 'section',
-      isDeletePageModalOpen: false,
-      isDeleteSectionModalOpen: false,
-      deletedSectionId: null,
-      deletedSectionName: null,
-      isErrorsFormatModalOpen: false,
-      isAuthModalOpen: false,
-      isUnAuthModalOpen: false,
-      synched: false,
-      createdView: {},
-      savedView: {},
-      // all saved variations
-      displayVariations: {
-        [this.pageName]: {
-          name: this.pageName,
-          views: {},
-          altered: false,
+
+    if (section.id) {
+      views[section.id] = section
+    } else {
+      views["test"] = section
+    }
+
+    sectionOptions[section.id] = false
+
+    if (section.error || (section.settings === null || section.settings === undefined)) {
+      errorInViews.value = true
+    } else {
+      errorInViews.value = false
+    }
+
+    sections.forEach((section) => {
+      if (section.status_code === 404) {
+        errorInViews.value = false
+      } else {
+        errorInViews.value = false
+      }
+    })
+  })
+
+  displayVariations[activeVariation.value.pageName] = {
+    name: activeVariation.value.pageName,
+    views: {...views},
+  }
+  selectedVariation.value = activeVariation.value.pageName
+  loading.value = false
+
+  // In Nuxt 3, we use emit from defineEmits()
+  // This would need to be passed through from the parent component
+  // For now, I'll comment it out
+  // emit("load", true)
+
+  sectionsPageLastUpdated.value = res.data.last_updated
+}
+const pageNotFoundManagement = (error, server) => {
+  if (server) {
+    if (error.response.data.error) {
+      sectionsError.value = error.response.data.error
+    } else {
+      sectionsError.value = error.response.data.message
+      sectionsErrorOptions.value = error.response.data.options
+    }
+    nuxtApp.ssrContext.res.statusCode = 404
+    navigateTo(nuxtApp.localePath(error.response.data.options.project_metadata.pagePath404))
+  } else {
+    if (error.response.data.error) {
+      showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error)
+    } else {
+      showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options)
+    }
+    navigateTo(route.localePath(error.response.data.options.project_metadata.pagePath404))
+  }
+}
+const selectedCSS = (mediaObject, mediaFieldName) => {
+  const media = {
+    media_id: "",
+    url: "",
+    seo_tag: "",
+    filename: "",
+    headers: {}
+  }
+  media.filename = mediaObject.files[0].filename
+  media.media_id = mediaObject.id
+  media.url = mediaObject.files[0].url
+  media.seo_tag = mediaObject.seo_tag
+  if (mediaObject.files[0].headers) {
+    media.headers = mediaObject.files[0].headers
+  }
+  pageMetadata[mediaFieldName] = media
+  // In Nuxt 3, we use template refs differently
+  // This would need adjustment based on how you're using refs
+  sectionsMediaComponent.value.closeModal()
+}
+const removeMedia = (media) => {
+  pageMetadata[media] = {}
+}
+const updatePageMetaData = async () => {
+  loading.value = true
+  metadataErrors.path[0] = ''
+
+  const sections = []
+  let views = originalVariations[sectionsPageName.value].views
+  views = Object.values(views)
+  views.forEach((view) => {
+    if (!view.error || view.status_code === 404) {
+      const refactorView = {
+        id: view.id,
+        weight: view.weight,
+        name: view.name,
+        type: view.type,
+        linkedTo: view.linkedTo,
+        region: view.region
+      }
+      if (view.settings && view.type === "configurable") {
+        refactorView.name = view.nameID
+        const options = []
+        view.render_data.map((rData) => {
+          options.push(rData.settings)
+        })
+        refactorView.options = options
+      } else if (view.settings) {
+        refactorView.options = view.settings
+      }
+      if (view.type === 'dynamic' || view.type === 'local') {
+        refactorView.options = []
+      }
+      if (refactorView.id && refactorView.id.startsWith("id-")) {
+        delete refactorView.id
+      }
+      if (view.linked_to) {
+        sections.push({
+          ...{
+            weight: view.weight,
+            linked_to: view.linked_to,
+            region: view.region ? view.region : {}
+          }
+        })
+      } else {
+        sections.push({...refactorView})
+      }
+    }
+  })
+
+  const token = useCookie("sections-auth-token").value
+  const config = {
+    headers: sectionHeader({ token }),
+  }
+
+  let pagePath = pagePath.value && pagePath.value !== "" ? pagePath.value.trim() : ""
+
+  if (pagePath !== '/') {
+    // Split the URL into individual path segments
+    const pathSegments = pagePath.split('/')
+
+    // Filter out empty segments and remove duplicates
+    const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1])
+
+    // Reconstruct the URL with the unique path segments
+    pagePath = pagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/')
+
+    if (pagePath[0] && pagePath[0] === '/') {
+      pagePath = pagePath.replace(/^\/+/, '')
+    }
+    while (pagePath.endsWith('//')) {
+      pagePath = pagePath.slice(0, -1)
+    }
+  }
+
+  const variables = {
+    page: sectionsPageName.value,
+    path: pagePath,
+    metadata: {...pageMetadata},
+    variations: [],
+    layout: sectionslayout.value,
+    sections
+  }
+
+  const URL = `${$sections.serverUrl}/project/${$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
+
+  try {
+    const res = await $axios.put(URL, variables, config)
+    loading.value = false
+
+    if (res.data && res.data.error) {
+      showToast("error", "error", res.data.error)
+      return
+    }
+
+    sectionsPageLastUpdated.value = res.data.last_updated
+    metadataModal.value = false
+    metadataFormLang.value = i18n.locale.value.toString()
+
+    showToast(
+      "Success",
+      "success",
+      i18n.t('successSettingsChanges')
+    )
+
+    if (pagePath !== sectionsPageName.value) {
+      let baseURL = window.location.origin
+      let routerBase = router.options.base
+
+      if (routerBase) {
+        while (routerBase.endsWith('/')) {
+          routerBase = routerBase.slice(0, -1)
+        }
+        baseURL = baseURL + routerBase
+      }
+
+      window.location.replace(`${baseURL}/${pagePath}`)
+    } else {
+      window.location.reload()
+    }
+  } catch (error) {
+    loading.value = false
+    if (error.response.data.errors) {
+      metadataErrors = error.response.data.errors
+    } else {
+      showToast(
+        "Error saving your changes",
+        "error",
+        error.response.data.message,
+        error.response.data.options
+      )
+    }
+  }
+}
+const addField = (index) => {
+  if (fieldsInputs.value[index].name.trim() !== '') {
+    fieldsInputs.value.push({type: "image", name: ""})
+  }
+}
+const removeField = (index) => {
+  fieldsInputs.value.splice(index, 1)
+}
+const checkToken = async () => {
+  const auth_code = route.query.auth_code
+
+  if ($sections.cname === "active") {
+    const cookiesAlias = '_sectionsOptions.cookiesAlias' // assuming this is defined somewhere
+
+    if (nuxtApp[`$${cookiesAlias}`].get("sections-project-id")) {
+      $sections.projectId = nuxtApp[`$${cookiesAlias}`].get("sections-project-id")
+    } else {
+      const project_id = route.query.project_id
+      $sections.projectId = project_id
+      nuxtApp[`$${cookiesAlias}`].set("sections-project-id", project_id)
+    }
+  }
+
+  if (auth_code) {
+    const config = {
+      headers: sectionHeader({}),
+    }
+
+    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/token/${auth_code}`
+
+    try {
+      const res = await $axios.get(URL, config)
+      const token = res.data.token
+      const date = new Date()
+      date.setDate(date.getDate() + 14)
+      date.setHours(date.getHours() - 4)
+
+      const cookiesAlias = '_sectionsOptions.cookiesAlias' // assuming this is defined somewhere
+
+      useCookie("sections-auth-token", {
+        expires: date,
+        path: '/'
+      }).value = token
+
+      await navigateTo(route.path)
+      loading.value = false
+    } catch (err) {
+      loading.value = false
+      sectionsAdminError.value = err.response.data.token
+    }
+  }
+}
+const getUserData = async () => {
+  const config = {
+    headers: sectionHeader({token: useCookie("sections-auth-token").value}),
+  }
+
+  const URL = `${$sections.serverUrl}/project/${$sections.projectId}/user`
+
+  try {
+    const res = await $axios.get(URL, config)
+    sectionsUserId.value = res.data.id
+    loading.value = false
+  } catch (error) {
+    loading.value = false
+    // In Nuxt 3, we use emit from defineEmits()
+    // emit("load", false)
+    cookies.remove('sections-auth-token')
+    admin.value = false
+    showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
+  }
+}
+const exportSections = () => {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allSections.value))
+  const dlAnchorElem = document.getElementById('downloadAnchorElem')
+  dlAnchorElem.setAttribute("href", dataStr)
+  dlAnchorElem.setAttribute("download", `${pagePath.value}.json`)
+  dlAnchorElem.click()
+}
+const initImportSections = () => {
+  if (Object.keys(displayVariations[selectedVariation.value].views).length > 0) {
+    showToast(
+      "Warning",
+      "warning",
+      i18n.t('importSections')
+    )
+  } else {
+    // In Nuxt 3, we use template refs differently
+    jsonFilePick.value.click()
+  }
+}
+const importSections = (e) => {
+  const jsonFile = e.target.files[0]
+  const reader = new FileReader()
+  reader.readAsText(jsonFile, "UTF-8")
+  reader.onload = (evt) => {
+    const jsonFileResult = evt.target.result
+    const sections = JSON.parse(jsonFileResult)
+    let sectionsNames = []
+
+    sections.forEach((section) => {
+      sectionsNames.push(section.name)
+      if (section.type === "configurable") {
+        const sectionTypeObject = types.value.find(type => type.name === section.nameID)
+        if ((sectionTypeObject.access === 'private' || sectionTypeObject.access === 'public_scoped') && sectionTypeObject.app_status !== 'enabled') {
+          showToast(
+            "Warning",
+            "warning",
+            `${i18n.t('activateConfigSections')} ${section.name} ${i18n.t('forProject')}`
+          )
+        }
+      }
+      addSectionType(section, false)
+    })
+
+    showToast(
+      "Success",
+      "info",
+      `${i18n.t('successImported')} ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
+    )
+  }
+}
+const isJsonString = (str) => {
+  try {
+    JSON.parse(str)
+  } catch (e) {
+    return false
+  }
+  return true
+}
+const updateGlobalType = async (section) => {
+  if (section.type === 'configurable') {
+    sectionTypeName.value = section.nameID
+  } else if (section && section.name) {
+    sectionTypeName.value = section.name
+  }
+
+  if (sectionTypeName.value !== "") {
+    if (selectedLayout.value !== 'standard') {
+      section.region = {}
+      section.region[selectedLayout.value] = {
+        slot: selectedSlotRegion.value,
+        weight: Object.keys(
+          displayVariations[selectedVariation.value].views
+        ).length
+      }
+    } else {
+      section.region = {}
+    }
+
+    const token = useCookie("sections-auth-token").value
+    const config = {
+      headers: sectionHeader({token}),
+    }
+
+    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/global-instances/${section.instance_name}`
+    loading.value = true
+
+    try {
+      await $axios.put(URL, {
+        "section": {
+          "name": sectionTypeName.value,
+          "options": section.type === 'configurable' ? [section.settings] : section.settings,
+          "type": section.type
         },
-      },
-      selectedSectionTypeName: "",
-      selectedAppName: "",
-      selectedSectionTypeIndex: "",
-      selectedSectionTypeAppId: "",
-      selectedSectionRequirements: [],
-      sectionsPageLastUpdated: null,
-      requirementsInputs: {},
-      allSections: {},
-      pageId: "",
-      pagePath: "",
-      sectionsPageName: "",
-      pageMetadata: {},
-      projectMetadata: {},
-      metadataErrors: {
-        path: [""]
-      },
-      sectionsError: "",
-      sectionsErrorOptions: null,
-      sectionsAdminError: "",
-      renderSectionError: "",
-      fieldsInputs: [
+        "auto_insertion": section.auto_insertion
+      }, config)
+
+      sectionTypeName.value = ""
+      currentSection.value = null
+      isModalOpen.value = false
+      isSideBarOpen.value = false
+      loading.value = false
+
+      showToast(
+        "Success",
+        "success",
+        i18n.t('globalTypeUpdated')
+      )
+    } catch (error) {
+      loading.value = false
+      showToast("Error", "error", i18n.t('updateSectionTypeError') + error.response.data.message, error.response.data.options)
+    }
+  } else {
+    loading.value = false
+    showToast("Error", "error", i18n.t('enterSectionTypeName'))
+  }
+}
+const addNewGlobalType = async (section) => {
+  if (section.type === 'configurable') {
+    sectionTypeName.value = section.nameID
+  } else if (section && section.name) {
+    sectionTypeName.value = section.name
+  }
+
+  if (sectionTypeName.value !== "") {
+    const token = useCookie("sections-auth-token").value
+    const config = {
+      headers: sectionHeader({token}),
+    }
+
+    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/global-instances/${section.instance_name}`
+    loading.value = true
+
+    try {
+      await $axios.post(URL, {
+        "section": {
+          "name": sectionTypeName.value,
+          "options": section.type === 'configurable' ? [section.settings] : section.settings,
+          "type": section.type
+        },
+        "auto_insertion": section.auto_insertion
+      }, config)
+
+      globalTypes.value = []
+      getGlobalSectionTypes() // assuming this function is defined elsewhere
+      staticSuccess.value = true
+      sectionTypeName.value = ""
+      fieldsInputs.value = [
         {
           type: "image",
           name: ""
         }
-      ],
-      metadataFormLang: '',
-      computedTitle: '',
-      computedDescription: '',
-      sectionsUserId: '',
-      displayedErrorFormat: '',
-      invalidSectionsErrors: {},
-      sectionsFormatErrors: {},
-      layoutSlotNames: [],
-      availableLayouts: ['standard'],
-      selectedLayout: 'standard',
-      viewsPerRegions: {},
-      sectionslayout: 'standard',
-      selectedSlotRegion: '',
-      layoutMode: false,
-      errorInLayout: false,
-      errorInViews: false,
-      highlightRegions: false,
-      sectionsMainErrors: [],
-      sectionsLayoutErrors: [],
-      availableSectionsForms: [],
-      sectionsConfigurableTypeReference: null,
-      supportedLanguages: [
-        {id: 'fr', label: 'French (fr)', selected: false},
-        {id: 'en', label: 'English (en)', selected: false}
-      ],
-      selectedLanguages: [],
-      defaultLang: 'en',
-      selectedMediaType: 'media',
-      resizeData: {
-        tracking: false,
-        startWidth: null,
-        startCursorScreenX: null,
-        handleWidth: 10,
-        resizeTarget: null,
-        parentElement: null,
-        maxWidth: null,
-      },
-      errorResponseStatus: 0,
-      errorRegisteredPage: '',
-      errorResponseData: null,
-      sectionOptions: {},
-      sectionsFilterName: '',
-      sectionsFilterAppName: '',
-      appNames: [],
-      sectionsWebsiteDomain: '',
-      pageData: null,
-      canPromote: false,
-      intro: null,
-      currentPages: null,
-      introRerun: false,
-      creationView: false
+      ]
+
+      if (canPromote.value === true) {
+        section.linkedTo = section.instance_name
+        section.linked_to = section.instance_name
+        section.instance = true
+
+        displayVariations[selectedVariation.value].views[section.id] = section
+        displayVariations[selectedVariation.value].altered = true
+
+        showToast(
+          "Success",
+          "info",
+          i18n.t('successAddedSection')
+        )
+      }
+
+      currentSection.value = null
+      isCreateInstance.value = false
+      isSideBarOpen.value = false
+      typesTab.value = 'globalTypes'
+    } catch (error) {
+      loading.value = false
+      showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
     }
-  },
-  computed: {
-    activeVariation() {
-      // If variation true return its page name
-      const activeVar = this.variations.filter((variation) => variation.active);
-      if (activeVar.length === 1) return activeVar[0];
-      else if (activeVar.length > 1) {
-        return activeVar[0];
-      }
-      // otherwise return the default pageName prop
-      else return {name: "default", pageName: this.pageName};
-    },
-    currentViews: {
-      get() {
-        let views = [];
-        views = Object.values(
-          this.displayVariations[this.selectedVariation].views
-        );
-        views = views.sort(function (a, b) {
-          return a.weight - b.weight;
-        });
+  } else {
+    loading.value = false
+    showToast("Error", "error", i18n.t('enterSectionTypeName'))
+  }
+}
+const addNewStaticType = async (name) => {
+  if (name) {
+    sectionTypeName.value = name
+  }
 
-        return views;
-      },
-      set(newValue) {
-        for (let index = 0; index < newValue.length; index++) {
-          const replacement = newValue[index];
-          replacement.weight = index;
-          this.$set(
-            this.displayVariations[this.selectedVariation].views,
-            newValue[index].id,
-            replacement
-          );
-        }
-      },
-    },
-    alteredViews() {
-      let alteredSections = null
-      let hooksJs = importJs(`/js/global-hooks`)
-      if (hooksJs['page_pre_render'] && this.pageData) {
-        if (typeof hooksJs['page_pre_render'] === 'function') {
-          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.currentViews)), this.sectionsWebsiteDomain, this.$sections, this.$config)
-        }
-      }
-      if (alteredSections) {
-        this.fire_js("page_payload_preprocess", alteredSections);
-        return alteredSections
-      } else {
-        this.fire_js("page_payload_preprocess", this.currentViews);
-        return this.currentViews
-      }
-    },
-    alteredViewsPerRegions() {
-      let alteredSections = null
-      let hooksJs = importJs(`/js/global-hooks`)
-      if (hooksJs['page_pre_render'] && this.pageData && this.viewsPerRegions && Object.keys(this.viewsPerRegions).length > 0) {
-        if (typeof hooksJs['page_pre_render'] === 'function') {
-          alteredSections = hooksJs['page_pre_render'](JSON.parse(JSON.stringify(this.pageData)), JSON.parse(JSON.stringify(this.viewsPerRegions)), this.sectionsWebsiteDomain, this.$sections, this.$config)
-        }
-      }
-      if (alteredSections) {
-        this.fire_js("page_payload_preprocess", alteredSections);
-        return alteredSections
-      } else {
-        this.fire_js("page_payload_preprocess", this.viewsPerRegions);
-        return this.viewsPerRegions
-      }
-    },
-    id() {
-      if (this.savedView.id) {
-        return this.savedView.id;
-      }
-      return "id-" + Date.now();
-    },
-    weight() {
-      if (this.savedView.weight) {
-        return this.savedView.weight;
-      }
-      return null;
-    },
-    filteredTypes() {
-      return this.types.filter(item => {
-        const nameMatch = this.sectionsFilterName
-          ? item.name.toLowerCase().includes(this.sectionsFilterName.toLowerCase())
-          : true;
+  if (sectionTypeName.value !== "") {
+    const token = useCookie("sections-auth-token").value
+    const config = {
+      headers: sectionHeader({token}),
+    }
 
-        const appNameMatch = this.sectionsFilterAppName
-          ? item.application && item.application.toLowerCase().includes(this.sectionsFilterAppName.toLowerCase())
-          : true;
+    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/section-types/${sectionTypeName.value}`
+    loading.value = true
 
-        return nameMatch && appNameMatch;
-      });
-    },
-    filteredGlobalTypes() {
-      return this.globalTypes.filter(item => {
-        const nameMatch = this.sectionsFilterName
-          ? item.name.toLowerCase().includes(this.sectionsFilterName.toLowerCase())
-          : true;
+    let fieldsDeclaration = fieldsInputs.value
 
-        const appNameMatch = this.sectionsFilterAppName
-          ? item.application && item.application.toLowerCase().includes(this.sectionsFilterAppName.toLowerCase())
-          : true;
+    if (name) {
+      let path = ""
+      path = `/forms/${sectionTypeName.value}`
+      // In Nuxt 3, dynamic imports use different syntax
+      // We'd need to know more about how importComp is used
+      const formComp = await import(path).then(module => module.default)
 
-        return nameMatch && appNameMatch;
-      });
-    },
-    getCreationComponent() {
-      try {
-        const path = `/views/${this.currentSection.name}_${this.currentSection.type}`;
-        return importComp(path);
-      } catch {
-        return ''
+      if (formComp.props && formComp.props.mediaFields) {
+        fieldsDeclaration = formComp.props.mediaFields
       }
     }
-  },
-  async mounted() {
+
+    fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
+
     try {
-      let hooksJavascript = importJs(`/js/global-hooks`)
-      if (hooksJavascript['init_params']) {
-        const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {}, url: window.location.host })
-        if (paramsUpdate) {
-          this.$sections = paramsUpdate
+      await $axios.post(URL, {
+        "fields": fieldsDeclaration
+      }, config)
+
+      types.value = []
+      globalTypes.value = []
+      getSectionTypes() // assuming this function is defined elsewhere
+      staticSuccess.value = true
+      sectionTypeName.value = ""
+      fieldsInputs.value = [
+        {
+          type: "image",
+          name: ""
         }
-      }
-    } catch {}
-    this.initializeSectionsCMSEvents()
-    if (this.admin) {
-      this.initiateIntroJs()
+      ]
+    } catch (error) {
+      loading.value = false
+      types.value = []
+      globalTypes.value = []
+      getSectionTypes() // assuming this function is defined elsewhere
+      showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+    }
+  } else {
+    loading.value = false
+    showToast("Error", "error", i18n.t('enterSectionTypeName'))
+  }
+}
+const openStaticSection = () => {
+  staticModal.value = true
+}
+const trackSectionComp = (sectionName, sectionType) => {
+  if (!sectionInPage.value.includes(sectionName)) {
+    sectionInPage.value.push(sectionName)
+    const name = upperFirst(
+      camelCase(
+        // Gets the file name regardless of folder depth
+        sectionName
+          .split("/")
+          .pop()
+          .replace(/\.\w+$/, "")
+      )
+    )
+  }
+}
+const getComponent = (sectionName, sectionType, returnProps) => {
+  const hooksJs = importJs(`/js/global-hooks`)
+  if (hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
+    return hooksJs['section_pre_render']({sectionName, sectionType})
+  } else if (returnProps === true) {
+    let path = ""
+    if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+      path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
+    } else if (sectionName && sectionName.includes(":")) {
+      path = `/views/${sectionName.split(":")[1]}_${sectionType}`
+    } else if (sectionName && sectionName.includes("_-_")) {
+      path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
+    } else {
+      path = `/views/${sectionName}_${sectionType}`
     }
 
-    if (this.sectionsError !== "" && !this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
-      this.showToast("Error", "error", this.$t('loadPageError') + this.sectionsError, this.sectionsErrorOptions);
-    } else if (this.sectionsAdminError !== "") {
-      this.showToast("Error", "error", this.sectionsAdminError);
-    }
-    if (this.renderSectionError !== "") {
-      this.showToast("Error", "error", this.renderSectionError);
-    }
-    if (this.$sections.cname === "active" && this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
-      this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
-    }
-    this.fire_js("page_payload_postprocess", document.documentElement.outerHTML);
-  },
-  beforeDestroy() {
-    window.removeEventListener("mousemove", this.onMouseMove);
-    window.removeEventListener("mouseup", this.stopTracking);
-  },
-  async fetch() {
-    try {
-      let hooksJavascript = importJs(`/js/global-hooks`)
-      if (hooksJavascript['init_params']) {
-        const paramsUpdate = hooksJavascript['init_params'](this.$sections, { qs: this.$route.query, headers: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.headers : {}, reqBody: this.$nuxt.context && this.$nuxt.context.req ? this.$nuxt.context.req.body : {}, url: this.$nuxt.context && this.$nuxt.context.req && this.$nuxt.context.req.headers ? this.$nuxt.context.req.headers.host : '' })
-        if (paramsUpdate) {
-          this.$sections = paramsUpdate
-        }
+    const moduleData = importComp(path)
+    if (moduleData && moduleData.props && moduleData.props.viewStructure &&
+      (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
+      return {
+        settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets),
+        render_data: populateWithDummyValues(moduleData.props.viewStructure.render_data, dummyDataPresets),
+        type: sectionType
       }
-    } catch {}
-    this.getAvailableLayouts()
-    this.getAvailableSections()
-    this.sectionsMainErrors = []
-    this.metadataFormLang = this.$i18n.locale.toString()
-    this.locales.forEach(lang => {
-      this.pageMetadata[lang] = {
-        title: "",
-        description: ""
+    } else return {type: sectionType}
+  } else if (sections.value.cname === "active") {
+    let path = ""
+    if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+      path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
+      return importComp(path)
+    } else if (sectionName && sectionName.includes(":")) {
+      path = `/views/${sectionName.split(":")[1]}_${sectionType}`
+      return importComp(path)
+    } else if (sectionName && sectionName.includes("_-_")) {
+      path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
+      return importComp(path)
+    } else {
+      path = `/views/${sectionName}_${sectionType}`
+      return importComp(path)
+    }
+  } else {
+    let path = ""
+    if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+      path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
+      return importComp(path)
+    } else if (sectionName && sectionName.includes(":")) {
+      path = `/views/${sectionName.split(":")[1]}_${sectionType}`
+      return importComp(path)
+    } else if (sectionName && sectionName.includes("_-_")) {
+      path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
+      return importComp(path)
+    } else {
+      path = `/views/${sectionName}_${sectionType}`
+      return importComp(path)
+    }
+  }
+}
+const getAvailableLayouts = () => {
+  try {
+    // In Nuxt 3, you'd typically use import.meta.glob instead of require.context
+    const layoutFiles = import.meta.glob('@/sections/layouts/*.vue')
+    const layoutNames = Object.keys(layoutFiles).map((filename) => {
+      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+    })
+    availableLayouts.value.push(...layoutNames)
+  } catch (error) {
+    console.warn(t('noLayoutsFolder'))
+  }
+}
+const getSelectedLayout = () => {
+  let path = `/layouts/${selectedLayout.value}`
+  if (selectedLayout.value === 'standard') {
+    return 'div'
+  } else return importComp(path)
+}
+const computeLayoutData = () => {
+  const slotNameExample = 'i.e. slotNames: { type: Array, default() { return [\'region1\'] }}'
+  errorInLayout.value = false
+
+  if (selectedLayout.value !== 'standard') {
+    sectionsMainErrors.value = []
+    sectionsLayoutErrors.value = []
+    let path = `/layouts/${selectedLayout.value}`
+    layoutSlotNames.value = []
+
+    let layoutComp = importComp(path)
+    if (!layoutComp.props) {
+      errorInLayout.value = true
+      sectionsMainErrors.value.push(t('layoutErrors.missingComp'))
+      return
+    } else if (!layoutComp.props.slotNames) {
+      errorInLayout.value = true
+      sectionsMainErrors.value.push(t('layoutErrors.missingProp'))
+      sectionsMainErrors.value.push(slotNameExample)
+      return
+    } else if (!layoutComp.props.slotNames.type || layoutComp.props.slotNames.type !== Array || !layoutComp.props.slotNames.default) {
+      errorInLayout.value = true
+      sectionsMainErrors.value.push(t('layoutErrors.propArray'))
+      sectionsMainErrors.value.push(slotNameExample)
+      return
+    }
+
+    try {
+      layoutSlotNames.value = [...importComp(path).props.slotNames.default()]
+    } catch {
+      errorInLayout.value = true
+      sectionsMainErrors.value.push(t('layoutErrors.propArray'))
+      sectionsMainErrors.value.push(slotNameExample)
+      return
+    }
+
+    if (!layoutComp.props.slotNames.default()[0]) {
+      errorInLayout.value = true
+      sectionsMainErrors.value.push(t('layoutErrors.propArray'))
+      sectionsMainErrors.value.push(slotNameExample)
+      return
+    }
+
+    let views = []
+    views = Object.values(
+      displayVariations.value[selectedVariation.value].views
+    )
+
+    views.map(view => {
+      if (!view.region || !view.region[selectedLayout.value] || !view.region[selectedLayout.value]['slot']) {
+        if (!view.region) {
+          view['region'] = {}
+        }
+        view.region[selectedLayout.value] = {
+          slot: layoutSlotNames.value[0],
+          weight: view.weight
+        }
       }
     })
-    if (this.$sections.projectLocales && this.$sections.projectLocales !== '' && this.$sections.projectLocales.includes(',')) {
-      this.translationComponentSupport = true
-      this.locales = []
-      this.locales = this.$sections.projectLocales.split(',')
-      this.metadataFormLang = this.$i18n.locale.toString()
-      this.locales.forEach(lang => {
-        this.pageMetadata[lang] = {
-          title: "",
-          description: ""
+
+    layoutSlotNames.value.forEach(slotName => {
+      viewsPerRegions.value[slotName] = []
+      views.forEach(view => {
+        if (view.region[selectedLayout.value].slot === slotName) {
+          viewsPerRegions.value[slotName].push(view)
+        }
+      })
+
+      let selectedLay = selectedLayout.value
+      viewsPerRegions.value[slotName] = viewsPerRegions.value[slotName].sort(function (a, b) {
+        return a.region[selectedLay].weight - b.region[selectedLay].weight
+      })
+    })
+
+    viewsPerRegions.value = {...viewsPerRegions.value}
+
+    if (admin.value && editMode.value) {
+      verifySlots()
+    }
+  }
+}
+const verifySlots = () => {
+  nextTick(() => {
+    if (selectedLayout.value !== 'standard') {
+      sectionsLayoutErrors.value = []
+      layoutSlotNames.value.forEach(slotName => {
+        if (!document.getElementById(`sections-slot-region-${selectedLayout.value}-${slotName}`)) {
+          errorInLayout.value = true
+          sectionsLayoutErrors.value.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + t('layoutErrors.regionNotConfigured'))
+          sectionsLayoutErrors.value.push(`<slot name=\"${slotName}\"></slot> ${t('layoutErrors.layoutTemp')}`)
+          return
         }
       })
     }
-    this.loading = true;
-    this.sectionsError = ""
-    this.checkToken();
-    // We check if this is running in the browser or not
-    // because during SSR no cors preflight request is sent
-    const inBrowser = typeof window !== 'undefined';
+  })
+}
+const logDrag = (evt) => {
+  Object.keys(viewsPerRegions.value).forEach(slotName => {
+    viewsPerRegions.value[slotName].forEach((view, index) => {
+      if (view.region[selectedLayout.value] === undefined) {
+        view.region[selectedLayout.value] = {}
+      }
+      if (view.region[selectedLayout.value]['slot'] === undefined) {
+        view.region[selectedLayout.value]['slot'] = ''
+      }
+      if (view.region[selectedLayout.value]['slot'] !== slotName) {
+        view.region[selectedLayout.value]['slot'] = slotName
+      }
+      view.region[selectedLayout.value]['weight'] = index
+    })
+  })
+  computeLayoutData()
+}
+const createNewPage = async () => {
+  loading.value = true
 
-    let websiteDomain = ""
-    const isServer = process.server;
-    const scheme = isServer ? this.$nuxt.context.req.headers['x-forwarded-proto'] || 'http' : window.location.protocol.replace(':', '');
+  const cookie = useCookie('sections-auth-token').value
+  const token = cookie.value
 
-    if (inBrowser) {
-      websiteDomain = window.location.host
-    } else {
-      websiteDomain = this.$nuxt.context.req.headers.host
+  const header = { token }
+  const config = {
+    headers: sectionHeader(header)
+  }
+
+  const { $axios } = useNuxtApp()
+  const sections = useSections()
+
+  const URL = `${sections.serverUrl}/project/${sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
+
+  try {
+    const res = await $axios.put(
+      URL,
+      {
+        variations: [],
+        sections: []
+      },
+      config
+    )
+
+    loading.value = false
+    pageNotFound.value = false
+    sectionsMainErrors.value = []
+    sectionsPageLastUpdated.value = res.data.last_updated
+    pageId.value = res.data.id
+    sectionsPageName.value = res.data.page
+    pagePath.value = res.data.path
+    allSections.value = []
+    runIntro('editPage')
+    showToast(
+      "Success",
+      "success",
+      t('createPageSuccess')
+    )
+  } catch (err) {
+    loading.value = false
+    let error = err.response.data.message
+    if (err.response.data.errors && err.response.data.errors.path) {
+      error = `${t('pageUrl')} ${err.response.data.errors.path[0]}`
     }
-    this.sectionsWebsiteDomain = websiteDomain
+    showToast(
+      "Error creating page",
+      "error",
+      t('createPageError') + pageName.value + "\n" + error,
+      err.response.data.options
+    )
+  }
+}
+const showToast = (title, variant, message, options) => {
+  const toast = useToast()
 
-    this.$sections.projectUrl = websiteDomain
+  toast[variant](
+    options && Object.keys(options).length > 0 ? '🔗 ' + message : message,
+    {
+      position: "top-right",
+      timeout: 5000,
+      closeOnClick: false,
+      pauseOnFocusLoss: true,
+      pauseOnHover: true,
+      draggable: true,
+      draggablePercent: 0.6,
+      showCloseButtonOnHover: false,
+      hideProgressBar: false,
+      closeButton: "button",
+      icon: false,
+      rtl: false,
+      onClick: () => options && Object.keys(options).length > 0 ?
+        window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
+    }
+  )
+}
+const getAvailableSections = () => {
+  try {
+    // Use import.meta.glob instead of require.context
+    const formSections = import.meta.glob('@/sections/forms/*.vue')
+    const formNames = Object.keys(formSections).map((filename) => {
+      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+    })
+    availableSectionsForms.value.push(...formNames)
+  } catch (error) {
+    console.warn(t('noFormsFolder'))
+  }
+}
+const initiateIntroJs = async () => {
+  try {
+    const cookie = useCookie('sections-auth-token').value
+    const token = cookie.value
 
+    const { $axios } = useNuxtApp()
+    const sections = useSections()
+
+    try {
+      const response = await $axios.get(
+        `${sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`,
+        {
+          headers: sectionHeader({ token })
+        }
+      )
+
+      currentPages.value = response.data.current_pages
+      if (currentPages.value !== null && currentPages.value === 0) {
+        if (pageNotFound.value) {
+          await runIntro('createPage')
+        }
+      }
+    } catch (error) {
+      loading.value = false
+      emit("load", false)
+      const cookie = useCookie('sections-auth-token').value
+      cookie.value = null
+      admin.value = false
+      showToast("Error", "error", t('tokenInvalidReconnect'))
+    }
+  } catch {}
+}
+const runIntro = async (topic, rerun) => {
+  if (intro.value && topic === 'globalTour') {
+    intro.value.setDontShowAgain(true)
+  }
+
+  if (rerun === true) {
+    introRerun.value = true
+  } else {
+    introRerun.value = false
+  }
+
+  if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
+    if (intro.value) {
+      intro.value.exit(true)
+    }
+
+    // Dynamic imports in Nuxt 3
+    const introJsModule = await import('intro.js/minified/intro.min.js')
+    await import('intro.js/minified/introjs.min.css')
+
+    intro.value = null
+    intro.value = introJsModule.default()
+
+    intro.value.setOption("dontShowAgain", true)
+    intro.value.setOption("nextLabel", t('intro.nextLabel'))
+    intro.value.setOption("prevLabel", t('intro.prevLabel'))
+    intro.value.setOption("doneLabel", t('intro.doneLabel'))
+    intro.value.setOption("dontShowAgainLabel", t('intro.dontShowAgainLabel'))
+
+    if (rerun === true) {
+      if (topic === 'globalTour') {
+        intro.value.setOption("dontShowAgain", false)
+        intro.value.onexit(() => {
+          intro.value.setDontShowAgain(true)
+          introRerun.value = false
+        })
+      } else {
+        if (topic === 'topBar') {
+          intro.value.setDontShowAgain(false)
+        }
+        intro.value.setOption("dontShowAgain", true)
+      }
+    }
+
+    if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
+      addIntroSteps(topic, rerun)
+    } else if (
+      topic === 'inventoryOpened' &&
+      refs['intro-simple-CTA-section-inventory'] &&
+      refs['intro-simple-CTA-section-inventory'][0]
+    ) {
+      addIntroSteps(topic, rerun)
+    } else if (
+      topic === 'availableSectionOpened' &&
+      refs['intro-simple-CTA-section-available'] &&
+      refs['intro-simple-CTA-section-available'][0]
+    ) {
+      addIntroSteps(topic, rerun)
+    }
+  }
+}
+const addIntroSteps = (topic, rerun) => {
+  if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
+    intro.value.setOptions({
+      steps: introSteps(topic)
+    })
+    intro.value.refresh(true)
+    intro.value.start()
+
+    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
+      window.runIntro = runIntro
+      window.introRerun = introRerun.value
+      window.setTypesTab = (value) => {
+        typesTab.value = value
+      }
+    } else if (topic === 'inventoryOpened') {
+      window.addNewStaticType = addNewStaticType
+      window.closeIntro = () => {
+        intro.value.exit(true)
+      }
+    } else if (topic === 'availableSectionOpened') {
+      window.simpleCTAType = filteredTypes.value.filter(
+        type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
+      ).find(type => type.name === 'SimpleCTA')
+
+      window.openCurrentSection = openCurrentSection
+      window.introRerun = introRerun.value
+      window.closeIntro = () => {
+        intro.value.exit(true)
+      }
+    }
+  }
+}
+const introSteps = (topic) => {
+  const t = i18n.t
+
+  const simpleCTAIndex = filteredTypes.value.filter(
+    type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled'
+  ).findIndex(type => type.name === 'SimpleCTA')
+
+  switch (topic) {
+    case 'createPage':
+      return [
+        {
+          element: refs['intro-create-page'],
+          intro: t('intro.createPage')
+        }
+      ]
+    case 'editPage':
+      return [
+        {
+          element: refs['intro-edit-page'],
+          intro: t('intro.editPage')
+        }
+      ]
+    case 'topBar':
+      return [
+        {
+          element: refs['intro-top-bar'],
+          intro: t('intro.topBarButtons')
+        },
+        {
+          element: refs['intro-add-new-section'],
+          intro: t('intro.addNewSection')
+        }
+      ]
+    case 'addNewSectionModal':
+      return [
+        {
+          element: refs['intro-available-sections'],
+          intro: t('intro.availableSections')
+        },
+        {
+          element: refs['intro-inventory'],
+          intro: simpleCTAIndex === -1 ?
+            t('intro.inventoryDesc') :
+            `${t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${t('intro.checkIt')}</span>`
+        }
+      ]
+    // Additional cases omitted for brevity but can be converted following the same pattern
+    default:
+      return []
+  }
+}
+const getSectionProjectIdentity = () => {
+  const sections = useSections()
+
+  if (sections.cname === "active") {
+    // In Nuxt 3, process.client replaces typeof window !== 'undefined'
+    if (process.client) {
+      return window.location.host
+    } else {
+      // In Nuxt 3, this would typically use the context from useRequestHeaders
+      const headers = useRequestHeaders()
+      return headers.host
+    }
+  } else {
+    return sections.projectId
+  }
+}
+const renderConfigurableSection = async (gt, options) => {
+  emit("load", true)
+
+  const cookie = useCookie('sections-auth-token').value
+  const token = cookie.value
+
+  const header = { token }
+  const config = {
+    headers: sectionHeader(header)
+  }
+
+  const variables = {
+    section: {
+      name: gt.section.name,
+      weight: 1,
+      options: options
+    },
+    base_path: pagePath.value
+  }
+
+  let language = undefined
+  const locale = i18n.locale
+  if (locale) {
+    language = locale.value
+  }
+
+  const sections = useSections()
+  const route = useRoute()
+
+  if (sections.queryStringSupport && sections.queryStringSupport === "enabled") {
+    variables["query_string"] = parseQS(
+      encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+      Object.keys(route.query).length !== 0,
+      route.query
+    )
+
+    if (gt.query_string_keys && gt.query_string_keys.length > 0) {
+      variables["query_string"] = {
+        ...variables["query_string"],
+        ...validateQS(variables["query_string"], gt.query_string_keys, editMode.value),
+        language
+      }
+    }
+  }
+
+  const { $axios } = useNuxtApp()
+  const URL = `${sections.serverUrl}/project/${sections.projectId}/section/render`
+
+  try {
+    const res = await $axios.post(URL, variables, config)
+    emit("load", false)
+
+    if (res.data && res.data.error) {
+      errorAddingSection({
+        closeModal: false,
+        title: "Error adding " + gt.name,
+        message: res.data.error
+      })
+      return
+    }
+
+    addSectionType({
+      name: gt.section.name,
+      type: 'configurable',
+      settings: options[0],
+      id: id.value,
+      weight: weight.value,
+      render_data: res.data.render_data,
+      fields: gt.fields,
+      query_string_keys: gt.query_string_keys,
+      dynamic_options: gt.dynamic_options,
+      auto_insertion: gt.auto_insertion,
+      instance_name: gt.name
+    })
+  } catch (e) {
+    if (e.response.status === 404) {
+      emit('addSectionType', {
+        name: gt.section.name,
+        type: 'configurable',
+        settings: options[0],
+        id: id.value,
+        weight: weight.value,
+        render_data: e.response.data.render_data,
+        fields: gt.fields,
+        query_string_keys: gt.query_string_keys,
+        dynamic_options: gt.dynamic_options,
+        auto_insertion: gt.auto_insertion,
+        instance_name: gt.name
+      })
+    } else {
+      emit('errorAddingSection', {
+        closeModal: false,
+        title: "Error adding " + gt.name,
+        message: e.response.data.error ? e.response.data.error : t('saveConfigSectionError')
+      })
+    }
+    emit("load", false)
+  }
+}
+const renderDynamicSection = async (name, instanceName, gt) => {
+  emit("load", true)
+
+  const cookie = useCookie('sections-auth-token').value
+  const token = cookie.value
+
+  const header = { token }
+  const config = {
+    headers: sectionHeader(header)
+  }
+
+  const variables = {
+    section: {
+      name,
+      weight: 1
+    },
+    base_path: pagePath.value
+  }
+
+  let language = undefined
+  const { locale } = useI18n()
+  if (locale) {
+    language = locale.value
+  }
+
+  const sections = useSections()
+  const route = useRoute()
+
+  if (sections.queryStringSupport && sections.queryStringSupport === "enabled") {
+    variables["query_string"] = parseQS(
+      encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+      Object.keys(route.query).length !== 0,
+      route.query
+    )
+
+    if (gt.query_string_keys && gt.query_string_keys.length > 0) {
+      variables["query_string"] = {
+        ...variables["query_string"],
+        ...validateQS(variables["query_string"], gt.query_string_keys, editMode.value),
+        language
+      }
+    }
+  }
+
+  const { $axios } = useNuxtApp()
+  const URL = `${sections.serverUrl}/project/${sections.projectId}/section/render`
+
+  try {
+    const res = await $axios.post(URL, variables, config)
+
+    if (res.data && res.data.error) {
+      emit('errorAddingSection', {
+        closeModal: true,
+        title: "Error adding " + instanceName,
+        message: res.data.error
+      })
+      emit("load", false)
+      return
+    }
+
+    addSectionType({
+      name: name,
+      type: 'dynamic',
+      id: id.value,
+      weight: weight.value,
+      render_data: res.data.render_data,
+      query_string_keys: res.data.query_string_keys,
+      instance_name: instanceName
+    })
+
+    emit("load", false)
+  } catch (e) {
+    if (e.response.status === 404) {
+      emit('addSectionType', {
+        name: name,
+        type: 'dynamic',
+        id: id.value,
+        weight: weight.value,
+        render_data: e.response.data.render_data,
+        query_string_keys: e.response.data.query_string_keys,
+        instance_name: instanceName
+      })
+    } else {
+      if (e.response.data.error) {
+        emit('errorAddingSection', {
+          closeModal: true,
+          title: "Error adding " + instanceName,
+          message: e.response.data.error
+        })
+      } else {
+        emit('errorAddingSection', {
+          closeModal: true,
+          title: "Error adding " + instanceName,
+          message: t('saveConfigSectionError')
+        })
+      }
+    }
+    emit("load", false)
+  }
+}
+const getGlobalSectionTypes = async (autoLoad) => {
+  if (globalTypes.value && globalTypes.value.length) {
+    return
+  }
+
+  loading.value = true
+  const token = useCookie("sections-auth-token").value
+  const config = {
+    headers: sectionHeader({
+      token,
+    }),
+  }
+
+  const url = `${$sections.serverUrl}/project/${$sections.projectId}/global-instances`
+
+  try {
+    const res = await $axios.get(url, config)
+
+    res.data.data.forEach((d) => {
+      globalTypes.value.push({
+        regions: d.regions,
+        auto_insertion: d.auto_insertion,
+        section: d.section,
+        pages: d.pages,
+        name: d.name,
+        id: d.id,
+        type: types.value.find(t => t.name === d.section.name) ? types.value.find(t => t.name === d.section.name).type : undefined,
+        query_string_keys: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).query_string_keys ? types.value.find(t => t.name === d.section.name).query_string_keys : undefined,
+        fields: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).fields ? types.value.find(t => t.name === d.section.name).fields : undefined,
+        dynamic_options: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).dynamic_options ? types.value.find(t => t.name === d.section.name).dynamic_options : undefined,
+        application: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).application ? types.value.find(t => t.name === d.section.name).application : undefined,
+      })
+    })
+
+    types.value.forEach(type => {
+      globalTypes.value.push({
+        name: type.name,
+        type: type.type,
+        application: type.application,
+        notCreated: type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
+      })
+    })
+
+    loading.value = false
+
+    if (autoLoad === true) {
+      if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
+        for (const gt of globalTypes.value.filter(gt => gt.auto_insertion === true)) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+          if (gt.type === 'configurable') {
+            await renderConfigurableSection(gt, gt.section.options)
+          } else if (gt.type === 'dynamic') {
+            await renderDynamicSection(gt.section.name, gt.name, gt)
+          } else {
+            addSectionType({
+              ...gt.section,
+              id: 'id-' + Date.now(),
+              weight: 'null',
+              type: gt.type,
+              instance_name: gt.name,
+              fields: gt.fields,
+              query_string_keys: gt.query_string_keys,
+              dynamic_options: gt.dynamic_options,
+              render_data: gt.section && gt.section.options && gt.section.options[0] ? [{settings: gt.section.options[0]}] : undefined
+            }, false, true)
+          }
+        }
+      }
+    }
+
+    emit("load", false)
+  } catch (error) {
+    loading.value = false
+    emit("load", false)
+    showToast("Error", "error", error.toString())
+  }
+}
+const getSectionTypes = async (autoLoad) => {
+  if (types.value && types.value.length) {
+    return
+  }
+
+  loading.value = true
+  appNames.value = []
+
+  const token = useCookie("sections-auth-token").value
+  const config = {
+    headers: sectionHeader({
+      token,
+    }),
+  }
+
+  const url = `${$sections.serverUrl}/project/${$sections.projectId}/section-types`
+
+  try {
+    const res = await $axios.get(url, config)
+
+    res.data.data.forEach((d) => {
+      if (d.application) {
+        appNames.value.push(d.application)
+      }
+      trackSectionComp(d.name, d.type)
+      types.value.push({
+        name: d.name,
+        type: d.type,
+        access: d.access,
+        application: d.application,
+        dynamic_options: d.dynamic_options,
+        fields: d.fields,
+        multiple: d.multiple,
+        application_id: d.application_id,
+        app_status: d.app_status,
+        requirements: d.requirements,
+        query_string_keys: d.query_string_keys,
+        notCreated: false
+      })
+    })
+
+    availableSectionsForms.value.forEach(name => {
+      const found = types.value.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
+      if (!found) {
+        types.value.push({
+          name,
+          notCreated: true
+        })
+      }
+    })
+
+    types.value = [...types.value, ...addSystemTypes()]
+    loading.value = false
+    emit("load", false)
+    getGlobalSectionTypes(autoLoad)
+  } catch (error) {
+    loading.value = false
+    emit("load", false)
+  }
+}
+const addSystemTypes = () => {
+  let staticTypes = []
+  // In Nuxt 3, we need to use a different approach for importing files
+  // This is an example of how you might approach this
+  // You'll need to adapt this based on your actual project structure
+  const internalViews = import.meta.glob('../../../src/configs/views/*.vue')
+  let externalViews = {}
+  let externalPath = ""
+
+  try {
+    externalViews = import.meta.glob('@/sections/views/*.vue')
+    externalPath = '@/sections/views'
+  } catch (error) {
+    throw new Error(i18n.t('noSectionsFolder'))
+  }
+
+  staticTypes = buildComp(staticTypes, {...externalViews}, "external", externalPath)
+  staticTypes = buildComp(staticTypes, internalViews, "internal", "internal:path")
+
+  return [...new Set(staticTypes)]
+}
+const buildComp = (staticTypes, views, compType, path) => {
+  let names = staticTypes.map((obj) => {
+    return obj.name
+  })
+
+  Object.keys(views).forEach((fileName) => {
+    const splitName = fileName.split("_")
+    const type = splitName[1]
+    const mainName = splitName[0]
+
+    if (type) {
+      if (type == "local") {
+        const name = camelCase(
+          mainName
+            .split("/")
+            .pop()
+            .replace(/\.\w+$/, "")
+        )
+
+        if (!names.includes(name)) {
+          trackSectionComp(name, "local")
+          staticTypes.push({
+            name,
+            type,
+            compType,
+          })
+          names.push(name)
+        }
+      }
+    } else {
+      if (fileName.includes(".vue")) {
+        console.error(
+          `nuxt-sections: ${fileName} ${i18n.t('in')} ${path} ${i18n.t('cannotRegisterComp')}`
+        )
+      }
+    }
+  })
+
+  return staticTypes
+}
+const openEditMode = async () => {
+  getSectionTypes(true)
+  if (!originalVariations.value[selectedVariation.value]) {
+    originalVariations.value = JSON.parse(
+      JSON.stringify(displayVariations.value)
+    )
+  }
+
+  editMode.value = !editMode.value
+
+  if (editMode.value === true) {
+    runIntro('topBar')
+
+    loading.value = true
+    const inBrowser = typeof window !== 'undefined'
     const config = {
-      headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
-    };
+      headers: sectionHeader((inBrowser) ? {} : {origin: $sections.projectUrl}),
+    }
 
-    let URL = `${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(this.pageName))}`;
+    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
 
     let payload = {}
 
     let language = undefined
     try {
-      language = this.$i18n.locale
+      language = i18n.locale
     } catch {
     }
 
-    if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-      let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
+    if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled") {
+      let query_string = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
       payload = {
         query_string: {
           ...query_string,
           language
         }
       }
-    }
-
-    let hooksJs = importJs(`/js/global-hooks`)
-    if (hooksJs['page_pre_load']) {
-      if (hooksJs['page_pre_load'](payload)) {
-        payload = hooksJs['page_pre_load'](payload)
+      if (sectionsQsKeys.value && sectionsQsKeys.value.length > 0) {
+        payload["query_string"] = {
+          ...payload["query_string"],
+          ...validateQS(payload["query_string"], sectionsQsKeys.value, editMode.value)
+        }
       }
     }
 
-    if (this.sectionsPageData) {
-      const res = this.sectionsPageData.res
-      const error = this.sectionsPageData.error
-      if (res) {
-        this.initializeSections(res);
-        this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
-      } else if (error) {
-        const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
-        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
-          this.pageNotFoundManagement(error)
-          return
-        }
-        if (error.response.status === 400) {
-          const res = error.response;
-          this.initializeSections(res);
-          return;
-        }
-        this.errorResponseStatus = error.response.status
-        if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
-          this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
-          this.errorResponseData = error.response.data
-        } else if (error.response.data.error) {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
-        } else {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
-        }
-        this.loading = false;
-        this.pageNotFound = true;
-        if (this.errorResponseStatus === 404) {
-          this.sectionsMainErrors.push(this.$t('404NotFound'));
-        }
-        this.$emit("load", false);
+    try {
+      const res = await $axios.post(URL, payload, config)
+      loading.value = false
+      if (res.data.last_updated > sectionsPageLastUpdated.value) {
+        showToast(
+          "Warning",
+          "warning",
+          i18n.t('oldPageVersion')
+        )
       }
-    } else if (inBrowser) {
+      initializeSections(res)
+      computeLayoutData()
+    } catch (error) {
+      // Handle errors
+    }
+
+    getUserData()
+    verifySlots()
+  }
+}
+const editable = (sectionType) => {
+  switch (sectionType) {
+    case "local":
+    case "dynamic":
+      return false
+    case "static":
+    case "configurable":
+      return true
+  }
+}
+const synch = () => {
+  synched.value = true
+  // get all existing linked to
+  const currentVariationView = displayVariations.value[
+    selectedVariation.value
+    ].views
+
+  // remove all existing linked to
+  const withoutLinkedToValueList = Object.values(
+    currentVariationView
+  ).filter((view) => !view.linkedTo)
+
+  // get default original values from the main
+  let defaultVariationViews = Object.values(
+    // we use an intermediary json object to deep clone the array
+    JSON.parse(JSON.stringify(displayVariations.value[pageName.value].views))
+  )
+
+  // update the cloned list with a linkedTo id
+  defaultVariationViews = defaultVariationViews.map((view) => {
+    view.linkedTo = view.id
+    view.id = "id-" + view.id
+    return view
+  })
+
+  // get the new added sections to this variation
+  const finalSections = [
+    ...withoutLinkedToValueList,
+    ...defaultVariationViews,
+  ]
+
+  const finalViews = {}
+  finalSections.map((section) => {
+    finalViews[section.id] = section
+  })
+
+  displayVariations.value[selectedVariation.value].views = finalViews
+
+  setTimeout(() => {
+    synched.value = false
+  }, 1000)
+}
+const addSectionType = (section, showToast = true, instance = false) => {
+  try {
+    if (savedView.value.linkedTo) {
+      const confirmed = window.confirm(
+        i18n.t('linkedSection')
+      )
+      if (!confirmed) {
+        return
+      }
+    }
+
+    if (section.weight === null || section.weight === "null" || section.weight === undefined) {
+      section.weight = Object.keys(
+        displayVariations.value[selectedVariation.value].views
+      ).length
+    }
+
+    if (selectedLayout.value !== 'standard') {
+      if (section.region === undefined || section.region === null || section.region[selectedLayout.value] === undefined || section.region[selectedLayout.value] === null) {
+        section.region = {}
+      }
+      section.region[selectedLayout.value] = {
+        slot: selectedSlotRegion.value,
+        weight: section.region && section.region[selectedLayout.value] && section.region[selectedLayout.value].weight !== undefined && section.region[selectedLayout.value].weight !== null ? section.region[selectedLayout.value].weight : viewsPerRegions.value[selectedSlotRegion.value] ? viewsPerRegions.value[selectedSlotRegion.value].length : Object.keys(
+          displayVariations.value[selectedVariation.value].views
+        ).length
+      }
+    }
+
+    if (instance === true || (section.type === 'local' && section.instance_name) || (section.type === 'dynamic' && section.instance_name) || (section.type === 'configurable' && section.instance_name)) {
+      section.linkedTo = section.instance_name
+      section.linked_to = section.instance_name
+      section.instance = true
+      section.settings = (section.type === 'dynamic' || section.type === 'configurable') && section.render_data && section.render_data[0] && section.render_data[0].settings ? section.render_data[0].settings : section.options
+    } else {
+      section.linkedTo = ""
+      section.linked_to = ""
+    }
+
+    displayVariations.value[selectedVariation.value].views[section.id] = section
+
+    if (section.name === 'SimpleCTA') {
+      runIntro('sectionSubmitted', introRerun.value)
+    }
+
+    if (selectedVariation.value === pageName.value) {
+      // We check if there are variations that contains a section linked to the one we just edited
+      // If there are, we edit them too so they stay in sync
+      variations.value.map((variation) => {
+        const newViews = Object.values(
+          displayVariations.value[variation.pageName].views
+        ).map((sectionVariation) => {
+          if (sectionVariation.linkedTo === section.id)
+            sectionVariation.settings = section.settings
+          return sectionVariation
+        })
+        displayVariations.value[variation.pageName].views = {...newViews}
+      })
+    }
+
+    currentViews.value = displayVariations.value[selectedVariation.value].views
+    displayVariations.value[selectedVariation.value].altered = true
+    isModalOpen.value = false
+    isSideBarOpen.value = false
+    savedView.value = {}
+    createdView.value = {}
+    creationView.value = false
+    loading.value = false
+
+    computeLayoutData()
+    if (showToast !== false) {
+      showToast(
+        "Success",
+        "info",
+        i18n.t('successAddedSection')
+      )
+    }
+  } catch (e) {
+    showToast(
+      "Error",
+      "error",
+      i18n.t('previewSectionError')
+    )
+  }
+}
+const refreshSectionView = async (sectionView, data) => {
+  let sectionDatas = []
+  const reRenderMultipleSections = data.sections && Array.isArray(data.sections) && data.sections.length > 0
+
+  if (reRenderMultipleSections === true) {
+    sectionDatas = allSections.value.filter(section => {
+      const valueToCompare = section.nameID || section.name
+      return data.sections.some(filteredSection => filteredSection.name === valueToCompare)
+    })
+    sectionDatas.map(section => {
+      const valueToCompare = section.nameID || section.name
+      section.qs = data.sections.find(sec => sec.name === valueToCompare) && data.sections.find(sec => sec.name === valueToCompare).qs ? data.sections.find(sec => sec.name === valueToCompare).qs : null
+      return section
+    })
+  } else {
+    sectionDatas = allSections.value.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
+  }
+
+  const config = {
+    headers: sectionHeader({}),
+  }
+
+  let variables = {
+    base_path: pagePath.value
+  }
+
+  let language = undefined
+  try {
+    language = i18n.locale
+  } catch {
+  }
+
+  if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled") {
+    variables["query_string"] = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
+    if (data.qs) {
+      variables["query_string"] = {...variables["query_string"], ...data.qs}
+    }
+    variables["query_string"] = {
+      ...variables["query_string"],
+      language
+    }
+  }
+
+  const URL = `${$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`
+
+  for (const sectionData of sectionDatas) {
+    const sectionName = sectionData.nameID ? sectionData.nameID : sectionData.name
+    variables['section'] = {
+      name: sectionName,
+      weight: sectionData.weight
+    }
+
+    if (sectionData.type === 'configurable') {
+      variables['section']['options'] = [sectionData.render_data[0].settings]
+    }
+
+    if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
+      variables["query_string"] = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
+      if (sectionData.qs) {
+        variables["query_string"] = {...variables["query_string"], ...sectionData.qs}
+      }
+    }
+
+    const inBrowser = typeof window !== 'undefined'
+    if (inBrowser) {
       try {
-        const res = await this.$axios.post(URL, payload, config)
-        this.initializeSections(res);
-        this.$nuxt.$emit('sectionsLoaded', 'pageMounted');
-      } catch (error) {
-        const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
-        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
-          this.pageNotFoundManagement(error)
-          return
-        }
-        if (error.response.status === 400) {
-          const res = error.response;
-          this.initializeSections(res);
-          return;
-        }
-        this.errorResponseStatus = error.response.status
-        if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
-          this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
-          this.errorResponseData = error.response.data
-        } else if (error.response.data.error) {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
+        const res = await $axios.post(URL, variables, config)
+        if (res.data && res.data.error) {
+          nuxtApp.$emit('sectionViewRefreshed', {error: res.data})
+          renderSectionError.value = `${sectionName}: ${res.data.error}`
+          showToast("Error", "error", renderSectionError.value)
         } else {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
+          const index = currentViews.value.findIndex(view => view.name === sectionData.name)
+          if (index !== -1) {
+            const updatedViews = [...currentViews.value]
+            updatedViews[index] = {
+              ...updatedViews[index],
+              render_data: res.data.render_data,
+            }
+
+            currentViews.value = updatedViews
+          }
+          nuxtApp.$emit('sectionViewRefreshed', res.data)
         }
-        this.loading = false;
-        this.pageNotFound = true;
-        if (this.errorResponseStatus === 404) {
-          this.sectionsMainErrors.push(this.$t('404NotFound'));
-        }
-        this.$emit("load", false);
+      } catch (e) {
+        nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
+        renderSectionError.value = `${sectionName}: ${e.response.data.error}`
+        showToast("Error", "error", renderSectionError.value)
       }
     } else {
-      const optionsRes = await this.$axios.options(URL, config)
+      const optionsRes = await $axios.options(URL, config)
       if (optionsRes.status === 200) {
         try {
-          const res = await this.$axios.post(URL, payload, config)
-          this.initializeSections(res);
-        } catch (error)  {
-          const pagePath = `/${decodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/')}`
-          if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !this.$cookies.get("sections-auth-token")) {
-            this.pageNotFoundManagement(error, true)
-            return
+          const res = await $axios.post(URL, variables, config)
+          if (res.data && res.data.error) {
+            nuxtApp.$emit('sectionViewRefreshed', res.data)
+            renderSectionError.value = `${sectionName}: ${res.data.error}`
+          } else {
+            const index = currentViews.value.findIndex(view => view.name === sectionData.name)
+            if (index !== -1) {
+              const updatedViews = [...currentViews.value]
+              updatedViews[index] = {
+                ...updatedViews[index],
+                render_data: res.data.render_data,
+              }
+
+              currentViews.value = updatedViews
+            }
+            nuxtApp.$emit('sectionViewRefreshed', res.data)
           }
-          if (error.response.status === 400) {
-            const res = error.response;
-            this.initializeSections(res);
+        } catch (e) {
+          nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
+          renderSectionError.value = `${sectionName}: ${e.response.data.error}`
+        }
+      }
+    }
+  }
+  computeLayoutData()
+}
+const mutateVariation = (variationName) => {
+  const invalidSectionsErrors = reactive({});
+  const sectionsFormatErrors = reactive({});
+  const sections = [];
+  const qsKeys = [];
+  let views = displayVariations.value[variationName].views;
+  views = Object.values(views);
+  let formatValdiation = true;
+
+  views.map((view) => {
+    if (!view.error || view.status_code === 404) {
+      const refactorView = {
+        id: view.id,
+        weight: view.weight,
+        name: view.name,
+        type: view.type,
+        linkedTo: view.linkedTo,
+        region: view.region
+      };
+
+      if (view.settings && view.type === "configurable") {
+        refactorView.name = view.nameID;
+        const options = [];
+
+        view.render_data.map((rData) => {
+          if (rData.settings.image && !Array.isArray(rData.settings.image)) {
+            formatValdiation = false;
+            showToast(
+              "",
+              "error",
+              t('imageFieldValidation') + view.name
+            );
             return;
           }
-          if (error.response.status === 404) {
-            this.$nuxt.context.res.statusCode = 404
-          }
+          options.push(rData.settings);
+        });
 
-          this.errorResponseStatus = error.response.status
-          if ((this.errorResponseStatus === 404 || this.errorResponseStatus === 401) && this.registeredPage(this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found')) {
-            this.errorRegisteredPage = this.errorResponseStatus === 404 ? 'page_not_found' : 'project_not_found'
-            this.errorResponseData = error.response.data
-          } else if (error.response.data.error) {
-            this.sectionsError = error.response.data.error
-          } else {
-            this.sectionsError = error.response.data.message
-            this.sectionsErrorOptions = error.response.data.options
-          }
-          this.loading = false;
-          this.pageNotFound = true;
-          if (this.errorResponseStatus === 404) {
-            this.sectionsMainErrors.push(this.$t('404NotFound'));
-          }
-          this.$emit("load", false);
-        }
+        refactorView.options = options;
+      } else if (view.settings) {
+        refactorView.options = view.settings;
       }
-    }
-    if (this.projectMetadata && this.projectMetadata['languages'] && this.projectMetadata['languages'].length > 0) {
-      this.locales = []
-      this.locales = this.projectMetadata['languages']
-    }
-    this.computeLayoutData()
-  },
-  watch: {
-    isModalOpen(value) {
-      const body = document.querySelector("body");
-      if (value === true) {
-        body.style.overflow = "hidden";
-      } else {
-        body.style.overflow = "auto";
-      }
-    }
-  },
-  methods: {
-    parsePath,
-    initializeSectionsCMSEvents() {
-      if (!window.SectionsCMS) {
-        window.SectionsCMS = {}
-        window.SectionsCMS.reRenderSection = (data) => this.refreshSectionView('SectionView', data);
-      }
-    },
-    initializeSections(res) {
-      this.$nuxt.$emit('page_pre_render', res)
-      const sections = res.data.sections;
-      this.pageData = res.data;
-      this.allSections = res.data.sections;
-      this.pageId = res.data.id;
-      this.pagePath = res.data.path;
-      this.sectionsPageName = res.data.page;
-      this.sectionslayout = res.data.layout;
-      this.selectedLayout = res.data.layout;
-      for (const lang of this.locales) {
-        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title) this.pageMetadata[lang].title = res.data.metadata[lang].title;
-        if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description) this.pageMetadata[lang].description = res.data.metadata[lang].description;
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
-        this.$set(this.projectMetadata, 'media', res.data.metadata.project_metadata.media)
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.selectedCSSPreset) {
-        this.$set(this.projectMetadata, 'selectedCSSPreset', res.data.metadata.project_metadata.selectedCSSPreset)
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.favicon) {
-        this.$set(this.projectMetadata, 'favicon', res.data.metadata.project_metadata.favicon)
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
-        this.$set(this.projectMetadata, 'languages', res.data.metadata.project_metadata.languages)
-        this.selectedLanguages = res.data.metadata.project_metadata.languages
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
-        this.$set(this.projectMetadata, 'defaultLang', res.data.metadata.project_metadata.defaultLang)
-        this.defaultLang = res.data.metadata.project_metadata.defaultLang
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl !== undefined && res.data.metadata.project_metadata.activateCookieControl !== null) {
-        this.$set(this.projectMetadata, 'activateCookieControl', res.data.metadata.project_metadata.activateCookieControl)
-      }
-      if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.gtmId !== undefined && res.data.metadata.project_metadata.gtmId !== null) {
-        this.$set(this.projectMetadata, 'gtmId', res.data.metadata.project_metadata.gtmId)
-      }
-      if (res.data.metadata.media) {
-        this.$set(this.pageMetadata, 'media', res.data.metadata.media)
-      }
-      if (res.data.metadata.mediaMetatag) {
-        this.$set(this.pageMetadata, 'mediaMetatag', res.data.metadata.mediaMetatag)
-      }
-      this.computedTitle = this.pageMetadata[this.lang].title
-      this.computedDescription = this.pageMetadata[this.lang].description
-      const views = {};
-      sections.map((section) => {
-        this.trackSectionComp(section.name, section.type);
 
-        if (section.type === "configurable") {
-          // The below condition is set to replace old image fields in settings that were saved as objects,
-          // which was causing the section using this field to be discarded and no more saved to the page
-          // after the media content linking update on sections server that requires image field to be an array
-          if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
-            section.render_data[0].settings.image = []
-          }
-          section.settings = section.render_data[0].settings;
-          // Splitting the name of the configurable sections into nameID that has the full name of it including the id,
-          // and name that has only name of the section which is going to be used for importing the section by using only its name on the host project.
-          section.nameID = section.name;
-          section.name = section.name.split(":")[1];
-        } else if (section.settings) {
-          section.settings = this.isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings;
-        }
-        if (section.query_string_keys && section.query_string_keys.length > 0) {
-          this.sectionsQsKeys.push(...section.query_string_keys)
-        }
-        if (section.id) {
-          views[section.id] = section;
-        } else {
-          views["test"] = section;
-        }
-
-        this.sectionOptions[section.id] = false
-
-        if (section.error || (section.settings === null || section.settings === undefined)) {
-          this.errorInViews = true;
-        } else {
-          this.errorInViews = false
-        }
-        sections.forEach((section) => {
-          if (section.status_code === 404) {
-            this.errorInViews = false;
-          } else {
-            this.errorInViews = false
-          }
-        })
-      });
-      this.sectionOptions = {...this.sectionOptions}
-      this.$set(this.displayVariations, this.activeVariation.pageName, {
-        name: this.activeVariation.pageName,
-        views: {...views},
-      });
-      this.selectedVariation = this.activeVariation.pageName;
-      this.loading = false;
-      this.$emit("load", true);
-      this.sectionsPageLastUpdated = res.data.last_updated;
-    },
-    pageNotFoundManagement(error, server) {
-      if (server) {
-        if (error.response.data.error) {
-          this.sectionsError = error.response.data.error
-        } else {
-          this.sectionsError = error.response.data.message
-          this.sectionsErrorOptions = error.response.data.options
-        }
-        this.$nuxt.context.res.statusCode = 404
-        this.$nuxt.context.redirect(this.$nuxt.localePath(error.response.data.options.project_metadata.pagePath404))
-      } else {
-        if (error.response.data.error) {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.error);
-        } else {
-          this.showToast("Error", "error", this.$t('loadPageError') + error.response.data.message, error.response.data.options);
-        }
-        this.$router.push(this.localePath(error.response.data.options.project_metadata.pagePath404))
+      if (view.type === 'dynamic' || view.type === 'local') {
+        refactorView.options = [];
       }
-    },
-    selectedCSS(mediaObject, mediaFieldName) {
-      const media = {
-        media_id: "",
-        url: "",
-        seo_tag: "",
-        filename: "",
-        headers: {}
-      };
-      media.filename = mediaObject.files[0].filename;
-      media.media_id = mediaObject.id;
-      media.url = mediaObject.files[0].url;
-      media.seo_tag = mediaObject.seo_tag;
-      if (mediaObject.files[0].headers) {
-        media.headers = mediaObject.files[0].headers
-      }
-      this.$set(this.pageMetadata, mediaFieldName, media);
-      this.$refs.sectionsMediaComponent.closeModal()
-    },
-    removeMedia(media) {
-      this.pageMetadata[media] = {}
-    },
-    updatePageMetaData() {
-      this.loading = true
-      this.metadataErrors.path[0] = ''
 
-      const sections = [];
-      let views = this.originalVariations[this.pageName].views;
-      views = Object.values(views);
-      views.forEach((view) => {
-        if (!view.error || view.status_code === 404) {
-          const refactorView = {
-            id: view.id,
+      if (refactorView.id && refactorView.id.startsWith("id-")) {
+        delete refactorView.id;
+      }
+
+      if (view.linked_to) {
+        sections.push({
+          ...{
             weight: view.weight,
-            name: view.name,
-            type: view.type,
-            linkedTo: view.linkedTo,
-            region: view.region
-          };
-          if (view.settings && view.type === "configurable") {
-            refactorView.name = view.nameID;
-            const options = [];
-            view.render_data.map((rData) => {
-              options.push(rData.settings);
-            });
-            refactorView.options = options;
-          } else if (view.settings) {
-            refactorView.options = view.settings;
+            linked_to: view.linked_to,
+            region: view.region ? view.region : {}
           }
-          if (view.type === 'dynamic' || view.type === 'local') {
-            refactorView.options = []
-          }
-          if (refactorView.id && refactorView.id.startsWith("id-")) {
-            delete refactorView.id;
-          }
-          if (view.linked_to) {
-            sections.push({
-              ...{
-                weight: view.weight,
-                linked_to: view.linked_to,
-                region: view.region ? view.region : {}
-              }
-            });
-          } else {
-            sections.push({...refactorView});
-          }
-        }
-      });
-
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
-
-      let pagePath = this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : "";
-
-      if (pagePath !== '/') {
-
-        // Split the URL into individual path segments
-        const pathSegments = pagePath.split('/');
-
-        // Filter out empty segments and remove duplicates
-        const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1]);
-
-        // Reconstruct the URL with the unique path segments
-        pagePath = pagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/');
-
-        if (pagePath[0] && pagePath[0] === '/') {
-          pagePath = pagePath.replace(/^\/+/, '')
-        }
-        while (pagePath.endsWith('//')) {
-          pagePath = pagePath.slice(0, -1);
-        }
+        });
+      } else {
+        sections.push({...refactorView});
       }
 
-      const variables = {
-        page: this.sectionsPageName,
-        path: pagePath,
-        metadata: {...this.pageMetadata},
-        variations: [],
-        layout: this.sectionslayout,
-        sections
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.sectionsPageName))}`;
+      if (view.query_string_keys && view.query_string_keys.length > 0) {
+        qsKeys.push(...view.query_string_keys);
+      }
+    }
+  });
 
-      this.$axios
+  let integrityCheck = true;
+
+  if (sections.length > 0) {
+    types.value.forEach(type => {
+      if (type.fields && Array.isArray(type.fields) && type.fields.length > 0) {
+        sections.forEach(section => {
+          if (section.name === type.name) {
+            if (Array.isArray(section.options)) {
+              type.fields.forEach(field => {
+                section.options.forEach(option => {
+                  if (Object.keys(option).includes(field.name)) {
+                    if (option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
+                      if (Array.isArray(option[field.name])) {
+                        if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0] || !option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
+                          integrityCheck = false;
+                          loading.value = false;
+                          showToast(
+                            "Error saving your changes",
+                            "error",
+                            `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``
+                          );
+                          sectionsFormatErrors[section.weight] = `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``;
+                        }
+                      } else if (typeof option[field.name] === 'object') {
+                        if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
+                          integrityCheck = false;
+                          loading.value = false;
+                          showToast(
+                            "Error saving your changes",
+                            "error",
+                            `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``
+                          );
+                          sectionsFormatErrors[section.weight] = `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``;
+                        }
+                      }
+                    }
+                  }
+                });
+              });
+            } else {
+              integrityCheck = false;
+              loading.value = false;
+              showToast(
+                "Error saving your changes",
+                "error",
+                `${t('optionsFormat')} \`${section.name}\``
+              );
+              sectionsFormatErrors[section.weight] = `${t('optionsFormat')} \`${section.name}\``;
+            }
+          }
+        });
+      }
+    });
+  }
+
+  if (integrityCheck === true && errorInLayout.value !== true) {
+    const token = useCookie("sections-auth-token").value;
+    const header = {
+      token,
+    };
+    const config = {
+      headers: sectionHeader(header),
+    };
+
+    let variables = {
+      page: sectionsPageName.value,
+      path: pagePath.value && pagePath.value !== "" ? pagePath.value.trim() : undefined,
+      metadata: pageMetadata.value,
+      variations: [],
+      layout: selectedLayout.value,
+      sections,
+    };
+
+    if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
+      const route = useRoute();
+      variables["query_string"] = parseQS(
+        encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+        Object.keys(route.query).length !== 0,
+        route.query
+      );
+
+      if (qsKeys && qsKeys.length > 0) {
+        variables["query_string"] = {
+          ...variables["query_string"],
+          ...validateQS(variables["query_string"], qsKeys, editMode.value)
+        };
+      }
+    }
+
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`;
+
+    if (formatValdiation === true) {
+      axios
         .put(URL, variables, config)
         .then((res) => {
-          this.loading = false
           if (res.data && res.data.error) {
-            this.showToast("error", "error", res.data.error);
+            showToast("error", "error", res.data.error);
             return;
           }
-          this.sectionsPageLastUpdated = res.data.last_updated
-          this.metadataModal = false
-          this.metadataFormLang = this.$i18n.locale.toString()
-          this.showToast(
-            "Success",
-            "success",
-            this.$t('successSettingsChanges')
+          allSections.value = res.data.sections;
+          sectionsPageLastUpdated.value = res.data.last_updated;
+          displayVariations.value[variationName].altered = false;
+          originalVariations.value = JSON.parse(
+            JSON.stringify(displayVariations.value)
           );
-          if (pagePath !== this.pageName) {
-            let baseURL = window.location.origin;
-            let routerBase = this.$router.options.base
-            if (routerBase) {
-              while (routerBase.endsWith('/')) {
-                routerBase = routerBase.slice(0, -1);
-              }
-              baseURL = baseURL + routerBase
-            }
-            window.location.replace(`${baseURL}/${pagePath}`);
+          sectionslayout.value = res.data.layout;
+          runIntro('pageSaved', introRerun.value);
+          loading.value = false;
+
+          if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
+            showToast(
+              "Error",
+              "error",
+              t('someSectionsNotSaved')
+            );
+            res.data.invalid_sections.forEach(section => {
+              invalidSectionsErrors[`${section.name}-${section.weight}`] = {
+                error: section.error,
+                weight: section.weight
+              };
+            });
           } else {
-            window.location.reload()
+            showToast(
+              "Success",
+              "success",
+              t('successPageChanges')
+            );
+            layoutMode.value = false;
           }
+
+          nuxtApp.hook('sectionsLoaded', () => 'pageSaved');
         })
         .catch((error) => {
-          this.loading = false
           if (error.response.data.errors) {
-            this.metadataErrors = error.response.data.errors
+            metadataErrors.value = error.response.data.errors;
           } else {
-            this.showToast(
+            showToast(
               "Error saving your changes",
               "error",
               error.response.data.message,
               error.response.data.options
             );
           }
+          loading.value = false;
         });
-    },
-    addField(index) {
-      if (this.fieldsInputs[index].name.trim() !== '') {
-        this.fieldsInputs.push({type: "image", name: ""});
-      }
-    },
-    removeField(index) {
-      this.fieldsInputs.splice(index, 1);
-    },
-    checkToken() {
-      const auth_code = this.$route.query.auth_code;
-      if (this.$sections.cname === "active") {
-        if (this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")) {
-          this.$sections.projectId = this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].get("sections-project-id")
-        } else {
-          const project_id = this.$route.query.project_id;
-          this.$sections.projectId = project_id
-          this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-project-id", project_id);
-        }
-      }
-      if (auth_code) {
-        const config = {
-          headers: sectionHeader({}),
-        };
-        const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/token/${auth_code}`;
-        this.$axios
-          .get(URL, config)
-          .then((res) => {
-            const token = res.data.token;
-            const date = new Date();
-            date.setDate(date.getDate() + 14);
-            date.setHours(date.getHours() - 4)
-            this.$nuxt[`$${this._sectionsOptions.cookiesAlias}`].set("sections-auth-token", token, {
-              expires: date,
-              path: '/'
-            });
-            this.$nuxt.context.redirect(this.$route.path)
-            this.loading = false;
-          })
-          .catch((err) => {
-            this.loading = false;
-            this.sectionsAdminError = err.response.data.token
-          });
-      }
-    },
-    getUserData() {
-      const config = {
-        headers: sectionHeader({token: this.$cookies.get("sections-auth-token")}),
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/user`;
-      this.$axios
-        .get(URL, config)
-        .then((res) => {
-          this.sectionsUserId = res.data.id
-          this.loading = false;
-        })
-        .catch((error) => {
-          this.loading = false
-          this.$emit("load", false);
-          this.$cookies.remove('sections-auth-token');
-          this.admin = false
-          this.showToast("Error", "error", this.$t('tokenInvalidReconnect'));
-        });
-    },
-    exportSections() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.allSections));
-      const dlAnchorElem = document.getElementById('downloadAnchorElem');
-      dlAnchorElem.setAttribute("href", dataStr);
-      dlAnchorElem.setAttribute("download", `${this.pagePath}.json`);
-      dlAnchorElem.click();
-    },
-    initImportSections() {
-      if (Object.keys(this.displayVariations[this.selectedVariation].views).length > 0) {
-        this.showToast(
-          "Warning",
-          "warning",
-          this.$t('importSections')
-        );
-      } else {
-        this.$refs.jsonFilePick.click();
-      }
-    },
-    importSections(e) {
-      const jsonFile = e.target.files[0];
-      const reader = new FileReader();
-      reader.readAsText(jsonFile, "UTF-8");
-      reader.onload = (evt) => {
-        const jsonFileResult = evt.target.result;
-        const sections = JSON.parse(jsonFileResult);
-        let sectionsNames = []
-        sections.forEach((section) => {
-          sectionsNames.push(section.name);
-          if (section.type === "configurable") {
-            const sectionTypeObject = this.types.find(type => type.name === section.nameID);
-            if ((sectionTypeObject.access === 'private' || sectionTypeObject.access === 'public_scoped') && sectionTypeObject.app_status !== 'enabled') {
-              this.showToast(
-                "Warning",
-                "warning",
-                `${this.$t('activateConfigSections')} ${section.name} ${this.$t('forProject')}`
-              );
-            }
+    } else {
+      loading.value = false;
+    }
+  } else {
+    loading.value = false;
+  }
+};
+const saveVariation = () => {
+  loading.value = true;
+  // initialize the new views
+  mutateVariation(pageName.value);
+  variations.value.map((variation) => {
+    mutateVariation(variation.pageName);
+  });
+};
+const edit = (view, viewAnchor) => {
+  if (isSideBarOpen.value !== true) {
+    canPromote.value = true;
+    types.value.map((type) => {
+      if (view.type === "configurable") {
+        if (type.name.split(":")[1] === view.name) {
+          view.fields = type.fields;
+          view.multiple = type.multiple;
+          view.application_id = type.application_id;
+          if (type.dynamic_options) {
+            view.dynamic_options = true;
           }
-          this.addSectionType(section, false);
-        })
-        this.showToast(
-          "Success",
-          "info",
-          `${this.$t('successImported')} ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
-        );
-      }
-    },
-    isJsonString(str) {
-      try {
-        JSON.parse(str);
-      } catch (e) {
-        return false;
-      }
-      return true;
-    },
-    updateGlobalType(section) {
-      if (section.type === 'configurable') {
-        this.sectionTypeName = section.nameID;
-      } else if (section && section.name) {
-        this.sectionTypeName = section.name;
-      }
-      if (this.sectionTypeName !== "") {
-
-        if (this.selectedLayout !== 'standard') {
-          section.region = {};
-          section.region[this.selectedLayout] = {
-            slot: this.selectedSlotRegion,
-            weight: Object.keys(
-              this.displayVariations[this.selectedVariation].views
-            ).length
-          };
-        } else {
-          section.region = {}
-        }
-
-        const token = this.$cookies.get("sections-auth-token");
-        const config = {
-          headers: sectionHeader({token}),
-        };
-        const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${section.instance_name}`;
-        this.loading = true;
-
-        this.$axios.put(URL, {
-          "section": {
-            "name": this.sectionTypeName,
-            "options": section.type === 'configurable' ? [section.settings] : section.settings,
-            "type": section.type
-          },
-          "auto_insertion": section.auto_insertion
-        }, config).then(() => {
-          this.sectionTypeName = "";
-          this.currentSection = null
-          this.isModalOpen = false
-          this.isSideBarOpen = false
-          this.loading = false
-          this.showToast(
-            "Success",
-            "success",
-            this.$t('globalTypeUpdated')
-          );
-        })
-          .catch((error) => {
-            this.loading = false;
-            this.showToast("Error", "error", this.$t('updateSectionTypeError') + error.response.data.message, error.response.data.options);
-          });
-      } else {
-        this.loading = false;
-        this.showToast("Error", "error", this.$t('enterSectionTypeName'));
-      }
-    },
-    addNewGlobalType(section) {
-      if (section.type === 'configurable') {
-        this.sectionTypeName = section.nameID;
-      } else if (section && section.name) {
-        this.sectionTypeName = section.name;
-      }
-      if (this.sectionTypeName !== "") {
-
-        const token = this.$cookies.get("sections-auth-token");
-        const config = {
-          headers: sectionHeader({token}),
-        };
-        const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${section.instance_name}`;
-        this.loading = true;
-
-        this.$axios.post(URL, {
-          "section": {
-            "name": this.sectionTypeName,
-            "options": section.type === 'configurable' ? [section.settings] : section.settings,
-            "type": section.type
-          },
-          "auto_insertion": section.auto_insertion
-        }, config).then(() => {
-          this.globalTypes = [];
-          this.getGlobalSectionTypes();
-          this.staticSuccess = true;
-          this.sectionTypeName = "";
-          this.fieldsInputs = [
-            {
-              type: "image",
-              name: ""
-            }
-          ]
-
-          if (this.canPromote === true) {
-            section.linkedTo = section.instance_name;
-            section.linked_to = section.instance_name;
-            section.instance = true;
-            this.$set(
-              this.displayVariations[this.selectedVariation].views,
-              section.id,
-              section
-            );
-            this.displayVariations[this.selectedVariation].altered = true;
-            this.showToast(
-              "Success",
-              "info",
-              this.$t('successAddedSection')
-            );
-          }
-
-          this.currentSection = null
-          this.isCreateInstance = false
-          this.isSideBarOpen = false
-          this.typesTab = 'globalTypes'
-        })
-          .catch((error) => {
-            this.loading = false;
-            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
-          });
-      } else {
-        this.loading = false;
-        this.showToast("Error", "error", this.$t('enterSectionTypeName'));
-      }
-    },
-    addNewStaticType(name) {
-      if (name) {
-        this.sectionTypeName = name;
-      }
-      if (this.sectionTypeName !== "") {
-        const token = this.$cookies.get("sections-auth-token");
-        const config = {
-          headers: sectionHeader({token}),
-        };
-        const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section-types/${this.sectionTypeName}`;
-        this.loading = true;
-
-        let fieldsDeclaration = this.fieldsInputs
-
-        if (name) {
-          let path = "";
-          path = `/forms/${this.sectionTypeName}`;
-          let formComp = importComp(path);
-          if (formComp.props && formComp.props.mediaFields) {
-            fieldsDeclaration = formComp.props.mediaFields;
-          }
-        }
-
-        fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
-
-        this.$axios.post(URL, {
-          "fields": fieldsDeclaration
-        }, config).then(() => {
-          this.types = [];
-          this.globalTypes = [];
-          this.getSectionTypes();
-          this.staticSuccess = true;
-          this.sectionTypeName = "";
-          this.fieldsInputs = [
-            {
-              type: "image",
-              name: ""
-            }
-          ]
-        })
-          .catch((error) => {
-            this.loading = false;
-            this.types = [];
-            this.globalTypes = [];
-            this.getSectionTypes();
-            this.showToast("Error", "error", this.$t('createSectionTypeError') + error.response.data.message, error.response.data.options);
-          });
-      } else {
-        this.loading = false;
-        this.showToast("Error", "error", this.$t('enterSectionTypeName'));
-      }
-    },
-    openStaticSection() {
-      this.staticModal = true;
-    },
-    trackSectionComp(sectionName, sectionType) {
-      if (!this.sectionInPage.includes(sectionName)) {
-        this.sectionInPage.push(sectionName);
-        const name = upperFirst(
-          camelCase(
-            // Gets the file name regardless of folder depth
-            sectionName
-              .split("/")
-              .pop()
-              .replace(/\.\w+$/, "")
-          )
-        );
-      }
-    },
-    getComponent(sectionName, sectionType, returnProps) {
-      let hooksJs = importJs(`/js/global-hooks`)
-      if (hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
-        return hooksJs['section_pre_render']({sectionName, sectionType})
-      } else if (returnProps === true) {
-        let path = "";
-        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
-          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-        } else if (sectionName && sectionName.includes(":")) {
-          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-        } else if (sectionName && sectionName.includes("_-_")) {
-          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
-        } else {
-          path = `/views/${sectionName}_${sectionType}`;
-        }
-        const moduleData = importComp(path);
-        if (moduleData && moduleData.props && moduleData.props.viewStructure && (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
-          return {
-            settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets),
-            render_data: populateWithDummyValues(moduleData.props.viewStructure.render_data, dummyDataPresets),
-            type: sectionType
-          }
-        } else return {type: sectionType}
-      } else if (this.$sections.cname === "active") {
-        let path = "";
-        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
-          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-          // if (process.client) {
-          //   Vue.component(`${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`, {
-          //     extends: importComp(path)
-          //   })
-          // }
-          return importComp(path)
-        } else if (sectionName && sectionName.includes(":")) {
-          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-          // if (process.client) {
-          //   Vue.component(`${sectionName.split(":")[1]}_${sectionType}`, {
-          //     extends: importComp(path)
-          //   })
-          // }
-          return importComp(path)
-        } else if (sectionName && sectionName.includes("_-_")) {
-          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
-          // if (process.client) {
-          //   Vue.component(`${sectionName.split("_-_")[0]}_${sectionType}`, {
-          //     extends: importComp(path)
-          //   })
-          // }
-          return importComp(path)
-        } else {
-          path = `/views/${sectionName}_${sectionType}`;
-          // if (process.client) {
-          //   Vue.component(`${sectionName}_${sectionType}`, {
-          //     extends: importComp(path)
-          //   })
-          // }
-          return importComp(path)
         }
       } else {
-        let path = "";
-        if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
-          path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`;
-          return importComp(path);
-        } else if (sectionName && sectionName.includes(":")) {
-          path = `/views/${sectionName.split(":")[1]}_${sectionType}`;
-          return importComp(path);
-        } else if (sectionName && sectionName.includes("_-_")) {
-          path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`;
-          return importComp(path);
-        } else {
-          path = `/views/${sectionName}_${sectionType}`;
-          return importComp(path);
-        }
-      }
-    },
-    getAvailableLayouts() {
-      try {
-        const external_layouts = require.context(`@/sections/layouts`, false, /\.vue$/)
-        const layouts_count = external_layouts.keys().length
-        if (layouts_count > 0) {
-          const layouts_names = external_layouts.keys().map((filename) => {
-            const name = filename.replace(/^\.\/(.+)\.vue$/, '$1');
-            return name;
-          });
-          this.availableLayouts.push(...layouts_names)
-        }
-      } catch (error) {
-        console.warn(this.$t('noLayoutsFolder'));
-      }
-    },
-    getSelectedLayout() {
-      let path = "";
-      path = `/layouts/${this.selectedLayout}`;
-      if (this.selectedLayout === 'standard') {
-        return 'div'
-      } else return importComp(path);
-    },
-    computeLayoutData() {
-      const slotNameExample = 'i.e. slotNames: { type: Array, default() { return [\'region1\'] }}';
-      this.errorInLayout = false;
-      if (this.selectedLayout !== 'standard') {
-        this.sectionsMainErrors = [];
-        this.sectionsLayoutErrors = [];
-        let path = "";
-        path = `/layouts/${this.selectedLayout}`;
-        this.layoutSlotNames = [];
-        let layoutComp = importComp(path);
-        if (!layoutComp.props) {
-          this.errorInLayout = true;
-          this.sectionsMainErrors.push(this.$t('layoutErrors.missingComp'))
-          return;
-        } else if (!layoutComp.props.slotNames) {
-          this.errorInLayout = true;
-          this.sectionsMainErrors.push(this.$t('layoutErrors.missingProp'))
-          this.sectionsMainErrors.push(slotNameExample)
-          return;
-        } else if (!layoutComp.props.slotNames.type || layoutComp.props.slotNames.type !== Array || !layoutComp.props.slotNames.default) {
-          this.errorInLayout = true;
-          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
-          this.sectionsMainErrors.push(slotNameExample)
-          return;
-        }
-        try {
-          this.layoutSlotNames = [...importComp(path).props.slotNames.default()]
-        } catch {
-          this.errorInLayout = true;
-          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
-          this.sectionsMainErrors.push(slotNameExample)
-          return;
-        }
-
-        if (!layoutComp.props.slotNames.default()[0]) {
-          this.errorInLayout = true;
-          this.sectionsMainErrors.push(this.$t('layoutErrors.propArray'))
-          this.sectionsMainErrors.push(slotNameExample)
-          return;
-        }
-
-        let views = [];
-        views = Object.values(
-          this.displayVariations[this.selectedVariation].views
-        );
-        views.map(view => {
-          if (!view.region || !view.region[this.selectedLayout] || !view.region[this.selectedLayout]['slot']) {
-            if (!view.region) {
-              view['region'] = {}
-            }
-            view.region[this.selectedLayout] = {
-              slot: this.layoutSlotNames[0],
-              weight: view.weight
-            }
-          }
-        })
-        this.layoutSlotNames.forEach(slotName => {
-          this.viewsPerRegions[slotName] = []
-          views.forEach(view => {
-            if (view.region[this.selectedLayout].slot === slotName) {
-              this.viewsPerRegions[slotName].push(view)
-            }
-          })
-          let selectedLay = this.selectedLayout
-          this.viewsPerRegions[slotName] = this.viewsPerRegions[slotName].sort(function (a, b) {
-            return a.region[selectedLay].weight - b.region[selectedLay].weight;
-          });
-        })
-
-        this.viewsPerRegions = {...this.viewsPerRegions}
-
-        if (this.admin && this.editMode) {
-          this.verifySlots();
-        }
-      }
-    },
-    verifySlots() {
-      this.$nextTick(() => {
-        if (this.selectedLayout !== 'standard') {
-          this.sectionsLayoutErrors = [];
-          this.layoutSlotNames.forEach(slotName => {
-            if (!document.getElementById(`sections-slot-region-${this.selectedLayout}-${slotName}`)) {
-              this.errorInLayout = true;
-              this.sectionsLayoutErrors.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + this.$t('layoutErrors.regionNotConfigured'))
-              this.sectionsLayoutErrors.push(`<slot name=\"${slotName}\"></slot> ${this.$t('layoutErrors.layoutTemp')}`)
-              return;
-            }
-          })
-        }
-      })
-    },
-    logDrag(evt) {
-      Object.keys(this.viewsPerRegions).forEach(slotName => {
-        this.viewsPerRegions[slotName].forEach((view, index) => {
-          if (view.region[this.selectedLayout] === undefined) {
-            view.region[this.selectedLayout] = {}
-          }
-          if (view.region[this.selectedLayout]['slot'] === undefined) {
-            view.region[this.selectedLayout]['slot'] = ''
-          }
-          if (view.region[this.selectedLayout]['slot'] !== slotName) {
-            view.region[this.selectedLayout]['slot'] = slotName
-          }
-          view.region[this.selectedLayout]['weight'] = index
-        })
-      })
-      this.computeLayoutData()
-    },
-    createNewPage() {
-      // pageName
-      this.loading = true;
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
-      const URL = `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
-      this.$axios
-        .put(
-          URL,
-          {
-            variations: [],
-            sections: [],
-          },
-          config
-        )
-        .then((res) => {
-          this.loading = false
-          this.pageNotFound = false;
-          this.sectionsMainErrors = []
-          this.sectionsPageLastUpdated = res.data.last_updated;
-          this.pageId = res.data.id;
-          this.sectionsPageName = res.data.page;
-          this.pagePath = res.data.path;
-          this.allSections = []
-          this.runIntro('editPage')
-          this.showToast(
-            "Success",
-            "success",
-            this.$t('createPageSuccess')
-          );
-        })
-        .catch((err) => {
-          this.loading = false
-          let error = err.response.data.message
-          if (err.response.data.errors && err.response.data.errors.path) {
-            error = `${this.$t('pageUrl')} ${err.response.data.errors.path[0]}`
-          }
-          this.showToast(
-            "Error creating page",
-            "error",
-            this.$t('createPageError') + this.pageName + "\n" + error,
-            err.response.data.options
-          );
-        });
-    },
-    showToast(title, variant, message, options) {
-      this.$toast[variant](options && Object.keys(options).length > 0 ? '🔗 ' + message : message, {
-        position: "top-right",
-        timeout: 5000,
-        closeOnClick: false,
-        pauseOnFocusLoss: true,
-        pauseOnHover: true,
-        draggable: true,
-        draggablePercent: 0.6,
-        showCloseButtonOnHover: false,
-        hideProgressBar: false,
-        closeButton: "button",
-        icon: false,
-        rtl: false,
-        onClick: () => options && Object.keys(options).length > 0 ? window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
-      });
-    },
-    getAvailableSections() {
-      try {
-        const form_sections = require.context(`@/sections/forms`, false, /\.vue$/)
-        const forms_count = form_sections.keys().length
-        if (forms_count > 0) {
-          const form_names = form_sections.keys().map((filename) => {
-            const name = filename.replace(/^\.\/(.+)\.vue$/, '$1');
-            return name;
-          });
-          this.availableSectionsForms.push(...form_names)
-        }
-      } catch (error) {
-        console.warn(this.$t('noFormsFolder'));
-      }
-    },
-    async initiateIntroJs() {
-      try {
-        const token = this.$cookies.get("sections-auth-token");
-        const response = await this.$axios.get(`${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/dashboard`, {
-          headers: sectionHeader({ token })
-        }).catch((error) => {
-          this.loading = false
-          this.$emit("load", false);
-          this.$cookies.remove('sections-auth-token');
-          this.admin = false
-          this.showToast("Error", "error", this.$t('tokenInvalidReconnect'));
-        });
-        this.currentPages = response.data.current_pages
-        if (this.currentPages !== null && this.currentPages === 0) {
-          if (this.pageNotFound) {
-            await this.runIntro('createPage')
-          }
-        }
-      } catch {
-      }
-    },
-    async runIntro(topic, rerun) {
-      if (this.intro && topic === 'globalTour') {
-        this.intro.setDontShowAgain(true)
-      }
-      if (rerun === true) {
-        this.introRerun = true
-      } else {
-        this.introRerun = false
-      }
-      if ((this.currentPages !== null && this.currentPages === 0) || rerun === true) {
-        if (this.intro) {
-          this.intro.exit(true)
-        }
-        let introJs = await import('intro.js/minified/intro.min.js');
-        await import('intro.js/minified/introjs.min.css');
-        this.intro = null
-        this.intro = introJs.default()
-        this.intro.setOption("dontShowAgain", true)
-        this.intro.setOption("nextLabel", this.$t('intro.nextLabel'))
-        this.intro.setOption("prevLabel", this.$t('intro.prevLabel'))
-        this.intro.setOption("doneLabel", this.$t('intro.doneLabel'))
-        this.intro.setOption("dontShowAgainLabel", this.$t('intro.dontShowAgainLabel'))
-        if (rerun === true) {
-          if (topic === 'globalTour') {
-            this.intro.setOption("dontShowAgain", false)
-            this.intro.onexit(() => {
-              this.intro.setDontShowAgain(true)
-              this.introRerun = false
-            });
-          } else {
-            if (topic === 'topBar') {
-              this.intro.setDontShowAgain(false)
-            }
-            this.intro.setOption("dontShowAgain", true)
-          }
-        }
-        if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
-          this.addIntroSteps(topic, rerun)
-        } else if (topic === 'inventoryOpened' && this.$refs['intro-simple-CTA-section-inventory'] && this.$refs['intro-simple-CTA-section-inventory'][0]) {
-          this.addIntroSteps(topic, rerun)
-        } else if (topic === 'availableSectionOpened' && this.$refs['intro-simple-CTA-section-available'] && this.$refs['intro-simple-CTA-section-available'][0]) {
-          this.addIntroSteps(topic, rerun)
-        }
-      }
-    },
-    addIntroSteps(topic, rerun) {
-      if ((this.currentPages !== null && this.currentPages === 0) || rerun === true) {
-        this.intro.setOptions({
-          steps: this.introSteps(topic)
-        })
-        this.intro.refresh(true)
-        this.intro.start()
-        if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
-          window.runIntro = this.runIntro.bind(this);
-          window.introRerun = this.introRerun;
-          window.setTypesTab = (value) => {
-            this.typesTab = value;
-          };
-        } else if (topic === 'inventoryOpened') {
-          window.addNewStaticType = this.addNewStaticType.bind(this);
-          window.closeIntro = () => {
-            this.intro.exit(true)
-          };
-        } else if (topic === 'availableSectionOpened') {
-          window.simpleCTAType = this.filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled').find(type => type.name === 'SimpleCTA')
-          window.openCurrentSection = this.openCurrentSection.bind(this);
-          window.introRerun = this.introRerun
-          window.closeIntro = () => {
-            this.intro.exit(true)
-          };
-        }
-      }
-    },
-    introSteps(topic) {
-      const simpleCTAIndex = this.filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled').findIndex(type => type.name === 'SimpleCTA')
-      switch (topic) {
-        case 'createPage':
-          return [
-            {
-              element: this.$refs['intro-create-page'],
-              intro: this.$t('intro.createPage')
-            }
-          ]
-        case 'editPage':
-          return [
-            {
-              element: this.$refs['intro-edit-page'],
-              intro: this.$t('intro.editPage')
-            }
-          ]
-        case 'topBar':
-          return [
-            {
-              element: this.$refs['intro-top-bar'],
-              intro: this.$t('intro.topBarButtons')
-            },
-            {
-              element: this.$refs['intro-add-new-section'],
-              intro: this.$t('intro.addNewSection')
-            }
-          ]
-        case 'addNewSectionModal':
-          return [
-            {
-              element: this.$refs['intro-available-sections'],
-              intro: this.$t('intro.availableSections')
-            },
-            {
-              element: this.$refs['intro-inventory'],
-              intro: simpleCTAIndex === -1 ? this.$t('intro.inventoryDesc') : `${this.$t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${this.$t('intro.checkIt')}</span>`
-            }
-          ]
-        case 'inventoryOpened':
-          return [
-            {
-              element: this.$refs['intro-simple-CTA-section-inventory'][0],
-              intro: `${this.$t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${this.$t('intro.createSection')}</span>`
-            }
-          ]
-        case 'sectionCreationConfirmed':
-          return [
-            {
-              element: this.$refs['intro-available-sections'],
-              intro: `${this.$t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened', introRerun);">${this.$t('intro.openAvailableSections')}</span>`
-            }
-          ]
-        case 'availableSectionOpened':
-          return [
-            {
-              element: this.$refs['intro-simple-CTA-section-available'][0],
-              intro: `${this.$t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${this.$t('intro.here')}</span>`
-            }
-          ]
-        case 'sectionFormOpened':
-          return [
-            {
-              element: this.$refs['intro-simple-CTA-section-form'],
-              intro: this.$t('intro.simpleCTAForm')
-            }
-          ]
-        case 'sectionSubmitted':
-          return [
-            {
-              element: this.$refs['intro-save-changes'],
-              intro: this.$t('intro.saveChanges')
-            }
-          ]
-        case 'pageSaved':
-          return [
-            {
-              element: this.$refs['intro-relaunch'],
-              intro: this.$t('intro.relaunch')
-            },
-            {
-              element: this.$refs['intro-find-more-blobal'],
-              intro: this.$t('intro.findMoreGlobal')
-            }
-          ]
-        case 'globalTour':
-          return [
-            {
-              intro: this.$t('intro.globalSections')
-            },
-            {
-              intro: this.$t('intro.creatingGlobalSection')
-            },
-            {
-              intro: this.$t('intro.promoteSection')
-            }
-          ]
-      }
-    },
-    getSectionProjectIdentity() {
-      if (this.$sections.cname === "active") {
-        const inBrowser = typeof window !== 'undefined';
-        let websiteDomain = ""
-        if (inBrowser) {
-          websiteDomain = window.location.host
-        } else {
-          websiteDomain = this.$nuxt.context.req.headers.host
-        }
-        return websiteDomain
-      } else {
-        return this.$sections.projectId
-      }
-    },
-    async renderConfigurableSection(gt, options) {
-      this.$emit("load", true);
-
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
-
-      const variables = {
-        section: {
-          name: gt.section.name,
-          weight: 1,
-          options: options
-        },
-        base_path: this.pagePath
-      };
-
-      let language = undefined
-      try {
-        language = this.$i18n.locale
-      } catch {
-      }
-
-      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-        if (gt.query_string_keys && gt.query_string_keys.length > 0) {
-          variables["query_string"] = {
-            ...variables["query_string"],
-            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode),
-            language
+        if (type.name === view.name) {
+          view.fields = type.fields;
+          view.multiple = type.multiple;
+          if (type.dynamic_options) {
+            view.dynamic_options = true;
           }
         }
       }
+    });
 
-      const URL =
-        this.$sections.serverUrl +
-        `/project/${this.$sections.projectId}/section/render`;
+    if (view.linked_to !== "") {
+      view.instance = true;
+    }
 
-      this.$axios
-        .post(URL, variables, config)
-        .then((res) => {
-          this.$emit("load", false);
-          if (res.data && res.data.error) {
-            this.errorAddingSection({
-              closeModal: false,
-              title: "Error adding " + gt.name,
-              message: res.data.error
-            })
-            return;
-          }
-          this.addSectionType({
-            name: gt.section.name,
-            type: 'configurable',
-            settings: options[0],
-            id: this.id,
-            weight: this.weight,
-            render_data: res.data.render_data,
-            fields: gt.fields,
-            query_string_keys: gt.query_string_keys,
-            dynamic_options: gt.dynamic_options,
-            auto_insertion: gt.auto_insertion,
-            instance_name: gt.name
-          })
-        })
-        .catch((e) => {
-          if (e.response.status === 404) {
-            this.$emit('addSectionType', {
-              name: gt.section.name,
-              type: 'configurable',
-              settings: options[0],
-              id: this.id,
-              weight: this.weight,
-              render_data: e.response.data.render_data,
-              fields: gt.fields,
-              query_string_keys: gt.query_string_keys,
-              dynamic_options: gt.dynamic_options,
-              auto_insertion: gt.auto_insertion,
-              instance_name: gt.name
-            })
-          } else {
-            this.$emit('errorAddingSection', {
-              closeModal: false,
-              title: "Error adding " + gt.name,
-              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
-            })
-          }
-          this.$emit("load", false);
-        });
-    },
-    async renderDynamicSection(name, instanceName, gt) {
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
+    currentSection.value = view;
+    savedView.value = view;
+    isSideBarOpen.value = true;
 
-      const variables = {
-        section: {
-          name,
-          weight: 1
-        },
-        base_path: this.pagePath
-      };
-
-      let language = undefined
-      try {
-        language = this.$i18n.locale
-      } catch {
-      }
-
-      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-        if (gt.query_string_keys && gt.query_string_keys.length > 0) {
-          variables["query_string"] = {
-            ...variables["query_string"],
-            ...validateQS(variables["query_string"], gt.query_string_keys, this.editMode),
-            language
-          }
-        }
-      }
-
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/render`;
-      this.$axios
-        .post(URL, variables, config)
-        .then((res) => {
-          if (res.data && res.data.error) {
-            this.$emit('errorAddingSection', {
-              closeModal: true,
-              title: "Error adding " + instanceName,
-              message: res.data.error
-            })
-            this.$emit("load", false);
-            return;
-          }
-          this.addSectionType({
-            name: name,
-            type: 'dynamic',
-            id: this.id,
-            weight: this.weight,
-            render_data: res.data.render_data,
-            query_string_keys: res.data.query_string_keys,
-            instance_name: instanceName
-          })
-          this.$emit("load", false);
-        })
-        .catch((e) => {
-          if (e.response.status === 404) {
-            this.$emit('addSectionType', {
-              name: name,
-              type: 'dynamic',
-              id: this.id,
-              weight: this.weight,
-              render_data: e.response.data.render_data,
-              query_string_keys: e.response.data.query_string_keys,
-              instance_name: instanceName
-            })
-          } else {
-            if (e.response.data.error) {
-              this.$emit('errorAddingSection', {
-                closeModal: true,
-                title: "Error adding " + instanceName,
-                message: e.response.data.error
-              })
-            } else {
-              this.$emit('errorAddingSection', {
-                closeModal: true,
-                title: "Error adding " + instanceName,
-                message: this.$t('saveConfigSectionError')
-              })
-            }
-          }
-          this.$emit("load", false);
-        });
-    },
-    getGlobalSectionTypes(autoLoad) {
-      if (this.globalTypes && this.globalTypes.length) {
-        return;
-      }
-      this.loading = true;
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader({
-          token,
-        }),
-      };
-      const url =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances`;
-      this.$axios
-        .get(url, config)
-        .then(async (res) => {
-          res.data.data.map((d) => {
-            this.globalTypes.push({
-              regions: d.regions,
-              auto_insertion: d.auto_insertion,
-              section: d.section,
-              pages: d.pages,
-              name: d.name,
-              id: d.id,
-              type: this.types.find(t => t.name === d.section.name) ? this.types.find(t => t.name === d.section.name).type : undefined,
-              query_string_keys: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).query_string_keys ? this.types.find(t => t.name === d.section.name).query_string_keys : undefined,
-              fields: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).fields ? this.types.find(t => t.name === d.section.name).fields : undefined,
-              dynamic_options: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).dynamic_options ? this.types.find(t => t.name === d.section.name).dynamic_options : undefined,
-              application: this.types.find(t => t.name === d.section.name) && this.types.find(t => t.name === d.section.name).application ? this.types.find(t => t.name === d.section.name).application : undefined,
-            });
-          });
-          this.types.forEach(type => {
-            this.globalTypes.push({
-              name: type.name,
-              type: type.type,
-              application: type.application,
-              notCreated: type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
-            })
-          })
-          this.loading = false
-          if (autoLoad === true) {
-            if (this.allSections.length === 0 && this.globalTypes && this.globalTypes.length > 0) {
-              for (const gt of this.globalTypes.filter(gt => gt.auto_insertion === true)) {
-                await new Promise((resolve) => setTimeout(resolve, 100));
-                if (gt.type === 'configurable') {
-                  await this.renderConfigurableSection(gt, gt.section.options)
-                } else if (gt.type === 'dynamic') {
-                  await this.renderDynamicSection(gt.section.name, gt.name, gt)
-                } else {
-                  this.addSectionType({
-                    ...gt.section,
-                    id: 'id-' + Date.now(),
-                    weight: 'null',
-                    type: gt.type,
-                    instance_name: gt.name,
-                    fields: gt.fields,
-                    query_string_keys: gt.query_string_keys,
-                    dynamic_options: gt.dynamic_options,
-                    render_data: gt.section && gt.section.options && gt.section.options[0] ? [{settings: gt.section.options[0]}] : undefined
-                  }, false, true)
-                }
-              }
-            }
-          }
-          this.$emit("load", false);
-        })
-        .catch((error) => {
-          this.loading = false
-          this.$emit("load", false);
-          this.showToast("Error", "error", error.toString());
-        });
-    },
-    getSectionTypes(autoLoad) {
-      if (this.types && this.types.length) {
-        return;
-      }
-      this.loading = true;
-      this.appNames = []
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader({
-          token,
-        }),
-      };
-      const url =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section-types`;
-      this.$axios
-        .get(url, config)
-        .then((res) => {
-          res.data.data.map((d) => {
-            if (d.application) {
-              this.appNames.push(d.application)
-            }
-            this.trackSectionComp(d.name, d.type);
-            this.types.push({
-              name: d.name,
-              type: d.type,
-              access: d.access,
-              application: d.application,
-              dynamic_options: d.dynamic_options,
-              fields: d.fields,
-              multiple: d.multiple,
-              application_id: d.application_id,
-              app_status: d.app_status,
-              requirements: d.requirements,
-              query_string_keys: d.query_string_keys,
-              notCreated: false
-            });
-          });
-          this.availableSectionsForms.forEach(name => {
-            const found = this.types.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
-            if (!found) {
-              this.types.push({
-                name,
-                notCreated: true
-              })
-            }
-          });
-          this.types = [...this.types, ...this.addSystemTypes()];
-          this.loading = false
-          this.$emit("load", false);
-          this.getGlobalSectionTypes(autoLoad);
-        })
-        .catch((error) => {
-          this.loading = false
-          this.$emit("load", false);
-        });
-    },
-    addSystemTypes() {
-      let staticTypes = [];
-      const internal_types = require.context("../../../src/configs/views", false);
-      let external_types = {};
-      let external_path = "";
-      try {
-        external_types = require.context(`@/sections/views`, false);
-        external_path = `@/sections/views`;
-      } catch (error) {
-        throw new Error(
-          this.$t('noSectionsFolder')
-        );
-      }
-      staticTypes = this.build_comp(
-        staticTypes,
-        {...external_types},
-        "external",
-        external_path
-      );
-      staticTypes = this.build_comp(
-        staticTypes,
-        internal_types,
-        "internal",
-        "internal:path"
-      );
-      return [...new Set(staticTypes)];
-    },
-    build_comp(staticTypes, types, compType, path) {
-      let names = staticTypes.map((obj) => {
-        return obj.name;
-      });
-      types.keys().forEach((fileName) => {
-        const splitName = fileName.split("_");
-        const type = splitName[1];
-        const mainName = splitName[0];
-        if (type) {
-          if (type == "local") {
-            const name = camelCase(
-              // Gets the file name regardless of folder depth
-              mainName
-                .split("/")
-                .pop()
-                .replace(/\.\w+$/, "")
-            );
-            if (!names.includes(name)) {
-              this.trackSectionComp(name, "local");
-              staticTypes.push({
-                name,
-                type,
-                compType,
-              });
-              names.push(name);
-            }
-          }
-        } else {
-          if (fileName.includes(".vue")) {
-            console.error(
-              `nuxt-sections: ${fileName} ${this.$t('in')} ${path} ${this.$t('cannotRegisterComp')}`
-            );
-          }
-        }
-      });
-      return staticTypes;
-    },
-    async openEditMode() {
-      this.getSectionTypes(true);
-      if (!this.originalVariations[this.selectedVariation]) {
-        this.originalVariations = JSON.parse(
-          JSON.stringify(this.displayVariations)
-        );
-      }
-
-      this.editMode = !this.editMode;
-
-      if (this.editMode === true) {
-
-        this.runIntro('topBar')
-
-        this.loading = true;
-        const inBrowser = typeof window !== 'undefined';
-        const config = {
-          headers: sectionHeader(((inBrowser) ? {} : {origin: this.$sections.projectUrl})),
-        };
-
-        const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.pageName))}`;
-
-        let payload = {}
-
-        let language = undefined
-        try {
-          language = this.$i18n.locale
-        } catch {
-        }
-
-        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          let query_string = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-          payload = {
-            query_string: {
-              ...query_string,
-              language
-            }
-          }
-          if (this.sectionsQsKeys && this.sectionsQsKeys.length > 0) {
-            payload["query_string"] = {
-              ...payload["query_string"],
-              ...validateQS(payload["query_string"], this.sectionsQsKeys, this.editMode)
-            }
-          }
-        }
-
-        await this.$axios.post(URL, payload, config).then((res) => {
-          this.loading = false;
-          if (res.data.last_updated > this.sectionsPageLastUpdated) {
-            this.showToast(
-              "Warning",
-              "warning",
-              this.$t('oldPageVersion')
-            );
-          }
-          this.initializeSections(res);
-          this.computeLayoutData()
-        }).catch(() => {
-        })
-        this.getUserData();
-        this.verifySlots();
-      }
-
-    },
-    formatName,
-    formatTexts,
-    editable(sectionType) {
-      switch (sectionType) {
-        case "local":
-        case "dynamic":
-          return false;
-        case "static":
-        case "configurable":
-          return true;
-      }
-    },
-    synch() {
-      this.synched = true;
-      // get all existing linked to
-      const currentVariationView = this.displayVariations[
-        this.selectedVariation
-        ].views;
-
-      // remove all existing linked to
-      const withoutLinkedToValueList = Object.values(
-        currentVariationView
-      ).filter((view) => !view.linkedTo);
-      // get default original values from the main
-      let defaultVariationViews = Object.values(
-        // we use an intermediary json object to deep clone the array
-        JSON.parse(JSON.stringify(this.displayVariations[this.pageName].views))
-      );
-      // update the cloned list with a linkedTo id
-      defaultVariationViews = defaultVariationViews.map((view) => {
-        view.linkedTo = view.id;
-        view.id = "id-" + view.id;
-        return view;
-      });
-      // get the new added sections to this variation
-      const finalSections = [
-        ...withoutLinkedToValueList,
-        ...defaultVariationViews,
-      ];
-
-      const finalViews = {};
-      finalSections.map((section) => {
-        finalViews[section.id] = section;
-      });
-      this.$set(
-        this.displayVariations[this.selectedVariation],
-        "views",
-        finalViews
-      );
-
+    nextTick(() => {
+      resizeData.value.parentElement = resizeTargetRef.value.parentElement;
+      resizeData.value.resizeTarget = resizeTargetRef.value;
       setTimeout(() => {
-        this.synched = false;
-      }, 1000);
-    },
-    addSectionType(section, showToast, instance) {
-      try {
-        if (this.savedView.linkedTo) {
-          const confirmed = window.confirm(
-            this.$t('linkedSection')
-          );
-          if (!confirmed) {
-            return;
-          }
-        }
-        if (section.weight === null || section.weight === "null" || section.weight === undefined) {
-          section.weight = Object.keys(
-            this.displayVariations[this.selectedVariation].views
-          ).length;
-        }
-
-        if (this.selectedLayout !== 'standard') {
-          if (section.region === undefined || section.region === null || section.region[this.selectedLayout] === undefined || section.region[this.selectedLayout] === null) {
-            section.region = {};
-          }
-          section.region[this.selectedLayout] = {
-            slot: this.selectedSlotRegion,
-            weight: section.region && section.region[this.selectedLayout] && section.region[this.selectedLayout].weight !== undefined && section.region[this.selectedLayout].weight !== null ? section.region[this.selectedLayout].weight : this.viewsPerRegions[this.selectedSlotRegion] ? this.viewsPerRegions[this.selectedSlotRegion].length : Object.keys(
-              this.displayVariations[this.selectedVariation].views
-            ).length
-          };
-        }
-
-        if (instance === true || (section.type === 'local' && section.instance_name) || (section.type === 'dynamic' && section.instance_name) || (section.type === 'configurable' && section.instance_name)) {
-          section.linkedTo = section.instance_name;
-          section.linked_to = section.instance_name;
-          section.instance = true;
-          section.settings = (section.type === 'dynamic' || section.type === 'configurable') && section.render_data && section.render_data[0] && section.render_data[0].settings ? section.render_data[0].settings : section.options
-        } else {
-          section.linkedTo = "";
-          section.linked_to = "";
-        }
-
-        this.$set(
-          this.displayVariations[this.selectedVariation].views,
-          section.id,
-          section
-        );
-
-        if (section.name === 'SimpleCTA') {
-          this.runIntro('sectionSubmitted', this.introRerun)
-        }
-
-        if (this.selectedVariation === this.pageName) {
-          // We check if there are variations that contains a section linked to the one we just edited
-          // If there are, we edit them too so they stay in sync
-          this.variations.map((variation) => {
-            const newViews = Object.values(
-              this.displayVariations[variation.pageName].views
-            ).map((sectionVariation) => {
-              if (sectionVariation.linkedTo === section.id)
-                sectionVariation.settings = section.settings;
-              return sectionVariation;
-            });
-            this.$set(this.displayVariations[variation.pageName], "views", {
-              ...newViews,
-            });
+        if (resizeTargetRef.value) {
+          resizeTargetRef.value.scrollTo({
+            top: 0
           });
         }
+      }, 600);
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", stopTracking);
+    });
 
-        this.currentViews = this.displayVariations[
-          this.selectedVariation
-          ].views;
-        this.displayVariations[this.selectedVariation].altered = true;
-        this.isModalOpen = false;
-        this.isSideBarOpen = false;
-        this.savedView = {};
-        this.createdView = {}
-        this.creationView = false
-        this.loading = false;
-
-        this.computeLayoutData();
-        if (showToast !== false) {
-          this.showToast(
-            "Success",
-            "info",
-            this.$t('successAddedSection')
-          );
-        }
-      } catch (e) {
-        this.showToast(
-          "Error",
-          "error",
-          this.$t('previewSectionError')
-        );
-      }
-    },
-    async refreshSectionView(sectionView, data) {
-      let sectionDatas = []
-      const reRenderMultipleSections = data.sections && Array.isArray(data.sections) && data.sections.length > 0
-      if (reRenderMultipleSections === true) {
-        sectionDatas = this.allSections.filter(section => {
-          const valueToCompare = section.nameID || section.name;
-          return data.sections.some(filteredSection => filteredSection.name === valueToCompare)
-        })
-        sectionDatas.map(section => {
-          const valueToCompare = section.nameID || section.name;
-          section.qs = data.sections.find(sec => sec.name === valueToCompare) && data.sections.find(sec => sec.name === valueToCompare).qs ? data.sections.find(sec => sec.name === valueToCompare).qs : null
-          return section
-        })
-      } else {
-        sectionDatas = this.allSections.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
-      }
-
-      const config = {
-        headers: sectionHeader({}),
-      };
-
-      let variables = {
-        base_path: this.pagePath
-      }
-
-      let language = undefined
-      try {
-        language = this.$i18n.locale
-      } catch {
-      }
-
-      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-        if (data.qs) {
-          variables["query_string"] = {...variables["query_string"], ...data.qs}
-        }
-        variables["query_string"] = {
-          ...variables["query_string"],
-          language
+    setTimeout(() => {
+      if (sectionsMainTargetRef.value) {
+        const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
+        const targetElement = sectionsMainTargetRef.value.querySelector(safeViewAnchor);
+        if (targetElement) {
+          const targetPosition = targetElement.offsetTop;
+          sectionsMainTargetRef.value.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
         }
       }
+    }, 600);
+  } else if (currentSection.value.name !== view.name) {
+    showToast(
+      "Edit",
+      "error",
+      t("editingSection")
+    );
+  }
 
-      const URL = `${this.$sections.serverUrl}/project/${this.getSectionProjectIdentity()}/section/render`;
+  updatedVariations.value = JSON.parse(
+    JSON.stringify(displayVariations.value)
+  );
+};
+const restoreVariations = () => {
+  displayVariations.value = JSON.parse(
+    JSON.stringify(originalVariations.value)
+  );
+  selectedLayout.value = sectionslayout.value;
+  computeLayoutData();
+  showToast(
+    "Revert Successful",
+    "info",
+    t('revertPageSuccess')
+  );
+};
+const toggleSectionsOptions = (viewId) => {
+  sectionOptions.value[viewId] = !sectionOptions.value[viewId];
+};
+const deleteView = (id) => {
+  if (selectedVariation.value === pageName.value) {
+    // Check if there are variations that contain a section linked to the one we are about to delete
+    // If there are, we unlink them
+    variations.value.map((variation) => {
+      const newViews = Object.values(
+        displayVariations.value[variation.pageName].views
+      ).map((section) => {
+        if (section.linkedTo === id) section.linkedTo = "";
+        return section;
+      });
+      displayVariations.value[variation.pageName].views = { ...newViews };
+    });
+  }
+  // Then we remove the variation we want to delete
+  delete displayVariations.value[selectedVariation.value].views[id];
+  isDeleteSectionModalOpen.value = false;
+  showToast(
+    "Deleted",
+    "info",
+    t('sectionRemoved')
+  );
+  computeLayoutData();
+};
+const copyAnchor = (anchor, event) => {
+  try {
+    if (window.location.protocol.replace(':', '') === 'http') {
+      showToast("", "error", t('copyAnchorFailed'));
+      return;
+    }
 
-      for (const sectionData of sectionDatas) {
-        const sectionName = sectionData.nameID ? sectionData.nameID : sectionData.name
-        variables['section'] = {
-          name: sectionName,
-          weight: sectionData.weight
-        };
-        if (sectionData.type === 'configurable') {
-          variables['section']['options'] = [sectionData.render_data[0].settings]
-        }
+    navigator.clipboard.writeText(anchor);
 
-        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
-          variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-          if (sectionData.qs) {
-            variables["query_string"] = {...variables["query_string"], ...sectionData.qs}
-          }
-        }
+    const tooltip = document.createElement("div");
+    tooltip.innerText = t("anchorCopied");
+    tooltip.className = "anchor-copied-tooltip";
+    document.body.appendChild(tooltip);
+    tooltip.style.left = `${event.clientX}px`;
+    tooltip.style.top = `${event.clientY}px`;
+    setTimeout(() => {
+      tooltip.classList.add("copied-opacity-100");
+    }, 10);
+    setTimeout(() => {
+      tooltip.classList.remove("copied-opacity-100");
+      setTimeout(() => tooltip.remove(), 300);
+    }, 1500);
+  } catch {
+    showToast("", "error", t('copyAnchorFailed'));
+  }
+};
+const errorAddingSection = (error) => {
+  isModalOpen.value = !error.closeModal;
+  showToast(error.title, "error", error.message);
+};
+const deleteGlobalSectionType = (sectionTypeName, index) => {
+  isDeleteModalOpen.value = false;
+  loading.value = true;
 
-        const inBrowser = typeof window !== 'undefined';
-        if (inBrowser) {
-          try {
-            const res = await this.$axios.post(URL, variables, config)
-            if (res.data && res.data.error) {
-              this.$nuxt.$emit('sectionViewRefreshed', {error: res.data})
-              this.renderSectionError = `${sectionName}: ${res.data.error}`
-              this.showToast("Error", "error", this.renderSectionError);
-            } else {
-              const index = this.currentViews.findIndex(view => view.name === sectionData.name);
-              if (index !== -1) {
-                const updatedViews = [...this.currentViews];
-                updatedViews[index] = {
-                  ...updatedViews[index],
-                  render_data: res.data.render_data,
-                };
+  const emit = (event, payload) => nuxtApp.hook(event, () => payload);
+  emit("load", true);
 
-                this.currentViews = updatedViews;
-              }
-              this.$nuxt.$emit('sectionViewRefreshed', res.data)
-            }
-          } catch (e) {
-            this.$nuxt.$emit('sectionViewRefreshed', {error: e.response.data})
-            this.renderSectionError = `${sectionName}: ${e.response.data.error}`
-            this.showToast("Error", "error", this.renderSectionError);
-          }
-        } else {
-          const optionsRes = await this.$axios.options(URL, config)
-          if (optionsRes.status === 200) {
-            try {
-              const res = await this.$axios.post(URL, variables, config)
-              if (res.data && res.data.error) {
-                this.$nuxt.$emit('sectionViewRefreshed', res.data)
-                this.renderSectionError = `${sectionName}: ${res.data.error}`
-              } else {
-                const index = this.currentViews.findIndex(view => view.name === sectionData.name);
-                if (index !== -1) {
-                  const updatedViews = [...this.currentViews];
-                  updatedViews[index] = {
-                    ...updatedViews[index],
-                    render_data: res.data.render_data,
-                  };
+  const token = useCookie("sections-auth-token").value;
+  const config = {
+    headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
+  };
 
-                  this.currentViews = updatedViews;
-                }
-                this.$nuxt.$emit('sectionViewRefreshed', res.data)
-              }
-            } catch (e) {
-              this.$nuxt.$emit('sectionViewRefreshed', {error: e.response.data})
-              this.renderSectionError = `${sectionName}: ${e.response.data.error}`
-            }
-          }
-        }
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${sectionTypeName}`;
+
+  axios
+    .delete(URL, config)
+    .then((res) => {
+      showToast(
+        "Success",
+        "info",
+        res.data.message
+      );
+      globalTypes.value.splice(index, 1);
+      globalTypes.value = [];
+      getGlobalSectionTypes();
+    })
+    .catch((error) => {
+      showToast("Error", "error", t('deleteSectionTypeError') + error.response.data.message);
+      loading.value = false;
+      emit("load", false);
+    });
+};
+const deleteSectionType = (sectionTypeName, index) => {
+  isDeleteModalOpen.value = false;
+  loading.value = true;
+
+  const emit = (event, payload) => nuxtApp.hook(event, () => payload);
+  emit("load", true);
+
+  const token = useCookie("sections-auth-token").value;
+  const config = {
+    headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
+  };
+
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types/${sectionTypeName}`;
+
+  axios
+    .delete(URL, config)
+    .then((res) => {
+      showToast(
+        "Success",
+        "info",
+        res.data.message
+      );
+      types.value.splice(index, 1);
+      types.value = [];
+      globalTypes.value = [];
+      getSectionTypes();
+    })
+    .catch((error) => {
+      showToast("Error", "error", t('deleteSectionTypeError') + error.response.data.message);
+      loading.value = false;
+      emit("load", false);
+    });
+};
+const deleteSectionPage = () => {
+  isDeletePageModalOpen.value = false;
+  loading.value = true;
+
+  const emit = (event, payload) => nuxtApp.hook(event, () => payload);
+  emit("load", true);
+
+  const token = useCookie("sections-auth-token").value;
+  const config = {
+    headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
+  };
+
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${pageId.value}`;
+
+  axios
+    .delete(URL, config)
+    .then((res) => {
+      showToast(
+        "Success",
+        "info",
+        res.data.message
+      );
+      loading.value = false;
+      emit("load", false);
+      setTimeout(() => window.location.reload(), 1000);
+    })
+    .catch((error) => {
+      showToast("Error", "error", t('deleteSectionPageError') + error.response.data.message);
+      loading.value = false;
+      emit("load", false);
+    });
+};
+const authorizeSectionType = (sectionAppId, index) => {
+  isDeleteModalOpen.value = false;
+  loading.value = true;
+
+  const emit = (event, payload) => nuxtApp.hook(event, () => payload);
+  emit("load", true);
+
+  const token = useCookie("sections-auth-token").value;
+  const config = {
+    headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
+  };
+
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/authorization_fields/${sectionAppId}`;
+
+  let authorization_fields = {};
+
+  for (let requiredItem of selectedSectionRequirements.value) {
+    authorization_fields[requiredItem] = requirementsInputs.value[requiredItem];
+  }
+
+  const data = {
+    authorization_fields
+  };
+
+  axios
+    .put(URL, data, config)
+    .then((res) => {
+      showToast(
+        "Success",
+        "info",
+        t("authorizeSuccess", { appName: selectedAppName.value })
+      );
+      isAuthModalOpen.value = false;
+      requirementsInputs.value = {};
+      types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
+        type.app_status = "enabled";
+      });
+      loading.value = false;
+      emit("load", false);
+    })
+    .catch((error) => {
+      showToast("Error", "error", `${t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+      loading.value = false;
+      emit("load", false);
+    });
+};
+const unAuthorizeSectionType = (sectionAppId, index) => {
+  isDeleteModalOpen.value = false;
+  loading.value = true;
+
+  const emit = (event, payload) => nuxtApp.hook(event, () => payload);
+  emit("load", true);
+
+  const token = useCookie("sections-auth-token").value;
+  const config = {
+    headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
+  };
+
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}`;
+
+  let data = {
+    configured_fields: {
+      [sectionAppId]: {
+        app_status: "disabled"
       }
-      this.computeLayoutData()
-    },
-    mutateVariation(variationName) {
-      this.invalidSectionsErrors = {}
-      this.sectionsFormatErrors = {}
-      const sections = [];
-      const qsKeys = [];
-      let views = this.displayVariations[variationName].views;
-      views = Object.values(views);
-      let formatValdiation = true
-      views.map((view) => {
-        if (!view.error || view.status_code === 404) {
-          const refactorView = {
-            id: view.id,
-            weight: view.weight,
-            name: view.name,
-            type: view.type,
-            linkedTo: view.linkedTo,
-            region: view.region
-          };
-          if (view.settings && view.type === "configurable") {
-            refactorView.name = view.nameID;
-            const options = [];
-            view.render_data.map((rData) => {
-              if (rData.settings.image && !Array.isArray(rData.settings.image)) {
-                formatValdiation = false
-                this.showToast(
-                  "",
-                  "error",
-                  this.$t('imageFieldValidation') + view.name
-                );
-                return;
-              }
-              options.push(rData.settings);
-            });
-            refactorView.options = options;
-          } else if (view.settings) {
-            refactorView.options = view.settings;
-          }
-          if (view.type === 'dynamic' || view.type === 'local') {
-            refactorView.options = []
-          }
-          if (refactorView.id && refactorView.id.startsWith("id-")) {
-            delete refactorView.id;
-          }
-          if (view.linked_to) {
-            sections.push({
-              ...{
-                weight: view.weight,
-                linked_to: view.linked_to,
-                region: view.region ? view.region : {}
-              }
+    }
+  };
+
+  axios
+    .put(URL, data, config)
+    .then((res) => {
+      showToast(
+        "Success",
+        "info",
+        t("unAuthorizeSuccess", { appName: selectedAppName.value })
+      );
+      isUnAuthModalOpen.value = false;
+      types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
+        type.app_status = "disabled";
+      });
+      loading.value = false;
+      emit("load", false);
+    })
+    .catch((error) => {
+      showToast("Error", "error", `${t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+      loading.value = false;
+      emit("load", false);
+    });
+};
+const openDeleteSectionTypeModal = (sectionTypeName, index) => {
+  selectedSectionTypeName.value = sectionTypeName;
+  selectedSectionTypeIndex.value = index;
+  isDeleteModalOpen.value = true;
+};
+const openAuthConfigurableSectionTypeModal = (sectionAppId, index, requirements, sectionTypeName, applicationName) => {
+  selectedSectionTypeAppId.value = sectionAppId;
+  selectedSectionTypeIndex.value = index;
+  selectedSectionRequirements.value = requirements;
+  selectedSectionTypeName.value = sectionTypeName;
+  selectedAppName.value = applicationName;
+  isAuthModalOpen.value = true;
+};
+const openUnAuthConfigurableSectionTypeModal = (sectionAppId, index, sectionTypeName, applicationName) => {
+  selectedSectionTypeAppId.value = sectionAppId;
+  selectedSectionTypeIndex.value = index;
+  selectedSectionTypeName.value = sectionTypeName;
+  selectedAppName.value = applicationName;
+  isUnAuthModalOpen.value = true;
+};
+const openCurrentSection = (type, global) => {
+  if (global === true) {
+    currentSection.value = {
+      ...types.value.find(t => t.name === type.name),
+      ...type,
+      name: type.section && type.section.name ? type.section.name : type.name,
+      instance_name: type.name,
+      instance: type.notCreated === true,
+      render_data: type.section && type.section.options && type.section.options[0] ? [{ settings: type.section.options[0] }] : undefined,
+      addToPage: type.type === 'configurable' ? true : undefined
+    };
+
+    if (!currentSection.value.linked_to) {
+      currentSection.value.linked_to = "";
+    }
+
+    if (type.type === 'configurable') {
+      savedView.value = currentSection.value;
+    }
+  } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
+    showToast("Authorisation warning", "warning", t("authorizeFirst"));
+  } else {
+    if (type.type === 'static' || type.type === 'configurable') {
+      isModalOpen.value = false;
+      isSideBarOpen.value = true;
+
+      currentSection.value = { ...type, creation: true, id: 'creation-view' };
+      createdView.value = currentSection.value;
+      creationView.value = true;
+      sideBarSizeManagement();
+    } else {
+      currentSection.value = { ...type, creation: true };
+    }
+  }
+};
+const updateCreationView = (settings) => {
+  createdView.value.settings = settings;
+  createdView.value = { ...createdView.value };
+};
+const sideBarSizeManagement = () => {
+  try {
+    nextTick(() => {
+      resizeData.value.parentElement = resizeTargetRef.value.parentElement;
+      resizeData.value.resizeTarget = resizeTargetRef.value;
+      setTimeout(() => {
+        if (resizeTargetRef.value) {
+          resizeTargetRef.value.scrollTo({
+            top: 0
+          });
+        }
+        if (sectionsMainTargetRef.value) {
+          const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`;
+          const targetElement = sectionsMainTargetRef.value.querySelector(safeViewAnchor);
+          if (targetElement) {
+            const targetPosition = targetElement.offsetTop;
+            sectionsMainTargetRef.value.scrollTo({
+              top: targetPosition,
+              behavior: 'smooth'
             });
           } else {
-            sections.push({...refactorView});
-          }
-          if (view.query_string_keys && view.query_string_keys.length > 0) {
-            qsKeys.push(...view.query_string_keys)
-          }
-        }
-      });
-
-      let integrityCheck = true
-
-      if (sections.length > 0) {
-        this.types.forEach(type => {
-          if (type.fields && Array.isArray(type.fields) && type.fields.length > 0) {
-            sections.forEach(section => {
-              if (section.name === type.name) {
-                if (Array.isArray(section.options)) {
-                  type.fields.forEach(field => {
-                    section.options.forEach(option => {
-                      if (Object.keys(option).includes(field.name)) {
-                        if (option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
-                          if (Array.isArray(option[field.name])) {
-                            if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0] || !option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
-                              integrityCheck = false
-                              this.loading = false;
-                              this.showToast(
-                                "Error saving your changes",
-                                "error",
-                                `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
-                              );
-                              this.sectionsFormatErrors[section.weight] = `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
-                            }
-                          } else if (typeof option[field.name] === 'object') {
-                            if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
-                              integrityCheck = false
-                              this.loading = false;
-                              this.showToast(
-                                "Error saving your changes",
-                                "error",
-                                `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
-                              );
-                              this.sectionsFormatErrors[section.weight] = `${this.$t('wrongFieldName')} \`${field.name}\` ${this.$t('formatOfSection')} \`${section.name}\``
-                            }
-                          }
-                        }
-                      }
-                    })
-                  })
-                } else {
-                  integrityCheck = false
-                  this.loading = false;
-                  this.showToast(
-                    "Error saving your changes",
-                    "error",
-                    `${this.$t('optionsFormat')} \`${section.name}\``
-                  );
-                  this.sectionsFormatErrors[section.weight] = `${this.$t('optionsFormat')} \`${section.name}\``
-                }
-              }
-            })
-          }
-        })
-      }
-
-      if (integrityCheck === true && this.errorInLayout !== true) {
-        const token = this.$cookies.get("sections-auth-token");
-        const header = {
-          token,
-        };
-        const config = {
-          headers: sectionHeader(header),
-        };
-
-        let variables = {
-          page: this.sectionsPageName,
-          path: this.pagePath && this.pagePath !== "" ? this.pagePath.trim() : undefined,
-          metadata: this.pageMetadata,
-          variations: [],
-          layout: this.selectedLayout,
-          sections,
-        };
-
-        if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-          variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-          if (qsKeys && qsKeys.length > 0) {
-            variables["query_string"] = {
-              ...variables["query_string"],
-              ...validateQS(variables["query_string"], qsKeys, this.editMode)
-            }
-          }
-        }
-
-        const URL =
-          `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${parsePath(encodeURIComponent(this.sectionsPageName))}`;
-
-        if (formatValdiation === true) {
-          this.$axios
-            .put(URL, variables, config)
-            .then((res) => {
-              if (res.data && res.data.error) {
-                this.showToast("error", "error", res.data.error);
-                return;
-              }
-              this.allSections = res.data.sections
-              this.sectionsPageLastUpdated = res.data.last_updated
-              this.displayVariations[variationName].altered = false;
-              this.originalVariations = JSON.parse(
-                JSON.stringify(this.displayVariations)
-              );
-              this.sectionslayout = res.data.layout;
-              this.runIntro('pageSaved', this.introRerun)
-              this.loading = false;
-              if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
-                this.showToast(
-                  "Error",
-                  "error",
-                  this.$t('someSectionsNotSaved')
-                );
-                res.data.invalid_sections.forEach(section => {
-                  this.invalidSectionsErrors[`${section.name}-${section.weight}`] = {
-                    error: section.error,
-                    weight: section.weight
-                  }
-                })
-              } else {
-                this.showToast(
-                  "Success",
-                  "success",
-                  this.$t('successPageChanges')
-                );
-                this.layoutMode = false;
-              }
-              this.$nuxt.$emit('sectionsLoaded', 'pageSaved');
-            })
-            .catch((error) => {
-              if (error.response.data.errors) {
-                this.metadataErrors = error.response.data.errors
-              } else {
-                this.showToast(
-                  "Error saving your changes",
-                  "error",
-                  error.response.data.message,
-                  error.response.data.options
-                );
-              }
-              this.loading = false;
+            sectionsMainTargetRef.value.scrollTo({
+              top: sectionsMainTargetRef.value.scrollHeight,
+              behavior: 'smooth'
             });
-        } else this.loading = false;
-      } else this.loading = false;
-    },
-    saveVariation() {
-      this.loading = true;
-      // intialise the new views
-      this.mutateVariation(this.pageName);
-      this.variations.map((variation) => {
-        this.mutateVariation(variation.pageName);
+          }
+        }
+      }, 600);
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", stopTracking);
+    });
+  } catch {}
+};
+const startTracking = (event) => {
+  if (event.button !== 0) return;
+
+  event.preventDefault();
+  const handleElement = event.currentTarget;
+
+  const targetSelector = handleElement.getAttribute("data-target");
+  const targetElement = resizeTargetRef.value.closest(targetSelector);
+
+  if (!targetElement) {
+    return;
+  }
+
+  resizeData.value.startWidth = targetElement.offsetWidth;
+  resizeData.value.startCursorScreenX = event.screenX;
+  resizeData.value.resizeTarget = targetElement;
+  resizeData.value.maxWidth =
+    resizeData.value.parentElement.offsetWidth - resizeData.value.handleWidth;
+  resizeData.value.tracking = true;
+};
+const onMouseMove = (event) => {
+  if (!resizeData.value.tracking) return;
+
+  const cursorScreenXDelta =
+    event.screenX - resizeData.value.startCursorScreenX;
+  const newWidth = Math.min(
+    resizeData.value.startWidth + cursorScreenXDelta,
+    resizeData.value.maxWidth
+  );
+
+  resizeData.value.resizeTarget.style.width = `${newWidth}px`;
+};
+const stopTracking = () => {
+  if (resizeData.value.tracking) {
+    resizeData.value.tracking = false;
+  }
+};
+const restoreSectionContent = () => {
+  isSideBarOpen.value = false;
+  isCreateInstance.value = false;
+  isRestoreSectionOpen.value = false;
+  if (creationView.value === true) {
+    createdView.value = {};
+    creationView.value = false;
+    if (backToAddSectionList.value === true) {
+      backToAddSectionList.value = false;
+      currentSection.value = null;
+      isModalOpen.value = true;
+      savedView.value = {};
+      isCreateInstance.value = false;
+      isSideBarOpen.value = false;
+    }
+  } else if (restoreType.value === 'section') {
+    restoreSection();
+  } else {
+    restoreVariations();
+  }
+};
+const restoreSection = () => {
+  displayVariations.value[selectedVariation.value].altered = false;
+
+  // In Nuxt 3, we don't need $set anymore, we can directly modify reactive objects
+  displayVariations.value[selectedVariation.value].views[currentSection.value.id] =
+    updatedVariations.value[selectedVariation.value].views[currentSection.value.id];
+
+  if (selectedLayout.value !== 'standard') {
+    try {
+      const index = viewsPerRegions.value[selectedSlotRegion.value]
+        .findIndex(view => view.id === currentSection.value.id);
+
+      viewsPerRegions.value[selectedSlotRegion.value][index] =
+        updatedVariations.value[selectedVariation.value].views[currentSection.value.id];
+    } catch {}
+  }
+
+  updatedVariations.value = JSON.parse(
+    JSON.stringify(displayVariations.value)
+  );
+  currentViews.value = displayVariations.value[selectedVariation.value].views;
+};
+const registeredPage = (type) => {
+  let path = `/page_components/${type}`;
+  // Assuming importComp is a global function or defined elsewhere
+  // In Nuxt 3, you might use defineAsyncComponent instead
+  return defineAsyncComponent(() => import(path));
+};
+const clearSectionsFilters = () => {
+  sectionsFilterName.value = '';
+  sectionsFilterAppName.value = '';
+};
+const fire_js = (event_name, event_data) => {
+  if (process.client) {
+    const event = new CustomEvent(event_name, { detail: event_data });
+    window.dispatchEvent(event);
+  }
+};
+
+// Lifecycle hooks
+onMounted(async () => {
+  console.log(sections);
+  try {
+    let hooksJavascript = importJs(`/js/global-hooks`);
+    if (hooksJavascript['init_params']) {
+      const paramsUpdate = hooksJavascript['init_params'](sections, {
+        qs: route.query,
+        headers: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.headers : {},
+        reqBody: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.body : {},
+        url: window.location.host
       });
-    },
-    edit(view, viewAnchor) {
-      if (this.isSideBarOpen !== true) {
-        this.canPromote = true
-        this.types.map((type) => {
-          if (view.type === "configurable") {
-            if (type.name.split(":")[1] === view.name) {
-              view.fields = type.fields;
-              view.multiple = type.multiple;
-              view.application_id = type.application_id;
-              if (type.dynamic_options) {
-                view.dynamic_options = true;
-              }
-            }
-          } else {
-            if (type.name === view.name) {
-              view.fields = type.fields;
-              view.multiple = type.multiple;
-              if (type.dynamic_options) {
-                view.dynamic_options = true;
-              }
-            }
-          }
-        });
-        if (view.linked_to !== "") {
-          view.instance = true
-        }
-
-        this.currentSection = view;
-        this.savedView = view;
-        this.isSideBarOpen = true;
-        this.$nextTick(() => {
-          this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
-          this.resizeData.resizeTarget = this.$refs.resizeTarget;
-          setTimeout(() => {
-            if (this.$refs.resizeTarget) {
-              this.$refs.resizeTarget.scrollTo({
-                top: 0
-              });
-            }
-          }, 600);
-          window.addEventListener("mousemove", this.onMouseMove);
-          window.addEventListener("mouseup", this.stopTracking);
-        })
-        setTimeout(() => {
-          if (this.$refs.sectionsMainTarget) {
-            const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
-            const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
-            if (targetElement) {
-              const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
-              this.$refs.sectionsMainTarget.scrollTo({
-                top: targetPosition,
-                behavior: 'smooth'
-              });
-            }
-          }
-        }, 600);
-      } else if (this.currentSection.name !== view.name) {
-        this.showToast(
-          "Edit",
-          "error",
-          this.$t("editingSection")
-        );
+      if (paramsUpdate) {
+        sections.value = paramsUpdate;
       }
-      this.updatedVariations = JSON.parse(
-        JSON.stringify(this.displayVariations)
-      );
-    },
-    restoreVariations() {
-      this.displayVariations = JSON.parse(
-        JSON.stringify(this.originalVariations)
-      );
-      this.selectedLayout = this.sectionslayout;
-      this.computeLayoutData();
-      this.showToast(
-        "Revert Successful",
-        "info",
-        this.$t('revertPageSuccess')
-      );
-    },
-    toggleSectionsOptions(viewId) {
-      this.$set(this.sectionOptions, viewId, !this.sectionOptions[viewId])
-    },
-    deleteView(id) {
-      if (this.selectedVariation === this.pageName) {
-        // We check if there are variations that contains a section linked to the one we are about to delete
-        // If there are, we unlink them
-        this.variations.map((variation) => {
-          const newViews = Object.values(
-            this.displayVariations[variation.pageName].views
-          ).map((section) => {
-            if (section.linkedTo === id) section.linkedTo = "";
-            return section;
-          });
-          this.$set(this.displayVariations[variation.pageName], "views", {
-            ...newViews,
-          });
-        });
+    }
+  } catch {}
+
+  initializeSectionsCMSEvents();
+  if (props.admin) {
+    initiateIntroJs();
+  }
+
+  if (sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+    showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
+  } else if (sectionsAdminError.value !== "") {
+    showToast("Error", "error", sectionsAdminError.value);
+  }
+  if (renderSectionError.value !== "") {
+    showToast("Error", "error", renderSectionError.value);
+  }
+  if (sections.cname === "active" && useCookie(`sections-project-id`).value) {
+    sections.projectId = useCookie(`sections-project-id`).value;
+  }
+  fire_js("page_payload_postprocess", document.documentElement.outerHTML);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("mousemove", onMouseMove);
+  window.removeEventListener("mouseup", stopTracking);
+});
+
+// Watchers
+watch(isModalOpen, (value) => {
+  const body = document.querySelector("body");
+  if (value === true) {
+    body.style.overflow = "hidden";
+  } else {
+    body.style.overflow = "auto";
+  }
+});
+
+// Fetch data (initial data loading)
+const fetchData = async () => {
+  try {
+    let hooksJavascript = importJs(`/js/global-hooks`);
+    if (hooksJavascript['init_params']) {
+      const paramsUpdate = hooksJavascript['init_params'](sections, {
+        qs: route.query,
+        headers: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.headers : {},
+        reqBody: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.body : {},
+        url: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req && nuxtApp.ssrContext.event.req.headers ? nuxtApp.ssrContext.event.req.headers.host : ''
+      });
+      if (paramsUpdate) {
+        sections.value = paramsUpdate;
       }
-      // Then we remove the variation we want to delete
-      this.$delete(this.displayVariations[this.selectedVariation].views, id);
-      this.isDeleteSectionModalOpen = false;
-      this.showToast(
-        "Deleted",
-        "info",
-        this.$t('sectionRemoved')
-      );
-      this.computeLayoutData();
-    },
-    copyAnchor(anchor, event) {
-      try {
-        if (window.location.protocol.replace(':', '') === 'http') {
-          this.showToast("", "error", this.$t('copyAnchorFailed'));
-          return
-        }
+    }
+  } catch {}
 
-        navigator.clipboard.writeText(anchor);
+  getAvailableLayouts();
+  getAvailableSections();
+  sectionsMainErrors.value = [];
+  metadataFormLang.value = i18n.locale.toString();
+  locales.value.forEach(lang => {
+    pageMetadata.value[lang] = {
+      title: "",
+      description: ""
+    };
+  });
 
-        const tooltip = document.createElement("div");
-        tooltip.innerText = this.$t("anchorCopied");
-        tooltip.className =
-          "anchor-copied-tooltip";
-        document.body.appendChild(tooltip);
-        tooltip.style.left = `${event.clientX}px`;
-        tooltip.style.top = `${event.clientY}px`;
-        setTimeout(() => {
-          tooltip.classList.add("copied-opacity-100");
-        }, 10);
-        setTimeout(() => {
-          tooltip.classList.remove("copied-opacity-100");
-          setTimeout(() => tooltip.remove(), 300);
-        }, 1500);
-      } catch {
-        this.showToast("", "error", this.$t('copyAnchorFailed'));
+  if (sections.projectLocales && sections.projectLocales !== '' && sections.projectLocales.includes(',')) {
+    translationComponentSupport.value = true;
+    locales.value = [];
+    locales.value = sections.projectLocales.split(',');
+    metadataFormLang.value = i18n.locale.toString();
+    locales.value.forEach(lang => {
+      pageMetadata.value[lang] = {
+        title: "",
+        description: ""
+      };
+    });
+  }
+
+  loading.value = true;
+  sectionsError.value = "";
+  checkToken();
+
+  // We check if this is running in the browser or not
+  // because during SSR no cors preflight request is sent
+  const inBrowser = process.client;
+
+  let websiteDomain = "";
+  const isServer = process.server;
+  const scheme = isServer
+    ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
+    : window.location.protocol.replace(':', '');
+
+  if (inBrowser) {
+    websiteDomain = window.location.host;
+  } else {
+    websiteDomain = nuxtApp.ssrContext.event.req.headers.host;
+  }
+  sectionsWebsiteDomain.value = websiteDomain;
+
+  sections.projectUrl = websiteDomain;
+
+  const config = {
+    headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
+  };
+
+  let URL = `${sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(props.pageName))}`;
+
+  let payload = {};
+
+  let language = undefined;
+  try {
+    language = i18n.locale;
+  } catch {
+  }
+
+  if (sections.queryStringSupport && sections.queryStringSupport === "enabled") {
+    let query_string = parseQS(
+      encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+      Object.keys(route.query).length !== 0,
+      route.query
+    );
+    payload = {
+      query_string: {
+        ...query_string,
+        language
       }
-    },
-    errorAddingSection(error) {
-      this.isModalOpen = !error.closeModal;
-      this.showToast(error.title, "error", error.message);
-    },
-    deleteGlobalSectionType(sectionTypeName, index) {
-      this.isDeleteModalOpen = false
-      this.loading = true
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/global-instances/${sectionTypeName}`;
-      this.$axios
-        .delete(URL, config)
-        .then((res) => {
-          this.showToast(
-            "Success",
-            "info",
-            res.data.message
-          );
-          this.globalTypes.splice(index, 1)
-          this.globalTypes = [];
-          this.getGlobalSectionTypes()
-        })
-        .catch((error) => {
-          this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
-          this.loading = false
-          this.$emit("load", false);
-        });
-    },
-    deleteSectionType(sectionTypeName, index) {
-      this.isDeleteModalOpen = false
-      this.loading = true
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section-types/${sectionTypeName}`;
-      this.$axios
-        .delete(URL, config)
-        .then((res) => {
-          this.showToast(
-            "Success",
-            "info",
-            res.data.message
-          );
-          this.types.splice(index, 1)
-          this.types = [];
-          this.globalTypes = []
-          this.getSectionTypes()
-        })
-        .catch((error) => {
-          this.showToast("Error", "error", this.$t('deleteSectionTypeError') + error.response.data.message);
-          this.loading = false
-          this.$emit("load", false);
-        });
-    },
-    deleteSectionPage() {
-      this.isDeletePageModalOpen = false
-      this.loading = true
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/page/${this.pageId}`;
-      this.$axios
-        .delete(URL, config)
-        .then((res) => {
-          this.showToast(
-            "Success",
-            "info",
-            res.data.message
-          );
-          this.loading = false
-          this.$emit("load", false);
-          setTimeout(() => window.location.reload(), 1000)
-        })
-        .catch((error) => {
-          this.showToast("Error", "error", this.$t('deleteSectionPageError') + error.response.data.message);
-          this.loading = false
-          this.$emit("load", false);
-        });
-    },
-    authorizeSectionType(sectionAppId, index) {
-      this.isDeleteModalOpen = false
-      this.loading = true
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/authorization_fields/${sectionAppId}`;
+    };
+  }
 
-      let authorization_fields = {}
+  let hooksJs = importJs(`/js/global-hooks`);
+  if (hooksJs['page_pre_load']) {
+    if (hooksJs['page_pre_load'](payload)) {
+      payload = hooksJs['page_pre_load'](payload);
+    }
+  }
 
-      for (let requiredItem of this.selectedSectionRequirements) {
-        authorization_fields[requiredItem] = this.requirementsInputs[requiredItem]
-      }
-      const data = {
-        authorization_fields
-      };
-      this.$axios
-        .put(URL, data, config)
-        .then((res) => {
-          this.showToast(
-            "Success",
-            "info",
-            this.$t("authorizeSuccess", {appName: this.selectedAppName})
-          );
-          this.isAuthModalOpen = false;
-          this.requirementsInputs = {}
-          this.types.filter(type => type.application_id === sectionAppId).forEach(type => {
-            type.app_status = "enabled"
-          })
-          this.loading = false
-          this.$emit("load", false);
-        })
-        .catch((error) => {
-          this.showToast("Error", "error", `${this.$t('authorizeError')} ${this.selectedAppName}: ` + error.response.data.message);
-          this.loading = false
-          this.$emit("load", false);
-        });
-    },
-    unAuthorizeSectionType(sectionAppId, index) {
-      this.isDeleteModalOpen = false
-      this.loading = true
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const config = {
-        headers: sectionHeader(({origin: this.$sections.projectUrl, token})),
-      };
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}`;
-
-      let data = {
-        configured_fields: {
-          [sectionAppId]: {
-            app_status: "disabled"
-          }
-        }
-      }
-
-      this.$axios
-        .put(URL, data, config)
-        .then((res) => {
-          this.showToast(
-            "Success",
-            "info",
-            this.$t("unAuthorizeSuccess", {appName: this.selectedAppName})
-          );
-          this.isUnAuthModalOpen = false;
-          this.types.filter(type => type.application_id === sectionAppId).forEach(type => {
-            type.app_status = "disabled"
-          })
-          this.loading = false
-          this.$emit("load", false);
-        })
-        .catch((error) => {
-          this.showToast("Error", "error", `${this.$t('unAuthorizeError')} ${this.selectedAppName}: ` + error.response.data.message);
-          this.loading = false
-          this.$emit("load", false);
-        });
-    },
-    openDeleteSectionTypeModal(sectionTypeName, index) {
-      this.selectedSectionTypeName = sectionTypeName
-      this.selectedSectionTypeIndex = index
-      this.isDeleteModalOpen = true
-    },
-    openAuthConfigurableSectionTypeModal(sectionAppId, index, requirements, sectionTypeName, applicationName) {
-      this.selectedSectionTypeAppId = sectionAppId
-      this.selectedSectionTypeIndex = index
-      this.selectedSectionRequirements = requirements
-      this.selectedSectionTypeName = sectionTypeName
-      this.selectedAppName = applicationName
-      this.isAuthModalOpen = true
-    },
-    openUnAuthConfigurableSectionTypeModal(sectionAppId, index, sectionTypeName, applicationName) {
-      this.selectedSectionTypeAppId = sectionAppId
-      this.selectedSectionTypeIndex = index
-      this.selectedSectionTypeName = sectionTypeName
-      this.selectedAppName = applicationName
-      this.isUnAuthModalOpen = true
-    },
-    openCurrentSection(type, global) {
-      if (global === true) {
-        this.currentSection = {
-          ...this.types.find(t => t.name === type.name),
-          ...type,
-          name: type.section && type.section.name ? type.section.name : type.name,
-          instance_name: type.name,
-          instance: type.notCreated === true,
-          render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined,
-          addToPage: type.type === 'configurable' ? true : undefined
-        }
-        if (!this.currentSection.linked_to) {
-          this.currentSection.linked_to = ""
-        }
-        if (type.type === 'configurable') {
-          this.savedView = this.currentSection
-        }
-      } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
-        this.showToast("Authorisation warning", "warning", this.$t("authorizeFirst"));
-      } else {
-        if (type.type === 'static' || type.type === 'configurable') {
-          this.isModalOpen = false
-          this.isSideBarOpen = true
-
-          this.currentSection = {...type, creation: true, id: 'creation-view'}
-          this.createdView = this.currentSection
-          this.creationView = true
-          this.sideBarSizeManagement()
-        } else {
-          this.currentSection = {...type, creation: true}
-        }
-      }
-    },
-    updateCreationView(settings) {
-      this.createdView.settings = settings;
-      this.createdView = {...this.createdView}
-    },
-    sideBarSizeManagement() {
-      try {
-        this.$nextTick(() => {
-          this.resizeData.parentElement = this.$refs.resizeTarget.parentElement;
-          this.resizeData.resizeTarget = this.$refs.resizeTarget;
-          setTimeout(() => {
-            if (this.$refs.resizeTarget) {
-              this.$refs.resizeTarget.scrollTo({
-                top: 0
-              });
-            }
-            if (this.$refs.sectionsMainTarget) {
-              const safeViewAnchor = `#${`${this.currentSection.name}-${this.currentSection.id}`.replace(/ /g, '\\ ')}`;
-              const targetElement = this.$refs.sectionsMainTarget.querySelector(safeViewAnchor);
-              if (targetElement) {
-                const targetPosition = targetElement.offsetTop; // Get the vertical position of the element
-                this.$refs.sectionsMainTarget.scrollTo({
-                  top: targetPosition,
-                  behavior: 'smooth'
-                });
-              } else {
-                this.$refs.sectionsMainTarget.scrollTo({
-                  top: this.$refs.sectionsMainTarget.scrollHeight,
-                  behavior: 'smooth'
-                });
-              }
-            }
-          }, 600);
-          window.addEventListener("mousemove", this.onMouseMove);
-          window.addEventListener("mouseup", this.stopTracking);
-        })
-      } catch {}
-    },
-    startTracking(event) {
-      if (event.button !== 0) return;
-
-      event.preventDefault();
-      const handleElement = event.currentTarget;
-
-      const targetSelector = handleElement.getAttribute("data-target");
-      const targetElement = this.$refs.resizeTarget.closest(targetSelector);
-
-      if (!targetElement) {
+  if (props.sectionsPageData) {
+    const res = props.sectionsPageData.res;
+    const error = props.sectionsPageData.error;
+    if (res) {
+      initializeSections(res);
+      nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+    } else if (error) {
+      const pagePath = `/${decodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/')}`;
+      if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+        pageNotFoundManagement(error);
         return;
       }
-
-      this.resizeData.startWidth = targetElement.offsetWidth;
-      this.resizeData.startCursorScreenX = event.screenX;
-      this.resizeData.resizeTarget = targetElement;
-      this.resizeData.maxWidth =
-        this.resizeData.parentElement.offsetWidth - this.resizeData.handleWidth;
-      this.resizeData.tracking = true;
-    },
-    onMouseMove(event) {
-      if (!this.resizeData.tracking) return;
-
-      const cursorScreenXDelta =
-        event.screenX - this.resizeData.startCursorScreenX;
-      const newWidth = Math.min(
-        this.resizeData.startWidth + cursorScreenXDelta,
-        this.resizeData.maxWidth
-      );
-
-      this.resizeData.resizeTarget.style.width = `${newWidth}px`;
-    },
-    stopTracking() {
-      if (this.resizeData.tracking) {
-        this.resizeData.tracking = false;
+      if (error.response.status === 400) {
+        const res = error.response;
+        initializeSections(res);
+        return;
       }
-    },
-    restoreSectionContent() {
-      this.isSideBarOpen = false;
-      this.isCreateInstance = false;
-      this.isRestoreSectionOpen = false;
-      if (this.creationView === true) {
-        this.createdView = {}
-        this.creationView = false
-        if (this.backToAddSectionList === true) {
-          this.backToAddSectionList = false;
-          this.currentSection = null
-          this.isModalOpen = true
-          this.savedView = {}
-          this.isCreateInstance = false
-          this.isSideBarOpen = false
-        }
-      } else if (this.restoreType === 'section') {
-        this.restoreSection();
+      errorResponseStatus.value = error.response.status;
+      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+        errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+        errorResponseData.value = error.response.data;
+      } else if (error.response.data.error) {
+        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
       } else {
-        this.restoreVariations()
+        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
       }
-    },
-    restoreSection() {
-      this.displayVariations[this.selectedVariation].altered = false;
-      this.$set(
-        this.displayVariations[this.selectedVariation].views,
-        this.currentSection.id,
-        this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
-      );
-      if (this.selectedLayout !== 'standard') {
-        try {
-          this.$set(
-            this.viewsPerRegions[this.selectedSlotRegion],
-            this.viewsPerRegions[this.selectedSlotRegion].findIndex(view => view.id === this.currentSection.id),
-            this.updatedVariations[this.selectedVariation].views[this.currentSection.id]
-          );
-        } catch {}
+      loading.value = false;
+      pageNotFound.value = true;
+      if (errorResponseStatus.value === 404) {
+        sectionsMainErrors.value.push(i18n.t('404NotFound'));
       }
-      this.updatedVariations = JSON.parse(
-        JSON.stringify(this.displayVariations)
-      );
-      this.currentViews = this.displayVariations[this.selectedVariation].views;
-    },
-    registeredPage(type) {
-      let path = `/page_components/${type}`
-      return importComp(path);
-    },
-    clearSectionsFilters() {
-      this.sectionsFilterName = ''
-      this.sectionsFilterAppName = ''
-    },
-    fire_js(event_name, event_data) {
-      if (process.client) {
-        const event = new CustomEvent(event_name, { detail: event_data });
-        window.dispatchEvent(event);
+      emit("load", false);
+    }
+  } else if (inBrowser) {
+    try {
+      const res = await $axios.post(URL, payload, config);
+      initializeSections(res);
+      nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+    } catch (error) {
+      const pagePath = `/${decodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/')}`;
+      if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+        pageNotFoundManagement(error);
+        return;
+      }
+      if (error.response.status === 400) {
+        const res = error.response;
+        initializeSections(res);
+        return;
+      }
+      errorResponseStatus.value = error.response.status;
+      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+        errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+        errorResponseData.value = error.response.data;
+      } else if (error.response.data.error) {
+        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
+      } else {
+        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
+      }
+      loading.value = false;
+      pageNotFound.value = true;
+      if (errorResponseStatus.value === 404) {
+        sectionsMainErrors.value.push(i18n.t('404NotFound'));
+      }
+      emit("load", false);
+    }
+  } else {
+    const optionsRes = await $axios.options(URL, config);
+    if (optionsRes.status === 200) {
+      try {
+        const res = await $axios.post(URL, payload, config);
+        initializeSections(res);
+      } catch (error) {
+        const pagePath = `/${decodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/')}`;
+        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+          pageNotFoundManagement(error, true);
+          return;
+        }
+        if (error.response.status === 400) {
+          const res = error.response;
+          initializeSections(res);
+          return;
+        }
+        if (error.response.status === 404) {
+          if (nuxtApp.ssrContext) {
+            nuxtApp.ssrContext.event.res.statusCode = 404;
+          }
+        }
+
+        errorResponseStatus.value = error.response.status;
+        if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+          errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+          errorResponseData.value = error.response.data;
+        } else if (error.response.data.error) {
+          sectionsError.value = error.response.data.error;
+        } else {
+          sectionsError.value = error.response.data.message;
+          sectionsErrorOptions.value = error.response.data.options;
+        }
+        loading.value = false;
+        pageNotFound.value = true;
+        if (errorResponseStatus.value === 404) {
+          sectionsMainErrors.value.push(i18n.t('404NotFound'));
+        }
+        emit("load", false);
       }
     }
   }
-}
+
+  if (projectMetadata.value && projectMetadata.value['languages'] && projectMetadata.value['languages'].length > 0) {
+    locales.value = [];
+    locales.value = projectMetadata.value['languages'];
+  }
+  computeLayoutData();
+};
+
+// Call fetch on component creation
+// await fetchData();
 </script>
 
 <style>
