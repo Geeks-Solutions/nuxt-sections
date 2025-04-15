@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
-- Update vue-components library version and fix to new version 1.0.16
+- Update vue-components library version and fix to new version 1.0.17
 
 
 ### [1.1.2] - 2025-04-01
