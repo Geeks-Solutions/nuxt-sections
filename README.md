@@ -1186,6 +1186,8 @@ html {
 
 * `page_pre_render`: When a page is loaded and about to be rendered, will contain the response from your section page as a payload
 
+* Implemented 2 events that fires on page render `page_payload_preprocess` and `page_payload_postprocess` and that can be listened to by any external js code
+
 ### Callbacks you can implement
 
 Inside `sections/js/global-hooks.js`
