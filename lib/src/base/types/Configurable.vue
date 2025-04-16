@@ -25,7 +25,7 @@
     </div>
     <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
     <div v-show="currentTab === 'config'">
-      <div class="error-message">
+      <div class="config-sections-errors error-message">
         {{ errorMessage }}
       </div>
       <div class="form-group">
@@ -611,6 +611,9 @@ export default {
           return "text";
       }
     },
+    isFieldRequired(field) {
+      return !('required' in field) || field.required === true
+    },
     addConfigurable() {
       this.instanceNameError = false
       if (this.globalSectionMode && this.instanceName === '') {
@@ -625,31 +628,37 @@ export default {
         if (fields.type ==='boolean' && this.options[0][key] === null) {
           this.options[0][key] = false
         }
-        if (((typeof this.options[0][key] === 'string' && !this.options[0][key]) || (typeof this.options[0][key] === 'object' && this.stringType(fields.type) && !this.options[0][key][this.defaultLang])) && typeof this.options[0][key] !== "boolean" && !Array.isArray(this.options[0][key])) {
-          if (typeof this.options[0][key] === 'string') {
+        if (this.isFieldRequired(fields)) {
+          if (((typeof this.options[0][key] === 'string' && !this.options[0][key]) || (typeof this.options[0][key] === 'object' && this.stringType(fields.type) && !this.options[0][key][this.defaultLang])) && typeof this.options[0][key] !== "boolean" && !Array.isArray(this.options[0][key])) {
+            if (typeof this.options[0][key] === 'string') {
+              errorMessage =
+                this.$t('fillRequiredFields') + ` (${key})`;
+            } else {
+              errorMessage =
+                this.$t('fillRequiredFields') + ` (${key})` + ` / (${this.defaultLang})`;
+            }
+          } else if (fields.type ==='integer' && !Array.isArray(this.options[0][key]) && (this.options[0][key] === null || isNaN(this.options[0][key]))) {
             errorMessage =
               this.$t('fillRequiredFields') + ` (${key})`;
-          } else {
+          } else if (this.options[0][key] === null) {
             errorMessage =
-              this.$t('fillRequiredFields') + ` (${key})` + ` / (${this.defaultLang})`;
+              this.$t('fillRequiredFields') + ` (${key})`;
+          } else if (typeComp && typeComp.methods) {
+            try {
+              let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
+              if(validatedOptions.errorMessage === true) {
+                errorMessage = this.$t('fillRequiredFields') + ` (${key} ${validatedOptions.errors})`;
+              }
+            } catch {}
           }
-        } else if (fields.type ==='integer' && !Array.isArray(this.options[0][key]) && (this.options[0][key] === null || isNaN(this.options[0][key]))) {
-          errorMessage =
-            this.$t('fillRequiredFields') + ` (${key})`;
-        } else if (this.options[0][key] === null) {
-          errorMessage =
-            this.$t('fillRequiredFields') + ` (${key})`;
-        } else if (typeComp && typeComp.methods) {
-          try {
-            let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
-            if(validatedOptions.errorMessage === true) {
-              errorMessage = this.$t('fillRequiredFields') + ` (${key} ${validatedOptions.errors})`;
-            }
-          } catch {}
         }
       });
       if (errorMessage) {
         this.errorMessage = errorMessage;
+        const errorEl = document.querySelector('.config-sections-errors.error-message');
+        if (errorEl) {
+          errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         return;
       } else {
         Object.keys(this.options[0]).map((key, i) => {
@@ -833,7 +842,9 @@ export default {
       let importedHook = this.importHooks('updateFieldLabel', field)
       if(importedHook) {
         return importedHook
-      } else return field.name.replace("_", " ")+'*'
+      } else if (this.isFieldRequired(field)) {
+        return field.name.replace("_", " ")+'*'
+      } else return field.name.replace("_", " ")
     }
   }
 };
