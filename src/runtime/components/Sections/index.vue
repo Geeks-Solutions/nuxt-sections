@@ -1,5 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
+    <nuxt-link to="/features">features</nuxt-link>
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
@@ -258,7 +259,7 @@
                 class="hp-button"
                 :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
                 @click="
-              displayVariations[pageName].altered ? dismissCountDown = 4 :
+              displayVariations.value[pageName].altered ? dismissCountDown = 4 :
               selectedVariation = v.pageName
             "
               >
@@ -849,66 +850,68 @@
               handle=".handle"
             >
               <!-- <transition-group> -->
-              <section
-                v-for="(view, index) in alteredViews"
-                :key="index"
-                :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-                :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
-              >
-                <div class="section-view relativeSections">
-                  <div
-                    class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
-                    v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
-                  >
-                    <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
-                         @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                      <AlertIcon/>
-                    </div>
+              <template #item="{ element }">
+                <section
+                  v-for="(view, index) in alteredViews"
+                  :key="index"
+                  :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
+                  :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
+                >
+                  <div class="section-view relativeSections">
                     <div
-                      @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
-                      v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                      <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
-                                class="edit-icon"/>
+                      class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
+                      v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
+                    >
+                      <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
+                           @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                        <AlertIcon/>
+                      </div>
+                      <div
+                        @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
+                        v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+                        <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
+                                  class="edit-icon"/>
+                      </div>
+                      <DragIcon class="drag-icon handle"/>
+                      <div
+                        @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
+                        <TrashIcon class="trash-icon"/>
+                      </div>
+                      <div
+                        @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
+                        <AnchorIcon
+                          :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
+                          class="edit-icon"/>
+                      </div>
                     </div>
-                    <DragIcon class="drag-icon handle"/>
-                    <div
-                      @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                      <TrashIcon class="trash-icon"/>
+                    <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                         class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
+                      <SettingsIcon :color="'currentColor'" class="settings-icon"/>
                     </div>
-                    <div
-                      @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                      <AnchorIcon
-                        :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
-                        class="edit-icon"/>
+                    <div class="view-component"
+                         :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
+                         :style="{ background: viewsBgColor }">
+                      <div
+                        v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"
+                        class="error-section-loaded">
+                        {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
+                      </div>
+                      <div v-else-if="admin && editMode && (view.error && view.status_code !== 404)"
+                           class="error-section-loaded error-section-empty">
+                      </div>
+                      <component
+                        v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
+                        :is="getComponent(view.name, view.type)"
+                        :section="view"
+                        :lang="lang"
+                        :locales="locales"
+                        :default-lang="defaultLang"
+                        @refresh-section="(data) => refreshSectionView(view, data)"
+                      />
                     </div>
                   </div>
-                  <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
-                       class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                    <SettingsIcon :color="'currentColor'" class="settings-icon"/>
-                  </div>
-                  <div class="view-component"
-                       :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
-                       :style="{ background: viewsBgColor }">
-                    <div
-                      v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"
-                      class="error-section-loaded">
-                      {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
-                    </div>
-                    <div v-else-if="admin && editMode && (view.error && view.status_code !== 404)"
-                         class="error-section-loaded error-section-empty">
-                    </div>
-                    <component
-                      v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                      :is="getComponent(view.name, view.type)"
-                      :section="view"
-                      :lang="lang"
-                      :locales="locales"
-                      :default-lang="defaultLang"
-                      @refresh-section="(data) => refreshSectionView(view, data)"
-                    />
-                  </div>
-                </div>
-              </section>
+                </section>
+              </template>
               <!-- </transition-group> -->
             </draggable>
           </div>
@@ -946,67 +949,69 @@
                       :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
                     >
                       <!-- <transition-group> -->
-                      <section
-                        v-for="(view, index) in alteredViewsPerRegions[slotName]"
-                        v-if="view.region[selectedLayout].slot === slotName"
-                        :key="index"
-                        :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-                        :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
-                      >
-                        <div class="section-view relativeSections">
-                          <div
-                            class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-                            v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
-                          >
-                            <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
-                                 @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                              <AlertIcon/>
-                            </div>
+                      <template #item="{ element }">
+                        <section
+                          v-for="(view, index) in alteredViewsPerRegions[slotName]"
+                          v-if="view.region[selectedLayout].slot === slotName"
+                          :key="index"
+                          :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
+                          :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
+                        >
+                          <div class="section-view relativeSections">
                             <div
-                              @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
-                              v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                              <EditIcon
-                                :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
-                                class="edit-icon"/>
+                              class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+                              v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
+                            >
+                              <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
+                                   @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
+                                <AlertIcon/>
+                              </div>
+                              <div
+                                @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
+                                v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
+                                <EditIcon
+                                  :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
+                                  class="edit-icon"/>
+                              </div>
+                              <DragIcon class="drag-icon handle"/>
+                              <div
+                                @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
+                                <TrashIcon class="trash-icon"/>
+                              </div>
+                              <div
+                                @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
+                                <AnchorIcon
+                                  :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
+                                  class="edit-icon"/>
+                              </div>
                             </div>
-                            <DragIcon class="drag-icon handle"/>
-                            <div
-                              @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                              <TrashIcon class="trash-icon"/>
+                            <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                                 class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
+                              <SettingsIcon :color="'currentColor'" class="settings-icon"/>
                             </div>
-                            <div
-                              @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                              <AnchorIcon
-                                :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
-                                class="edit-icon"/>
+                            <div class="view-component"
+                                 :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
+                                 :style="{ background: viewsBgColor }">
+                              <div
+                                v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"
+                                class="error-section-loaded">
+                                {{
+                                  $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error
+                                }}
+                              </div>
+                              <component
+                                v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
+                                :is="getComponent(view.name, view.type)"
+                                :section="view"
+                                :lang="lang"
+                                :locales="locales"
+                                :default-lang="defaultLang"
+                                @refresh-section="(data) => refreshSectionView(view, data)"
+                              />
                             </div>
                           </div>
-                          <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
-                               class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                            <SettingsIcon :color="'currentColor'" class="settings-icon"/>
-                          </div>
-                          <div class="view-component"
-                               :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
-                               :style="{ background: viewsBgColor }">
-                            <div
-                              v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"
-                              class="error-section-loaded">
-                              {{
-                                $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error
-                              }}
-                            </div>
-                            <component
-                              v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                              :is="getComponent(view.name, view.type)"
-                              :section="view"
-                              :lang="lang"
-                              :locales="locales"
-                              :default-lang="defaultLang"
-                              @refresh-section="(data) => refreshSectionView(view, data)"
-                            />
-                          </div>
-                        </div>
-                      </section>
+                        </section>
+                      </template>
                       <!-- </transition-group> -->
                     </draggable>
                   </div>
@@ -1259,14 +1264,25 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useCookie, useHead, useNuxtApp, useRoute, useRouter } from '#app';
+import { useCookie, useHead, useNuxtApp, useRoute, useRouter} from '#app';
 
 import draggable from "vuedraggable";
 
 import camelCase from "lodash/camelCase";
 import upperFirst from "lodash/upperFirst";
 
-const props = defineProps({
+const {
+  pageName,
+  admin,
+  variations,
+  headers,
+  reactiveTrigger,
+  lang,
+  editorOptions,
+  viewsBgColor,
+  _sectionsOptions,
+  sectionsPageData
+} = defineProps({
   pageName: {
     type: String,
     default: "",
@@ -1312,11 +1328,9 @@ const props = defineProps({
 });
 const emit = defineEmits(['load']);
 const nuxtApp = useNuxtApp();
-console.log('$sections', nuxtApp.$sections)
 const route = useRoute();
 const router = useRouter();
 const i18n = useI18n();
-const sections = ref({});
 const config = useRuntimeConfig();
 
 // Data properties converted to refs
@@ -1333,7 +1347,7 @@ const sectionInPage = ref([]);
 const pageNotFound = ref(false);
 const dismissCountDown = ref(0);
 const editMode = ref(false);
-const selectedVariation = ref(props.pageName);
+const selectedVariation = ref(pageName);
 const typesTab = ref('types');
 const globalTypes = ref([]);
 const types = ref([]);
@@ -1366,13 +1380,20 @@ const createdView = ref({});
 const savedView = ref({});
 
 // Display variations object
-const displayVariations = ref({
-  [props.pageName]: {
-    name: props.pageName,
+const displayVariations = useState('displayVariations', () => ({
+  [pageName]: {
+    name: pageName,
     views: {},
     altered: false,
   },
-});
+}));
+// const displayVariations = ref({
+//   [pageName]: {
+//     name: pageName,
+//     views: {},
+//     altered: false,
+//   },
+// });
 
 const selectedSectionTypeName = ref("");
 const selectedAppName = ref("");
@@ -1451,28 +1472,36 @@ const intro = ref(null);
 const currentPages = ref(null);
 const introRerun = ref(false);
 const creationView = ref(false);
+const pathMatch = Array.isArray(route.params.pathMatch)
+  ? route.params.pathMatch.join('/')
+  : route.params.pathMatch || ''
 
 // Computed properties
 const activeVariation = computed(() => {
   // If variation true return its page name
-  const activeVar = props.variations.filter((variation) => variation.active);
+  const activeVar = variations.filter((variation) => variation.active);
   if (activeVar.length === 1) return activeVar[0];
   else if (activeVar.length > 1) {
     return activeVar[0];
   }
   // otherwise return the default pageName prop
-  else return {name: "default", pageName: props.pageName};
+  else return {name: "default", pageName: pageName};
 });
 
 const currentViews = computed({
   get() {
     let views = [];
-    views = Object.values(
-      displayVariations.value[selectedVariation.value].views
-    );
-    views = views.sort(function (a, b) {
-      return a.weight - b.weight;
-    });
+    console.log("displayVariations.value[selectedVariation.value]", displayVariations.value)
+    console.log("displayVariations.value[selectedVariation.value]", selectedVariation.value)
+    console.log("displayVariations.value[selectedVariation.value]", displayVariations.value[selectedVariation.value])
+    if (displayVariations.value[selectedVariation.value] && displayVariations.value[selectedVariation.value].views) {
+      views = Object.values(
+        displayVariations.value[selectedVariation.value].views
+      );
+      views = views.sort(function (a, b) {
+        return a.weight - b.weight;
+      });
+    }
 
     return views;
   },
@@ -1487,6 +1516,7 @@ const currentViews = computed({
 });
 
 const alteredViews = computed(() => {
+  console.log('alteredViews')
   let alteredSections = null;
   let hooksJs = importJs(`/js/global-hooks`);
   if (hooksJs['page_pre_render'] && pageData.value) {
@@ -1495,7 +1525,7 @@ const alteredViews = computed(() => {
         JSON.parse(JSON.stringify(pageData.value)),
         JSON.parse(JSON.stringify(currentViews.value)),
         sectionsWebsiteDomain.value,
-        sections,
+        nuxtApp.$sections,
         config
       );
     }
@@ -1518,7 +1548,7 @@ const alteredViewsPerRegions = computed(() => {
         JSON.parse(JSON.stringify(pageData.value)),
         JSON.parse(JSON.stringify(viewsPerRegions.value)),
         sectionsWebsiteDomain.value,
-        sections,
+        nuxtApp.$sections,
         config
       );
     }
@@ -1650,11 +1680,11 @@ const initializeSections = (res) => {
   sectionslayout.value = res.data.layout
   selectedLayout.value = res.data.layout
 
-  for (const lang of locales.value) {
-    if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].title)
-      pageMetadata[lang].title = res.data.metadata[lang].title
-    if (res.data.metadata && res.data.metadata[lang] && res.data.metadata[lang].description)
-      pageMetadata[lang].description = res.data.metadata[lang].description
+  for (const langKey of locales.value) {
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title)
+      pageMetadata.value[langKey].title = res.data.metadata[langKey].title
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].description)
+      pageMetadata.value[langKey].description = res.data.metadata[langKey].description
   }
 
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
@@ -1681,14 +1711,14 @@ const initializeSections = (res) => {
     projectMetadata.gtmId = res.data.metadata.project_metadata.gtmId
   }
   if (res.data.metadata.media) {
-    pageMetadata.media = res.data.metadata.media
+    pageMetadata.value.media = res.data.metadata.media
   }
   if (res.data.metadata.mediaMetatag) {
-    pageMetadata.mediaMetatag = res.data.metadata.mediaMetatag
+    pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
   }
 
-  computedTitle.value = pageMetadata[lang.value].title
-  computedDescription.value = pageMetadata[lang.value].description
+  computedTitle.value = pageMetadata.value[lang].title
+  computedDescription.value = pageMetadata.value[lang].description
 
   const views = {}
   sections.map((section) => {
@@ -1732,7 +1762,7 @@ const initializeSections = (res) => {
     })
   })
 
-  displayVariations[activeVariation.value.pageName] = {
+  displayVariations.value[activeVariation.value.pageName] = {
     name: activeVariation.value.pageName,
     views: {...views},
   }
@@ -1780,13 +1810,13 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
   if (mediaObject.files[0].headers) {
     media.headers = mediaObject.files[0].headers
   }
-  pageMetadata[mediaFieldName] = media
+  pageMetadata.value[mediaFieldName] = media
   // In Nuxt 3, we use template refs differently
   // This would need adjustment based on how you're using refs
   sectionsMediaComponent.value.closeModal()
 }
 const removeMedia = (media) => {
-  pageMetadata[media] = {}
+  pageMetadata.value[media] = {}
 }
 const updatePageMetaData = async () => {
   loading.value = true
@@ -1863,7 +1893,7 @@ const updatePageMetaData = async () => {
   const variables = {
     page: sectionsPageName.value,
     path: pagePath,
-    metadata: {...pageMetadata},
+    metadata: {...pageMetadata.value},
     variations: [],
     layout: sectionslayout.value,
     sections
@@ -1930,7 +1960,7 @@ const removeField = (index) => {
 const checkToken = async () => {
   const auth_code = route.query.auth_code
 
-  if ($sections.cname === "active") {
+  if (nuxtApp.$sections.cname === "active") {
     const cookiesAlias = '_sectionsOptions.cookiesAlias' // assuming this is defined somewhere
 
     if (nuxtApp[`$${cookiesAlias}`].get("sections-project-id")) {
@@ -1999,7 +2029,7 @@ const exportSections = () => {
   dlAnchorElem.click()
 }
 const initImportSections = () => {
-  if (Object.keys(displayVariations[selectedVariation.value].views).length > 0) {
+  if (Object.keys(displayVariations.value[selectedVariation.value].views).length > 0) {
     showToast(
       "Warning",
       "warning",
@@ -2062,7 +2092,7 @@ const updateGlobalType = async (section) => {
       section.region[selectedLayout.value] = {
         slot: selectedSlotRegion.value,
         weight: Object.keys(
-          displayVariations[selectedVariation.value].views
+          displayVariations.value[selectedVariation.value].views
         ).length
       }
     } else {
@@ -2149,8 +2179,8 @@ const addNewGlobalType = async (section) => {
         section.linked_to = section.instance_name
         section.instance = true
 
-        displayVariations[selectedVariation.value].views[section.id] = section
-        displayVariations[selectedVariation.value].altered = true
+        displayVariations.value[selectedVariation.value].views[section.id] = section
+        displayVariations.value[selectedVariation.value].altered = true
 
         showToast(
           "Success",
@@ -2272,7 +2302,7 @@ const getComponent = (sectionName, sectionType, returnProps) => {
         type: sectionType
       }
     } else return {type: sectionType}
-  } else if (sections.value.cname === "active") {
+  } else if (nuxtApp.$sections.cname === "active") {
     let path = ""
     if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
       path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
@@ -2313,7 +2343,7 @@ const getAvailableLayouts = () => {
     })
     availableLayouts.value.push(...layoutNames)
   } catch (error) {
-    console.warn(t('noLayoutsFolder'))
+    console.warn(i18n.t('noLayoutsFolder'))
   }
 }
 const getSelectedLayout = () => {
@@ -2322,7 +2352,7 @@ const getSelectedLayout = () => {
     return 'div'
   } else return importComp(path)
 }
-const computeLayoutData = () => {
+const computeLayoutData = async () => {
   const slotNameExample = 'i.e. slotNames: { type: Array, default() { return [\'region1\'] }}'
   errorInLayout.value = false
 
@@ -2332,19 +2362,20 @@ const computeLayoutData = () => {
     let path = `/layouts/${selectedLayout.value}`
     layoutSlotNames.value = []
 
-    let layoutComp = importComp(path)
+    let layoutComp = await importComp(path)
     if (!layoutComp.props) {
       errorInLayout.value = true
-      sectionsMainErrors.value.push(t('layoutErrors.missingComp'))
+      sectionsMainErrors.value.push(i18n.t('layoutErrors.missingComp'))
       return
     } else if (!layoutComp.props.slotNames) {
       errorInLayout.value = true
-      sectionsMainErrors.value.push(t('layoutErrors.missingProp'))
+      sectionsMainErrors.value.push(i18n.t('layoutErrors.missingProp'))
       sectionsMainErrors.value.push(slotNameExample)
       return
     } else if (!layoutComp.props.slotNames.type || layoutComp.props.slotNames.type !== Array || !layoutComp.props.slotNames.default) {
+
       errorInLayout.value = true
-      sectionsMainErrors.value.push(t('layoutErrors.propArray'))
+      sectionsMainErrors.value.push(i18n.t('layoutErrors.propArray'))
       sectionsMainErrors.value.push(slotNameExample)
       return
     }
@@ -2353,14 +2384,14 @@ const computeLayoutData = () => {
       layoutSlotNames.value = [...importComp(path).props.slotNames.default()]
     } catch {
       errorInLayout.value = true
-      sectionsMainErrors.value.push(t('layoutErrors.propArray'))
+      sectionsMainErrors.value.push(i18n.t('layoutErrors.propArray'))
       sectionsMainErrors.value.push(slotNameExample)
       return
     }
 
     if (!layoutComp.props.slotNames.default()[0]) {
       errorInLayout.value = true
-      sectionsMainErrors.value.push(t('layoutErrors.propArray'))
+      sectionsMainErrors.value.push(i18n.t('layoutErrors.propArray'))
       sectionsMainErrors.value.push(slotNameExample)
       return
     }
@@ -2410,8 +2441,8 @@ const verifySlots = () => {
       layoutSlotNames.value.forEach(slotName => {
         if (!document.getElementById(`sections-slot-region-${selectedLayout.value}-${slotName}`)) {
           errorInLayout.value = true
-          sectionsLayoutErrors.value.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + t('layoutErrors.regionNotConfigured'))
-          sectionsLayoutErrors.value.push(`<slot name=\"${slotName}\"></slot> ${t('layoutErrors.layoutTemp')}`)
+          sectionsLayoutErrors.value.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + i18n.t('layoutErrors.regionNotConfigured'))
+          sectionsLayoutErrors.value.push(`<slot name=\"${slotName}\"></slot> ${i18n.t('layoutErrors.layoutTemp')}`)
           return
         }
       })
@@ -2447,9 +2478,8 @@ const createNewPage = async () => {
   }
 
   const { $axios } = useNuxtApp()
-  const sections = useSections()
 
-  const URL = `${sections.serverUrl}/project/${sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
 
   try {
     const res = await $axios.put(
@@ -2473,18 +2503,18 @@ const createNewPage = async () => {
     showToast(
       "Success",
       "success",
-      t('createPageSuccess')
+      i18n.t('createPageSuccess')
     )
   } catch (err) {
     loading.value = false
     let error = err.response.data.message
     if (err.response.data.errors && err.response.data.errors.path) {
-      error = `${t('pageUrl')} ${err.response.data.errors.path[0]}`
+      error = `${i18n.t('pageUrl')} ${err.response.data.errors.path[0]}`
     }
     showToast(
       "Error creating page",
       "error",
-      t('createPageError') + pageName.value + "\n" + error,
+      i18n.t('createPageError') + pageName.value + "\n" + error,
       err.response.data.options
     )
   }
@@ -2521,7 +2551,7 @@ const getAvailableSections = () => {
     })
     availableSectionsForms.value.push(...formNames)
   } catch (error) {
-    console.warn(t('noFormsFolder'))
+    console.warn(i18n.t('noFormsFolder'))
   }
 }
 const initiateIntroJs = async () => {
@@ -2530,11 +2560,10 @@ const initiateIntroJs = async () => {
     const token = cookie.value
 
     const { $axios } = useNuxtApp()
-    const sections = useSections()
 
     try {
       const response = await $axios.get(
-        `${sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`,
+        `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`,
         {
           headers: sectionHeader({ token })
         }
@@ -2552,7 +2581,7 @@ const initiateIntroJs = async () => {
       const cookie = useCookie('sections-auth-token').value
       cookie.value = null
       admin.value = false
-      showToast("Error", "error", t('tokenInvalidReconnect'))
+      showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
     }
   } catch {}
 }
@@ -2580,10 +2609,10 @@ const runIntro = async (topic, rerun) => {
     intro.value = introJsModule.default()
 
     intro.value.setOption("dontShowAgain", true)
-    intro.value.setOption("nextLabel", t('intro.nextLabel'))
-    intro.value.setOption("prevLabel", t('intro.prevLabel'))
-    intro.value.setOption("doneLabel", t('intro.doneLabel'))
-    intro.value.setOption("dontShowAgainLabel", t('intro.dontShowAgainLabel'))
+    intro.value.setOption("nextLabel", i18n.t('intro.nextLabel'))
+    intro.value.setOption("prevLabel", i18n.t('intro.prevLabel'))
+    intro.value.setOption("doneLabel", i18n.t('intro.doneLabel'))
+    intro.value.setOption("dontShowAgainLabel", i18n.t('intro.dontShowAgainLabel'))
 
     if (rerun === true) {
       if (topic === 'globalTour') {
@@ -2661,38 +2690,38 @@ const introSteps = (topic) => {
       return [
         {
           element: refs['intro-create-page'],
-          intro: t('intro.createPage')
+          intro: i18n.t('intro.createPage')
         }
       ]
     case 'editPage':
       return [
         {
           element: refs['intro-edit-page'],
-          intro: t('intro.editPage')
+          intro: i18n.t('intro.editPage')
         }
       ]
     case 'topBar':
       return [
         {
           element: refs['intro-top-bar'],
-          intro: t('intro.topBarButtons')
+          intro: i18n.t('intro.topBarButtons')
         },
         {
           element: refs['intro-add-new-section'],
-          intro: t('intro.addNewSection')
+          intro: i18n.t('intro.addNewSection')
         }
       ]
     case 'addNewSectionModal':
       return [
         {
           element: refs['intro-available-sections'],
-          intro: t('intro.availableSections')
+          intro: i18n.t('intro.availableSections')
         },
         {
           element: refs['intro-inventory'],
           intro: simpleCTAIndex === -1 ?
-            t('intro.inventoryDesc') :
-            `${t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${t('intro.checkIt')}</span>`
+            i18n.t('intro.inventoryDesc') :
+            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${i18n.t('intro.checkIt')}</span>`
         }
       ]
     // Additional cases omitted for brevity but can be converted following the same pattern
@@ -2701,9 +2730,8 @@ const introSteps = (topic) => {
   }
 }
 const getSectionProjectIdentity = () => {
-  const sections = useSections()
 
-  if (sections.cname === "active") {
+  if (nuxtApp.$sections.cname === "active") {
     // In Nuxt 3, process.client replaces typeof window !== 'undefined'
     if (process.client) {
       return window.location.host
@@ -2713,7 +2741,7 @@ const getSectionProjectIdentity = () => {
       return headers.host
     }
   } else {
-    return sections.projectId
+    return nuxtApp.$sections.projectId
   }
 }
 const renderConfigurableSection = async (gt, options) => {
@@ -2742,12 +2770,11 @@ const renderConfigurableSection = async (gt, options) => {
     language = locale.value
   }
 
-  const sections = useSections()
   const route = useRoute()
 
-  if (sections.queryStringSupport && sections.queryStringSupport === "enabled") {
+  if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
     variables["query_string"] = parseQS(
-      encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+      encodeURIComponent(pathMatch ? pathMatch : '/'),
       Object.keys(route.query).length !== 0,
       route.query
     )
@@ -2762,7 +2789,7 @@ const renderConfigurableSection = async (gt, options) => {
   }
 
   const { $axios } = useNuxtApp()
-  const URL = `${sections.serverUrl}/project/${sections.projectId}/section/render`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
 
   try {
     const res = await $axios.post(URL, variables, config)
@@ -2809,7 +2836,7 @@ const renderConfigurableSection = async (gt, options) => {
       emit('errorAddingSection', {
         closeModal: false,
         title: "Error adding " + gt.name,
-        message: e.response.data.error ? e.response.data.error : t('saveConfigSectionError')
+        message: e.response.data.error ? e.response.data.error : i18n.t('saveConfigSectionError')
       })
     }
     emit("load", false)
@@ -2840,12 +2867,11 @@ const renderDynamicSection = async (name, instanceName, gt) => {
     language = locale.value
   }
 
-  const sections = useSections()
   const route = useRoute()
 
-  if (sections.queryStringSupport && sections.queryStringSupport === "enabled") {
+  if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
     variables["query_string"] = parseQS(
-      encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+      encodeURIComponent(pathMatch ? pathMatch : '/'),
       Object.keys(route.query).length !== 0,
       route.query
     )
@@ -2860,7 +2886,7 @@ const renderDynamicSection = async (name, instanceName, gt) => {
   }
 
   const { $axios } = useNuxtApp()
-  const URL = `${sections.serverUrl}/project/${sections.projectId}/section/render`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
 
   try {
     const res = await $axios.post(URL, variables, config)
@@ -2908,7 +2934,7 @@ const renderDynamicSection = async (name, instanceName, gt) => {
         emit('errorAddingSection', {
           closeModal: true,
           title: "Error adding " + instanceName,
-          message: t('saveConfigSectionError')
+          message: i18n.t('saveConfigSectionError')
         })
       }
     }
@@ -3143,7 +3169,7 @@ const openEditMode = async () => {
     }
 
     if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled") {
-      let query_string = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
+      let query_string = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
       payload = {
         query_string: {
           ...query_string,
@@ -3348,7 +3374,7 @@ const refreshSectionView = async (sectionView, data) => {
   }
 
   if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled") {
-    variables["query_string"] = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
+    variables["query_string"] = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
     if (data.qs) {
       variables["query_string"] = {...variables["query_string"], ...data.qs}
     }
@@ -3372,7 +3398,7 @@ const refreshSectionView = async (sectionView, data) => {
     }
 
     if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
-      variables["query_string"] = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
+      variables["query_string"] = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
       if (sectionData.qs) {
         variables["query_string"] = {...variables["query_string"], ...sectionData.qs}
       }
@@ -3464,7 +3490,7 @@ const mutateVariation = (variationName) => {
             showToast(
               "",
               "error",
-              t('imageFieldValidation') + view.name
+              i18n.t('imageFieldValidation') + view.name
             );
             return;
           }
@@ -3521,9 +3547,9 @@ const mutateVariation = (variationName) => {
                           showToast(
                             "Error saving your changes",
                             "error",
-                            `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``
+                            `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``
                           );
-                          sectionsFormatErrors[section.weight] = `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``;
+                          sectionsFormatErrors[section.weight] = `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``;
                         }
                       } else if (typeof option[field.name] === 'object') {
                         if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
@@ -3532,9 +3558,9 @@ const mutateVariation = (variationName) => {
                           showToast(
                             "Error saving your changes",
                             "error",
-                            `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``
+                            `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``
                           );
-                          sectionsFormatErrors[section.weight] = `${t('wrongFieldName')} \`${field.name}\` ${t('formatOfSection')} \`${section.name}\``;
+                          sectionsFormatErrors[section.weight] = `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``;
                         }
                       }
                     }
@@ -3547,9 +3573,9 @@ const mutateVariation = (variationName) => {
               showToast(
                 "Error saving your changes",
                 "error",
-                `${t('optionsFormat')} \`${section.name}\``
+                `${i18n.t('optionsFormat')} \`${section.name}\``
               );
-              sectionsFormatErrors[section.weight] = `${t('optionsFormat')} \`${section.name}\``;
+              sectionsFormatErrors[section.weight] = `${i18n.t('optionsFormat')} \`${section.name}\``;
             }
           }
         });
@@ -3578,7 +3604,7 @@ const mutateVariation = (variationName) => {
     if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
       const route = useRoute();
       variables["query_string"] = parseQS(
-        encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+        encodeURIComponent(pathMatch ? pathMatch : '/'),
         Object.keys(route.query).length !== 0,
         route.query
       );
@@ -3615,7 +3641,7 @@ const mutateVariation = (variationName) => {
             showToast(
               "Error",
               "error",
-              t('someSectionsNotSaved')
+              i18n.t('someSectionsNotSaved')
             );
             res.data.invalid_sections.forEach(section => {
               invalidSectionsErrors[`${section.name}-${section.weight}`] = {
@@ -3627,7 +3653,7 @@ const mutateVariation = (variationName) => {
             showToast(
               "Success",
               "success",
-              t('successPageChanges')
+              i18n.t('successPageChanges')
             );
             layoutMode.value = false;
           }
@@ -3742,7 +3768,7 @@ const restoreVariations = () => {
   showToast(
     "Revert Successful",
     "info",
-    t('revertPageSuccess')
+    i18n.t('revertPageSuccess')
   );
 };
 const toggleSectionsOptions = (viewId) => {
@@ -3768,14 +3794,14 @@ const deleteView = (id) => {
   showToast(
     "Deleted",
     "info",
-    t('sectionRemoved')
+    i18n.t('sectionRemoved')
   );
   computeLayoutData();
 };
 const copyAnchor = (anchor, event) => {
   try {
     if (window.location.protocol.replace(':', '') === 'http') {
-      showToast("", "error", t('copyAnchorFailed'));
+      showToast("", "error", i18n.t('copyAnchorFailed'));
       return;
     }
 
@@ -3795,7 +3821,7 @@ const copyAnchor = (anchor, event) => {
       setTimeout(() => tooltip.remove(), 300);
     }, 1500);
   } catch {
-    showToast("", "error", t('copyAnchorFailed'));
+    showToast("", "error", i18n.t('copyAnchorFailed'));
   }
 };
 const errorAddingSection = (error) => {
@@ -3829,7 +3855,7 @@ const deleteGlobalSectionType = (sectionTypeName, index) => {
       getGlobalSectionTypes();
     })
     .catch((error) => {
-      showToast("Error", "error", t('deleteSectionTypeError') + error.response.data.message);
+      showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
       loading.value = false;
       emit("load", false);
     });
@@ -3862,7 +3888,7 @@ const deleteSectionType = (sectionTypeName, index) => {
       getSectionTypes();
     })
     .catch((error) => {
-      showToast("Error", "error", t('deleteSectionTypeError') + error.response.data.message);
+      showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
       loading.value = false;
       emit("load", false);
     });
@@ -3894,7 +3920,7 @@ const deleteSectionPage = () => {
       setTimeout(() => window.location.reload(), 1000);
     })
     .catch((error) => {
-      showToast("Error", "error", t('deleteSectionPageError') + error.response.data.message);
+      showToast("Error", "error", i18n.t('deleteSectionPageError') + error.response.data.message);
       loading.value = false;
       emit("load", false);
     });
@@ -3940,7 +3966,7 @@ const authorizeSectionType = (sectionAppId, index) => {
       emit("load", false);
     })
     .catch((error) => {
-      showToast("Error", "error", `${t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+      showToast("Error", "error", `${i18n.t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
       loading.value = false;
       emit("load", false);
     });
@@ -3983,7 +4009,7 @@ const unAuthorizeSectionType = (sectionAppId, index) => {
       emit("load", false);
     })
     .catch((error) => {
-      showToast("Error", "error", `${t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+      showToast("Error", "error", `${i18n.t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
       loading.value = false;
       emit("load", false);
     });
@@ -4160,11 +4186,11 @@ const restoreSection = () => {
   );
   currentViews.value = displayVariations.value[selectedVariation.value].views;
 };
-const registeredPage = (type) => {
+const registeredPage = async (type) => {
   let path = `/page_components/${type}`;
   // Assuming importComp is a global function or defined elsewhere
   // In Nuxt 3, you might use defineAsyncComponent instead
-  return defineAsyncComponent(() => import(path));
+  return await importComp(path);
 };
 const clearSectionsFilters = () => {
   sectionsFilterName.value = '';
@@ -4179,28 +4205,27 @@ const fire_js = (event_name, event_data) => {
 
 // Lifecycle hooks
 onMounted(async () => {
-  console.log(sections);
   try {
     let hooksJavascript = importJs(`/js/global-hooks`);
     if (hooksJavascript['init_params']) {
-      const paramsUpdate = hooksJavascript['init_params'](sections, {
+      const paramsUpdate = hooksJavascript['init_params'](nuxtApp.$sections, {
         qs: route.query,
         headers: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.headers : {},
         reqBody: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.body : {},
         url: window.location.host
       });
       if (paramsUpdate) {
-        sections.value = paramsUpdate;
+        nuxtApp.$sections = paramsUpdate;
       }
     }
   } catch {}
 
   initializeSectionsCMSEvents();
-  if (props.admin) {
+  if (admin) {
     initiateIntroJs();
   }
 
-  if (sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+  if (sectionsError.value !== "" && !await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
     showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
   } else if (sectionsAdminError.value !== "") {
     showToast("Error", "error", sectionsAdminError.value);
@@ -4208,8 +4233,8 @@ onMounted(async () => {
   if (renderSectionError.value !== "") {
     showToast("Error", "error", renderSectionError.value);
   }
-  if (sections.cname === "active" && useCookie(`sections-project-id`).value) {
-    sections.projectId = useCookie(`sections-project-id`).value;
+  if (nuxtApp.$sections.cname === "active" && useCookie(`sections-project-id`).value) {
+    nuxtApp.$sections.projectId = useCookie(`sections-project-id`).value;
   }
   fire_js("page_payload_postprocess", document.documentElement.outerHTML);
 });
@@ -4234,14 +4259,14 @@ const fetchData = async () => {
   try {
     let hooksJavascript = importJs(`/js/global-hooks`);
     if (hooksJavascript['init_params']) {
-      const paramsUpdate = hooksJavascript['init_params'](sections, {
+      const paramsUpdate = hooksJavascript['init_params'](nuxtApp.$sections, {
         qs: route.query,
         headers: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.headers : {},
         reqBody: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.body : {},
         url: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req && nuxtApp.ssrContext.event.req.headers ? nuxtApp.ssrContext.event.req.headers.host : ''
       });
       if (paramsUpdate) {
-        sections.value = paramsUpdate;
+        nuxtApp.$sections = paramsUpdate;
       }
     }
   } catch {}
@@ -4257,10 +4282,10 @@ const fetchData = async () => {
     };
   });
 
-  if (sections.projectLocales && sections.projectLocales !== '' && sections.projectLocales.includes(',')) {
+  if (nuxtApp.$sections.projectLocales && nuxtApp.$sections.projectLocales !== '' && nuxtApp.$sections.projectLocales.includes(',')) {
     translationComponentSupport.value = true;
     locales.value = [];
-    locales.value = sections.projectLocales.split(',');
+    locales.value = nuxtApp.$sections.projectLocales.split(',');
     metadataFormLang.value = i18n.locale.toString();
     locales.value.forEach(lang => {
       pageMetadata.value[lang] = {
@@ -4291,13 +4316,13 @@ const fetchData = async () => {
   }
   sectionsWebsiteDomain.value = websiteDomain;
 
-  sections.projectUrl = websiteDomain;
+  nuxtApp.$sections.projectUrl = websiteDomain;
 
   const config = {
     headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
   };
 
-  let URL = `${sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(props.pageName))}`;
+  let URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`;
 
   let payload = {};
 
@@ -4307,9 +4332,9 @@ const fetchData = async () => {
   } catch {
   }
 
-  if (sections.queryStringSupport && sections.queryStringSupport === "enabled") {
+  if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
     let query_string = parseQS(
-      encodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/'),
+      encodeURIComponent(pathMatch ? pathMatch : '/'),
       Object.keys(route.query).length !== 0,
       route.query
     );
@@ -4328,14 +4353,15 @@ const fetchData = async () => {
     }
   }
 
-  if (props.sectionsPageData) {
-    const res = props.sectionsPageData.res;
-    const error = props.sectionsPageData.error;
+  console.log('sectionsPageData', sectionsPageData)
+  if (sectionsPageData) {
+    const res = sectionsPageData.res;
+    const error = sectionsPageData.error;
     if (res) {
       initializeSections(res);
       nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
     } else if (error) {
-      const pagePath = `/${decodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/')}`;
+      const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
       if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
         pageNotFoundManagement(error);
         return;
@@ -4346,7 +4372,7 @@ const fetchData = async () => {
         return;
       }
       errorResponseStatus.value = error.response.status;
-      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
         errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
         errorResponseData.value = error.response.data;
       } else if (error.response.data.error) {
@@ -4362,45 +4388,47 @@ const fetchData = async () => {
       emit("load", false);
     }
   } else if (inBrowser) {
-    try {
-      const res = await $axios.post(URL, payload, config);
-      initializeSections(res);
-      nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
-    } catch (error) {
-      const pagePath = `/${decodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/')}`;
-      if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
-        pageNotFoundManagement(error);
-        return;
-      }
-      if (error.response.status === 400) {
-        const res = error.response;
-        initializeSections(res);
-        return;
-      }
-      errorResponseStatus.value = error.response.status;
-      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-        errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
-        errorResponseData.value = error.response.data;
-      } else if (error.response.data.error) {
-        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
-      } else {
-        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
-      }
-      loading.value = false;
-      pageNotFound.value = true;
-      if (errorResponseStatus.value === 404) {
-        sectionsMainErrors.value.push(i18n.t('404NotFound'));
-      }
-      emit("load", false);
-    }
+    // try {
+    //   const res = await $fetch(URL, payload, config);
+    //   initializeSections(res);
+    //   nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+    // } catch (error) {
+    //   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
+    //   if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+    //     pageNotFoundManagement(error);
+    //     return;
+    //   }
+    //   if (error.response.status === 400) {
+    //     const res = error.response;
+    //     initializeSections(res);
+    //     return;
+    //   }
+    //   errorResponseStatus.value = error.response.status;
+    //   if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+    //     errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+    //     errorResponseData.value = error.response.data;
+    //   } else if (error.response.data.error) {
+    //     showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
+    //   } else {
+    //     showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
+    //   }
+    //   loading.value = false;
+    //   pageNotFound.value = true;
+    //   if (errorResponseStatus.value === 404) {
+    //     sectionsMainErrors.value.push(i18n.t('404NotFound'));
+    //   }
+    //   emit("load", false);
+    // }
   } else {
-    const optionsRes = await $axios.options(URL, config);
+    const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
     if (optionsRes.status === 200) {
       try {
-        const res = await $axios.post(URL, payload, config);
-        initializeSections(res);
+        const res = await (await fetch(URL, {method: 'POST', body: payload, ...config})).json();
+        console.log('res', res)
+        initializeSections({data: res});
       } catch (error) {
-        const pagePath = `/${decodeURIComponent(route.params.pathMatch ? route.params.pathMatch : '/')}`;
+        console.log('error', error)
+        const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
         if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
           pageNotFoundManagement(error, true);
           return;
@@ -4417,7 +4445,7 @@ const fetchData = async () => {
         }
 
         errorResponseStatus.value = error.response.status;
-        if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+        if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
           errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
           errorResponseData.value = error.response.data;
         } else if (error.response.data.error) {
@@ -4440,11 +4468,14 @@ const fetchData = async () => {
     locales.value = [];
     locales.value = projectMetadata.value['languages'];
   }
-  computeLayoutData();
+  await computeLayoutData();
 };
 
 // Call fetch on component creation
-// await fetchData();
+// await useAsyncData('fetchData', async () => {
+//   await fetchData();
+// })
+onServerPrefetch(async () => {await fetchData()});
 </script>
 
 <style>

@@ -34,8 +34,8 @@ export default defineNuxtModule<ModuleOptions>({
     extendPages((pages) => {
       pages.push({
         name: 'all',
-        path: '/:slug(.*)*',
-        file: resolve('./runtime/pages/[...slug].vue'),
+        path: '/:pathMatch(.*)*',
+        file: resolve('./runtime/pages/[...pathMatch].vue'),
       })
       pages.push({
         name: 'Health',

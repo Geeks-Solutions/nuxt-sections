@@ -1,4 +1,4 @@
-import { useNuxtApp, useCookie } from "#app";
+import { useNuxtApp, useCookie, useRoute } from "#app";
 
 export function formatName(name: string): string {
   switch (name) {
@@ -30,16 +30,16 @@ export const importJs = (path: string): any => {
   }
 }
 
-export const importComp = (path: string): any => {
+export const importComp = async (path: string): Promise<any> => {
   try {
-    const component = require(`../../../.././sections${path}.vue`);
-    return component.default;
-  } catch (e) {
+    const component = await import(`../../../../sections${path}.vue`)
+    return component.default
+  } catch (e1) {
     try {
-      const component = require(`../configs${path}.vue`);
-      return component.default;
-    } catch (e) {
-      return '';
+      const component = await import(`../configs${path}.vue`)
+      return component.default
+    } catch (e2) {
+      return ''
     }
   }
 }
@@ -145,7 +145,7 @@ export const parsePath = (path: string): string => {
   }
 }
 
-export const parseQS = (path: string, routeQueries: boolean, queries: Record<string, string>): Record<string, any> => {
+export const parseQS = (path: string, routeQueries: boolean, queries: any): Record<string, any> => {
   let queryStringObject: Record<string, any> = {};
   if (routeQueries === true) {
     Object.keys(queries).map((queryKey) => {
@@ -378,17 +378,18 @@ interface RenderPageDataParams {
 
 // Function to render page data
 export const renderPageData = async ({ app, pageName }: RenderPageDataParams) => {
+  const route = useRoute()
   try {
     const hooksJavascript = await importJs(`/js/global-hooks`);
     if (hooksJavascript['init_params']) {
-      const paramsUpdate = hooksJavascript['init_params'](app.context.$sections, {
-        qs: app.context.route.query,
-        headers: app.context?.req ? app.context.req.headers : {},
-        reqBody: app.context?.req ? app.context.req.body : {},
+      const paramsUpdate = hooksJavascript['init_params'](app.$sections, {
+        qs: route.query,
+        headers: app?.req ? app.req.headers : {},
+        reqBody: app?.req ? app.req.body : {},
         url: window.location.host
       });
       if (paramsUpdate) {
-        app.context.$sections = paramsUpdate;
+        app.$sections = paramsUpdate;
       }
     }
   } catch (e) {}
@@ -401,21 +402,25 @@ export const renderPageData = async ({ app, pageName }: RenderPageDataParams) =>
     headers: sectionHeader({})
   };
 
-  let URL = `${app.context.$sections.serverUrl}/project/${app.context.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName ? pageName : app.context.route.params.pathMatch ? app.context.route.params.pathMatch : '/'))}`;
+  const pathMatch = Array.isArray(route.params.pathMatch)
+    ? route.params.pathMatch.join('/')
+    : route.params.pathMatch || ''
 
-  if (app.context.$sections.cname === "active") {
-    URL = `${app.context.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(pageName ? pageName : app.context.route.params.pathMatch ? app.context.route.params.pathMatch : '/'))}`;
+  let URL = `${app.$sections.serverUrl}/project/${app.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName ? pageName : pathMatch ? pathMatch : '/'))}`;
+
+  if (app.$sections.cname === "active") {
+    URL = `${app.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(pageName ? pageName : pathMatch ? pathMatch : '/'))}`;
   }
 
   let payload = {};
 
   let language;
   try {
-    language = app.context.i18n.locale;
+    language = app.i18n.locale;
   } catch {}
 
-  if (app.context.$sections.queryStringSupport === "enabled") {
-    const query_string = parseQS(encodeURIComponent(app.context.route.params.pathMatch || '/'), Object.keys(app.context.route.query).length !== 0, app.context.route.query);
+  if (app.$sections.queryStringSupport === "enabled") {
+    const query_string = parseQS(encodeURIComponent(pathMatch || '/'), Object.keys(route.query).length !== 0, route.query);
     payload = {
       query_string: {
         ...query_string,
@@ -432,7 +437,8 @@ export const renderPageData = async ({ app, pageName }: RenderPageDataParams) =>
   }
 
   try {
-    const res = await app.context.$axios.post(URL, payload, config);
+    const res = await $fetch(URL, {method: "POST", body: payload, ...config});
+    console.log('res', res)
     return { res, error: null };
   } catch (error) {
     return { res: null, error };

@@ -3,7 +3,9 @@ import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 export default defineNuxtPlugin((_nuxtApp) => {
   const config = useRuntimeConfig()
   const sectionsConfig : any = config.public.sections
-
+  _nuxtApp.vueApp.config.warnHandler = () => {
+    // No-op: silence warnings
+  }
   const $sections = {
     projectId: sectionsConfig.projectId,
     projectUrl: sectionsConfig.projectUrl,
@@ -19,5 +21,5 @@ export default defineNuxtPlugin((_nuxtApp) => {
   }
 
   // Provide it globally via Nuxt app context
-  _nuxtApp.provide('$sections', $sections)
+  _nuxtApp.provide('sections', $sections)
 })
