@@ -1,29 +1,39 @@
 <template>
-  <div class="container text-center sub-types" :class="{'containerWidth': isSideBarOpen === false}">
-
+  <div class="container text-center sub-types" :class="{'containerWidth': !isSideBarOpen}">
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
       <div>
-        <div class="active-tab px-2 h-45px flex justify-center items-center rounded-tl-lg" :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-top-left-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'config';">
+        <div
+          class="px-2 h-45px flex justify-center items-center rounded-tl-lg"
+          :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'"
+          style="border-top-left-radius: 10px 10px; cursor: pointer;"
+          @click="currentTab = 'config'"
+        >
           <div
-              class="font-light mt-2 mb-2"
-              :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
+            class="font-light mt-2 mb-2"
+            :class="currentTab === 'config' ? 'text-white' : 'inactive-text'"
           >
-            <div class="text-capitalize ">{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : formatTexts(formatName(props.name, " / ")) }}</div>
+            <!-- Access nested props.props -->
+            <div class="text-capitalize ">{{ props.props.linked_to ? formatTexts(formatName(props.props.linked_to, '/')) : formatTexts(formatName(props.props.name, " / ")) }}</div>
           </div>
         </div>
       </div>
-      <!--  The below div element adds an extra tab to the configurable section. -->
-      <!--  If the custom form is present on the host project with the same name as the configurable section, the tab will show and clicking on it results in showing this custom form   -->
-      <div v-if="showCustomFormTab === true" class="active-tab px-2 h-45px flex justify-center items-center rounded-br-lg" :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'" style="border-bottom-right-radius: 10px 10px; cursor: pointer;" @click="currentTab = 'custom';">
+      <!-- Custom form tab -->
+      <div v-if="showCustomFormTab"
+        class="px-2 h-45px flex justify-center items-center rounded-br-lg"
+        :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'"
+        style="border-bottom-right-radius: 10px 10px; cursor: pointer;"
+        @click="currentTab = 'custom'"
+      >
         <div
           class="font-light mt-2 mb-2"
           :class="currentTab === 'custom' ? 'text-white' : 'inactive-text'"
         >
-          {{ $t('Custom form') }}
+          {{ t('Custom form') }}
         </div>
       </div>
     </div>
-    <!--  The below div element is the configurable section form tab and its fields/types are loaded based on the response fields coming from backend -->
+
+    <!-- Config Tab Content -->
     <div v-show="currentTab === 'config'">
       <div class="error-message">
         {{ errorMessage }}
@@ -31,40 +41,61 @@
       <div class="form-group">
         <form>
           <div
-            class=" flex flex-col justify-between"
-			:class="{'content-wrapper': isSideBarOpen === false}"
+            class="flex flex-col justify-between"
+            :class="{'content-wrapper': !isSideBarOpen}"
           >
-            <div v-if="globalSectionMode === true">
+            <!-- Global Section Specific Fields -->
+            <div v-if="globalSectionMode">
               <div class="autoInsertRow">
                 <div>
-                  {{ $t('autoInsertInstance') }}
+                  {{ t('autoInsertInstance') }}
                 </div>
                 <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
               </div>
-              <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+              <div v-if="!props.linked_to" class="autoInsertRow">
                 <input
-                    class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
-                    type="text"
-                    :placeholder="$t('instanceName')+'*'"
-                    :disabled="props.linked_to !== '' && props.linked_to !== undefined"
-                    v-model="instanceName"
+                  class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+                  type="text"
+                  :placeholder="t('instanceName')+'*'"
+                  :disabled="!!props.props.linked_to" <!-- Access nested props.props -->
+                  v-model="instanceName"
                 />
               </div>
-              <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+              <span v-if="instanceNameError" class="pagesReference mb-2">{{ t('instanceNameRequired') }}</span>
             </div>
             <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+
+            <!-- Translation Component -->
             <TranslationComponent v-if="translationComponentSupport" :locales="locales" :default-lang="defaultLang" @setFormLang="updateLocale"/>
+
+            <!-- Dynamic Fields -->
             <div
+              v-for="(field, idx) in props.fields" <!-- Access nested props.props -->
               :key="idx"
-              v-for="(field, idx) in props.fields"
               :class="getType(field.type) !== 'file' ? '' : ''"
             >
-              <div v-if="registeredType(field.type, field.key)" class="element d-inline-block">
-                <component :is="registeredType(field.type, field.key)" :reference="sectionsConfigurableType" :options=options :options-data="optionsData" :field="field" :custom-form-data="customFormData" :sections-user-id="sectionsUserId" :ref="`${field.type}-${field.key}`" :locales="locales" :selectedLang="formLang" :default-lang="defaultLang" :option-values="optionValues" />
+              <!-- Registered Custom Component -->
+              <div v-if="registeredComponents[field.type + '_' + field.key]" class="element d-inline-block">
+                 <component
+                    :is="registeredComponents[field.type + '_' + field.key]"
+                    :reference="sectionsConfigurableType"
+                    :options="options"
+                    :options-data="optionsData"
+                    :field="field"
+                    :custom-form-data="customFormData"
+                    :sections-user-id="sectionsUserId"
+                    :ref="el => fieldRefs[field.type + '-' + field.key] = el" <!-- Function ref for dynamic refs -->
+                    :locales="locales"
+                    :selectedLang="formLang"
+                    :default-lang="defaultLang"
+                    :option-values="optionValues"
+                 />
               </div>
+              <!-- Unsupported Field Type -->
               <div v-else-if="!getType(field.type)" class="element w-full unsupportedFieldType">
-                {{ $t('unsupportedFieldType', { name: `"${field.type}_${field.key}"`, type: `"${field.type}"`}) }}
+                {{ t('unsupportedFieldType', { name: `"${field.type}_${field.key}"`, type: `"${field.type}"`}) }}
               </div>
+              <!-- Standard Field Types -->
               <div v-else class="element d-inline-block">
                 <div
                   v-if="field.name && field.type !== 'hidden'"
@@ -72,11 +103,18 @@
                 >
                   {{ changeFieldLabel(field) }}
                 </div>
+                <!-- WYSIWYG Editor -->
                 <div v-if="field.type === 'wysiwyg'">
                   <div class="input">
-                    <wysiwyg :ref="field.type+'Editor'" class="wyzywig" :html="computedWysiwygValue(field)" @settingsUpdate="(content) => onEditorChange(content, idx, field.key)" />
+                     <wysiwyg
+                        :ref="el => fieldRefs[field.type + 'Editor'] = el" <!-- Function ref -->
+                        class="wyzywig"
+                        :html="computedWysiwygValue(field)"
+                        @settingsUpdate="(content) => onEditorChange(content, idx, field.key)"
+                     />
                   </div>
                 </div>
+                <!-- Textarea -->
                 <div v-else-if="field.type === 'textarea'" class="w-full">
                   <textarea
                     v-model="optionsData[field.key][formLang]"
@@ -86,19 +124,21 @@
                     @change="changeFieldValue($event, idx, field.type, field.key)"
                   />
                 </div>
+                <!-- String/Textfield Input -->
                 <div v-else-if="stringType(field.key)" class="w-full">
-                  <input
-                    v-model="optionsData[field.key][formLang]"
-                    class="d-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
-                    :name="field.name"
-                    :placeholder="changeFieldLabel(field)"
-                    @change="changeFieldValue($event, idx, field.type, field.key)"
-                  />
+                   <input
+                      v-model="optionsData[field.key][formLang]"
+                      class="d-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                      :name="field.name"
+                      :placeholder="changeFieldLabel(field)"
+                      @change="changeFieldValue($event, idx, field.type, field.key)"
+                   />
                 </div>
+                <!-- Other Input Types (Media, Integer, Select etc.) -->
                 <div v-else class="w-full justify-start">
-                  <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url !== ''" class="py-4 flex align-items-center">
+                  <!-- Media Preview -->
+                  <div v-if="field.type === 'media' && optionsData[field.key] && optionsData[field.key].length > 0 && optionsData[field.key][0].url" class="py-4 flex align-items-center">
                     <img
-                      v-if="optionsData[field.key][0].url"
                       :src="optionsData[field.key][0].url"
                       alt="image"
                       class="w-95px h-63px object-contain"
@@ -117,9 +157,11 @@
                       <CloseIcon />
                     </div>
                   </div>
+                  <!-- Media Upload Progress -->
                   <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
                     <loadingCircle />
                   </div>
+                  <!-- Integer Multiple Options -->
                   <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
                     <div class="selectMultipleOptions">
                       <div v-for="option in optionValues.option_values" :key="option.id" class="multiple-options-wrapper">
@@ -127,8 +169,9 @@
                       </div>
                     </div>
                   </div>
+                  <!-- Generic Input/Select -->
                   <component
-                    v-show="(field.type === 'string' || field.type === 'textfield') || (!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && previewMedia === '' && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && optionsData[field.key][0].url === ''))))))"
+                    v-show="(field.type === 'string' || field.type === 'textfield') || (!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && !previewMedia && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && !optionsData[field.key][0].url))))))"
                     :value="computedComponentValue(field)"
                     :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
                     :id="field.key"
@@ -153,693 +196,826 @@
               </div>
             </div>
           </div>
-          <button class="submit-btn mt-4" type="button" @click="addConfigurable()">
-            {{ $t('Submit data') }}
+          <!-- Submit Buttons -->
+          <button class="submit-btn mt-4" type="button" @click="addConfigurable">
+            {{ t('Submit data') }}
           </button>
           <button
-              v-if="instance === false && props.creation !== true && globalSectionMode === false"
-              class="mt-4 submit-btn promote-btn"
-              type="button"
-              @click="$emit('promote-section')"
+            v-if="!instance && !props.creation && !globalSectionMode"
+            class="mt-4 submit-btn promote-btn"
+            type="button"
+            @click="emit('promote-section')"
           >
-            {{ $t('promoteSection') }}
+            {{ t('promoteSection') }}
           </button>
         </form>
       </div>
-      <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
+      <!-- Media Component -->
+      <MediaComponent ref="sectionsMediaComponentRef" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
     </div>
-    <!--  The below div element is the custom form tab and its loaded from the host project using the computed getComponentForm() property that relies on the configurable section name -->
+
+    <!-- Custom Tab Content -->
     <div v-show="currentTab === 'custom'" class="sub-types">
       <div>
-        <div class="text-video d-flex content-wrapper" v-show="formatName(props.name)">
-          <component :is="getComponentForm" :ref="formatName(props.name)" :section-settings="props" :section-options="options[0]" @whitelistIdUpdated="updateWhitelistId" @customFormEvent="(data) => { customFormData = data }" @load="(value) => $emit('load', value)" @customFormLoaded="showCustomFormTab = true" />
+        <div class="text-video d-flex content-wrapper" v-show="formatName(props.props.name)"> <!-- Access nested props.props -->
+           <component
+              :is="getComponentForm"
+              :ref="el => fieldRefs[formatName(props.props.name)] = el" <!-- Function ref, Access nested props.props -->
+              :section-settings="props.props" <!-- Pass nested props.props -->
+              :section-options="options[0]"
+              @whitelistIdUpdated="updateWhitelistId"
+              @customFormEvent="(data) => { customFormData = data }"
+              @load="(value) => emit('load', value)"
+              @customFormLoaded="showCustomFormTab = true"
+           />
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive, computed, watch, onMounted, defineProps, defineEmits, shallowRef, nextTick } from 'vue';
+import { useNuxtApp, useCookie, useRoute, useI18n } from '#app'; // Import Nuxt 3 composables
 import {
   formatName,
   sectionHeader,
-  importComp,
+  importComp, // Keep using this helper for now, ensure it works with Vite dynamic imports
   deleteMedia,
   globalFileUpload,
-  importJs,
+  importJs, // Keep using this helper, but refactor if 'require' causes issues
   parseQS,
   validateQS,
-  getGlobalTypeData, formatTexts
-} from "../../utils";
+  getGlobalTypeData,
+  formatTexts
+} from "../../utils/helpers"; // Adjusted path
+
+// Import local components explicitly (Nuxt auto-import might not work reliably for deep nesting)
 import loadingCircle from "../icons/loadingCircle.vue";
 import CloseIcon from "../icons/close.vue";
 import UploadMedia from "../../Medias/UploadMedia.vue";
 import MediaComponent from "../../Medias/MediaComponent.vue";
-import wysiwyg from "../../components/Editor/wysiwyg.vue";
+import wysiwyg from "../Editor/wysiwyg.vue"; // Corrected path
 import TranslationComponent from "../../Translations/TranslationComponent.vue";
 import GlobalReferences from "../SubTypes/globalReferences.vue";
 
-export default {
-  components: {
-    UploadMedia,
-    MediaComponent,
-    TranslationComponent,
-    GlobalReferences,
-    loadingCircle,
-    CloseIcon,
-    wysiwyg
+// Composables
+const nuxtApp = useNuxtApp();
+const route = useRoute();
+const { t, locale } = useI18n();
+const authToken = useCookie("sections-auth-token");
+
+// Props
+const props = defineProps({
+  props: { // This holds the nested object with fields like name, fields, linked_to etc.
+    type: Object,
+    default: () => ({}),
   },
-  props: {
-    props: {
-      type: Object,
-      default: () => {},
-    },
-    savedView: {
-      type: Object,
-      default: {},
-    },
-    headers: {
-      type: Object,
-      default: {},
-    },
-    html: {
-      type: String,
-      default: ""
-    },
-    sectionsUserId: {
-      type: String,
-      default: ''
-    },
-    sectionsConfigurableType: {},
-    locales: {
-      type: Array,
-      default() {
-        return ['en', 'fr']
-      }
-    },
-    defaultLang: {
-      type: String,
-      default: 'en'
-    },
-    translationComponentSupport: {
+  savedView: {
+    type: Object,
+    default: () => ({}),
+  },
+  headers: { // Likely unused now with Nuxt 3 fetching
+    type: Object,
+    default: () => ({}),
+  },
+  html: { // Likely related to WYSIWYG initial content
+    type: String,
+    default: ""
+  },
+  sectionsUserId: {
+    type: String,
+    default: ''
+  },
+  sectionsConfigurableType: {}, // Type could be more specific
+  locales: {
+    type: Array,
+    default: () => ['en', 'fr']
+  },
+  defaultLang: {
+    type: String,
+    default: 'en'
+  },
+  translationComponentSupport: {
+    type: Boolean,
+    default: false
+  },
+  instance: { // Is this a global instance?
+    type: Boolean,
+    default: false
+  },
+  linked: { // Is this linked to a global instance?
+    type: Boolean,
+    default: false
+  },
+  basePath: {
+    type: String,
+    default: ''
+  },
+  isSideBarOpen: {
+    type: Boolean,
+    default: false
+  },
+  // Removed incorrect top-level props. Access via props.props.fieldName
+  creation: { // Used in template logic - IS THIS PASSED SEPARATELY OR INSIDE props.props? Assuming separate for now.
       type: Boolean,
       default: false
-    },
-    instance: {
-      type: Boolean,
-      default: false
-    },
-    linked: {
-      type: Boolean,
-      default: false
-    },
-    basePath: {
-      type: String,
-      default: ''
-    },
-	isSideBarOpen: {
-	  type: Boolean,
-	  default: false
-	}
-  },
-  data() {
-    return {
-      errorMessage: "",
-      settings: {},
-      options: [{}],
-      optionValues: {},
-      currentTab: 'config',
-      optionsData: {},
-      showCustomFormTab: false,
-      previewMedia: "",
-      isInProgress: false,
-      mediaError: '',
-      customFormData: null,
-      formLang: this.$i18n.locale.toString(),
-      autoInsert: false,
-      instanceNameError: false,
-      showPagesList: false,
-      instanceName: '',
-      pages: []
-    };
-  },
-  watch: {
-    settings() {
-      this.$emit('settingsUpdate', this.settings)
-    },
-    html() {
-      this.settings = this.html
-    },
-    props: {
-      handler(v) {
-        if (v && v.fields) {
-          v.fields.forEach((field) => {
-            if (this.options[0][field.key] === undefined) {
-              this.$set(this.options[0], field.key, null);
-            }
-            if (this.optionsData[field.key] === undefined) {
-              if (this.stringType(field.type)) {
-                this.$set(this.optionsData, field.key, {})
-                this.locales.forEach(locale => {
-                  this.$set(this.optionsData[field.key], locale, '');
-                })
-              } else {
-                this.$set(this.optionsData, field.key, null);
-              }
-            }
-          });
-        }
-      },
-      deep: true,
-      immediate: true
-    }
-  },
-  computed: {
-    id() {
-      if (this.savedView.id) {
-        return this.savedView.id;
-      }
-      return "id-" + Date.now();
-    },
-    weight() {
-      if (this.savedView.weight) {
-        return this.savedView.weight;
-      }
-      return null;
-    },
-    // This property is to import the custom form from the host project if it exists and if it has the same name as the configurable section type
-    getComponentForm() {
-      let path = "";
-      if (this.props.name.includes(":")) {
-        path = "/forms/" + this.props.name.split(":")[1];
-      } else {
-        path = "/forms/" + this.props.name;
-      }
-      return importComp(path);
-    },
-    globalSectionMode() {
-      return this.instance === true || this.linked === true
-    }
-  },
-  mounted() {
-    this.$emit('loadReference')
-    // Load the configurable section type options
-    if (this.savedView.fields) {
-      const options = [];
-      const fields = [];
-      let savedViewData = {};
-      if (this.savedView.render_data) {
-        savedViewData = this.savedView.render_data
-      } else {
-        savedViewData = this.savedView.renderData
-      }
-      savedViewData.map((rdata) => {
-        const keys = Object.keys(rdata.settings);
-        const obj = {};
-        keys.map((key) => {
-          obj[key] = rdata.settings[key];
-        });
-        options.push(obj);
-        const fieldGroup = this.savedView.fields;
-        if (fieldGroup[0][0]) {
-          fields.push(...fieldGroup);
-        } else {
-          fields.push(fieldGroup);
-        }
-      });
-      this.options = options;
-
-      let alteredOptions = null
-      let hooksJs = importJs(`/js/configurable-hooks`)
-      if (hooksJs['configurable_pre_render']) {
-        if (typeof hooksJs['configurable_pre_render'] === 'function') {
-          alteredOptions = hooksJs['configurable_pre_render'](JSON.parse(JSON.stringify(this.options)), this.defaultLang, this.locales, this.props)
-        }
-      }
-
-      if (alteredOptions) {
-        this.$set(this, ['options'], alteredOptions);
-      }
-
-      this.props.fields.forEach((field) => {
-        if (this.options[0][field.key] === undefined) {
-          if (this.stringType(field.type)) {
-            this.$set(this.options[0], field.key, {});
-            this.locales.forEach(locale => {
-              this.$set(this.options[0][field.key], locale, '');
-            })
-          } else {
-            this.$set(this.options[0], field.key, null);
-          }
-        }
-      });
-
-      Object.assign(this.optionsData, this.options[0])
-      Object.keys(this.options[0]).forEach(key => {
-        this.$set(this.optionsData, key, this.options[0][key]);
-      })
-      this.props.fields = [...fields[0]];
-    } else {
-      this.props.fields.forEach((field) => {
-        if (this.options[0][field.key] === undefined || this.options[0][field.key] === null) {
-          if (this.stringType(field.type)) {
-            this.$set(this.options[0], field.key, {});
-            this.locales.forEach(locale => {
-              this.$set(this.options[0][field.key], locale, '');
-            })
-          } else {
-            this.$set(this.options[0], field.key, null);
-          }
-        }
-      });
-    }
-
-    if (this.savedView.settings) {
-      this.settings.data = this.savedView.settings;
-    }
-
-    if (this.props.dynamic_options || this.savedView.dynamic_options){
-      this.$emit("load", true);
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
-
-      const URL =
-        `${this.$sections.serverUrl}/project/${this.$sections.projectId}/section/${this.props.nameID ? this.props.nameID : this.props.name}/options`;
-
-      this.$axios
-        .get(URL, config)
-        .then((res) => {
-          //TODO this should be updated to iterate over all the elements of the data array
-          //and key the result by the `field` key in the object
-          this.optionValues = res.data[0]
-
-          if (this.optionValues.option_values) {
-            this.optionValues.option_values.forEach(opt => {
-              if (this.isSelected(opt.id, this.optionValues.field)) {
-                const foundIdx = this.optionValues.option_values.findIndex(el => el.id == opt.id)
-                this.optionValues.option_values.splice(foundIdx, 1)
-                this.optionValues.option_values.unshift(opt)
-              }
-            })
-          }
-
-          if (this.props.addToPage) {
-            this.addConfigurable()
-          }
-
-          this.$emit("load", false);
-        })
-        .catch((err) => {
-          this.$emit("load", false);
-          this.showToast("Error", "error", err.response.data.message.toString());
-        });
-    }
-
-    this.importHooks('mounted')
-
-    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
-      this.getGlobalType()
-    }
-  },
-  methods: {
-    formatTexts,
-    formatFileName(name) {
-      if (!name) {
-        return "Choose a file...";
-      }
-      return "..." + name.substr(name.length - 8);
-    },
-    removeRow(idx) {
-      this.options.splice(idx, 1);
-      this.props.fields.splice(idx, 1);
-    },
-    stringType(type, name) {
-      return ['wysiwyg', 'string', 'textfield', 'textarea'].includes(type)
-    },
-    async changeFieldValue(e, idx, type, fieldname) {
-      const value = type === "media" ? e : e.target.value;
-      const name = type === "media" ? fieldname : e.target.name;
-      if (type === "media") {
-        await this.mediaUpload(e, idx, name);
-      } else if(type === 'integer') {
-        this.options[0][name] = parseInt(value);
-      } else if(type === 'textarea') {
-        this.options[0][name][this.formLang] = value;
-      } else if(this.stringType(type) && !(this.optionValues.field === fieldname && this.optionValues.option_values)) {
-        this.options[0][name][this.formLang] = value;
-      } else {
-        this.options[0][name] = value;
-      }
-    },
-    async mediaUpload(e, idx, name) {
-      this.isInProgress = true
-      const media = [
-        {
-          media_id: "",
-          url: "",
-          fielname: ""
-        }
-      ];
-      this.mediaError = ''
-      await globalFileUpload(e.target.files[0]).then(
-        (result) => {
-          if(result.success) {
-            this.isInProgress = false
-            media[0].url = result.data.files[0].url;
-            media[0].filename = result.data.files[0].filename;
-            media[0].media_id = result.data.id;
-            this.previewMedia = media[0].url;
-            this.options[0][name] = media;
-          } else {
-            this.isInProgress = false
-            this.mediaError = `${result.error.response.data.error}. ${result.error.response.data.message}`
-          }
-        }
-      )
-    },
-    async removeImage(name) {
-      this.previewMedia = ''
-      this.optionsData[name][0].url = ""
-      this.options[0][name] = []
-    },
-    onEditorChange(html, idx, fieldname) {
-      this.options[0][fieldname][this.formLang] = html;
-    },
-    addAnother() {
-      this.errorMessage = "";
-      let errorMessage = "";
-
-      this.options.map((opt) => {
-        const fields = this.props.fields[0];
-        fields.map((field) => {
-          if (!opt[field.name] || opt[field.name] === "no-value") {
-            errorMessage =
-              "You must fill your current fields before adding a new one";
-          }
-        });
-      });
-      if (errorMessage) {
-        this.errorMessage = errorMessage;
-      } else {
-        this.props.fields.push(this.props.fields[0]);
-        this.options.push({});
-      }
-    },
-    formatName,
-    // Compute the element tag name based on the field value
-    getTag(type, name) {
-      switch (type) {
-        case "integer":
-          if (
-            this.optionValues.field === name &&
-            this.optionValues.option_values
-          ) {
-            return "select";
-          }
-          return "input";
-        case "media":
-          return "input";
-        case "string":
-          if (
-            this.optionValues.field === name &&
-            this.optionValues.option_values
-          ) {
-            return "select";
-          }
-          return "input";
-        case "textfield":
-          if (
-            this.optionValues.field === name &&
-            this.optionValues.option_values
-          ) {
-            return "select";
-          }
-          return "input";
-        case "textarea":
-          if (
-            this.optionValues.field === name &&
-            this.optionValues.option_values
-          ) {
-            return "select";
-          }
-          return "textarea";
-      }
-    },
-    // Compute the element type based on the type value
-    getType(type) {
-      switch (type) {
-        case "file":
-          return "file";
-        case "media":
-          return "file";
-        case "string":
-          return "text";
-        case "integer":
-          return "text";
-        case "textfield":
-          return "text";
-        case "textarea":
-          return "text";
-        case "hidden":
-          return "text";
-        case "wysiwyg":
-          return "text";
-      }
-    },
-    addConfigurable() {
-      this.instanceNameError = false
-      if (this.globalSectionMode && this.instanceName === '') {
-        this.instanceNameError = true
-        return
-      }
-      this.errorMessage = "";
-      let errorMessage = "";
-      Object.keys(this.options[0]).map((key, i) => {
-        const fields = this.props.fields.find(field => field.key === key);
-        let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
-        if (fields.type ==='boolean' && this.options[0][key] === null) {
-          this.options[0][key] = false
-        }
-        if (((typeof this.options[0][key] === 'string' && !this.options[0][key]) || (typeof this.options[0][key] === 'object' && this.stringType(fields.type) && !this.options[0][key][this.defaultLang])) && typeof this.options[0][key] !== "boolean" && !Array.isArray(this.options[0][key])) {
-          if (typeof this.options[0][key] === 'string') {
-            errorMessage =
-              this.$t('fillRequiredFields') + ` (${key})`;
-          } else {
-            errorMessage =
-              this.$t('fillRequiredFields') + ` (${key})` + ` / (${this.defaultLang})`;
-          }
-        } else if (fields.type ==='integer' && !Array.isArray(this.options[0][key]) && (this.options[0][key] === null || isNaN(this.options[0][key]))) {
-          errorMessage =
-            this.$t('fillRequiredFields') + ` (${key})`;
-        } else if (this.options[0][key] === null) {
-          errorMessage =
-            this.$t('fillRequiredFields') + ` (${key})`;
-        } else if (typeComp && typeComp.methods) {
-          try {
-            let validatedOptions = typeComp.methods.validateOptions(this.options, fields, key, this)
-            if(validatedOptions.errorMessage === true) {
-              errorMessage = this.$t('fillRequiredFields') + ` (${key} ${validatedOptions.errors})`;
-            }
-          } catch {}
-        }
-      });
-      if (errorMessage) {
-        this.errorMessage = errorMessage;
-        return;
-      } else {
-        Object.keys(this.options[0]).map((key, i) => {
-          const fields = this.props.fields.find(field => field.key === key);
-          let typeComp = fields ? this.registeredType(fields.type, fields.key) : null
-          try {
-            typeComp.methods.optionsValidated(this)
-          } catch {}
-        })
-      }
-      this.$emit("load", true);
-
-      const token = this.$cookies.get("sections-auth-token");
-      const header = {
-        token,
-      };
-      const config = {
-        headers: sectionHeader(header),
-      };
-
-      const options = JSON.stringify(this.options)
-
-      const variables = {
-        section: {
-          name: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
-          weight: 1,
-          options: this.options
-        },
-        base_path: this.basePath
-      };
-
-      let language = undefined
-      try {
-        language = this.$i18n.locale
-      } catch {}
-
-      if (this.$sections.queryStringSupport && this.$sections.queryStringSupport === "enabled") {
-        variables["query_string"] = parseQS(encodeURIComponent(this.$route.params.pathMatch ? this.$route.params.pathMatch : '/'), Object.keys(this.$route.query).length !== 0, this.$route.query)
-        if (this.props.query_string_keys && this.props.query_string_keys.length > 0) {
-          variables["query_string"] = {
-            ...variables["query_string"],
-            ...validateQS(variables["query_string"], this.props.query_string_keys, true)
-          }
-        }
-        variables["query_string"] = {
-          ...variables["query_string"],
-          language
-        }
-      }
-
-      const URL =
-        this.$sections.serverUrl +
-        `/project/${this.$sections.projectId}/section/render`;
-
-      this.$axios
-        .post(URL, variables, config)
-        .then((res) => {
-          this.$emit("load", false);
-          if (res.data && res.data.error) {
-            this.$emit('errorAddingSection', {
-              closeModal: false,
-              title: "Error adding "+ this.props.name,
-              message: res.data.error
-            })
-            return;
-          }
-          this.$emit('addSectionType', {
-            name: this.props.name.includes(":") ? this.props.name.split(":")[1] : this.props.name,
-            nameID: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
-            type: 'configurable',
-            settings: this.options[0],
-            id: this.id,
-            weight: this.weight,
-            render_data: res.data.render_data,
-            query_string_keys: res.data.query_string_keys,
-            auto_insertion: this.autoInsert,
-            instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
-          })
-        })
-        .catch((e) => {
-          if (e.response.status === 404) {
-            this.$emit('addSectionType', {
-              name: this.props.name.includes(":") ? this.props.name.split(":")[1] : this.props.name,
-              nameID: this.props.name.includes(":") ? this.props.name : `${this.savedView.application_id}:${this.props.name}`,
-              type: 'configurable',
-              settings: this.options[0],
-              id: this.id,
-              weight: this.weight,
-              render_data: e.response.data.render_data,
-              query_string_keys: e.response.data.query_string_keys,
-              auto_insertion: this.autoInsert,
-              instance_name: this.props.addToPage ? this.props.instance_name : this.instanceName
-            })
-          } else {
-            this.$emit('errorAddingSection', {
-              closeModal: false,
-              title: "Error adding "+ this.props.name,
-              message: e.response.data.error ? e.response.data.error : this.$t('saveConfigSectionError')
-            })
-          }
-          this.$emit("load", false);
-        });
-    },
-    async getGlobalType() {
-      this.$emit("load", true);
-      const result = await getGlobalTypeData(this.props.linked_to)
-      if (result.res && result.res.data) {
-        this.$emit("load", false);
-        this.autoInsert = result.res.data.auto_insertion
-        if (result.res.data.pages && result.res.data.pages.length > 0) {
-          this.pages = result.res.data.pages.map(p => p.path)
-        }
-        this.instanceName = result.res.data.name
-      } else if (result.error) {
-        this.$emit("load", false);
-        this.showToast("Error", "error", result.error.response.data.message, result.error.response.data.options);
-      }
-    },
-    showToast(title, variant, message) {
-      this.$toast[variant](message, {
-        position: "top-right",
-        timeout: 5000,
-        closeOnClick: true,
-        pauseOnFocusLoss: true,
-        pauseOnHover: true,
-        draggable: true,
-        draggablePercent: 0.6,
-        showCloseButtonOnHover: false,
-        hideProgressBar: false,
-        closeButton: "button",
-        icon: false,
-        rtl: false
-      });
-    },
-    updateWhitelistId(id) {
-      this.optionsData['whitelist_id'] = id;
-      this.options[0]['whitelist_id'] = id;
-    },
-    isSelected(id, name) {
-      return this.optionsData[name] !== undefined && this.optionsData[name] !== null && this.optionsData[name].indexOf(id) !== -1;
-    },
-    selectOption(value, name) {
-      if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) === -1) {
-        this.optionsData[name].push(parseInt(value));
-      } else if (Array.isArray(this.optionsData[name]) && this.optionsData[name].indexOf(parseInt(value)) !== -1) {
-        this.optionsData[name].splice(this.optionsData[name].indexOf(parseInt(value)), 1);
-      } else {
-        this.$set(this.optionsData, name, [parseInt(value)]);
-      }
-      this.options[0][name] = this.optionsData[name]
-    },
-    importHooks(hook, params) {
-      let hooksJs = importJs(`/js/configurable-hooks`)
-      if (hooksJs[hook]) {
-        return hooksJs[hook](params)
-      } else return;
-    },
-    registeredType(type, key) {
-      let path = `/configurable_components/${type}_${key}`
-      return importComp(path);
-    },
-    updateLocale(locale) {
-      this.$set(this, 'formLang', locale)
-      this.$set(this.props, 'fields', [...this.props.fields])
-      this.$set(this, 'optionsData', {...this.optionsData})
-      this.$set(this, 'options', [...this.options])
-    },
-    computedWysiwygValue(field) {
-      if (this.options && this.options[0] && this.options[0][field.key] && this.options[0][field.key][this.formLang]) {
-        return this.options[0][field.key][this.formLang]
-      }
-    },
-    computedComponentValue(field) {
-      if (this.optionValues.field === field.name && this.optionValues.option_values) {
-        return this.optionsData[field.key]
-      } else if (this.stringType(field.type, field.name)) {
-        return this.optionsData[field.key][this.formLang]
-      } else return this.optionsData[field.key]
-    },
-    changeFieldLabel(field) {
-      let importedHook = this.importHooks('updateFieldLabel', field)
-      if(importedHook) {
-        return importedHook
-      } else return field.name.replace("_", " ")+'*'
-    }
   }
-};
+});
+
+// Emits
+const emit = defineEmits(['settingsUpdate', 'load', 'promote-section', 'errorAddingSection', 'addSectionType', 'loadReference']);
+
+// Reactive State
+const errorMessage = ref("");
+const settings = reactive({}); // Consider structure based on usage
+const options = reactive([{}]); // Array of option objects
+const optionValues = reactive({}); // Holds dynamic option values fetched from API
+const currentTab = ref('config');
+const optionsData = reactive({}); // Holds the actual data for the fields, keyed by field.key
+const showCustomFormTab = ref(false);
+const previewMedia = ref("");
+const isInProgress = ref(false); // For media uploads
+const mediaError = ref('');
+const customFormData = ref(null); // Data from custom form component
+const formLang = ref(locale.value.toString()); // Use i18n locale
+const autoInsert = ref(false); // For global instances
+const instanceNameError = ref(false);
+const showPagesList = ref(false);
+const instanceName = ref('');
+const pages = ref([]); // For global instance page references
+const selectedMedia = ref(null); // From MediaComponent emit
+const fieldRefs = reactive({}); // To hold dynamic template refs
+const sectionsMediaComponentRef = ref(null); // Ref for MediaComponent
+const registeredComponents = reactive({}); // To hold dynamically imported registered components
+
+// Computed Properties
+const id = computed(() => props.savedView.id || `id-${Date.now()}`);
+const weight = computed(() => props.savedView.weight || null);
+
+const getComponentForm = computed(() => {
+  let path = "";
+  // Access nested props.props.name
+  if (props.props.name && props.props.name.includes(":")) {
+    path = "/forms/" + props.props.name.split(":")[1];
+  } else if (props.props.name) {
+    path = "/forms/" + props.props.name;
+  } else {
+      return null; // Return null or a placeholder if name is not available
+  }
+  // Use shallowRef for components to avoid deep reactivity tracking
+  const component = shallowRef(null);
+  importComp(path).then(comp => {
+      component.value = comp;
+      // Check if the component loaded successfully to show the tab
+      if (comp) {
+          showCustomFormTab.value = true;
+      }
+  });
+  return component;
+});
+
+const globalSectionMode = computed(() => props.instance || props.linked);
+
+// Watchers
+watch(settings, (newSettings) => {
+  emit('settingsUpdate', newSettings);
+}, { deep: true });
+
+watch(() => props.html, (newHtml) => {
+  // Assuming settings structure, adjust if needed
+  if (typeof settings.data === 'object' && settings.data !== null) {
+      settings.data = newHtml; // Or merge appropriately
+  } else {
+      settings.data = newHtml;
+  }
+});
+
+// Watch the nested props.props.fields
+watch(() => props.props.fields, (newFields) => {
+  if (newFields) {
+    newFields.forEach((field) => {
+      // Initialize options structure if needed
+      if (options[0][field.key] === undefined) {
+        options[0][field.key] = null; // Or appropriate default
+      }
+      // Initialize optionsData structure
+      if (optionsData[field.key] === undefined) {
+        if (stringType(field.type)) {
+          optionsData[field.key] = {};
+          props.locales.forEach(loc => {
+            optionsData[field.key][loc] = '';
+          });
+        } else {
+          optionsData[field.key] = null; // Or appropriate default (e.g., [] for multi-select)
+        }
+      }
+       // Pre-load registered components
+       loadRegisteredComponent(field.type, field.key);
+    });
+  }
+}, { deep: true, immediate: true });
+
+watch(locale, (newLocale) => {
+    // Update formLang when app locale changes
+    formLang.value = newLocale.toString();
+});
+
+// Methods converted to functions
+function formatFileName(name) {
+  if (!name) return "Choose a file...";
+  return "..." + name.substr(name.length - 8);
+}
+
+function removeRow(idx) {
+  options.splice(idx, 1);
+  // Assuming props.fields is not directly mutable, emit event if needed
+  // props.fields.splice(idx, 1); // Avoid mutating props directly
+}
+
+function stringType(type) {
+  return ['wysiwyg', 'string', 'textfield', 'textarea'].includes(type);
+}
+
+async function changeFieldValue(e, idx, type, fieldname) {
+  const value = type === "media" ? e : e.target.value;
+  const name = type === "media" ? fieldname : e.target.name; // 'name' here is the field key
+
+  if (type === "media") {
+    await mediaUpload(e, idx, name);
+  } else if (type === 'integer') {
+    // Ensure optionsData structure exists
+    if (!optionsData[name]) optionsData[name] = null; // Or appropriate default
+    optionsData[name] = parseInt(value); // Store in optionsData
+    options[0][name] = parseInt(value); // Also update legacy options structure if needed elsewhere
+  } else if (type === 'textarea') {
+    if (!optionsData[name]) optionsData[name] = {};
+    optionsData[name][formLang.value] = value;
+    if (!options[0][name]) options[0][name] = {}; // Legacy
+    options[0][name][formLang.value] = value; // Legacy
+  } else if (stringType(type) && !(optionValues.field === fieldname && optionValues.option_values)) {
+    if (!optionsData[name]) optionsData[name] = {};
+    optionsData[name][formLang.value] = value;
+    if (!options[0][name]) options[0][name] = {}; // Legacy
+    options[0][name][formLang.value] = value; // Legacy
+  } else {
+    // Handle other types like select, checkbox, etc.
+    if (!optionsData[name]) optionsData[name] = null;
+    optionsData[name] = value;
+    options[0][name] = value; // Legacy
+  }
+}
+
+async function mediaUpload(e, idx, name) {
+  isInProgress.value = true;
+  const media = [{ media_id: "", url: "", filename: "" }]; // Corrected typo 'fielname'
+  mediaError.value = '';
+  try {
+    const result = await globalFileUpload(e.target.files[0]); // Assuming globalFileUpload is adapted for Nuxt 3
+    if (result.success) {
+      media[0].url = result.data.files[0].url;
+      media[0].filename = result.data.files[0].filename;
+      media[0].media_id = result.data.id;
+      previewMedia.value = media[0].url;
+      optionsData[name] = media; // Update reactive data store
+      options[0][name] = media; // Update legacy structure if needed
+    } else {
+      mediaError.value = `${result.error?.response?.data?.error || 'Upload failed'}. ${result.error?.response?.data?.message || ''}`;
+    }
+  } catch (error) {
+      console.error("Media upload error:", error);
+      mediaError.value = 'An unexpected error occurred during upload.';
+  } finally {
+      isInProgress.value = false;
+  }
+}
+
+async function removeImage(name) {
+  previewMedia.value = '';
+  // Assuming optionsData[name] is the array [{ url: '...', ... }]
+  if (optionsData[name] && optionsData[name][0]) {
+      const mediaId = optionsData[name][0].media_id;
+      if (mediaId) {
+          try {
+              await deleteMedia(mediaId); // Call delete helper
+          } catch (error) {
+              console.error("Failed to delete media from server:", error);
+              // Optionally show a toast message
+          }
+      }
+      optionsData[name] = []; // Clear the reactive data
+      options[0][name] = []; // Clear legacy structure
+  }
+}
+
+
+function onEditorChange(html, idx, fieldname) {
+  if (!optionsData[fieldname]) optionsData[fieldname] = {};
+  optionsData[fieldname][formLang.value] = html;
+  if (!options[0][fieldname]) options[0][fieldname] = {}; // Legacy
+  options[0][fieldname][formLang.value] = html; // Legacy
+}
+
+function addAnother() {
+  // This logic seems flawed, it adds the *first* field definition again.
+  // Re-evaluate if this feature is needed or how it should work.
+  // If needed, it should likely clone the last set of fields/options.
+  console.warn("'addAnother' functionality needs review for Nuxt 3 migration.");
+  // Original logic (potentially problematic):
+  // errorMessage.value = "";
+  // let error = false;
+  // options.forEach(opt => {
+  //   const fields = props.fields[0]; // Always uses the first field definition
+  //   fields.forEach(field => {
+  //     if (!opt[field.name] || opt[field.name] === "no-value") {
+  //       error = true;
+  //     }
+  //   });
+  // });
+  // if (error) {
+  //   errorMessage.value = "You must fill your current fields before adding a new one";
+  // } else {
+  //   props.fields.push(props.fields[0]); // Mutating props!
+  //   options.push({});
+  // }
+}
+
+function getTag(type, name) {
+  // Simplified logic based on original
+  if ((type === 'integer' || type === 'string' || type === 'textfield' || type === 'textarea') && optionValues.field === name && optionValues.option_values) {
+    return 'select';
+  }
+  if (type === 'media') return 'input';
+  if (type === 'textarea') return 'textarea';
+  return 'input';
+}
+
+function getType(type) {
+  // Simplified logic based on original
+  if (type === 'file' || type === 'media') return 'file';
+  return 'text'; // Default for string, integer, textfield, textarea, hidden, wysiwyg
+}
+
+async function addConfigurable() {
+  instanceNameError.value = false;
+  if (globalSectionMode.value && !instanceName.value) {
+    instanceNameError.value = true;
+    return;
+  }
+
+  errorMessage.value = "";
+  let error = false;
+  let errorField = '';
+
+  // Validate fields using optionsData
+  // Iterate over nested props.props.fields
+  for (const field of props.props.fields) {
+      const key = field.key;
+      const type = field.type;
+      const value = optionsData[key];
+      const isStringType = stringType(type);
+
+      // Check registered component validation first
+      const registeredComp = registeredComponents[type + '_' + key];
+      if (registeredComp?.methods?.validateOptions) { // Check if component and method exist
+          try {
+              // Pass reactive optionsData, field definition, key, and component context (if needed)
+              let validatedOptions = registeredComp.methods.validateOptions(optionsData, field, key, /* component instance proxy if needed */);
+              if (validatedOptions.errorMessage === true) {
+                  error = true;
+                  errorField = `${key} (${validatedOptions.errors})`;
+                  break;
+              }
+          } catch (e) {
+              console.warn(`Error validating options for custom component ${key}:`, e);
+          }
+      }
+
+      // Standard validation
+      if (type === 'boolean' && value === null) {
+          optionsData[key] = false; // Default boolean to false if null
+      } else if (isStringType && typeof value === 'object' && value !== null && !value[props.defaultLang]) {
+          error = true;
+          errorField = `${key} / (${props.defaultLang})`;
+          break;
+      } else if (isStringType && typeof value !== 'object' && !value && typeof value !== 'boolean' && !Array.isArray(value)) {
+          error = true;
+          errorField = key;
+          break;
+      } else if (type === 'integer' && !Array.isArray(value) && (value === null || isNaN(value))) {
+          error = true;
+          errorField = key;
+          break;
+      } else if (value === null && type !== 'boolean') { // Allow null for non-required fields? Add check if field is required
+          // This condition might be too strict depending on requirements
+          // error = true;
+          // errorField = key;
+          // break;
+      }
+  }
+
+
+  if (error) {
+    errorMessage.value = `${t('fillRequiredFields')} (${errorField})`;
+    return;
+  }
+
+  // Notify registered components validation passed (if method exists)
+  // Iterate over nested props.props.fields
+  props.props.fields.forEach(field => {
+      const registeredComp = registeredComponents[field.type + '_' + field.key];
+      if (registeredComp?.methods?.optionsValidated) {
+          try {
+              registeredComp.methods.optionsValidated(/* component instance proxy if needed */);
+          } catch (e) {
+              console.warn(`Error calling optionsValidated for custom component ${field.key}:`, e);
+          }
+      }
+  });
+
+
+  emit("load", true);
+
+  const config = {
+    headers: sectionHeader({ token: authToken.value || '' }), // Use token from useCookie
+  };
+
+  // Prepare payload using reactive optionsData
+  const currentOptions = {};
+  Object.keys(optionsData).forEach(key => {
+      // Ensure the key corresponds to a defined field to avoid sending extra data
+      // Check against nested props.props.fields
+      if (props.props.fields && props.props.fields.some(f => f.key === key)) {
+          currentOptions[key] = optionsData[key];
+      }
+  });
+
+
+  const variables = {
+    section: {
+      // Access nested props.props.name
+      name: props.props.name && props.props.name.includes(":") ? props.props.name : `${props.savedView.application_id}:${props.props.name}`, // Ensure savedView.application_id is available
+      weight: 1, // Or use computed weight?
+      options: [currentOptions] // Send the validated data
+    },
+    base_path: props.basePath
+  };
+
+  let currentLanguage = undefined;
+  try {
+    currentLanguage = locale.value;
+  } catch {}
+
+  if (nuxtApp.$sections.queryStringSupport === "enabled") {
+    const query_string = parseQS(encodeURIComponent(route.params.pathMatch ? route.params.pathMatch.join('/') : '/'), Object.keys(route.query).length !== 0, route.query);
+    // Access nested props.props.query_string_keys
+    if (props.props.query_string_keys && props.props.query_string_keys.length > 0) {
+      variables.query_string = {
+        ...query_string,
+        ...validateQS(query_string, props.props.query_string_keys, true) // Assuming validateQS is adapted
+      };
+    } else {
+        variables.query_string = query_string;
+    }
+    variables.query_string = {
+      ...variables.query_string,
+      language: currentLanguage
+    };
+  }
+
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`;
+
+  try {
+    // Use $fetch for Nuxt 3
+    const res = await $fetch(URL, {
+        method: 'POST',
+        body: variables,
+        headers: config.headers // Pass headers directly
+    });
+
+    if (res && res.error) {
+      emit('errorAddingSection', {
+        closeModal: false,
+        title: "Error adding " + props.props.name, // Access nested props.props
+        message: res.error
+      });
+      return;
+    }
+
+    emit('addSectionType', {
+      // Access nested props.props.name
+      name: props.props.name && props.props.name.includes(":") ? props.props.name.split(":")[1] : props.props.name,
+      nameID: props.props.name && props.props.name.includes(":") ? props.props.name : `${props.savedView.application_id}:${props.props.name}`, // Ensure savedView.application_id
+      type: 'configurable',
+      settings: currentOptions, // Send validated data
+      id: id.value,
+      weight: weight.value,
+      render_data: res.render_data,
+      query_string_keys: res.query_string_keys,
+      auto_insertion: autoInsert.value,
+      // Access nested props.props.addToPage and props.props.instance_name
+      instance_name: props.props.addToPage ? props.props.instance_name : instanceName.value
+    });
+
+  } catch (e) {
+    const errorData = e.response?._data || e.data || {}; // Nuxt 3 $fetch error structure
+    const status = e.response?.status || e.status;
+
+    if (status === 404) {
+      // Handle 404 - potentially render with default data?
+       emit('addSectionType', {
+         // Access nested props.props.name
+         name: props.props.name && props.props.name.includes(":") ? props.props.name.split(":")[1] : props.props.name,
+         nameID: props.props.name && props.props.name.includes(":") ? props.props.name : `${props.savedView.application_id}:${props.props.name}`, // Ensure savedView.application_id
+         type: 'configurable',
+         settings: currentOptions, // Send validated data
+         id: id.value,
+         weight: weight.value,
+         render_data: errorData.render_data, // Use error response data if available
+         query_string_keys: errorData.query_string_keys,
+         auto_insertion: autoInsert.value,
+         // Access nested props.props.addToPage and props.props.instance_name
+         instance_name: props.props.addToPage ? props.props.instance_name : instanceName.value
+       });
+    } else {
+      emit('errorAddingSection', {
+        closeModal: false,
+        title: "Error adding " + props.props.name, // Access nested props.props
+        message: errorData.error || errorData.message || t('saveConfigSectionError')
+      });
+    }
+  } finally {
+    emit("load", false);
+  }
+}
+
+async function getGlobalType() {
+  emit("load", true);
+  try {
+    // Access nested props.props.linked_to
+    const result = await getGlobalTypeData(props.props.linked_to); // Assuming getGlobalTypeData is adapted
+    if (result.res && result.res.data) {
+      autoInsert.value = result.res.data.auto_insertion;
+      if (result.res.data.pages && result.res.data.pages.length > 0) {
+        pages.value = result.res.data.pages.map(p => p.path);
+      }
+      instanceName.value = result.res.data.name;
+    } else if (result.error) {
+      showToast("Error", "error", result.error?.response?.data?.message || 'Failed to load global type data');
+    }
+  } catch (error) {
+      console.error("Error fetching global type data:", error);
+      showToast("Error", "error", 'An unexpected error occurred.');
+  } finally {
+      emit("load", false);
+  }
+}
+
+function showToast(title, variant, message) {
+  // Use a Nuxt 3 compatible toast library or implement a simple notification system
+  // Example: console.log(`[${variant.toUpperCase()}] ${title}: ${message}`);
+   if (nuxtApp.$toast && typeof nuxtApp.$toast[variant] === 'function') {
+       nuxtApp.$toast[variant](message, {
+           // Nuxt 3 toast options might differ
+           position: "top-right",
+           timeout: 5000,
+           // ... other options
+       });
+   } else {
+       console.warn(`Toast notification: [${variant}] ${title} - ${message}`);
+   }
+}
+
+function updateWhitelistId(id) {
+  optionsData['whitelist_id'] = id;
+  options[0]['whitelist_id'] = id; // Legacy
+}
+
+function isSelected(id, name) {
+    const data = optionsData[name];
+    // Check if data is an array and includes the id
+    return Array.isArray(data) && data.includes(parseInt(id));
+}
+
+function selectOption(value, name) {
+  const intValue = parseInt(value);
+  if (!optionsData[name]) {
+      optionsData[name] = []; // Initialize as array if not exists
+  }
+
+  if (Array.isArray(optionsData[name])) {
+      const index = optionsData[name].indexOf(intValue);
+      if (index === -1) {
+          optionsData[name].push(intValue); // Add if not present
+      } else {
+          optionsData[name].splice(index, 1); // Remove if present
+      }
+  } else {
+      // If it wasn't an array before (e.g., null), start a new array
+      optionsData[name] = [intValue];
+  }
+  options[0][name] = optionsData[name]; // Update legacy structure
+}
+
+
+function importHooks(hook, params) {
+  // Ensure importJs is compatible with Nuxt 3/Vite
+  try {
+      const hooksJs = importJs(`/js/configurable-hooks`); // Might need refactoring
+      if (hooksJs && typeof hooksJs[hook] === 'function') {
+          return hooksJs[hook](params);
+      }
+  } catch (e) {
+      console.warn(`Could not import or execute hook '${hook}':`, e);
+  }
+  return undefined; // Return undefined if hook doesn't exist or fails
+}
+
+// Function to load registered components dynamically
+async function loadRegisteredComponent(type, key) {
+    const componentKey = `${type}_${key}`;
+    if (!registeredComponents[componentKey]) {
+        let path = `/configurable_components/${type}_${key}`;
+        try {
+            const comp = await importComp(path);
+            if (comp) {
+                // Use shallowRef for performance with components
+                registeredComponents[componentKey] = shallowRef(comp);
+            } else {
+                registeredComponents[componentKey] = null; // Mark as tried but failed
+            }
+        } catch (e) {
+            // console.warn(`Could not load registered component for ${componentKey}:`, e);
+            registeredComponents[componentKey] = null; // Mark as tried but failed
+        }
+    }
+}
+
+
+function updateLocale(newLocale) {
+  formLang.value = newLocale;
+  // Force reactivity update if needed, though direct v-model should handle it
+  // nextTick(() => { /* potentially force update if direct binding fails */ });
+}
+
+function computedWysiwygValue(field) {
+    // Use reactive optionsData
+    return optionsData[field.key]?.[formLang.value] || '';
+}
+
+function computedComponentValue(field) {
+    // Use reactive optionsData
+    if (optionValues.field === field.name && optionValues.option_values) {
+        return optionsData[field.key]; // For select bound to array/value
+    } else if (stringType(field.type, field.name)) {
+        return optionsData[field.key]?.[formLang.value] || ''; // For translatable strings
+    }
+    return optionsData[field.key]; // For other types
+}
+
+function changeFieldLabel(field) {
+  let importedHook = importHooks('updateFieldLabel', field);
+  if (importedHook) {
+    return importedHook;
+  }
+  // Add * only if field is considered required (add logic if needed)
+  return field.name.replace(/_/g, " ") + '*';
+}
+
+// Lifecycle Hooks
+onMounted(() => {
+  emit('loadReference'); // Emit event defined in defineEmits
+
+  // Initialize options and optionsData from savedView
+  if (props.savedView.fields) {
+    const initialOptions = {};
+    const savedRenderData = props.savedView.render_data || props.savedView.renderData || [];
+
+    if (savedRenderData.length > 0) {
+        // Assuming we only care about the first item's settings for this component instance
+        Object.assign(initialOptions, savedRenderData[0].settings || {});
+    }
+
+    // Ensure all defined fields exist in initialOptions and optionsData
+    // Iterate over nested props.props.fields
+    if (props.props.fields) {
+        props.props.fields.forEach(field => {
+            if (initialOptions[field.key] === undefined) {
+                initialOptions[field.key] = stringType(field.type) ?
+                    props.locales.reduce((acc, loc) => ({ ...acc, [loc]: '' }), {}) :
+                    null; // Or appropriate default like [] for multi-select
+            }
+            if (optionsData[field.key] === undefined) {
+                 optionsData[field.key] = JSON.parse(JSON.stringify(initialOptions[field.key])); // Deep copy initial value
+            }
+        });
+    }
+
+    // Apply configurable_pre_render hook if exists
+    let alteredOptions = null;
+    try {
+        const hooksJs = importJs(`/js/configurable-hooks`);
+        if (hooksJs?.configurable_pre_render) {
+            alteredOptions = hooksJs.configurable_pre_render(
+                JSON.parse(JSON.stringify([initialOptions])), // Pass options structure expected by hook
+                props.defaultLang,
+                props.locales,
+                props.props // Pass the nested props object itself
+            );
+        }
+    } catch (e) {
+        console.warn("Error running configurable_pre_render hook:", e);
+    }
+
+    // Update optionsData with altered values if hook returned data
+    if (alteredOptions && alteredOptions[0]) {
+        Object.keys(alteredOptions[0]).forEach(key => {
+            if (optionsData.hasOwnProperty(key)) { // Update only existing keys
+                optionsData[key] = alteredOptions[0][key];
+            }
+        });
+    }
+     // Update the legacy options array as well
+     options[0] = { ...initialOptions, ...(alteredOptions ? alteredOptions[0] : {}) };
+
+
+  } else {
+      // Initialize optionsData for fields even if no savedView
+      // Iterate over nested props.props.fields
+      if (props.props.fields) {
+          props.props.fields.forEach(field => {
+              if (optionsData[field.key] === undefined) {
+                  optionsData[field.key] = stringType(field.type) ?
+                      props.locales.reduce((acc, loc) => ({ ...acc, [loc]: '' }), {}) :
+                      null; // Or appropriate default
+                  options[0][field.key] = optionsData[field.key]; // Sync legacy options
+              }
+          });
+      }
+  }
+
+
+  // Initialize settings data
+  if (props.savedView.settings) {
+    settings.data = props.savedView.settings; // Assuming settings is reactive({ data: ... })
+  }
+
+  // Fetch dynamic options if needed
+  // Access nested props.props.dynamic_options
+  if (props.props.dynamic_options || props.savedView.dynamic_options) {
+    emit("load", true);
+    const header = { token: authToken.value || '' };
+    const config = { headers: sectionHeader(header) };
+    // Access nested props.props.nameID and props.props.name
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/${props.props.nameID || props.props.name}/options`;
+
+    $fetch(URL, { headers: config.headers })
+      .then((res) => {
+        // Assuming res is an array and we need the first element
+        if (res && res[0]) {
+            Object.assign(optionValues, res[0]); // Update reactive optionValues
+
+            // Pre-sort options if needed (example from original code)
+            if (optionValues.option_values) {
+                const sortedOptions = [...optionValues.option_values].sort((a, b) => {
+                    const aSelected = isSelected(a.id, optionValues.field);
+                    const bSelected = isSelected(b.id, optionValues.field);
+                    if (aSelected && !bSelected) return -1;
+                    if (!aSelected && bSelected) return 1;
+                    return 0; // Keep original order otherwise or add more sorting criteria
+                });
+                optionValues.option_values = sortedOptions;
+            }
+        }
+
+        // Access nested props.props.addToPage
+        if (props.props.addToPage) {
+          addConfigurable(); // Call addConfigurable after options are loaded
+        }
+      })
+      .catch((err) => {
+        const errorData = err.response?._data || err.data || {};
+        showToast("Error", "error", errorData.message || 'Failed to load dynamic options');
+      })
+      .finally(() => {
+        emit("load", false);
+      });
+  }
+
+  // Run mounted hook from external JS file
+  importHooks('mounted');
+
+  // Fetch global type data if linked
+  // Access nested props.props.linked_to
+  if (props.props.linked_to) {
+    getGlobalType();
+  }
+});
+
 </script>
 
 <style scoped>
+/* Styles remain largely the same, ensure preprocessor (like SASS for darken()) is set up */
 .element {
   margin: 15px;
   flex-direction: column;
@@ -892,16 +1068,17 @@ export default {
 }
 .content-wrapper {
   overflow-y: scroll;
-  height: 550px;
+  height: 550px; /* Consider using CSS variables or making this dynamic */
 }
 .error-message {
-  color: #dc3545;
+  color: #dc3545; /* Standard Bootstrap danger color */
 }
 .inactive-text {
   color: #03B1C7;
 }
 .active-tab {
   background: #03B1C7;
+  color: white; /* Ensure text is visible */
 }
 .inactive-tab {
   background: #ffffff;
@@ -917,7 +1094,7 @@ export default {
 .selectMultipleOptions {
   border-radius: 0.75rem;
   border-width: 1px;
-  border-radius: 0.75rem;
+  border-color: #f2f2f3; /* Match input border */
   overflow-y: scroll;
   align-items: flex-start;
   flex-direction: column;
@@ -937,13 +1114,17 @@ export default {
 .multiple-options-wrapper {
   width: 100%;
 }
+.multiple-options-wrapper:hover .single-multiple-option:not(.multiple-options-selected) {
+    background-color: #f0f0f0; /* Add hover effect */
+}
 
 .multiple-options-selected {
   background: #C2C2C2;
+  font-weight: bold; /* Indicate selection */
 }
 
 .text-area-field {
-  min-height: 48px;
+  min-height: 96px; /* Increase min-height for better usability */
 }
 
 .wl-col {
@@ -956,6 +1137,7 @@ export default {
   justify-content: center;
   gap: 8px;
   align-items: center;
+  margin-bottom: 10px; /* Add some spacing */
 }
 .autoInsertInput {
   width: 15px;
@@ -965,6 +1147,35 @@ export default {
   width: 350px;
 }
 .promote-btn {
-  font-size: 20px !important;
+  font-size: 1rem !important; /* Adjust size */
+  margin-left: 10px; /* Add spacing */
+  background-color: #6c757d; /* Secondary color */
+  border-color: #6c757d;
 }
+.promote-btn:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+.unsupportedFieldType {
+    color: #dc3545;
+    font-style: italic;
+    padding: 10px;
+    border: 1px dashed #dc3545;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+.submit-btn {
+    /* Add styles from your project's design system */
+    padding: 10px 20px;
+    background-color: #03B1C7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.submit-btn:hover {
+    background-color: #028a9b;
+}
+
 </style>

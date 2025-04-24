@@ -15,13 +15,12 @@
 </svg>
 </template>
 
-<script>
-export default {
-  props: {
-    title: {
-      type: String,
-      default: 'Anchor'
-    }
+<script setup>
+// Define component props using defineProps
+const props = defineProps({
+  title: {
+    type: String,
+    default: 'Anchor' // Default title if not provided
   }
-}
+});
 </script>

@@ -25,6 +25,7 @@ definePageMeta({
 
 // Get route and language
 const route = useRoute()
+const nuxtApp = useNuxtApp()
 const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
   : route.params.pathMatch || ''
@@ -40,13 +41,13 @@ useHead({
 
 // Load sectionsPageData
 const { sectionsPageData } = await useAsyncData('sectionsPageData', async () => {
-  console.log("GOT HERE")
+  console.log('nuxtApp.isHydrating', nuxtApp.isHydrating)
+  console.log('window.__NUXT__', window.__NUXT__)
   if (import.meta.client) {
     return await renderPageData({app: useNuxtApp()})
   } else return null
 }, {
-  watch: [() => route.fullPath],
-  immediate: false
+  immediate: true
 })
 
 // Optional: Dynamic lifecycle hook imports

@@ -4,14 +4,12 @@
   </svg>
 </template>
 
-<script>
-export default {
-  name: 'Cross',
-  props: {
-    color: {
-      type: String,
-      default: '#737373'
-    }
+<script setup>
+// Define component props using defineProps
+const props = defineProps({
+  color: {
+    type: String,
+    default: '#737373' // Default color if not provided
   }
-}
+});
 </script>

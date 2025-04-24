@@ -1491,9 +1491,6 @@ const activeVariation = computed(() => {
 const currentViews = computed({
   get() {
     let views = [];
-    console.log("displayVariations.value[selectedVariation.value]", displayVariations.value)
-    console.log("displayVariations.value[selectedVariation.value]", selectedVariation.value)
-    console.log("displayVariations.value[selectedVariation.value]", displayVariations.value[selectedVariation.value])
     if (displayVariations.value[selectedVariation.value] && displayVariations.value[selectedVariation.value].views) {
       views = Object.values(
         displayVariations.value[selectedVariation.value].views
@@ -1516,7 +1513,6 @@ const currentViews = computed({
 });
 
 const alteredViews = computed(() => {
-  console.log('alteredViews')
   let alteredSections = null;
   let hooksJs = importJs(`/js/global-hooks`);
   if (hooksJs['page_pre_render'] && pageData.value) {
@@ -4205,6 +4201,7 @@ const fire_js = (event_name, event_data) => {
 
 // Lifecycle hooks
 onMounted(async () => {
+  console.log(sectionsPageData)
   try {
     let hooksJavascript = importJs(`/js/global-hooks`);
     if (hooksJavascript['init_params']) {
