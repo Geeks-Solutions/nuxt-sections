@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
-    <nuxt-link to="/features">features</nuxt-link>
+    <nuxt-link to="/features">features {{ i18n.locale }}</nuxt-link>
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
@@ -8,14 +8,14 @@
         v-if="currentSection && creationView"
         @click="backToAddSectionList = true; restoreType = 'section'; isRestoreSectionOpen = true;"
       >
-        <BackIcon/>
+        <BaseIconsBack/>
       </div>
       <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
-        <CloseIcon/>
+        <BaseIconsClose/>
       </div>
       <a class="anchorIcon"
          :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
-        <AnchorIcon
+        <BaseIconsAnchor
           :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`"
           class="edit-icon"/>
       </a>
@@ -23,7 +23,7 @@
         <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
-          <Static
+          <BaseTypesStatic
             v-if="currentSection.type === 'static'"
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -40,7 +40,7 @@
             @promote-section="currentSection = {...currentSection, instance: true}"
             @creationViewLoaded="updateCreationView"
           />
-          <Dynamic
+          <BaseTypesDynamic
             v-if="currentSection.type === 'dynamic'"
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -53,7 +53,7 @@
             :is-side-bar-open="isSideBarOpen"
             @load="(value) => loading = value"
           />
-          <Configurable
+          <BaseTypesConfigurable
             v-if="currentSection.type === 'configurable'"
             ref="sections-configurable-type"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -74,7 +74,7 @@
             @load="(value) => loading = value"
             @promote-section="currentSection = {...currentSection, instance: true}"
           />
-          <Local
+          <BaseTypesLocal
             v-if="currentSection.type === 'local'"
             :props="currentSection"
             :savedView="savedView"
@@ -150,7 +150,7 @@
             "
                   >
                     <div class="btn-icon plus-icon">
-                      <PlusIcon/>
+                      <BaseIconsPlus/>
                     </div>
                     <div class="btn-text">{{ $t("Add") }}</div>
                   </button>
@@ -162,7 +162,7 @@
             "
                 >
                   <div class="btn-icon plus-icon">
-                    <PlusIcon/>
+                    <BaseIconsPlus/>
                   </div>
                   <div class="btn-text">{{ $t("createGlobal") }}</div>
                 </button>
@@ -175,13 +175,13 @@
                 </button>
                 <button ref="intro-save-changes" class="hp-button" @click="saveVariation">
                   <div class="btn-icon check-icon">
-                    <CheckIcon/>
+                    <BaseIconsSave/>
                   </div>
                   <div class="btn-text">{{ $t("Save") }}</div>
                 </button>
                 <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
                   <div class="btn-icon back-icon">
-                    <BackIcon/>
+                    <BaseIconsBack/>
                   </div>
                   <div class="btn-text">{{ $t("Restore") }}</div>
                 </button>
@@ -193,7 +193,7 @@
                   data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
                   @click="exportSections"
                 >
-                  <ImportIcon/>
+                  <BaseIconsImport/>
                 </button>
                 <a id="downloadAnchorElem" style="display:none"></a>
                 <button
@@ -202,13 +202,13 @@
                   data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
                   @click="initImportSections"
                 >
-                  <ExportIcon/>
+                  <BaseIconsExport/>
                 </button>
                 <button
                   class="hp-button danger"
                   data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
                   @click="isDeletePageModalOpen = true">
-                  <TrashIcon class="trash-icon-style"/>
+                  <BaseIconsTrash class="trash-icon-style"/>
                 </button>
                 <button
                   class="hp-button "
@@ -216,7 +216,7 @@
                   data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
                   @click="metadataModal = true"
                 >
-                  <SettingsIcon/>
+                  <BaseIconsSettings/>
                 </button>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
                 <button
@@ -271,7 +271,7 @@
                 @click="synch()"
               >
                 <div class="icon" :class="{ synched }">
-                  <SyncIcon/>
+                  <BaseIconsSync/>
                 </div>
                 <span>{{ $t("Synchronise") }}</span>
               </div>
@@ -344,7 +344,7 @@
                     </div>
                   </div>
                   <div class="closeIcon" @click="isModalOpen = false; isCreateInstance = false">
-                    <CloseIcon/>
+                    <BaseIconsClose/>
                   </div>
                 </div>
                 <div
@@ -352,7 +352,7 @@
                   v-if="currentSection"
                   @click="currentSection = null"
                 >
-                  <BackIcon/>
+                  <BaseIconsBack/>
                 </div>
 
                 <div
@@ -371,7 +371,7 @@
                     </div>
                     <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
                       <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
-                        <TrashIcon class="trash-icon-style"/>
+                        <BaseIconsTrash class="trash-icon-style"/>
                       </div>
                     </div>
                     <div v-else-if="type.notCreated === true" class="section-creation">
@@ -385,18 +385,18 @@
                       </div>
                     </div>
                     <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
-                      <ClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                      <TooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
                         <div class="section-info-icon">
-                          <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                          <BaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
                                     class="info-icon-style" />
                         </div>
-                      </ClickableTooltip>
+                      </TooltipClickableTooltip>
                     </div>
                     <div v-else class="section-top-separator"></div>
                     <div class="section-item"
                          :class="[{active: type.notCreated !== true},{inactive: type.notCreated === true}]"
                          @click="type.notCreated !== true ? openCurrentSection(type) : null">
-                      <SectionItem
+                      <BaseSubTypesSectionItem
                         v-if="type.name"
                         class="bg-light-blue"
                         :title="formatName(type.name)"
@@ -419,7 +419,7 @@
                             {{ $t('by') + type.application }}
                           </div>
                           <div v-else></div>
-                          <LockedIcon class="trash-icon-style sections-p-1"/>
+                          <BaseIconsLocked class="trash-icon-style sections-p-1"/>
                         </div>
                       </div>
                     </div>
@@ -430,7 +430,7 @@
                           <div class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
                             {{ $t('by') + type.application }}
                           </div>
-                          <UnlockedIcon class="trash-icon-style sections-p-1"/>
+                          <BaseIconsUnlocked class="trash-icon-style sections-p-1"/>
                         </div>
                       </div>
                     </div>
@@ -447,7 +447,7 @@
             "
                     >
                       <div class="btn-icon plus-icon">
-                        <PlusIcon/>
+                        <BaseIconsPlus/>
                       </div>
                       <div class="btn-text">{{ $t("createGlobal") }}</div>
                     </button>
@@ -464,21 +464,21 @@
                     </div>
                     <div v-if="type.notCreated !== true" class="section-delete">
                       <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
-                        <TrashIcon class="trash-icon-style"/>
+                        <BaseIconsTrash class="trash-icon-style"/>
                       </div>
                     </div>
                     <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
-                      <ClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                      <TooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
                         <div class="global-section-info-icon">
-                          <InfoIcon :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                          <BaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
                                     class="info-icon-style"/>
                         </div>
-                      </ClickableTooltip>
+                      </TooltipClickableTooltip>
                     </div>
                     <div v-else-if="isCreateInstance === true" class="section-top-separator"></div>
                     <div class="section-item" :class="{active: type.notCreated !== true || isCreateInstance === true}"
                          @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
-                      <SectionItem
+                      <BaseSubTypesSectionItem
                         v-if="type.name"
                         class="bg-light-blue"
                         :title="formatName(type.name)"
@@ -497,7 +497,7 @@
                   <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
-                    <Static
+                    <BaseTypesStatic
                       v-if="currentSection.type === 'static'"
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -513,7 +513,7 @@
                       @promote-section="currentSection = {...currentSection, instance: true}"
                       @creationViewLoaded="updateCreationView"
                     />
-                    <Dynamic
+                    <BaseTypesDynamic
                       v-if="currentSection.type === 'dynamic'"
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -525,7 +525,7 @@
                       :base-path="pagePath"
                       @load="(value) => loading = value"
                     />
-                    <Configurable
+                    <BaseTypesConfigurable
                       v-if="currentSection.type === 'configurable'"
                       ref="sections-configurable-type"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -545,7 +545,7 @@
                       @load="(value) => loading = value"
                       @promote-section="currentSection = {...currentSection, instance: true}"
                     />
-                    <Local
+                    <BaseTypesLocal
                       v-if="currentSection.type === 'local'"
                       :props="currentSection"
                       :savedView="savedView"
@@ -642,7 +642,7 @@
               <div
                 class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
                 <div class="flexSections sections-flex-row sections-justify-center sections-items-center">
-                  <AlertIcon/>
+                  <BaseIconsAlert/>
                   <div class="sections-text-center h4 sections-my-3 sections-pb-3 deletePageLabel">
                     {{ $t("deletePage") }}
                   </div>
@@ -682,7 +682,7 @@
               class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
                 <div class="flexSections flex-row justify-center items-center">
-                  <AlertIcon/>
+                  <BaseIconsAlert/>
                   <div class="text-center h4 my-3 pb-3 deletePageLabel">
                     {{ $t("deleteSection") }} ({{ deletedSectionName }})
                   </div>
@@ -722,9 +722,9 @@
               class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
                 <div class="text-center flexSections sections-center h4 sectionTypeHeader">
-                  <AlertIcon/>
+                  <BaseIconsAlert/>
                   <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
-                    <CloseIcon/>
+                    <BaseIconsClose/>
                   </div>
                 </div>
                 <div class="text-center h4 my-3  pb-3 errorMessageDialog">
@@ -829,7 +829,7 @@
           <div v-if="errorInLayout === true && admin && editMode" class="views">
             <div class="flexSections not-found-error">
               <div class="flexSections not-found-error-column">
-                <ErrorIcon class="error-icon"/>
+                <BaseIconsError class="error-icon"/>
                 <div v-for="(error, index) in sectionsMainErrors" :key="`layout-error-${index}`"
                      class="mainmsg not-found-error-column">
                   {{ error }}
@@ -864,29 +864,29 @@
                     >
                       <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
                            @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                        <AlertIcon/>
+                        <BaseIconsAlert/>
                       </div>
                       <div
                         @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
                         v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                        <EditIcon :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
+                        <BaseIconsEdit :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
                                   class="edit-icon"/>
                       </div>
-                      <DragIcon class="drag-icon handle"/>
+                      <BaseIconsDrag class="drag-icon handle"/>
                       <div
                         @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                        <TrashIcon class="trash-icon"/>
+                        <BaseIconsTrash class="trash-icon"/>
                       </div>
                       <div
                         @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                        <AnchorIcon
+                        <BaseIconsAnchor
                           :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                           class="edit-icon"/>
                       </div>
                     </div>
                     <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
                          class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                      <SettingsIcon :color="'currentColor'" class="settings-icon"/>
+                      <BaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                     </div>
                     <div class="view-component"
                          :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
@@ -930,7 +930,7 @@
             "
                     >
                       <div class="btn-icon plus-icon">
-                        <PlusIcon/>
+                        <BaseIconsPlus/>
                       </div>
                       <div class="btn-text">{{ $t("Add") }}</div>
                     </button>
@@ -964,30 +964,30 @@
                             >
                               <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
                                    @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                                <AlertIcon/>
+                                <BaseIconsAlert/>
                               </div>
                               <div
                                 @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
                                 v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                                <EditIcon
+                                <BaseIconsEdit
                                   :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
                                   class="edit-icon"/>
                               </div>
-                              <DragIcon class="drag-icon handle"/>
+                              <BaseIconsDrag class="drag-icon handle"/>
                               <div
                                 @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                                <TrashIcon class="trash-icon"/>
+                                <BaseIconsTrash class="trash-icon"/>
                               </div>
                               <div
                                 @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                                <AnchorIcon
+                                <BaseIconsAnchor
                                   :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                                   class="edit-icon"/>
                               </div>
                             </div>
                             <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
                                  class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                              <SettingsIcon :color="'currentColor'" class="settings-icon"/>
+                              <BaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                             </div>
                             <div class="view-component"
                                  :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
@@ -1041,7 +1041,7 @@
                   <div class="sections-text-center h4 sectionTypeHeader">
                     <div class="title">{{ $t("section-title") }}:</div>
                     <div class="closeIcon" @click="staticModal = false">
-                      <CloseIcon/>
+                      <BaseIconsClose/>
                     </div>
                   </div>
                   <div class="flexSections sections-w-full sections-justify-center">
@@ -1099,27 +1099,27 @@
           <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
                class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true"
-               :class="$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
+               :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
               <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl"
-                   :class="$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
+                   :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
                 <div class="section-modal-wrapper">
                   <div class="sections-text-center h4 sectionTypeHeader">
                     <div class="title">{{ $t("Metadata") }}</div>
-                    <div class="closeIcon" @click="metadataModal = false; metadataFormLang = $i18n.locale.toString()">
-                      <CloseIcon/>
+                    <div class="closeIcon" @click="metadataModal = false; metadataFormLang = i18n.locale.toString()">
+                      <BaseIconsClose/>
                     </div>
                   </div>
-                  <TranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
+                  <TranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
                                         @setFormLang="(locale) => metadataFormLang = locale"/>
                   <div class="flexSections sections-w-full sections-justify-center"
-                       :class="$sections.cname === 'active' ? 'sections-page-settings' : ''">
+                       :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
                     <div class="body metadataFieldsContainer">
                       <div class="flexSections sections-flex-row sections-gap-4">
                         <div class='sections-w-full'>
                           <div class="sectionsFieldsLabels">
-                            {{ $t("projectId") }}: {{ $sections.projectId }}
+                            {{ $t("projectId") }}: {{ nuxtApp.$sections.projectId }}
                           </div>
                           <div class="sectionsFieldsLabels">
                             {{ $t("pageUrl") }}
@@ -1160,7 +1160,7 @@
                             <div class="sections-mt-2 sectionsFieldsLabels">
                               {{ $t('Image Metatag') }}
                             </div>
-                            <UploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                            <MediasUploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
                                          :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
                                          :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"
                                          @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"
@@ -1170,13 +1170,13 @@
                             <div class="sections-mt-2 sectionsFieldsLabels">
                               {{ $t('CSS') }}
                             </div>
-                            <UploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                            <MediasUploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
                                          :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
                                          :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
                                          @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
                                          @removeUploadedImage="removeMedia('media')" />
-                            <MediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
-                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediaComponent>
+                            <MediasMediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
+                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediasMediaComponent>
                           </div>
                         </div>
                       </div>
@@ -1208,7 +1208,7 @@
                 <div class="section-modal-wrapper success-section-type">
                   <div class="sections-text-center h4 header">
                     <div class="icon-head">
-                      <CelebrateIcon/>
+                      <BaseIconsCelebrate/>
                     </div>
                     <div class="title">
                       {{
@@ -1216,7 +1216,7 @@
                       }}
                     </div>
                     <div class="closeIcon" @click="staticSuccess = false">
-                      <CloseIcon/>
+                      <BaseIconsClose/>
                     </div>
                   </div>
                   <div v-if="typesTab === 'types' || typesTab === 'inventoryTypes'"
@@ -1235,7 +1235,7 @@
 
           <!-- ------------------------------------------------------------------------------------------- -->
 
-          <Loading :loading="loading"/>
+          <BaseIconsLoading :loading="loading"/>
         </div>
         <div v-else>
           <!-- This is to show the create a new page button when the page requested is not found     -->
@@ -1249,7 +1249,7 @@
           </div>
           <div v-else-if="errorResponseStatus !== 0" class="flexSections not-found-error">
             <div class="flexSections not-found-error-column">
-              <ErrorIcon class="error-icon"/>
+              <BaseIconsError class="error-icon"/>
               <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
                 {{ error }}
               </div>
@@ -1263,7 +1263,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useCookie, useHead, useNuxtApp, useRoute, useRouter} from '#app';
 
 import draggable from "vuedraggable";
@@ -1413,7 +1412,6 @@ let metadataErrors = ref({
 });
 const sectionsError = ref("");
 const sectionsErrorOptions = ref(null);
-const sectionsAdminError = ref("");
 const renderSectionError = ref("");
 const fieldsInputs = ref([
   {
@@ -1472,6 +1470,7 @@ const intro = ref(null);
 const currentPages = ref(null);
 const introRerun = ref(false);
 const creationView = ref(false);
+const fetchedOnServer = useState('fetchedOnServer', () => false);
 const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
   : route.params.pathMatch || ''
@@ -1895,7 +1894,7 @@ const updatePageMetaData = async () => {
     sections
   }
 
-  const URL = `${$sections.serverUrl}/project/${$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
 
   try {
     const res = await $axios.put(URL, variables, config)
@@ -1957,14 +1956,12 @@ const checkToken = async () => {
   const auth_code = route.query.auth_code
 
   if (nuxtApp.$sections.cname === "active") {
-    const cookiesAlias = '_sectionsOptions.cookiesAlias' // assuming this is defined somewhere
-
-    if (nuxtApp[`$${cookiesAlias}`].get("sections-project-id")) {
-      $sections.projectId = nuxtApp[`$${cookiesAlias}`].get("sections-project-id")
+    if (useCookie("sections-project-id").value) {
+      nuxtApp.$sections.projectId = useCookie("sections-project-id").value
     } else {
       const project_id = route.query.project_id
-      $sections.projectId = project_id
-      nuxtApp[`$${cookiesAlias}`].set("sections-project-id", project_id)
+      nuxtApp.$sections.projectId = project_id
+      useCookie("sections-project-id").value = project_id
     }
   }
 
@@ -1973,16 +1970,15 @@ const checkToken = async () => {
       headers: sectionHeader({}),
     }
 
-    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/token/${auth_code}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/token/${auth_code}`
 
     try {
-      const res = await $axios.get(URL, config)
-      const token = res.data.token
+      const res = await $fetch(URL, {method: 'GET', config});
+      console.log(res)
+      const token = res.token
       const date = new Date()
       date.setDate(date.getDate() + 14)
       date.setHours(date.getHours() - 4)
-
-      const cookiesAlias = '_sectionsOptions.cookiesAlias' // assuming this is defined somewhere
 
       useCookie("sections-auth-token", {
         expires: date,
@@ -1993,7 +1989,7 @@ const checkToken = async () => {
       loading.value = false
     } catch (err) {
       loading.value = false
-      sectionsAdminError.value = err.response.data.token
+      showToast("Error", "error", err.response._data.token);
     }
   }
 }
@@ -2002,7 +1998,7 @@ const getUserData = async () => {
     headers: sectionHeader({token: useCookie("sections-auth-token").value}),
   }
 
-  const URL = `${$sections.serverUrl}/project/${$sections.projectId}/user`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/user`
 
   try {
     const res = await $axios.get(URL, config)
@@ -2100,7 +2096,7 @@ const updateGlobalType = async (section) => {
       headers: sectionHeader({token}),
     }
 
-    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/global-instances/${section.instance_name}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${section.instance_name}`
     loading.value = true
 
     try {
@@ -2146,7 +2142,7 @@ const addNewGlobalType = async (section) => {
       headers: sectionHeader({token}),
     }
 
-    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/global-instances/${section.instance_name}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${section.instance_name}`
     loading.value = true
 
     try {
@@ -2209,7 +2205,7 @@ const addNewStaticType = async (name) => {
       headers: sectionHeader({token}),
     }
 
-    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/section-types/${sectionTypeName.value}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types/${sectionTypeName.value}`
     loading.value = true
 
     let fieldsDeclaration = fieldsInputs.value
@@ -2514,29 +2510,6 @@ const createNewPage = async () => {
       err.response.data.options
     )
   }
-}
-const showToast = (title, variant, message, options) => {
-  const toast = useToast()
-
-  toast[variant](
-    options && Object.keys(options).length > 0 ? '🔗 ' + message : message,
-    {
-      position: "top-right",
-      timeout: 5000,
-      closeOnClick: false,
-      pauseOnFocusLoss: true,
-      pauseOnHover: true,
-      draggable: true,
-      draggablePercent: 0.6,
-      showCloseButtonOnHover: false,
-      hideProgressBar: false,
-      closeButton: "button",
-      icon: false,
-      rtl: false,
-      onClick: () => options && Object.keys(options).length > 0 ?
-        window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
-    }
-  )
 }
 const getAvailableSections = () => {
   try {
@@ -2950,7 +2923,7 @@ const getGlobalSectionTypes = async (autoLoad) => {
     }),
   }
 
-  const url = `${$sections.serverUrl}/project/${$sections.projectId}/global-instances`
+  const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances`
 
   try {
     const res = await $axios.get(url, config)
@@ -3029,7 +3002,7 @@ const getSectionTypes = async (autoLoad) => {
     }),
   }
 
-  const url = `${$sections.serverUrl}/project/${$sections.projectId}/section-types`
+  const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types`
 
   try {
     const res = await $axios.get(url, config)
@@ -3151,10 +3124,10 @@ const openEditMode = async () => {
     loading.value = true
     const inBrowser = typeof window !== 'undefined'
     const config = {
-      headers: sectionHeader((inBrowser) ? {} : {origin: $sections.projectUrl}),
+      headers: sectionHeader((inBrowser) ? {} : {origin: nuxtApp.$sections.projectUrl}),
     }
 
-    const URL = `${$sections.serverUrl}/project/${$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
 
     let payload = {}
 
@@ -3164,7 +3137,7 @@ const openEditMode = async () => {
     } catch {
     }
 
-    if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled") {
+    if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
       let query_string = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
       payload = {
         query_string: {
@@ -3369,7 +3342,7 @@ const refreshSectionView = async (sectionView, data) => {
   } catch {
   }
 
-  if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled") {
+  if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
     variables["query_string"] = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
     if (data.qs) {
       variables["query_string"] = {...variables["query_string"], ...data.qs}
@@ -3380,7 +3353,7 @@ const refreshSectionView = async (sectionView, data) => {
     }
   }
 
-  const URL = `${$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`
 
   for (const sectionData of sectionDatas) {
     const sectionName = sectionData.nameID ? sectionData.nameID : sectionData.name
@@ -3393,7 +3366,7 @@ const refreshSectionView = async (sectionView, data) => {
       variables['section']['options'] = [sectionData.render_data[0].settings]
     }
 
-    if ($sections.queryStringSupport && $sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
+    if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {
       variables["query_string"] = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
       if (sectionData.qs) {
         variables["query_string"] = {...variables["query_string"], ...sectionData.qs}
@@ -4201,7 +4174,7 @@ const fire_js = (event_name, event_data) => {
 
 // Lifecycle hooks
 onMounted(async () => {
-  console.log(sectionsPageData)
+  await fetchData()
   try {
     let hooksJavascript = importJs(`/js/global-hooks`);
     if (hooksJavascript['init_params']) {
@@ -4224,8 +4197,6 @@ onMounted(async () => {
 
   if (sectionsError.value !== "" && !await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
     showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
-  } else if (sectionsAdminError.value !== "") {
-    showToast("Error", "error", sectionsAdminError.value);
   }
   if (renderSectionError.value !== "") {
     showToast("Error", "error", renderSectionError.value);
@@ -4237,6 +4208,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  fetchedOnServer.value = false
   window.removeEventListener("mousemove", onMouseMove);
   window.removeEventListener("mouseup", stopTracking);
 });
@@ -4344,20 +4316,56 @@ const fetchData = async () => {
   }
 
   let hooksJs = importJs(`/js/global-hooks`);
-  if (hooksJs['page_pre_load']) {
-    if (hooksJs['page_pre_load'](payload)) {
-      payload = hooksJs['page_pre_load'](payload);
+  if (typeof hooksJs?.page_pre_load === 'function') {
+    // Call only once and check the result
+    const hookResult = hooksJs.page_pre_load(payload);
+    if (hookResult && typeof hookResult === 'object') {
+      // Ensure we only take serializable data
+      try {
+        payload = JSON.parse(JSON.stringify(hookResult));
+      } catch {}
     }
   }
 
-  console.log('sectionsPageData', sectionsPageData)
   if (sectionsPageData) {
     const res = sectionsPageData.res;
     const error = sectionsPageData.error;
     if (res) {
-      initializeSections(res);
+      initializeSections({data: res});
       nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
     } else if (error) {
+      const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
+      if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+        pageNotFoundManagement(error);
+        return;
+      }
+      if (error.response.status === 400) {
+        const res = error.response;
+        initializeSections({data: res});
+        return;
+      }
+      errorResponseStatus.value = error.response.status;
+      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+        errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+        errorResponseData.value = error.response.data;
+      } else if (error.response.data.error) {
+        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
+      } else {
+        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
+      }
+      loading.value = false;
+      pageNotFound.value = true;
+      if (errorResponseStatus.value === 404) {
+        sectionsMainErrors.value.push(i18n.t('404NotFound'));
+      }
+      emit("load", false);
+    }
+  } else if (inBrowser && fetchedOnServer.value === false) {
+    try {
+      const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
+      initializeSections({data: res});
+      nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+    } catch (error) {
       const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
       if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
         pageNotFoundManagement(error);
@@ -4384,47 +4392,14 @@ const fetchData = async () => {
       }
       emit("load", false);
     }
-  } else if (inBrowser) {
-    // try {
-    //   const res = await $fetch(URL, payload, config);
-    //   initializeSections(res);
-    //   nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
-    // } catch (error) {
-    //   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
-    //   if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
-    //     pageNotFoundManagement(error);
-    //     return;
-    //   }
-    //   if (error.response.status === 400) {
-    //     const res = error.response;
-    //     initializeSections(res);
-    //     return;
-    //   }
-    //   errorResponseStatus.value = error.response.status;
-    //   if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-    //     errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
-    //     errorResponseData.value = error.response.data;
-    //   } else if (error.response.data.error) {
-    //     showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
-    //   } else {
-    //     showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
-    //   }
-    //   loading.value = false;
-    //   pageNotFound.value = true;
-    //   if (errorResponseStatus.value === 404) {
-    //     sectionsMainErrors.value.push(i18n.t('404NotFound'));
-    //   }
-    //   emit("load", false);
-    // }
-  } else {
+  } else if (!inBrowser) {
+    fetchedOnServer.value = true;
     const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
     if (optionsRes.status === 200) {
       try {
         const res = await (await fetch(URL, {method: 'POST', body: payload, ...config})).json();
-        console.log('res', res)
         initializeSections({data: res});
       } catch (error) {
-        console.log('error', error)
         const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
         if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
           pageNotFoundManagement(error, true);

@@ -19,13 +19,11 @@
   </svg>
 </template>
 
-<script>
-export default {
-  props: {
-    color: {
-      type: String,
-      default: 'currentColor'
-    }
+<script setup>
+const props = defineProps({
+  color: {
+    type: String,
+    default: 'currentColor'
   }
-}
+});
 </script>

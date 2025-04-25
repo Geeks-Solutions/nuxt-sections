@@ -40,10 +40,8 @@ useHead({
 })
 
 // Load sectionsPageData
-const { sectionsPageData } = await useAsyncData('sectionsPageData', async () => {
-  console.log('nuxtApp.isHydrating', nuxtApp.isHydrating)
-  console.log('window.__NUXT__', window.__NUXT__)
-  if (import.meta.client) {
+const { data: sectionsPageData } = await useAsyncData('sectionsPageData', async () => {
+  if (import.meta.client && !nuxtApp.isHydrating) {
     return await renderPageData({app: useNuxtApp()})
   } else return null
 }, {

@@ -2,24 +2,22 @@
   <div class="load_container" v-if="loading || loadingNum > 0">
     <div class="load_overlay"></div>
     <div class="load_image">
-      <img src="../assets/loading.gif" />
+      <img src="../../../assets/loading.gif"  alt="Loading"/>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-    loadingNum: {
-      type: Number,
-      default: 0,
-    },
+<script setup>
+const props = defineProps({
+  loading: {
+    type: Boolean,
+    default: false,
   },
-};
+  loadingNum: {
+    type: Number,
+    default: 0,
+  }
+});
 </script>
 
 <style>

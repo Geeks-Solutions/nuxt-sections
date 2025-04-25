@@ -2,7 +2,24 @@ export default defineNuxtConfig({
   modules: ['../src/module', "@nuxtjs/i18n"],
   i18n: {
     strategy: "no_prefix",
-    detectBrowserLanguage: false
+    detectBrowserLanguage: false,
+    defaultLocale: "en",
+    locales: [
+      {
+        name: "French",
+        code: "fr",
+        iso: "fr",
+        file: "fr.js"
+      },
+      {
+        name: "English",
+        code: "en",
+        iso: "en",
+        file: "en.js"
+      }
+    ],
+    lazy: true,
+    langDir: "lang/"
   },
   // myModule: {},
   devtools: { enabled: true },

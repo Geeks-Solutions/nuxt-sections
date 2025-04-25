@@ -1,149 +1,160 @@
 <template>
   <div class="sub-types">
-    <h4 class="local-t">{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : $t('Adding section') }}</h4>
-    <div v-if="globalSectionMode === true" class="mt-4">
+    <!-- Access nested props.props -->
+    <h4 class="local-t">{{ props.props.linked_to ? formatTexts(formatName(props.props.linked_to, '/')) : t('Adding section') }}</h4>
+
+    <!-- Global Instance Fields -->
+    <div v-if="globalSectionMode" class="mt-4">
       <div class="autoInsertRow">
         <div>
-          {{ $t('autoInsertInstance') }}
+          {{ t('autoInsertInstance') }}
         </div>
         <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
       </div>
-      <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+      <!-- Access nested props.props -->
+      <div v-if="!props.props.linked_to" class="autoInsertRow">
         <input
             class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
             type="text"
-            :placeholder="$t('instanceName')+'*'"
-            :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+            :placeholder="t('instanceName')+'*'"
+            :disabled="!!props.props.linked_to"
             v-model="instanceName"
         />
       </div>
-      <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+      <span v-if="instanceNameError" class="pagesReference mb-2">{{ t('instanceNameRequired') }}</span>
     </div>
     <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+
+    <!-- Submit Button for Global Instances -->
     <button
-        v-if="globalSectionMode === true"
+        v-if="globalSectionMode"
         class="mt-4 submit-btn"
         type="button"
         @click="addLocal"
     >
-      {{ $t('Submit data') }}
+      {{ t('Submit data') }}
     </button>
   </div>
 </template>
 
-<script>
-import {formatName, getGlobalTypeData, formatTexts} from "../../utils";
+<script setup>
+import { ref, computed, onMounted, defineProps, defineEmits } from 'vue';
+import { useNuxtApp, useI18n } from '#app'; // Import Nuxt 3 composables
+import { formatName, getGlobalTypeData, formatTexts } from "../../utils/helpers"; // Corrected path
 import GlobalReferences from "../SubTypes/globalReferences.vue";
 
-export default {
-  props: {
-    props: {
-      type: Object,
-      default: {},
-    },
-    savedView: {
-      type: Object,
-      default: {},
-    },
-    instance: {
-      type: Boolean,
-      default: false
-    },
-    linked: {
-      type: Boolean,
-      default: false
-    }
+// Composables
+const nuxtApp = useNuxtApp(); // Needed for potential $sections access in helpers
+const { t } = useI18n();
+
+// Props
+const props = defineProps({
+  props: { // Nested object containing name, linked_to, instance_name etc.
+    type: Object,
+    default: () => ({}),
   },
-  components: {
-    GlobalReferences
+  savedView: {
+    type: Object,
+    default: () => ({}),
   },
-  data() {
-    return {
-      autoInsert: false,
-      instanceNameError: false,
-      showPagesList: false,
-      instanceName: '',
-      pages: []
-    }
+  instance: {
+    type: Boolean,
+    default: false
   },
-  computed: {
-    id() {
-      if (this.savedView.id) {
-        return this.savedView.id;
-      }
-      return "id-" + Date.now();
-    },
-    weight() {
-      if (this.savedView.weight) {
-        return this.savedView.weight;
-      }
-      return 0;
-    },
-    globalSectionMode() {
-      return this.instance === true || this.linked === true
-    }
-  },
-  mounted() {
-    if (this.instance !== true) {
-      // add a little time for the user to see the popup and know that the section is adding
-      setTimeout(() => {
-        this.$emit("addSectionType", {
-          name: this.props.name,
-          type: "local",
-          id: this.id,
-          auto_insertion: this.autoInsert,
-          instance_name: this.props.instance_name
-        });
-      }, 500);
-    }
-    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
-      this.getGlobalType()
-    }
-  },
-  methods: {
-    formatTexts,
-    formatName,
-    addLocal() {
-      this.instanceNameError = false
-      if (this.globalSectionMode && this.instanceName === '') {
-        this.instanceNameError = true
-        return
-      }
-      this.$emit("addSectionType", {
-        name: this.props.name,
-        type: 'local',
-        id: this.id,
-        weight: this.weight,
-        auto_insertion: this.autoInsert,
-        instance_name: this.instanceName
-      });
-    },
-    async getGlobalType() {
-      this.$emit("load", true);
-      const result = await getGlobalTypeData(this.props.linked_to)
-      if (result.res && result.res.data) {
-        this.$emit("load", false);
-        this.autoInsert = result.res.data.auto_insertion
-        if (result.res.data.pages && result.res.data.pages.length > 0) {
-          this.pages = result.res.data.pages.map(p => p.path)
-        }
-        this.instanceName = result.res.data.name
-      } else if (result.error) {
-        this.$emit("load", false);
-        this.showToast("Error", "error", result.error.response.data.message, result.error.response.data.options);
-      }
-    }
+  linked: {
+    type: Boolean,
+    default: false
   }
-};
+});
+
+// Emits
+const emit = defineEmits(['addSectionType', 'load']);
+
+// Reactive State
+const autoInsert = ref(false);
+const instanceNameError = ref(false);
+const showPagesList = ref(false);
+const instanceName = ref('');
+const pages = ref([]);
+
+// Computed Properties
+const id = computed(() => props.savedView.id || `id-${Date.now()}`);
+const weight = computed(() => props.savedView.weight || 0); // Default to 0 as per original
+const globalSectionMode = computed(() => props.instance || props.linked);
+
+// Methods converted to functions
+function addLocal() {
+  instanceNameError.value = false;
+  if (globalSectionMode.value && !instanceName.value) {
+    instanceNameError.value = true;
+    return;
+  }
+  emit("addSectionType", {
+    name: props.props.name, // Access nested props
+    type: 'local',
+    id: id.value,
+    weight: weight.value,
+    auto_insertion: autoInsert.value,
+    instance_name: instanceName.value
+  });
+}
+
+async function getGlobalType() {
+  emit("load", true);
+  try {
+    // Access nested props.props.linked_to
+    const result = await getGlobalTypeData(props.props.linked_to); // Assuming helper is adapted for Nuxt 3
+    if (result.res && result.res.data) {
+      autoInsert.value = result.res.data.auto_insertion;
+      if (result.res.data.pages && result.res.data.pages.length > 0) {
+        pages.value = result.res.data.pages.map(p => p.path);
+      }
+      instanceName.value = result.res.data.name;
+    } else if (result.error) {
+      // Handle error - Use Nuxt 3 compatible toast/notification
+      console.error("Error loading global type:", result.error?.response?.data?.message || 'Unknown error');
+      // showToast("Error", "error", result.error.response.data.message); // Replace if using a toast system
+    }
+  } catch (error) {
+    console.error("Error fetching global type data:", error);
+    // showToast("Error", "error", 'An unexpected error occurred.'); // Replace if using a toast system
+  } finally {
+    emit("load", false);
+  }
+}
+
+// Lifecycle Hooks
+onMounted(() => {
+  // Emit immediately if not in instance mode
+  if (!props.instance) {
+    // add a little time for the user to see the popup and know that the section is adding
+    setTimeout(() => {
+      emit("addSectionType", {
+        name: props.props.name, // Access nested props
+        type: "local",
+        id: id.value,
+        weight: weight.value, // Include weight
+        auto_insertion: autoInsert.value, // Use current value
+        instance_name: props.props.instance_name // Access nested props
+      });
+    }, 500);
+  }
+  // Fetch global type if linked
+  if (props.props.linked_to) { // Access nested props
+    getGlobalType();
+  }
+});
+
 </script>
 
-<style>
+<style scoped> /* Changed to scoped */
 .autoInsertRow {
   display: flex;
   flex-direction: row;
   justify-content: center;
   gap: 8px;
   align-items: center;
+  margin-bottom: 10px; /* Added spacing */
 }
 .autoInsertInput {
   width: 15px;
@@ -155,5 +166,33 @@ export default {
 .local-t {
   min-width: 550px;
   min-height: 40px;
+  margin-bottom: 1rem; /* Added spacing */
+}
+.sub-types { /* Added padding */
+    padding: 20px;
+    text-align: center;
+}
+/* Added styles for consistency */
+.submit-btn {
+    padding: 10px 20px;
+    background-color: #03B1C7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.submit-btn:hover {
+    background-color: #028a9b;
+}
+.pagesReference {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+}
+.border-FieldGray {
+  --tw-border-opacity: 1!important;
+  border-color: #f2f2f3!important;
+  border-color: rgba(242,242,243,var(--tw-border-opacity))!important;
 }
 </style>

@@ -412,7 +412,7 @@ export const renderPageData = async ({ app, pageName }: RenderPageDataParams) =>
     URL = `${app.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(pageName ? pageName : pathMatch ? pathMatch : '/'))}`;
   }
 
-  let payload = {};
+  let payload : any = {};
 
   let language;
   try {
@@ -437,10 +437,34 @@ export const renderPageData = async ({ app, pageName }: RenderPageDataParams) =>
   }
 
   try {
-    const res = await $fetch(URL, {method: "POST", body: payload, ...config});
-    console.log('res', res)
+    const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
     return { res, error: null };
   } catch (error) {
     return { res: null, error };
   }
 };
+
+export const showToast = (title : any, variant : any, message : any, options : any) => {
+  const $nuxt : any = useNuxtApp();
+  const toast = $nuxt.$toast
+
+  toast[variant](
+    options && Object.keys(options).length > 0 ? '🔗 ' + message : message,
+    {
+      position: "top-right",
+      timeout: 5000,
+      closeOnClick: false,
+      pauseOnFocusLoss: true,
+      pauseOnHover: true,
+      draggable: true,
+      draggablePercent: 0.6,
+      showCloseButtonOnHover: false,
+      hideProgressBar: false,
+      closeButton: "button",
+      icon: false,
+      rtl: false,
+      onClick: () => options && Object.keys(options).length > 0 ?
+        window.open(`${options.link.root}${options.link.path}`, '_blank') : {}
+    }
+  )
+}

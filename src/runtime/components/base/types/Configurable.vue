@@ -57,7 +57,7 @@
                   class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
                   type="text"
                   :placeholder="t('instanceName')+'*'"
-                  :disabled="!!props.props.linked_to" <!-- Access nested props.props -->
+                  :disabled="!!props.props.linked_to"
                   v-model="instanceName"
                 />
               </div>
@@ -70,7 +70,7 @@
 
             <!-- Dynamic Fields -->
             <div
-              v-for="(field, idx) in props.fields" <!-- Access nested props.props -->
+              v-for="(field, idx) in props.props.fields"
               :key="idx"
               :class="getType(field.type) !== 'file' ? '' : ''"
             >
@@ -84,7 +84,7 @@
                     :field="field"
                     :custom-form-data="customFormData"
                     :sections-user-id="sectionsUserId"
-                    :ref="el => fieldRefs[field.type + '-' + field.key] = el" <!-- Function ref for dynamic refs -->
+                    :ref="el => fieldRefs[field.type + '-' + field.key] = el"
                     :locales="locales"
                     :selectedLang="formLang"
                     :default-lang="defaultLang"
@@ -107,7 +107,7 @@
                 <div v-if="field.type === 'wysiwyg'">
                   <div class="input">
                      <wysiwyg
-                        :ref="el => fieldRefs[field.type + 'Editor'] = el" <!-- Function ref -->
+                        :ref="el => fieldRefs[field.type + 'Editor'] = el"
                         class="wyzywig"
                         :html="computedWysiwygValue(field)"
                         @settingsUpdate="(content) => onEditorChange(content, idx, field.key)"
@@ -217,11 +217,11 @@
     <!-- Custom Tab Content -->
     <div v-show="currentTab === 'custom'" class="sub-types">
       <div>
-        <div class="text-video d-flex content-wrapper" v-show="formatName(props.props.name)"> <!-- Access nested props.props -->
+        <div class="text-video d-flex content-wrapper" v-show="formatName(props.props.name)">
            <component
               :is="getComponentForm"
-              :ref="el => fieldRefs[formatName(props.props.name)] = el" <!-- Function ref, Access nested props.props -->
-              :section-settings="props.props" <!-- Pass nested props.props -->
+              :ref="el => fieldRefs[formatName(props.props.name)] = el"
+              :section-settings="props.props"
               :section-options="options[0]"
               @whitelistIdUpdated="updateWhitelistId"
               @customFormEvent="(data) => { customFormData = data }"

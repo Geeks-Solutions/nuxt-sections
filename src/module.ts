@@ -1,4 +1,12 @@
-import {defineNuxtModule, createResolver, extendPages, addComponentsDir, addImportsDir, addPluginTemplate} from '@nuxt/kit'
+import {
+  defineNuxtModule,
+  createResolver,
+  extendPages,
+  addComponentsDir,
+  addImportsDir,
+  addPluginTemplate,
+  installModule
+} from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {}
@@ -13,22 +21,35 @@ export default defineNuxtModule<ModuleOptions>({
   async setup(_options, _nuxt) {
     const { resolve } = createResolver(import.meta.url)
 
-    // Extend i18n messages
-    _nuxt.hook('i18n:registerModule', register => {
-      register({
-        langDir: resolve('./lang'),
-        locales: [
-          {
-            code: 'en',
-            file: 'en.json'
-          },
-          {
-            code: 'fr',
-            file: 'fr.json'
-          }
-        ]
-      })
+    await installModule('@nuxtjs/i18n', {
+      // vueI18n: resolve('./i18n.config.ts'),
+      langDir: resolve('./runtime/lang'),
+      locales: [
+        {
+          code: 'en',
+          file: resolve('./runtime/lang/en.json'),
+        },
+        {
+          code: 'fr',
+          file: resolve('./runtime/lang/fr.json'),
+        },
+      ]
     })
+    // _nuxt.hook('i18n:registerModule', register => {
+    //   register({
+    //     langDir: resolve('./runtime/lang'),
+    //     locales: [
+    //       {
+    //         code: 'en',
+    //         file: 'en.json'
+    //       },
+    //       {
+    //         code: 'fr',
+    //         file: 'fr.json'
+    //       }
+    //     ]
+    //   })
+    // })
 
     // Extend routes
     extendPages((pages) => {

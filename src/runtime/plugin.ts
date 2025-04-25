@@ -1,4 +1,6 @@
 import { defineNuxtPlugin, useRuntimeConfig } from '#app'
+import * as vt from 'vue-toastification'
+import "vue-toastification/dist/index.css"
 
 export default defineNuxtPlugin((_nuxtApp) => {
   const config = useRuntimeConfig()
@@ -22,4 +24,13 @@ export default defineNuxtPlugin((_nuxtApp) => {
 
   // Provide it globally via Nuxt app context
   _nuxtApp.provide('sections', $sections)
+
+  const options = {
+    position: "top-right",
+    maxToasts: 20,
+    newestOnTop: true
+  }
+
+  _nuxtApp.vueApp.use(vt.default, options)
+  _nuxtApp.provide('toast', vt.useToast())
 })
