@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
-    <nuxt-link to="/features">features {{ i18n.locale }}</nuxt-link>
+<!--    <nuxt-link to="/features">features {{ i18n.locale }}</nuxt-link>-->
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
@@ -8,22 +8,22 @@
         v-if="currentSection && creationView"
         @click="backToAddSectionList = true; restoreType = 'section'; isRestoreSectionOpen = true;"
       >
-        <BaseIconsBack/>
+        <LazyBaseIconsBack/>
       </div>
       <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
-        <BaseIconsClose/>
+        <LazyBaseIconsClose/>
       </div>
       <a class="anchorIcon"
          :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
-        <BaseIconsAnchor
+        <LazyBaseIconsAnchor
           :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`"
           class="edit-icon"/>
       </a>
       <div class="flexSections">
-        <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
+        <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
-          <BaseTypesStatic
+          <LazyBaseTypesStatic
             v-if="currentSection.type === 'static'"
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -40,7 +40,7 @@
             @promote-section="currentSection = {...currentSection, instance: true}"
             @creationViewLoaded="updateCreationView"
           />
-          <BaseTypesDynamic
+          <LazyBaseTypesDynamic
             v-if="currentSection.type === 'dynamic'"
             :props="currentSection"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -53,7 +53,7 @@
             :is-side-bar-open="isSideBarOpen"
             @load="(value) => loading = value"
           />
-          <BaseTypesConfigurable
+          <LazyBaseTypesConfigurable
             v-if="currentSection.type === 'configurable'"
             ref="sections-configurable-type"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -74,7 +74,7 @@
             @load="(value) => loading = value"
             @promote-section="currentSection = {...currentSection, instance: true}"
           />
-          <BaseTypesLocal
+          <LazyBaseTypesLocal
             v-if="currentSection.type === 'local'"
             :props="currentSection"
             :savedView="savedView"
@@ -99,7 +99,7 @@
             :ref="!editMode ? 'intro-edit-page' : undefined"
             @click="openEditMode()"
             v-if="admin && !isSideBarOpen"
-            class="bg-blue control-button hide-mobile btn-text"
+            class="intro-edit-page bg-blue control-button hide-mobile btn-text"
           >
             {{ !editMode ? $t("Edit page") : $t("View page") }}
           </button>
@@ -112,7 +112,7 @@
               class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
               v-if="admin && editMode && !isSideBarOpen"
             >
-              <div ref="intro-top-bar" class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
+              <div ref="intro-top-bar" class="intro-top-bar sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
                 <button
                   class="hp-button"
                   @click="layoutMode = !layoutMode"
@@ -141,7 +141,7 @@
                   </label>
                   <label for="highlightRegions"></label>
                 </div>
-                <div ref="intro-add-new-section">
+                <div ref="intro-add-new-section" class="intro-add-new-section">
                   <button
                     v-if="selectedLayout === 'standard'"
                     class="hp-button"
@@ -150,7 +150,7 @@
             "
                   >
                     <div class="btn-icon plus-icon">
-                      <BaseIconsPlus/>
+                      <LazyBaseIconsPlus/>
                     </div>
                     <div class="btn-text">{{ $t("Add") }}</div>
                   </button>
@@ -162,26 +162,26 @@
             "
                 >
                   <div class="btn-icon plus-icon">
-                    <BaseIconsPlus/>
+                    <LazyBaseIconsPlus/>
                   </div>
                   <div class="btn-text">{{ $t("createGlobal") }}</div>
                 </button>
                 <button
                   ref="intro-find-more-blobal"
-                  class="hp-button globalTour"
+                  class="intro-find-more-blobal hp-button globalTour"
                   @click="runIntro('globalTour', true)"
                 >
                   <div class="btn-text intro">?</div>
                 </button>
-                <button ref="intro-save-changes" class="hp-button" @click="saveVariation">
+                <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
                   <div class="btn-icon check-icon">
-                    <BaseIconsSave/>
+                    <LazyBaseIconsSave/>
                   </div>
                   <div class="btn-text">{{ $t("Save") }}</div>
                 </button>
                 <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
                   <div class="btn-icon back-icon">
-                    <BaseIconsBack/>
+                    <LazyBaseIconsBack/>
                   </div>
                   <div class="btn-text">{{ $t("Restore") }}</div>
                 </button>
@@ -193,7 +193,7 @@
                   data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
                   @click="exportSections"
                 >
-                  <BaseIconsImport/>
+                  <LazyBaseIconsImport/>
                 </button>
                 <a id="downloadAnchorElem" style="display:none"></a>
                 <button
@@ -202,13 +202,13 @@
                   data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
                   @click="initImportSections"
                 >
-                  <BaseIconsExport/>
+                  <LazyBaseIconsExport/>
                 </button>
                 <button
                   class="hp-button danger"
                   data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
                   @click="isDeletePageModalOpen = true">
-                  <BaseIconsTrash class="trash-icon-style"/>
+                  <LazyBaseIconsTrash class="trash-icon-style"/>
                 </button>
                 <button
                   class="hp-button "
@@ -216,18 +216,18 @@
                   data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
                   @click="metadataModal = true"
                 >
-                  <BaseIconsSettings/>
+                  <LazyBaseIconsSettings/>
                 </button>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
                 <button
                   ref="intro-relaunch"
-                  class="hp-button"
+                  class="intro-relaunch hp-button"
                   @click="runIntro('topBar', true)"
                 >
                   <div class="btn-text intro">?</div>
                 </button>
                 <button
-                  @click="$cookies.remove('sections-auth-token'), (admin = false)"
+                  @click="useCookie('sections-auth-token').value = null, (admin = false)"
                   v-if="admin"
                   class="bg-blue"
                   style="background: black;
@@ -271,7 +271,7 @@
                 @click="synch()"
               >
                 <div class="icon" :class="{ synched }">
-                  <BaseIconsSync/>
+                  <LazyBaseIconsSync/>
                 </div>
                 <span>{{ $t("Synchronise") }}</span>
               </div>
@@ -291,7 +291,7 @@
                   <div v-if="!currentSection && isCreateInstance === false"
                        class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                     <div class="flexSections sections-flex-row sections-justify-center">
-                      <div ref="intro-available-sections" class="sections-text-center h2 sections-cursor-pointer"
+                      <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun)">
                         {{ $t("availableSections") }}
                       </div>
@@ -302,7 +302,7 @@
                         {{ $t("AddGlobal") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
-                      <div ref="intro-inventory" class="sections-text-center h2 sections-cursor-pointer"
+                      <div ref="intro-inventory" class="intro-inventory sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
                            @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened')">
                         {{ $t("typeInventory") }}
@@ -344,7 +344,7 @@
                     </div>
                   </div>
                   <div class="closeIcon" @click="isModalOpen = false; isCreateInstance = false">
-                    <BaseIconsClose/>
+                    <LazyBaseIconsClose/>
                   </div>
                 </div>
                 <div
@@ -352,7 +352,7 @@
                   v-if="currentSection"
                   @click="currentSection = null"
                 >
-                  <BaseIconsBack/>
+                  <LazyBaseIconsBack/>
                 </div>
 
                 <div
@@ -363,6 +363,7 @@
                     v-for="(type, index) in typesTab === 'types' ? filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
                     :key="type.name"
                     :ref="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
+                    :class="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
                   >
                     <div
                       v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data"
@@ -371,7 +372,7 @@
                     </div>
                     <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
                       <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
-                        <BaseIconsTrash class="trash-icon-style"/>
+                        <LazyBaseIconsTrash class="trash-icon-style"/>
                       </div>
                     </div>
                     <div v-else-if="type.notCreated === true" class="section-creation">
@@ -385,18 +386,18 @@
                       </div>
                     </div>
                     <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
-                      <TooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                      <LazyTooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
                         <div class="section-info-icon">
-                          <BaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                          <LazyBaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
                                     class="info-icon-style" />
                         </div>
-                      </TooltipClickableTooltip>
+                      </LazyTooltipClickableTooltip>
                     </div>
                     <div v-else class="section-top-separator"></div>
                     <div class="section-item"
                          :class="[{active: type.notCreated !== true},{inactive: type.notCreated === true}]"
                          @click="type.notCreated !== true ? openCurrentSection(type) : null">
-                      <BaseSubTypesSectionItem
+                      <LazyBaseSubTypesSectionItem
                         v-if="type.name"
                         class="bg-light-blue"
                         :title="formatName(type.name)"
@@ -419,7 +420,7 @@
                             {{ $t('by') + type.application }}
                           </div>
                           <div v-else></div>
-                          <BaseIconsLocked class="trash-icon-style sections-p-1"/>
+                          <LazyBaseIconsLocked class="trash-icon-style sections-p-1"/>
                         </div>
                       </div>
                     </div>
@@ -430,7 +431,7 @@
                           <div class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
                             {{ $t('by') + type.application }}
                           </div>
-                          <BaseIconsUnlocked class="trash-icon-style sections-p-1"/>
+                          <LazyBaseIconsUnlocked class="trash-icon-style sections-p-1"/>
                         </div>
                       </div>
                     </div>
@@ -447,7 +448,7 @@
             "
                     >
                       <div class="btn-icon plus-icon">
-                        <BaseIconsPlus/>
+                        <LazyBaseIconsPlus/>
                       </div>
                       <div class="btn-text">{{ $t("createGlobal") }}</div>
                     </button>
@@ -464,21 +465,21 @@
                     </div>
                     <div v-if="type.notCreated !== true" class="section-delete">
                       <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
-                        <BaseIconsTrash class="trash-icon-style"/>
+                        <LazyBaseIconsTrash class="trash-icon-style"/>
                       </div>
                     </div>
                     <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
-                      <TooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                      <LazyTooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
                         <div class="global-section-info-icon">
-                          <BaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                          <LazyBaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
                                     class="info-icon-style"/>
                         </div>
-                      </TooltipClickableTooltip>
+                      </LazyTooltipClickableTooltip>
                     </div>
                     <div v-else-if="isCreateInstance === true" class="section-top-separator"></div>
                     <div class="section-item" :class="{active: type.notCreated !== true || isCreateInstance === true}"
                          @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
-                      <BaseSubTypesSectionItem
+                      <LazyBaseSubTypesSectionItem
                         v-if="type.name"
                         class="bg-light-blue"
                         :title="formatName(type.name)"
@@ -494,10 +495,10 @@
                   </div>
                 </div>
                 <div v-else class="flexSections">
-                  <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" class="component-view">
+                  <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
-                    <BaseTypesStatic
+                    <LazyBaseTypesStatic
                       v-if="currentSection.type === 'static'"
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -513,7 +514,7 @@
                       @promote-section="currentSection = {...currentSection, instance: true}"
                       @creationViewLoaded="updateCreationView"
                     />
-                    <BaseTypesDynamic
+                    <LazyBaseTypesDynamic
                       v-if="currentSection.type === 'dynamic'"
                       :props="currentSection"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -525,7 +526,7 @@
                       :base-path="pagePath"
                       @load="(value) => loading = value"
                     />
-                    <BaseTypesConfigurable
+                    <LazyBaseTypesConfigurable
                       v-if="currentSection.type === 'configurable'"
                       ref="sections-configurable-type"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
@@ -545,7 +546,7 @@
                       @load="(value) => loading = value"
                       @promote-section="currentSection = {...currentSection, instance: true}"
                     />
-                    <BaseTypesLocal
+                    <LazyBaseTypesLocal
                       v-if="currentSection.type === 'local'"
                       :props="currentSection"
                       :savedView="savedView"
@@ -642,7 +643,7 @@
               <div
                 class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
                 <div class="flexSections sections-flex-row sections-justify-center sections-items-center">
-                  <BaseIconsAlert/>
+                  <LazyBaseIconsAlert/>
                   <div class="sections-text-center h4 sections-my-3 sections-pb-3 deletePageLabel">
                     {{ $t("deletePage") }}
                   </div>
@@ -682,7 +683,7 @@
               class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
                 <div class="flexSections flex-row justify-center items-center">
-                  <BaseIconsAlert/>
+                  <LazyBaseIconsAlert/>
                   <div class="text-center h4 my-3 pb-3 deletePageLabel">
                     {{ $t("deleteSection") }} ({{ deletedSectionName }})
                   </div>
@@ -722,9 +723,9 @@
               class="flexSections fullHeightSections items-center sections-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               <div class="section-modal-content bg-white relativeSections shadow rounded-xl overflow-scroll">
                 <div class="text-center flexSections sections-center h4 sectionTypeHeader">
-                  <BaseIconsAlert/>
+                  <LazyBaseIconsAlert/>
                   <div class="closeIcon" @click="isErrorsFormatModalOpen = false">
-                    <BaseIconsClose/>
+                    <LazyBaseIconsClose/>
                   </div>
                 </div>
                 <div class="text-center h4 my-3  pb-3 errorMessageDialog">
@@ -829,7 +830,7 @@
           <div v-if="errorInLayout === true && admin && editMode" class="views">
             <div class="flexSections not-found-error">
               <div class="flexSections not-found-error-column">
-                <BaseIconsError class="error-icon"/>
+                <LazyBaseIconsError class="error-icon"/>
                 <div v-for="(error, index) in sectionsMainErrors" :key="`layout-error-${index}`"
                      class="mainmsg not-found-error-column">
                   {{ error }}
@@ -864,29 +865,29 @@
                     >
                       <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
                            @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                        <BaseIconsAlert/>
+                        <LazyBaseIconsAlert/>
                       </div>
                       <div
                         @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
                         v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                        <BaseIconsEdit :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
+                        <LazyBaseIconsEdit :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
                                   class="edit-icon"/>
                       </div>
-                      <BaseIconsDrag class="drag-icon handle"/>
+                      <LazyBaseIconsDrag class="drag-icon handle"/>
                       <div
                         @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                        <BaseIconsTrash class="trash-icon"/>
+                        <LazyBaseIconsTrash class="trash-icon"/>
                       </div>
                       <div
                         @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                        <BaseIconsAnchor
+                        <LazyBaseIconsAnchor
                           :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                           class="edit-icon"/>
                       </div>
                     </div>
                     <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
                          class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                      <BaseIconsSettings :color="'currentColor'" class="settings-icon"/>
+                      <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                     </div>
                     <div class="view-component"
                          :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
@@ -930,7 +931,7 @@
             "
                     >
                       <div class="btn-icon plus-icon">
-                        <BaseIconsPlus/>
+                        <LazyBaseIconsPlus/>
                       </div>
                       <div class="btn-text">{{ $t("Add") }}</div>
                     </button>
@@ -964,30 +965,30 @@
                             >
                               <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
                                    @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                                <BaseIconsAlert/>
+                                <LazyBaseIconsAlert/>
                               </div>
                               <div
                                 @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
                                 v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                                <BaseIconsEdit
+                                <LazyBaseIconsEdit
                                   :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
                                   class="edit-icon"/>
                               </div>
-                              <BaseIconsDrag class="drag-icon handle"/>
+                              <LazyBaseIconsDrag class="drag-icon handle"/>
                               <div
                                 @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                                <BaseIconsTrash class="trash-icon"/>
+                                <LazyBaseIconsTrash class="trash-icon"/>
                               </div>
                               <div
                                 @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                                <BaseIconsAnchor
+                                <LazyBaseIconsAnchor
                                   :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                                   class="edit-icon"/>
                               </div>
                             </div>
                             <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
                                  class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                              <BaseIconsSettings :color="'currentColor'" class="settings-icon"/>
+                              <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                             </div>
                             <div class="view-component"
                                  :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
@@ -1041,7 +1042,7 @@
                   <div class="sections-text-center h4 sectionTypeHeader">
                     <div class="title">{{ $t("section-title") }}:</div>
                     <div class="closeIcon" @click="staticModal = false">
-                      <BaseIconsClose/>
+                      <LazyBaseIconsClose/>
                     </div>
                   </div>
                   <div class="flexSections sections-w-full sections-justify-center">
@@ -1108,10 +1109,10 @@
                   <div class="sections-text-center h4 sectionTypeHeader">
                     <div class="title">{{ $t("Metadata") }}</div>
                     <div class="closeIcon" @click="metadataModal = false; metadataFormLang = i18n.locale.toString()">
-                      <BaseIconsClose/>
+                      <LazyBaseIconsClose/>
                     </div>
                   </div>
-                  <TranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
+                  <LazyTranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
                                         @setFormLang="(locale) => metadataFormLang = locale"/>
                   <div class="flexSections sections-w-full sections-justify-center"
                        :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
@@ -1160,7 +1161,7 @@
                             <div class="sections-mt-2 sectionsFieldsLabels">
                               {{ $t('Image Metatag') }}
                             </div>
-                            <MediasUploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                            <LazyMediasUploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
                                          :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
                                          :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"
                                          @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"
@@ -1170,13 +1171,13 @@
                             <div class="sections-mt-2 sectionsFieldsLabels">
                               {{ $t('CSS') }}
                             </div>
-                            <MediasUploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                            <LazyMediasUploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
                                          :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
                                          :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
                                          @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
                                          @removeUploadedImage="removeMedia('media')" />
-                            <MediasMediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
-                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></MediasMediaComponent>
+                            <LazyMediasMediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
+                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></LazyMediasMediaComponent>
                           </div>
                         </div>
                       </div>
@@ -1208,7 +1209,7 @@
                 <div class="section-modal-wrapper success-section-type">
                   <div class="sections-text-center h4 header">
                     <div class="icon-head">
-                      <BaseIconsCelebrate/>
+                      <LazyBaseIconsCelebrate/>
                     </div>
                     <div class="title">
                       {{
@@ -1216,7 +1217,7 @@
                       }}
                     </div>
                     <div class="closeIcon" @click="staticSuccess = false">
-                      <BaseIconsClose/>
+                      <LazyBaseIconsClose/>
                     </div>
                   </div>
                   <div v-if="typesTab === 'types' || typesTab === 'inventoryTypes'"
@@ -1235,11 +1236,11 @@
 
           <!-- ------------------------------------------------------------------------------------------- -->
 
-          <BaseIconsLoading :loading="loading"/>
+          <LazyBaseIconsLoading :loading="loading"/>
         </div>
         <div v-else>
           <!-- This is to show the create a new page button when the page requested is not found     -->
-          <button ref="intro-create-page" v-if="admin && errorResponseStatus !== 401" class="hp-button btn-text" @click="createNewPage">
+          <button ref="intro-create-page" v-if="admin && errorResponseStatus !== 401" class="intro-create-page hp-button btn-text" @click="createNewPage">
             {{ $t("Create New Page") }}
           </button>
           <div
@@ -1249,7 +1250,7 @@
           </div>
           <div v-else-if="errorResponseStatus !== 0" class="flexSections not-found-error">
             <div class="flexSections not-found-error-column">
-              <BaseIconsError class="error-icon"/>
+              <LazyBaseIconsError class="error-icon"/>
               <div v-for="(error, index) in sectionsMainErrors" :key="index" class="mainmsg not-found-error-column">
                 {{ error }}
               </div>
@@ -1262,8 +1263,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue';
-import { useCookie, useHead, useNuxtApp, useRoute, useRouter} from '#app';
+import {computed, onBeforeUnmount, onMounted, reactive, ref} from 'vue';
+import {useCookie, useHead, useNuxtApp, useRoute, useRouter} from '#app';
 
 import draggable from "vuedraggable";
 
@@ -1331,6 +1332,8 @@ const route = useRoute();
 const router = useRouter();
 const i18n = useI18n();
 const config = useRuntimeConfig();
+
+const sectionsInstance = getCurrentInstance()?.refs
 
 // Data properties converted to refs
 const locales = ref(['en', 'fr']);
@@ -1674,6 +1677,7 @@ const initializeSections = (res) => {
   sectionsPageName.value = res.data.page
   sectionslayout.value = res.data.layout
   selectedLayout.value = res.data.layout
+  // console.log('res.data.layout', res.data)
 
   for (const langKey of locales.value) {
     if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title)
@@ -1767,7 +1771,7 @@ const initializeSections = (res) => {
   // In Nuxt 3, we use emit from defineEmits()
   // This would need to be passed through from the parent component
   // For now, I'll comment it out
-  // emit("load", true)
+  emit("load", true)
 
   sectionsPageLastUpdated.value = res.data.last_updated
 }
@@ -1808,7 +1812,7 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
   pageMetadata.value[mediaFieldName] = media
   // In Nuxt 3, we use template refs differently
   // This would need adjustment based on how you're using refs
-  sectionsMediaComponent.value.closeModal()
+  sectionsInstance['sectionsMediaComponent'].closeModal()
 }
 const removeMedia = (media) => {
   pageMetadata.value[media] = {}
@@ -1897,7 +1901,9 @@ const updatePageMetaData = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
 
   try {
-    const res = await $axios.put(URL, variables, config)
+    const res = {
+      data: await (await fetch(URL, {method: 'PUT', body: variables, ...config})).json()
+    }
     loading.value = false
 
     if (res.data && res.data.error) {
@@ -1974,7 +1980,6 @@ const checkToken = async () => {
 
     try {
       const res = await $fetch(URL, {method: 'GET', config});
-      console.log(res)
       const token = res.token
       const date = new Date()
       date.setDate(date.getDate() + 14)
@@ -2001,15 +2006,16 @@ const getUserData = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/user`
 
   try {
-    const res = await $axios.get(URL, config)
-    sectionsUserId.value = res.data.id
+    const res = await (await fetch(URL, {method: 'GET', ...config})).json()
+    sectionsUserId.value = res.id
     loading.value = false
   } catch (error) {
     loading.value = false
     // In Nuxt 3, we use emit from defineEmits()
-    // emit("load", false)
-    cookies.remove('sections-auth-token')
-    admin.value = false
+    emit("load", false)
+    useCookie('sections-auth-token').value = null
+    // TODO: Do not mutate prop value admin
+    // admin.value = false
     showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
   }
 }
@@ -2029,7 +2035,7 @@ const initImportSections = () => {
     )
   } else {
     // In Nuxt 3, we use template refs differently
-    jsonFilePick.value.click()
+    sectionsInstance['jsonFilePick'].click()
   }
 }
 const importSections = (e) => {
@@ -2100,14 +2106,14 @@ const updateGlobalType = async (section) => {
     loading.value = true
 
     try {
-      await $axios.put(URL, {
-        "section": {
-          "name": sectionTypeName.value,
-          "options": section.type === 'configurable' ? [section.settings] : section.settings,
-          "type": section.type
-        },
-        "auto_insertion": section.auto_insertion
-      }, config)
+      await (await fetch(URL, {method: 'PUT', body: {
+          "section": {
+            "name": sectionTypeName.value,
+            "options": section.type === 'configurable' ? [section.settings] : section.settings,
+            "type": section.type
+          },
+          "auto_insertion": section.auto_insertion
+        }, ...config})).json()
 
       sectionTypeName.value = ""
       currentSection.value = null
@@ -2146,17 +2152,17 @@ const addNewGlobalType = async (section) => {
     loading.value = true
 
     try {
-      await $axios.post(URL, {
-        "section": {
-          "name": sectionTypeName.value,
-          "options": section.type === 'configurable' ? [section.settings] : section.settings,
-          "type": section.type
-        },
-        "auto_insertion": section.auto_insertion
-      }, config)
+      await (await fetch(URL, {method: 'POST', body: {
+          "section": {
+            "name": sectionTypeName.value,
+            "options": section.type === 'configurable' ? [section.settings] : section.settings,
+            "type": section.type
+          },
+          "auto_insertion": section.auto_insertion
+        }, ...config})).json()
 
       globalTypes.value = []
-      getGlobalSectionTypes() // assuming this function is defined elsewhere
+      await getGlobalSectionTypes() // assuming this function is defined elsewhere
       staticSuccess.value = true
       sectionTypeName.value = ""
       fieldsInputs.value = [
@@ -2211,11 +2217,9 @@ const addNewStaticType = async (name) => {
     let fieldsDeclaration = fieldsInputs.value
 
     if (name) {
-      let path = ""
-      path = `/forms/${sectionTypeName.value}`
       // In Nuxt 3, dynamic imports use different syntax
       // We'd need to know more about how importComp is used
-      const formComp = await import(path).then(module => module.default)
+      const formComp = importComp(`/forms/${sectionTypeName.value}`)
 
       if (formComp.props && formComp.props.mediaFields) {
         fieldsDeclaration = formComp.props.mediaFields
@@ -2225,13 +2229,13 @@ const addNewStaticType = async (name) => {
     fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
 
     try {
-      await $axios.post(URL, {
-        "fields": fieldsDeclaration
-      }, config)
+      await (await fetch(URL, {method: 'POST', body: {
+          "fields": fieldsDeclaration
+        }, ...config})).json()
 
       types.value = []
       globalTypes.value = []
-      getSectionTypes() // assuming this function is defined elsewhere
+      await getSectionTypes() // assuming this function is defined elsewhere
       staticSuccess.value = true
       sectionTypeName.value = ""
       fieldsInputs.value = [
@@ -2244,7 +2248,7 @@ const addNewStaticType = async (name) => {
       loading.value = false
       types.value = []
       globalTypes.value = []
-      getSectionTypes() // assuming this function is defined elsewhere
+      await getSectionTypes() // assuming this function is defined elsewhere
       showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
     }
   } else {
@@ -2469,19 +2473,15 @@ const createNewPage = async () => {
     headers: sectionHeader(header)
   }
 
-  const { $axios } = useNuxtApp()
-
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
 
   try {
-    const res = await $axios.put(
-      URL,
-      {
-        variations: [],
-        sections: []
-      },
-      config
-    )
+    const res = {
+      data: await (await fetch(URL, {method: 'PUT', body: {
+          variations: [],
+          sections: []
+        }, ...config})).json()
+    }
 
     loading.value = false
     pageNotFound.value = false
@@ -2528,15 +2528,12 @@ const initiateIntroJs = async () => {
     const cookie = useCookie('sections-auth-token').value
     const token = cookie.value
 
-    const { $axios } = useNuxtApp()
-
     try {
-      const response = await $axios.get(
-        `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`,
-        {
-          headers: sectionHeader({ token })
-        }
-      )
+      const response = {
+        data: await (await fetch(`${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`, {method: 'GET', ...{
+            headers: sectionHeader({ token })
+          }})).json()
+      }
 
       currentPages.value = response.data.current_pages
       if (currentPages.value !== null && currentPages.value === 0) {
@@ -2602,14 +2599,14 @@ const runIntro = async (topic, rerun) => {
       addIntroSteps(topic, rerun)
     } else if (
       topic === 'inventoryOpened' &&
-      refs['intro-simple-CTA-section-inventory'] &&
-      refs['intro-simple-CTA-section-inventory'][0]
+      document.querySelector('.intro-simple-CTA-section-inventory') &&
+      document.querySelector('.intro-simple-CTA-section-inventory')[0]
     ) {
       addIntroSteps(topic, rerun)
     } else if (
       topic === 'availableSectionOpened' &&
-      refs['intro-simple-CTA-section-available'] &&
-      refs['intro-simple-CTA-section-available'][0]
+      document.querySelector('.intro-simple-CTA-section-available') &&
+      document.querySelector('.intro-simple-CTA-section-available')[0]
     ) {
       addIntroSteps(topic, rerun)
     }
@@ -2648,7 +2645,6 @@ const addIntroSteps = (topic, rerun) => {
   }
 }
 const introSteps = (topic) => {
-  const t = i18n.t
 
   const simpleCTAIndex = filteredTypes.value.filter(
     type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled'
@@ -2658,44 +2654,99 @@ const introSteps = (topic) => {
     case 'createPage':
       return [
         {
-          element: refs['intro-create-page'],
+          element: document.querySelector('.intro-create-page'),
           intro: i18n.t('intro.createPage')
         }
       ]
     case 'editPage':
       return [
         {
-          element: refs['intro-edit-page'],
+          element: document.querySelector('.intro-edit-page'),
           intro: i18n.t('intro.editPage')
         }
       ]
     case 'topBar':
       return [
         {
-          element: refs['intro-top-bar'],
+          element: document.querySelector('.intro-top-bar'),
           intro: i18n.t('intro.topBarButtons')
         },
         {
-          element: refs['intro-add-new-section'],
+          element: document.querySelector('.intro-add-new-section'),
           intro: i18n.t('intro.addNewSection')
         }
       ]
     case 'addNewSectionModal':
       return [
         {
-          element: refs['intro-available-sections'],
+          element: document.querySelector('.intro-available-sections'),
           intro: i18n.t('intro.availableSections')
         },
         {
-          element: refs['intro-inventory'],
+          element: document.querySelector('.intro-inventory'),
           intro: simpleCTAIndex === -1 ?
             i18n.t('intro.inventoryDesc') :
             `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${i18n.t('intro.checkIt')}</span>`
         }
       ]
-    // Additional cases omitted for brevity but can be converted following the same pattern
-    default:
-      return []
+    case 'inventoryOpened':
+      return [
+        {
+          element: document.querySelector('.intro-simple-CTA-section-inventory')[0],
+          intro: `${i18n.t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${i18n.t('intro.createSection')}</span>`
+        }
+      ]
+    case 'sectionCreationConfirmed':
+      return [
+        {
+          element: document.querySelector('.intro-available-sections'),
+          intro: `${i18n.t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened', introRerun);">${i18n.t('intro.openAvailableSections')}</span>`
+        }
+      ]
+    case 'availableSectionOpened':
+      return [
+        {
+          element: document.querySelector('.intro-simple-CTA-section-available')[0],
+          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${i18n.t('intro.here')}</span>`
+        }
+      ]
+    case 'sectionFormOpened':
+      return [
+        {
+          element: document.querySelector('.intro-simple-CTA-section-form'),
+          intro: i18n.t('intro.simpleCTAForm')
+        }
+      ]
+    case 'sectionSubmitted':
+      return [
+        {
+          element: document.querySelector('.intro-save-changes'),
+          intro: i18n.t('intro.saveChanges')
+        }
+      ]
+    case 'pageSaved':
+      return [
+        {
+          element: document.querySelector('.intro-relaunch'),
+          intro: i18n.t('intro.relaunch')
+        },
+        {
+          element: document.querySelector('.intro-find-more-blobal'),
+          intro: i18n.t('intro.findMoreGlobal')
+        }
+      ]
+    case 'globalTour':
+      return [
+        {
+          intro: i18n.t('intro.globalSections')
+        },
+        {
+          intro: i18n.t('intro.creatingGlobalSection')
+        },
+        {
+          intro: i18n.t('intro.promoteSection')
+        }
+      ]
   }
 }
 const getSectionProjectIdentity = () => {
@@ -2757,11 +2808,13 @@ const renderConfigurableSection = async (gt, options) => {
     }
   }
 
-  const { $axios } = useNuxtApp()
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
 
   try {
-    const res = await $axios.post(URL, variables, config)
+    const res = {
+      data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
+    }
+
     emit("load", false)
 
     if (res.data && res.data.error) {
@@ -2854,11 +2907,12 @@ const renderDynamicSection = async (name, instanceName, gt) => {
     }
   }
 
-  const { $axios } = useNuxtApp()
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
 
   try {
-    const res = await $axios.post(URL, variables, config)
+    const res = {
+      data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
+    }
 
     if (res.data && res.data.error) {
       emit('errorAddingSection', {
@@ -2926,9 +2980,9 @@ const getGlobalSectionTypes = async (autoLoad) => {
   const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances`
 
   try {
-    const res = await $axios.get(url, config)
+    const res = await (await fetch(url, {method: 'GET', ...config})).json()
 
-    res.data.data.forEach((d) => {
+    res.data.forEach((d) => {
       globalTypes.value.push({
         regions: d.regions,
         auto_insertion: d.auto_insertion,
@@ -3005,9 +3059,9 @@ const getSectionTypes = async (autoLoad) => {
   const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types`
 
   try {
-    const res = await $axios.get(url, config)
+    const res = await (await fetch(url, {method: 'GET', ...config})).json()
 
-    res.data.data.forEach((d) => {
+    res.data.forEach((d) => {
       if (d.application) {
         appNames.value.push(d.application)
       }
@@ -3041,7 +3095,7 @@ const getSectionTypes = async (autoLoad) => {
     types.value = [...types.value, ...addSystemTypes()]
     loading.value = false
     emit("load", false)
-    getGlobalSectionTypes(autoLoad)
+    await getGlobalSectionTypes(autoLoad)
   } catch (error) {
     loading.value = false
     emit("load", false)
@@ -3109,7 +3163,7 @@ const buildComp = (staticTypes, views, compType, path) => {
   return staticTypes
 }
 const openEditMode = async () => {
-  getSectionTypes(true)
+  await getSectionTypes(true)
   if (!originalVariations.value[selectedVariation.value]) {
     originalVariations.value = JSON.parse(
       JSON.stringify(displayVariations.value)
@@ -3119,7 +3173,7 @@ const openEditMode = async () => {
   editMode.value = !editMode.value
 
   if (editMode.value === true) {
-    runIntro('topBar')
+    await runIntro('topBar')
 
     loading.value = true
     const inBrowser = typeof window !== 'undefined'
@@ -3154,7 +3208,10 @@ const openEditMode = async () => {
     }
 
     try {
-      const res = await $axios.post(URL, payload, config)
+      const res = {
+        data: await (await fetch(URL, {method: 'POST', body: payload, ...config})).json()
+      }
+
       loading.value = false
       if (res.data.last_updated > sectionsPageLastUpdated.value) {
         showToast(
@@ -3164,12 +3221,12 @@ const openEditMode = async () => {
         )
       }
       initializeSections(res)
-      computeLayoutData()
+      await computeLayoutData()
     } catch (error) {
       // Handle errors
     }
 
-    getUserData()
+    await getUserData()
     verifySlots()
   }
 }
@@ -3376,7 +3433,10 @@ const refreshSectionView = async (sectionView, data) => {
     const inBrowser = typeof window !== 'undefined'
     if (inBrowser) {
       try {
-        const res = await $axios.post(URL, variables, config)
+        const res = {
+          data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
+        }
+
         if (res.data && res.data.error) {
           nuxtApp.$emit('sectionViewRefreshed', {error: res.data})
           renderSectionError.value = `${sectionName}: ${res.data.error}`
@@ -3400,10 +3460,14 @@ const refreshSectionView = async (sectionView, data) => {
         showToast("Error", "error", renderSectionError.value)
       }
     } else {
-      const optionsRes = await $axios.options(URL, config)
+      const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
+
       if (optionsRes.status === 200) {
         try {
-          const res = await $axios.post(URL, variables, config)
+          const res = {
+            data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
+          }
+
           if (res.data && res.data.error) {
             nuxtApp.$emit('sectionViewRefreshed', res.data)
             renderSectionError.value = `${sectionName}: ${res.data.error}`
@@ -3427,9 +3491,9 @@ const refreshSectionView = async (sectionView, data) => {
       }
     }
   }
-  computeLayoutData()
+  await computeLayoutData()
 }
-const mutateVariation = (variationName) => {
+const mutateVariation = async (variationName) => {
   const invalidSectionsErrors = reactive({});
   const sectionsFormatErrors = reactive({});
   const sections = [];
@@ -3589,59 +3653,61 @@ const mutateVariation = (variationName) => {
     const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`;
 
     if (formatValdiation === true) {
-      axios
-        .put(URL, variables, config)
-        .then((res) => {
-          if (res.data && res.data.error) {
-            showToast("error", "error", res.data.error);
-            return;
-          }
-          allSections.value = res.data.sections;
-          sectionsPageLastUpdated.value = res.data.last_updated;
-          displayVariations.value[variationName].altered = false;
-          originalVariations.value = JSON.parse(
-            JSON.stringify(displayVariations.value)
+      try {
+        const res = {
+          data: await (await fetch(URL, {method: 'PUT', body: variables, ...config})).json()
+        }
+
+        if (res.data && res.data.error) {
+          showToast("error", "error", res.data.error);
+          return;
+        }
+        allSections.value = res.data.sections;
+        sectionsPageLastUpdated.value = res.data.last_updated;
+        displayVariations.value[variationName].altered = false;
+        originalVariations.value = JSON.parse(
+          JSON.stringify(displayVariations.value)
+        );
+        sectionslayout.value = res.data.layout;
+        runIntro('pageSaved', introRerun.value);
+        loading.value = false;
+
+        if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
+          showToast(
+            "Error",
+            "error",
+            i18n.t('someSectionsNotSaved')
           );
-          sectionslayout.value = res.data.layout;
-          runIntro('pageSaved', introRerun.value);
-          loading.value = false;
+          res.data.invalid_sections.forEach(section => {
+            invalidSectionsErrors[`${section.name}-${section.weight}`] = {
+              error: section.error,
+              weight: section.weight
+            };
+          });
+        } else {
+          showToast(
+            "Success",
+            "success",
+            i18n.t('successPageChanges')
+          );
+          layoutMode.value = false;
+        }
 
-          if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
-            showToast(
-              "Error",
-              "error",
-              i18n.t('someSectionsNotSaved')
-            );
-            res.data.invalid_sections.forEach(section => {
-              invalidSectionsErrors[`${section.name}-${section.weight}`] = {
-                error: section.error,
-                weight: section.weight
-              };
-            });
-          } else {
-            showToast(
-              "Success",
-              "success",
-              i18n.t('successPageChanges')
-            );
-            layoutMode.value = false;
-          }
+        nuxtApp.hook('sectionsLoaded', () => 'pageSaved');
+      } catch (error) {
+        if (error.response.data.errors) {
+          metadataErrors.value = error.response.data.errors;
+        } else {
+          showToast(
+            "Error saving your changes",
+            "error",
+            error.response.data.message,
+            error.response.data.options
+          );
+        }
+        loading.value = false;
+      }
 
-          nuxtApp.hook('sectionsLoaded', () => 'pageSaved');
-        })
-        .catch((error) => {
-          if (error.response.data.errors) {
-            metadataErrors.value = error.response.data.errors;
-          } else {
-            showToast(
-              "Error saving your changes",
-              "error",
-              error.response.data.message,
-              error.response.data.options
-            );
-          }
-          loading.value = false;
-        });
     } else {
       loading.value = false;
     }
@@ -3720,7 +3786,7 @@ const edit = (view, viewAnchor) => {
     showToast(
       "Edit",
       "error",
-      t("editingSection")
+      i18n.t("editingSection")
     );
   }
 
@@ -3777,7 +3843,7 @@ const copyAnchor = (anchor, event) => {
     navigator.clipboard.writeText(anchor);
 
     const tooltip = document.createElement("div");
-    tooltip.innerText = t("anchorCopied");
+    tooltip.innerText = i18n.t("anchorCopied");
     tooltip.className = "anchor-copied-tooltip";
     document.body.appendChild(tooltip);
     tooltip.style.left = `${event.clientX}px`;
@@ -3797,7 +3863,7 @@ const errorAddingSection = (error) => {
   isModalOpen.value = !error.closeModal;
   showToast(error.title, "error", error.message);
 };
-const deleteGlobalSectionType = (sectionTypeName, index) => {
+const deleteGlobalSectionType = async (sectionTypeName, index) => {
   isDeleteModalOpen.value = false;
   loading.value = true;
 
@@ -3811,9 +3877,12 @@ const deleteGlobalSectionType = (sectionTypeName, index) => {
 
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${sectionTypeName}`;
 
-  axios
-    .delete(URL, config)
-    .then((res) => {
+  try {
+    const res = {
+      data: await (await fetch(URL, {method: 'DELETE', ...config})).json()
+    }
+
+    if (res.data) {
       showToast(
         "Success",
         "info",
@@ -3821,15 +3890,15 @@ const deleteGlobalSectionType = (sectionTypeName, index) => {
       );
       globalTypes.value.splice(index, 1);
       globalTypes.value = [];
-      getGlobalSectionTypes();
-    })
-    .catch((error) => {
-      showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
-      loading.value = false;
-      emit("load", false);
-    });
+      await getGlobalSectionTypes();
+    }
+  } catch (error) {
+    showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
+    loading.value = false;
+    emit("load", false);
+  }
 };
-const deleteSectionType = (sectionTypeName, index) => {
+const deleteSectionType = async (sectionTypeName, index) => {
   isDeleteModalOpen.value = false;
   loading.value = true;
 
@@ -3843,9 +3912,12 @@ const deleteSectionType = (sectionTypeName, index) => {
 
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types/${sectionTypeName}`;
 
-  axios
-    .delete(URL, config)
-    .then((res) => {
+  try {
+    const res = {
+      data: await (await fetch(URL, {method: 'DELETE', ...config})).json()
+    }
+
+    if (res.data) {
       showToast(
         "Success",
         "info",
@@ -3854,15 +3926,15 @@ const deleteSectionType = (sectionTypeName, index) => {
       types.value.splice(index, 1);
       types.value = [];
       globalTypes.value = [];
-      getSectionTypes();
-    })
-    .catch((error) => {
-      showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
-      loading.value = false;
-      emit("load", false);
-    });
+      await getSectionTypes();
+    }
+  } catch (error) {
+    showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
+    loading.value = false;
+    emit("load", false);
+  }
 };
-const deleteSectionPage = () => {
+const deleteSectionPage = async () => {
   isDeletePageModalOpen.value = false;
   loading.value = true;
 
@@ -3876,9 +3948,12 @@ const deleteSectionPage = () => {
 
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${pageId.value}`;
 
-  axios
-    .delete(URL, config)
-    .then((res) => {
+  try {
+    const res = {
+      data: await (await fetch(URL, {method: 'DELETE', ...config})).json()
+    }
+
+    if (res.data) {
       showToast(
         "Success",
         "info",
@@ -3887,14 +3962,14 @@ const deleteSectionPage = () => {
       loading.value = false;
       emit("load", false);
       setTimeout(() => window.location.reload(), 1000);
-    })
-    .catch((error) => {
-      showToast("Error", "error", i18n.t('deleteSectionPageError') + error.response.data.message);
-      loading.value = false;
-      emit("load", false);
-    });
+    }
+  } catch (error) {
+    showToast("Error", "error", i18n.t('deleteSectionPageError') + error.response.data.message);
+    loading.value = false;
+    emit("load", false);
+  }
 };
-const authorizeSectionType = (sectionAppId, index) => {
+const authorizeSectionType = async (sectionAppId, index) => {
   isDeleteModalOpen.value = false;
   loading.value = true;
 
@@ -3918,13 +3993,16 @@ const authorizeSectionType = (sectionAppId, index) => {
     authorization_fields
   };
 
-  axios
-    .put(URL, data, config)
-    .then((res) => {
+  try {
+    const res = {
+      data: await (await fetch(URL, {method: 'PUT', body: data, ...config})).json()
+    }
+
+    if (res.data) {
       showToast(
         "Success",
         "info",
-        t("authorizeSuccess", { appName: selectedAppName.value })
+        i18n.t("authorizeSuccess", { appName: selectedAppName.value })
       );
       isAuthModalOpen.value = false;
       requirementsInputs.value = {};
@@ -3933,14 +4011,14 @@ const authorizeSectionType = (sectionAppId, index) => {
       });
       loading.value = false;
       emit("load", false);
-    })
-    .catch((error) => {
-      showToast("Error", "error", `${i18n.t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
-      loading.value = false;
-      emit("load", false);
-    });
+    }
+  } catch (error) {
+    showToast("Error", "error", `${i18n.t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+    loading.value = false;
+    emit("load", false);
+  }
 };
-const unAuthorizeSectionType = (sectionAppId, index) => {
+const unAuthorizeSectionType = async (sectionAppId, index) => {
   isDeleteModalOpen.value = false;
   loading.value = true;
 
@@ -3962,13 +4040,16 @@ const unAuthorizeSectionType = (sectionAppId, index) => {
     }
   };
 
-  axios
-    .put(URL, data, config)
-    .then((res) => {
+  try {
+    const res = {
+      data: await (await fetch(URL, {method: 'PUT', body: data, ...config})).json()
+    }
+
+    if (res.data) {
       showToast(
         "Success",
         "info",
-        t("unAuthorizeSuccess", { appName: selectedAppName.value })
+        i18n.t("unAuthorizeSuccess", { appName: selectedAppName.value })
       );
       isUnAuthModalOpen.value = false;
       types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
@@ -3976,12 +4057,12 @@ const unAuthorizeSectionType = (sectionAppId, index) => {
       });
       loading.value = false;
       emit("load", false);
-    })
-    .catch((error) => {
-      showToast("Error", "error", `${i18n.t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
-      loading.value = false;
-      emit("load", false);
-    });
+    }
+  } catch (error) {
+    showToast("Error", "error", `${i18n.t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+    loading.value = false;
+    emit("load", false);
+  }
 };
 const openDeleteSectionTypeModal = (sectionTypeName, index) => {
   selectedSectionTypeName.value = sectionTypeName;
@@ -4023,7 +4104,7 @@ const openCurrentSection = (type, global) => {
       savedView.value = currentSection.value;
     }
   } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
-    showToast("Authorisation warning", "warning", t("authorizeFirst"));
+    showToast("Authorisation warning", "warning", i18n.t("authorizeFirst"));
   } else {
     if (type.type === 'static' || type.type === 'configurable') {
       isModalOpen.value = false;
@@ -4434,6 +4515,8 @@ const fetchData = async () => {
         emit("load", false);
       }
     }
+  } else {
+    loading.value = false;
   }
 
   if (projectMetadata.value && projectMetadata.value['languages'] && projectMetadata.value['languages'].length > 0) {

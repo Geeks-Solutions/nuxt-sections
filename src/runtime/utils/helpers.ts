@@ -1,4 +1,5 @@
-import { useNuxtApp, useCookie, useRoute } from "#app";
+import {useCookie, useNuxtApp, useRoute} from "#app";
+import {defineAsyncComponent} from "vue";
 
 export function formatName(name: string): string {
   switch (name) {
@@ -30,17 +31,43 @@ export const importJs = (path: string): any => {
   }
 }
 
-export const importComp = async (path: string): Promise<any> => {
+const sections = import.meta.glob('/sections/**/*.vue')
+const NullComponent = {
+  name: 'NullComponent',
+  render() {
+    return null // renders nothing
+  }
+}
+
+export const importComp = (path: string): any => {
+  const sectionPath = `/sections${path}.vue`
+  const configPath = `../components/configs${path}.vue`
+
+  let importFn = sections[sectionPath]
+
   try {
-    const component = await import(`../../../../sections${path}.vue`)
-    return component.default
-  } catch (e1) {
-    try {
-      const component = await import(`../configs${path}.vue`)
-      return component.default
-    } catch (e2) {
-      return ''
+    if (importFn) {
+      return defineAsyncComponent(() => {
+        return importFn()
+      })
+    } else {
+      return defineAsyncComponent({
+        loader: async () => {
+          try {
+            return await import(`../components/configs${path}.vue`)
+          } catch {
+            console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
+            return NullComponent
+          }
+        },
+        onError(error, retry, fail, attempts) {
+          // prevents retry loop, just fail silently
+          fail()
+        }
+      })
     }
+  } catch {
+
   }
 }
 

@@ -48,6 +48,7 @@
     "link": "npm link   //  In host project use \"link-module\": \"npm link my-module\""
   },
   "dependencies": {
+    "@geeks.solutions/vue-components": "1.0.19",
     "@nuxt/kit": "^3.16.2",
     "@nuxtjs/i18n": "^9.5.3",
     "intro.js": "^7.2.0",

@@ -63,10 +63,10 @@
               </div>
               <span v-if="instanceNameError" class="pagesReference mb-2">{{ t('instanceNameRequired') }}</span>
             </div>
-            <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+            <LazyBaseSubTypesGlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
 
             <!-- Translation Component -->
-            <TranslationComponent v-if="translationComponentSupport" :locales="locales" :default-lang="defaultLang" @setFormLang="updateLocale"/>
+            <LazyTranslationsTranslationComponent v-if="translationComponentSupport" :locales="locales" :default-lang="defaultLang" @setFormLang="updateLocale"/>
 
             <!-- Dynamic Fields -->
             <div
@@ -106,7 +106,7 @@
                 <!-- WYSIWYG Editor -->
                 <div v-if="field.type === 'wysiwyg'">
                   <div class="input">
-                     <wysiwyg
+                     <LazyEditorWysiwyg
                         :ref="el => fieldRefs[field.type + 'Editor'] = el"
                         class="wyzywig"
                         :html="computedWysiwygValue(field)"
@@ -144,7 +144,7 @@
                       class="w-95px h-63px object-contain"
                     />
                     <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
-                      <CloseIcon />
+                      <LazyBaseIconsClose />
                     </div>
                   </div>
                   <div v-else-if="field.type === 'media' && previewMedia" class="py-4 flex align-items-center">
@@ -154,12 +154,12 @@
                       class="w-95px h-63px object-contain"
                     />
                     <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
-                      <CloseIcon />
+                      <LazyBaseIconsClose />
                     </div>
                   </div>
                   <!-- Media Upload Progress -->
                   <div v-else-if="field.type === 'media' && isInProgress" class="loadingCircle pl-4 p-2">
-                    <loadingCircle />
+                    <LazyBaseIconsLoadingCircle />
                   </div>
                   <!-- Integer Multiple Options -->
                   <div v-else-if="field.type === 'integer' && optionValues.field === field.name && optionValues.option_values">
@@ -211,7 +211,7 @@
         </form>
       </div>
       <!-- Media Component -->
-      <MediaComponent ref="sectionsMediaComponentRef" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></MediaComponent>
+      <LazyMediasMediaComponent ref="sectionsMediaComponentRef" :sections-user-id="sectionsUserId" @emittedMedia="(media) => selectedMedia = media"></LazyMediasMediaComponent>
     </div>
 
     <!-- Custom Tab Content -->
@@ -236,28 +236,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, defineProps, defineEmits, shallowRef, nextTick } from 'vue';
-import { useNuxtApp, useCookie, useRoute, useI18n } from '#app'; // Import Nuxt 3 composables
-import {
-  formatName,
-  sectionHeader,
-  importComp, // Keep using this helper for now, ensure it works with Vite dynamic imports
-  deleteMedia,
-  globalFileUpload,
-  importJs, // Keep using this helper, but refactor if 'require' causes issues
-  parseQS,
-  validateQS,
-  getGlobalTypeData,
-  formatTexts
-} from "../../utils/helpers"; // Adjusted path
-
-// Import local components explicitly (Nuxt auto-import might not work reliably for deep nesting)
-import loadingCircle from "../icons/loadingCircle.vue";
-import CloseIcon from "../icons/close.vue";
-import UploadMedia from "../../Medias/UploadMedia.vue";
-import MediaComponent from "../../Medias/MediaComponent.vue";
-import wysiwyg from "../Editor/wysiwyg.vue"; // Corrected path
-import TranslationComponent from "../../Translations/TranslationComponent.vue";
-import GlobalReferences from "../SubTypes/globalReferences.vue";
+import { useNuxtApp, useCookie, useRoute } from '#app'; // Import Nuxt 3 composables
 
 // Composables
 const nuxtApp = useNuxtApp();
@@ -856,6 +835,9 @@ function updateLocale(newLocale) {
   formLang.value = newLocale;
   // Force reactivity update if needed, though direct v-model should handle it
   // nextTick(() => { /* potentially force update if direct binding fails */ });
+  // this.$set(this.props, 'fields', [...this.props.fields])
+  // this.$set(this, 'optionsData', {...this.optionsData})
+  // this.$set(this, 'options', [...this.options])
 }
 
 function computedWysiwygValue(field) {

@@ -1,182 +1,214 @@
 <template>
   <div class="text-center">
     <div class="element-type">
-      <h3>{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : formatTexts(formatName(props.name, " / ")) }}</h3>
-      <div v-if="globalSectionMode === true">
+      <!-- Access nested props.props -->
+      <h3>{{ props.props.linked_to ? formatTexts(formatName(props.props.linked_to, '/')) : formatTexts(formatName(props.props.name, " / ")) }}</h3>
+
+      <!-- Global Instance Fields -->
+      <div v-if="globalSectionMode">
         <div class="autoInsertRow">
           <div>
-            {{ $t('autoInsertInstance') }}
+            {{ t('autoInsertInstance') }}
           </div>
           <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
         </div>
-        <div v-if="props.linked_to === '' || props.linked_to === undefined" class="autoInsertRow">
+        <!-- Access nested props.props -->
+        <div v-if="!props.props.linked_to" class="autoInsertRow">
           <input
               class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
               type="text"
-              :placeholder="$t('instanceName')+'*'"
-              :disabled="props.linked_to !== '' && props.linked_to !== undefined"
+              :placeholder="t('instanceName')+'*'"
+              :disabled="!!props.props.linked_to"
               v-model="instanceName"
           />
         </div>
-        <span v-if="instanceNameError" class="pagesReference mb-2">{{ $t('instanceNameRequired') }}</span>
+        <span v-if="instanceNameError" class="pagesReference mb-2">{{ t('instanceNameRequired') }}</span>
       </div>
-      <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+      <LazyBaseSubTypesGlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+
+      <!-- Form and SubType -->
       <form>
         <div>
-          <subType :name="props.name" :creationView="creationView" :promote-button="instance === false && props.creation !== true && globalSectionMode === false" :is-side-bar-open="isSideBarOpen" @promote-section="$emit('promote-section')" @addStatic="addStatic" ref="viewSaved" :locales="locales" :default-lang="defaultLang" :translation-component-support="translationComponentSupport" :sections-user-id="sectionsUserId" @creationViewLoaded="(settings) => $emit('creationViewLoaded', settings)">
-            <slot />
-          </subType>
+           <LazyBaseSubTypesSubType
+              :name="props.props.name"
+              :creationView="creationView"
+              :promote-button="!instance && !props.props.creation && !globalSectionMode"
+              :is-side-bar-open="isSideBarOpen"
+              :locales="locales"
+              :default-lang="defaultLang"
+              :translation-component-support="translationComponentSupport"
+              :sections-user-id="sectionsUserId"
+              :saved-settings="savedView?.settings"
+              ref="subTypeRef"
+              @promote-section="emit('promote-section')"
+              @addStatic="addStatic"
+              @creationViewLoaded="(settings) => emit('creationViewLoaded', settings)"
+           >
+             <slot />
+           </LazyBaseSubTypesSubType>
         </div>
       </form>
     </div>
-    <!-- get access to the imported static component -->
-    <component :is="component" :section="props" v-show="false" ref="importedComponent" />
+    <!-- Dynamically imported component (kept for potential field access, though usage seems missing) -->
+    <component :is="component" :section="props.props" v-show="false" ref="importedComponentRef" />
   </div>
 </template>
 
-<script>
-import subType from "../SubTypes/subType.vue";
-import GlobalReferences from "../SubTypes/globalReferences.vue";
-import {formatName, formatTexts, getGlobalTypeData, importComp} from "../../utils";
+<script setup>
+import { ref, computed, onMounted, defineProps, defineEmits, shallowRef } from 'vue';
 
-export default {
-  components: {
-    subType,
-    GlobalReferences
+const { t } = useI18n();
+
+// Props
+const props = defineProps({
+  props: { // Nested object containing name, linked_to, type, region, instance_name etc.
+    type: Object,
+    default: () => ({}),
   },
-  props: {
-    props: {
-      type: Object,
-      default: () => {},
-    },
-    savedView: {
-      type: Object,
-      default: () => {},
-    },
-    creationView: {
-      type: Boolean,
-      default: false
-    },
-    locales: {
-      type: Array,
-      default() {
-        return ['en', 'fr']
+  savedView: { // Contains id, weight, settings
+    type: Object,
+    default: () => ({}),
+  },
+  creationView: {
+    type: Boolean,
+    default: false
+  },
+  locales: {
+    type: Array,
+    default: () => ['en', 'fr']
+  },
+  defaultLang: {
+    type: String,
+    default: 'en'
+  },
+  translationComponentSupport: {
+    type: Boolean,
+    default: false
+  },
+  sectionsUserId: {
+    type: String,
+    default: ''
+  },
+  instance: {
+    type: Boolean,
+    default: false
+  },
+  linked: {
+    type: Boolean,
+    default: false
+  },
+  isSideBarOpen: {
+    type: Boolean,
+    default: false
+  },
+   // Prop 'creation' is nested within props.props
+   // Removed incorrect top-level 'creation' prop definition.
+});
+
+// Emits
+const emit = defineEmits(['addSectionType', 'load', 'promote-section', 'creationViewLoaded']);
+
+// Reactive State
+const showPagesList = ref(false);
+const autoInsert = ref(false);
+const instanceNameError = ref(false);
+const instanceName = ref('');
+const pages = ref([]);
+const subTypeRef = ref(null); // Ref for subType component
+const importedComponentRef = ref(null); // Ref for the dynamically imported component
+const elements = ref([]); // To store fields from imported component if needed
+
+// Computed Properties
+const component = computed(() => {
+  // Access nested props.props.name and props.props.type
+  if (!props.props.name || !props.props.type) return null;
+  const path = `/views/${props.props.name}_${props.props.type}`;
+  // Use shallowRef for dynamically imported components
+  const comp = shallowRef(null);
+  importComp(path).then(c => comp.value = c);
+  return comp;
+});
+
+const id = computed(() => props.savedView.id || `id-${Date.now()}`);
+// Ensure weight is handled correctly, default to null if not present or 0
+const weight = computed(() => (props.savedView.weight === 0 || props.savedView.weight) ? props.savedView.weight : null);
+const globalSectionMode = computed(() => props.instance || props.linked);
+
+// Methods converted to functions
+function addStatic(settings) {
+  instanceNameError.value = false;
+  if (globalSectionMode.value && !instanceName.value) {
+    instanceNameError.value = true;
+    return;
+  }
+  emit("addSectionType", {
+    name: props.props.name, // Access nested props
+    type: "static",
+    settings,
+    id: id.value,
+    weight: weight.value,
+    auto_insertion: autoInsert.value,
+    instance_name: instanceName.value,
+    region: props.props.region // Access nested props
+  });
+}
+
+async function getGlobalType() {
+  emit("load", true);
+  try {
+    // Access nested props.props.linked_to
+    const result = await getGlobalTypeData(props.props.linked_to); // Assuming helper is adapted
+    if (result.res && result.res.data) {
+      autoInsert.value = result.res.data.auto_insertion;
+      if (result.res.data.pages && result.res.data.pages.length > 0) {
+        pages.value = result.res.data.pages.map(p => p.path);
       }
-    },
-    defaultLang: {
-      type: String,
-      default: 'en'
-    },
-    translationComponentSupport: {
-      type: Boolean,
-      default: false
-    },
-    sectionsUserId: {
-      type: String,
-      default: ''
-    },
-    instance: {
-      type: Boolean,
-      default: false
-    },
-    linked: {
-      type: Boolean,
-      default: false
-    },
-	isSideBarOpen: {
-      type: Boolean,
-      default: false
+      instanceName.value = result.res.data.name;
+    } else if (result.error) {
+      // Handle error - Use Nuxt 3 compatible toast/notification
+      console.error("Error loading global type:", result.error?.response?.data?.message || 'Unknown error');
+      // showToast("Error", "error", result.error.response.data.message); // Replace if using a toast system
     }
-  },
-  data() {
-    return {
-      myHtml: "",
-      elements: [],
-      showPagesList: false,
-      imported: false,
-      autoInsert: false,
-      instanceNameError: false,
-      instanceName: '',
-      pages: []
-    };
-  },
-  computed: {
-    component() {
-      const path = `/views/${this.props.name}_${this.props.type}`;
-      return importComp(path);
-    },
-    id() {
-      if (this.savedView.id) {
-        return this.savedView.id;
-      }
-      return "id-" + Date.now();
-    },
-    weight() {
-      if (this.savedView.weight === 0 || this.savedView.weight) {
-        return this.savedView.weight;
-      }
-      return "null";
-    },
-    globalSectionMode() {
-      return this.instance === true || this.linked === true
-    }
-  },
-  mounted() {
-    if (this.savedView && this.savedView.settings) {
-      setTimeout(() => {
-        this.$refs.viewSaved.$refs[
-          this.props.name
-        ].settings = this.savedView.settings;
-      }, 500);
-    }
-    setTimeout(() => {
-      this.elements = this.$refs.importedComponent.fields;
-    }, 10);
-    if (this.props.linked_to !== '' && this.props.linked_to !== undefined) {
-      this.getGlobalType()
-    }
-  },
-  methods: {
-    formatTexts,
-    formatName,
-    addStatic(settings) {
-      this.instanceNameError = false
-      if (this.globalSectionMode && this.instanceName === '') {
-        this.instanceNameError = true
-        return
-      }
-      this.$emit("addSectionType", {
-        name: this.props.name,
-        type: "static",
-        settings,
-        id: this.id,
-        weight: this.weight,
-        auto_insertion: this.autoInsert,
-        instance_name: this.instanceName,
-        region: this.props.region
-      });
-    },
-    async getGlobalType() {
-      this.$emit("load", true);
-      const result = await getGlobalTypeData(this.props.linked_to)
-      if (result.res && result.res.data) {
-        this.$emit("load", false);
-        this.autoInsert = result.res.data.auto_insertion
-        if (result.res.data.pages && result.res.data.pages.length > 0) {
-          this.pages = result.res.data.pages.map(p => p.path)
-        }
-        this.instanceName = result.res.data.name
-      } else if (result.error) {
-        this.$emit("load", false);
-        this.showToast("Error", "error", result.error.response.data.message, result.error.response.data.options);
-      }
-    }
-  },
-};
+  } catch (error) {
+    console.error("Error fetching global type data:", error);
+    // showToast("Error", "error", 'An unexpected error occurred.'); // Replace if using a toast system
+  } finally {
+    emit("load", false);
+  }
+}
+
+// Lifecycle Hooks
+onMounted(() => {
+  // Refactored: Settings are now passed as a prop to subType.
+  // The complex ref logic is removed.
+
+  // Logic to get fields from the dynamically imported component.
+  // This relies on the component exposing a 'fields' property.
+  // Consider if this is still the best approach.
+  // Use watch or nextTick if component loading is asynchronous.
+  if (importedComponentRef.value && importedComponentRef.value.fields) {
+      elements.value = importedComponentRef.value.fields;
+  } else {
+      // Watch for the component to load if it's async
+      watch(component, (newCompInstance) => {
+          if (newCompInstance && newCompInstance.fields) {
+              elements.value = newCompInstance.fields;
+          }
+      }, { immediate: true }); // Check immediately in case it's already loaded
+  }
+
+
+  // Fetch global type if linked
+  if (props.props.linked_to) { // Access nested props
+    getGlobalType();
+  }
+});
+
 </script>
 
-<style>
+<style scoped> /* Changed to scoped */
 .dashboard button {
+  /* These styles seem overly broad, consider refining selectors */
   background: black;
   margin: 10px;
   width: auto;
@@ -187,7 +219,9 @@ export default {
   max-width: 1000px;
 }
 .element-type h3 {
-  font-size: 29px;
+  font-size: 1.5rem; /* Adjusted size */
+  margin-bottom: 1rem; /* Added spacing */
+  text-transform: capitalize; /* Added for consistency */
 }
 .autoInsertRow {
   display: flex;
@@ -195,6 +229,7 @@ export default {
   justify-content: center;
   gap: 8px;
   align-items: center;
+  margin-bottom: 10px; /* Added spacing */
 }
 .autoInsertInput {
   width: 15px;
@@ -202,5 +237,31 @@ export default {
 }
 .instanceInput {
   width: 350px;
+}
+.element-type { /* Added padding */
+    padding: 20px;
+}
+/* Added styles for consistency */
+.submit-btn {
+    padding: 10px 20px;
+    background-color: #03B1C7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.submit-btn:hover {
+    background-color: #028a9b;
+}
+.pagesReference {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+}
+.border-FieldGray {
+  --tw-border-opacity: 1!important;
+  border-color: #f2f2f3!important;
+  border-color: rgba(242,242,243,var(--tw-border-opacity))!important;
 }
 </style>

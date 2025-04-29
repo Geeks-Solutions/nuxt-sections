@@ -2,8 +2,8 @@
   <div class="custom-clickable-tooltip">
     <div class="tooltip-wrapper">
       <span class="tooltip-trigger" @click="toggleTooltip">
-      <slot />
-    </span>
+        <slot />
+      </span>
       <div
         v-if="isVisible"
         class="tooltip"
@@ -15,35 +15,33 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "ClickableTooltip",
-  props: {
-    content: {
-      type: String,
-      required: true,
-    },
-    position: {
-      type: String,
-      default: "top",
-    },
+<script setup>
+import { ref, computed } from 'vue';
+
+defineOptions({
+  name: 'ClickableTooltip'
+});
+
+const props = defineProps({
+  content: {
+    type: String,
+    required: true,
   },
-  data() {
-    return {
-      isVisible: false,
-    };
+  position: {
+    type: String,
+    default: 'top',
   },
-  computed: {
-    tooltipPosition() {
-      return `tooltip-${this.position}`;
-    },
-  },
-  methods: {
-    toggleTooltip() {
-      this.isVisible = !this.isVisible;
-    },
-  },
-};
+});
+
+const isVisible = ref(false);
+
+const tooltipPosition = computed(() => {
+  return `tooltip-${props.position}`;
+});
+
+const toggleTooltip = () => {
+  isVisible.value = !isVisible.value;
+}
 </script>
 
 <style scoped>

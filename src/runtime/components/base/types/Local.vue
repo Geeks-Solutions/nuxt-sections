@@ -23,7 +23,7 @@
       </div>
       <span v-if="instanceNameError" class="pagesReference mb-2">{{ t('instanceNameRequired') }}</span>
     </div>
-    <GlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+    <LazyBaseSubTypesGlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
 
     <!-- Submit Button for Global Instances -->
     <button
@@ -39,12 +39,7 @@
 
 <script setup>
 import { ref, computed, onMounted, defineProps, defineEmits } from 'vue';
-import { useNuxtApp, useI18n } from '#app'; // Import Nuxt 3 composables
-import { formatName, getGlobalTypeData, formatTexts } from "../../utils/helpers"; // Corrected path
-import GlobalReferences from "../SubTypes/globalReferences.vue";
 
-// Composables
-const nuxtApp = useNuxtApp(); // Needed for potential $sections access in helpers
 const { t } = useI18n();
 
 // Props

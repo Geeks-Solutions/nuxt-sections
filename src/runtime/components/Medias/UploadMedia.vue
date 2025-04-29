@@ -9,14 +9,14 @@
             class="section-module-upload-media-container"
           >
             <div>
-              <EmptyImage v-if="media.length === 0 || (media.length > 0 && media[0].url === '')"
+              <LazyBaseIconsEmptyImage v-if="media.length === 0 || (media.length > 0 && media[0].url === '')"
                           alt="empty"
                           class="section-module-upload-media-image"/>
               <div v-if="media.length > 0 && media[0].url !== ''">
                 <div v-if="isDocument">
                   <div class="section-module-upload-media-document">
                     <div class="section-module-upload-media-document-inner">
-                      <MediaDocument />
+                      <LazyBaseIconsMediaDocument />
                     </div>
                   </div>
                 </div>
@@ -32,62 +32,57 @@
               <div>
                 <div v-if="media.length > 0 && media[0].seo_tag" class="section-module-upload-media-seo">{{ seoTag + media[0].seo_tag }}</div>
                 <div>
-                  <span v-if="media.length === 0 || (media.length > 0 && media[0].url === '')" class="section-module-upload-media-upload-text">{{ $t(uploadText) }}</span>
-                  <span v-else class="section-module-upload-media-upload-text">{{ $t(changeText) }}</span>
+                  <span v-if="media.length === 0 || (media.length > 0 && media[0].url === '')" class="section-module-upload-media-upload-text">{{ t(uploadText) }}</span>
+                  <span v-else class="section-module-upload-media-upload-text">{{ t(changeText) }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div @click="$emit('removeUploadedImage')">
-          <Cross v-if="media.length > 0 && media[0].url !== ''" alt="" class="section-module-upload-media-cross"/>
+          <LazyBaseIconsCross v-if="media.length > 0 && media[0].url !== ''" alt="" class="section-module-upload-media-cross"/>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import EmptyImage from "~/src/runtime/components/base/icons/EmptyImage.vue";
-import Cross from "~/src/runtime/components/base/icons/cross.vue";
-import MediaDocument from "~/src/runtime/components/base/icons/mediaDocument.vue";
+<script setup>
+defineOptions({
+  name: 'UploadMedia'
+});
 
-export default {
-  name: 'UploadMedia',
-  components: {
-    Cross,
-    MediaDocument,
-    EmptyImage
+const props = defineProps({
+  mediaLabel: {
+    type: String,
+    default: 'Media'
   },
-  props: {
-    mediaLabel: {
-      type: String,
-      default: 'Media'
-    },
-    uploadText: {
-      type: String,
-      default: 'mediaComponent.Upload'
-    },
-    changeText: {
-      type: String,
-      default: 'mediaComponent.Change'
-    },
-    seoTag: {
-      type: String,
-      default: 'SEO tag: '
-    },
-    isDocument: {
-      type: Boolean,
-      default: false
-    },
-    media: {
-      type: Array,
-      default() {
-        return []
-      }
-    }
+  uploadText: {
+    type: String,
+    default: 'mediaComponent.Upload'
+  },
+  changeText: {
+    type: String,
+    default: 'mediaComponent.Change'
+  },
+  seoTag: {
+    type: String,
+    default: 'SEO tag: '
+  },
+  isDocument: {
+    type: Boolean,
+    default: false
+  },
+  media: {
+    type: Array,
+    default: () => []
   }
-}
+});
+
+defineEmits(['uploadContainerClicked', 'removeUploadedImage']);
+
+// For i18n usage
+const { t } = useI18n();
 </script>
 
 <style>

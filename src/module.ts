@@ -22,7 +22,7 @@ export default defineNuxtModule<ModuleOptions>({
     const { resolve } = createResolver(import.meta.url)
 
     await installModule('@nuxtjs/i18n', {
-      // vueI18n: resolve('./i18n.config.ts'),
+      vueI18n: resolve('./runtime/i18n.config.ts'),
       langDir: resolve('./runtime/lang'),
       locales: [
         {
@@ -77,6 +77,11 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Register $sections configuration plugin
     addPluginTemplate(resolve('./runtime/plugin'))
+
+    // await installModule('@geeks.solutions/vue-components/nuxt')
+
+
+
 
     // Detect Tailwind installation
     // const isTailwindInstalled = ['@nuxtjs/tailwindcss'].some(pkg =>

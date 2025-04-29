@@ -11,11 +11,6 @@
 </template>
 
 <script setup>
-import { useRoute } from '#app'
-// import { useRoute, useCookie, useAsyncData, useHead } from '#imports'
-// import { importJs, renderPageData } from '~/utils'
-// import Sections from '~/components/Sections.vue'
-
 defineOptions({
   name: 'DynamicSectionsPage'
 })
@@ -59,5 +54,4 @@ const importHooks = (hook, params) => {
 // Lifecycle equivalents
 onMounted(() => importHooks('mounted'))
 onBeforeMount(() => importHooks('created'))
-onBeforeMount(() => importHooks('fetch')) // Nuxt 3 doesn’t use `fetch` the same way, so call it early
 </script>
