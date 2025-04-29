@@ -5,7 +5,7 @@
     :class="htmlContent && htmlContent.length > 2 ? 'mtitle' + htmlContent.charAt(2) : 'mtitle'"
   >
     <!-- Use v-html to render the content. Ensure content is sanitized if necessary -->
-    <div :class="`wysiwyg-content-wrapper ${cssClasses}`" v-html="htmlContent"></div>
+    <gWysiwygContent tag="div" :wrapper-classes="`${cssClasses}`" :html-content="htmlContent" />
   </div>
 </template>
 
@@ -36,9 +36,6 @@ const props = defineProps({
     })
   }
 });
-
-// --- Refs ---
-// const isVisible = ref(false); // Removed as its update logic was missing
 
 // --- Computed Properties ---
 const htmlContent = computed(() => { // Removed <string> type annotation

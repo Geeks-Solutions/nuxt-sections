@@ -31,7 +31,11 @@ export const importJs = (path: string): any => {
   }
 }
 
+// @ts-ignore
 const sections = import.meta.glob('/sections/**/*.vue')
+// @ts-ignore
+const configs = import.meta.glob('../components/configs/**/*.vue')
+
 const NullComponent = {
   name: 'NullComponent',
   render() {
@@ -44,7 +48,6 @@ export const importComp = (path: string): any => {
   const configPath = `../components/configs${path}.vue`
 
   let importFn = sections[sectionPath]
-
   try {
     if (importFn) {
       return defineAsyncComponent(() => {
@@ -52,11 +55,11 @@ export const importComp = (path: string): any => {
       })
     } else {
       return defineAsyncComponent({
-        loader: async () => {
+        loader: () => {
           try {
-            return await import(`../components/configs${path}.vue`)
+            return configs[configPath]()
           } catch {
-            console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
+            console.warn(`Component not found at: ${sectionPath}`)
             return NullComponent
           }
         },
@@ -66,9 +69,7 @@ export const importComp = (path: string): any => {
         }
       })
     }
-  } catch {
-
-  }
+  } catch {}
 }
 
 export const sectionHeader = (header: Record<string, string>): Record<string, string> => {
@@ -103,12 +104,11 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
     const config = {
       headers: sectionHeader({ token }),
     };
-    const result = await $nuxt.$axios.post(
-      $nuxt.$sections.serverUrl +
-      `/project/${$nuxt.$sections.projectId}/media`,
-      data,
-      config
-    );
+    const result = {
+      data: await (await fetch($nuxt.$sections.serverUrl +
+        `/project/${$nuxt.$sections.projectId}/media`, {method: "POST", body: data, ...config})).json()
+    }
+
     return { data: result.data, success: true, error: '' };
   } catch (e) {
     return { data: '', success: false, error: e };
@@ -122,9 +122,11 @@ export async function deleteMedia(id: string): Promise<{ data: any, success: boo
     const config = {
       headers: sectionHeader({ token }),
     };
-    const result = await $nuxt.$axios.delete($nuxt.$sections.serverUrl + `/project/${$nuxt.$sections.projectId}/media/${id}`,
-      config
-    );
+    const result = {
+      data: await (await fetch($nuxt.$sections.serverUrl + `/project/${$nuxt.$sections.projectId}/media/${id}`,
+        {method: "DELETE", ...config})).json()
+    }
+
     return { data: result.data, success: true, error: '' };
   } catch (e) {
     return { data: '', success: false, error: e };
@@ -140,7 +142,8 @@ export async function addNewStaticType(sectionTypeName: string): Promise<{ statu
     };
     const URL = $nuxt.$sections.serverUrl + `/project/${$nuxt.$sections.projectId}/section-types/${sectionTypeName}`;
     try {
-      await $nuxt.$axios.post(URL, {}, config);
+      await $fetch(URL, {method: "POST", body: {}, ...config})
+
       return {
         status: 'success',
         message: undefined
@@ -255,12 +258,14 @@ export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, 
     `${$nuxt.$sections.serverUrl}/project/${$nuxt.$sections.projectId}/global-instances/${linked_to}`;
 
   const result = {
-    res: null,
+    res: {},
     error: null
   };
 
   try {
-    result.res = await $nuxt.$axios.get(URL, config);
+    result.res = {
+      data: await (await fetch(URL, {method: "GET", ...config})).json()
+    }
     return result;
   } catch (error: any) {
     result.error = error;

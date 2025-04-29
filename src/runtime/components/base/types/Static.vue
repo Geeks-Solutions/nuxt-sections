@@ -56,6 +56,7 @@
 
 <script setup>
 import { ref, computed, onMounted, defineProps, defineEmits, shallowRef } from 'vue';
+import {getGlobalTypeData} from "~/src/runtime/utils/helpers.js";
 
 const { t } = useI18n();
 
@@ -123,10 +124,7 @@ const component = computed(() => {
   // Access nested props.props.name and props.props.type
   if (!props.props.name || !props.props.type) return null;
   const path = `/views/${props.props.name}_${props.props.type}`;
-  // Use shallowRef for dynamically imported components
-  const comp = shallowRef(null);
-  importComp(path).then(c => comp.value = c);
-  return comp;
+  return importComp(path);
 });
 
 const id = computed(() => props.savedView.id || `id-${Date.now()}`);

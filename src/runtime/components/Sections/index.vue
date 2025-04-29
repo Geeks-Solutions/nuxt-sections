@@ -1333,8 +1333,6 @@ const router = useRouter();
 const i18n = useI18n();
 const config = useRuntimeConfig();
 
-const sectionsInstance = getCurrentInstance()?.refs
-
 // Data properties converted to refs
 const locales = ref(['en', 'fr']);
 const translationComponentSupport = ref(true);
@@ -1381,6 +1379,12 @@ const synched = ref(false);
 const createdView = ref({});
 const savedView = ref({});
 
+const sectionsMediaComponent = ref(null)
+const jsonFilePick = ref(null)
+const resizeTarget = ref(null)
+const sectionsMainTarget = ref(null)
+
+
 // Display variations object
 const displayVariations = useState('displayVariations', () => ({
   [pageName]: {
@@ -1402,7 +1406,7 @@ const selectedAppName = ref("");
 const selectedSectionTypeIndex = ref("");
 const selectedSectionTypeAppId = ref("");
 const selectedSectionRequirements = ref([]);
-const sectionsPageLastUpdated = ref(null);
+const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);;
 const requirementsInputs = ref({});
 const allSections = ref({});
 const pageId = ref("");
@@ -1812,7 +1816,7 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
   pageMetadata.value[mediaFieldName] = media
   // In Nuxt 3, we use template refs differently
   // This would need adjustment based on how you're using refs
-  sectionsInstance['sectionsMediaComponent'].closeModal()
+  sectionsMediaComponent.value.closeModal()
 }
 const removeMedia = (media) => {
   pageMetadata.value[media] = {}
@@ -2035,7 +2039,7 @@ const initImportSections = () => {
     )
   } else {
     // In Nuxt 3, we use template refs differently
-    sectionsInstance['jsonFilePick'].click()
+    jsonFilePick.value.click()
   }
 }
 const importSections = (e) => {
@@ -2465,15 +2469,14 @@ const logDrag = (evt) => {
 const createNewPage = async () => {
   loading.value = true
 
-  const cookie = useCookie('sections-auth-token').value
-  const token = cookie.value
+  const token = useCookie('sections-auth-token').value
 
   const header = { token }
   const config = {
     headers: sectionHeader(header)
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName))}`
 
   try {
     const res = {
@@ -2506,7 +2509,7 @@ const createNewPage = async () => {
     showToast(
       "Error creating page",
       "error",
-      i18n.t('createPageError') + pageName.value + "\n" + error,
+      i18n.t('createPageError') + pageName + "\n" + error,
       err.response.data.options
     )
   }
@@ -2525,8 +2528,7 @@ const getAvailableSections = () => {
 }
 const initiateIntroJs = async () => {
   try {
-    const cookie = useCookie('sections-auth-token').value
-    const token = cookie.value
+    const token = useCookie('sections-auth-token').value
 
     try {
       const response = {
@@ -2544,8 +2546,7 @@ const initiateIntroJs = async () => {
     } catch (error) {
       loading.value = false
       emit("load", false)
-      const cookie = useCookie('sections-auth-token').value
-      cookie.value = null
+      useCookie('sections-auth-token').value = null
       admin.value = false
       showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
     }
@@ -2767,8 +2768,7 @@ const getSectionProjectIdentity = () => {
 const renderConfigurableSection = async (gt, options) => {
   emit("load", true)
 
-  const cookie = useCookie('sections-auth-token').value
-  const token = cookie.value
+  const token = useCookie('sections-auth-token').value
 
   const header = { token }
   const config = {
@@ -2867,8 +2867,7 @@ const renderConfigurableSection = async (gt, options) => {
 const renderDynamicSection = async (name, instanceName, gt) => {
   emit("load", true)
 
-  const cookie = useCookie('sections-auth-token').value
-  const token = cookie.value
+  const token = useCookie('sections-auth-token').value
 
   const header = { token }
   const config = {
@@ -3181,7 +3180,7 @@ const openEditMode = async () => {
       headers: sectionHeader((inBrowser) ? {} : {origin: nuxtApp.$sections.projectUrl}),
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName.value))}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName))}`
 
     let payload = {}
 
@@ -3255,7 +3254,7 @@ const synch = () => {
   // get default original values from the main
   let defaultVariationViews = Object.values(
     // we use an intermediary json object to deep clone the array
-    JSON.parse(JSON.stringify(displayVariations.value[pageName.value].views))
+    JSON.parse(JSON.stringify(displayVariations.value[pageName].views))
   )
 
   // update the cloned list with a linkedTo id
@@ -3327,7 +3326,7 @@ const addSectionType = (section, showToast = true, instance = false) => {
       runIntro('sectionSubmitted', introRerun.value)
     }
 
-    if (selectedVariation.value === pageName.value) {
+    if (selectedVariation.value === pageName) {
       // We check if there are variations that contains a section linked to the one we just edited
       // If there are, we edit them too so they stay in sync
       variations.value.map((variation) => {
@@ -3718,7 +3717,7 @@ const mutateVariation = async (variationName) => {
 const saveVariation = () => {
   loading.value = true;
   // initialize the new views
-  mutateVariation(pageName.value);
+  mutateVariation(pageName);
   variations.value.map((variation) => {
     mutateVariation(variation.pageName);
   });
@@ -3756,11 +3755,11 @@ const edit = (view, viewAnchor) => {
     isSideBarOpen.value = true;
 
     nextTick(() => {
-      resizeData.value.parentElement = resizeTargetRef.value.parentElement;
-      resizeData.value.resizeTarget = resizeTargetRef.value;
+      resizeData.value.parentElement = resizeTarget.value.parentElement;
+      resizeData.value.resizeTarget = resizeTarget.value;
       setTimeout(() => {
-        if (resizeTargetRef.value) {
-          resizeTargetRef.value.scrollTo({
+        if (resizeTarget.value) {
+          resizeTarget.value.scrollTo({
             top: 0
           });
         }
@@ -3770,12 +3769,12 @@ const edit = (view, viewAnchor) => {
     });
 
     setTimeout(() => {
-      if (sectionsMainTargetRef.value) {
+      if (sectionsMainTarget.value) {
         const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
-        const targetElement = sectionsMainTargetRef.value.querySelector(safeViewAnchor);
+        const targetElement = sectionsMainTarget.value.querySelector(safeViewAnchor);
         if (targetElement) {
           const targetPosition = targetElement.offsetTop;
-          sectionsMainTargetRef.value.scrollTo({
+          sectionsMainTarget.value.scrollTo({
             top: targetPosition,
             behavior: 'smooth'
           });
@@ -3810,7 +3809,7 @@ const toggleSectionsOptions = (viewId) => {
   sectionOptions.value[viewId] = !sectionOptions.value[viewId];
 };
 const deleteView = (id) => {
-  if (selectedVariation.value === pageName.value) {
+  if (selectedVariation.value === pageName) {
     // Check if there are variations that contain a section linked to the one we are about to delete
     // If there are, we unlink them
     variations.value.map((variation) => {
@@ -4126,26 +4125,26 @@ const updateCreationView = (settings) => {
 const sideBarSizeManagement = () => {
   try {
     nextTick(() => {
-      resizeData.value.parentElement = resizeTargetRef.value.parentElement;
-      resizeData.value.resizeTarget = resizeTargetRef.value;
+      resizeData.value.parentElement = resizeTarget.value.parentElement;
+      resizeData.value.resizeTarget = resizeTarget.value;
       setTimeout(() => {
-        if (resizeTargetRef.value) {
-          resizeTargetRef.value.scrollTo({
+        if (resizeTarget.value) {
+          resizeTarget.value.scrollTo({
             top: 0
           });
         }
-        if (sectionsMainTargetRef.value) {
+        if (sectionsMainTarget.value) {
           const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`;
-          const targetElement = sectionsMainTargetRef.value.querySelector(safeViewAnchor);
+          const targetElement = sectionsMainTarget.value.querySelector(safeViewAnchor);
           if (targetElement) {
             const targetPosition = targetElement.offsetTop;
-            sectionsMainTargetRef.value.scrollTo({
+            sectionsMainTarget.value.scrollTo({
               top: targetPosition,
               behavior: 'smooth'
             });
           } else {
-            sectionsMainTargetRef.value.scrollTo({
-              top: sectionsMainTargetRef.value.scrollHeight,
+            sectionsMainTarget.value.scrollTo({
+              top: sectionsMainTarget.value.scrollHeight,
               behavior: 'smooth'
             });
           }
@@ -4163,7 +4162,7 @@ const startTracking = (event) => {
   const handleElement = event.currentTarget;
 
   const targetSelector = handleElement.getAttribute("data-target");
-  const targetElement = resizeTargetRef.value.closest(targetSelector);
+  const targetElement = resizeTarget.value.closest(targetSelector);
 
   if (!targetElement) {
     return;

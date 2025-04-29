@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineProps, defineEmits, shallowRef, watch } from 'vue';
+import { ref, computed, onMounted, defineProps, defineEmits, watch } from 'vue';
 
 const { t, locale } = useI18n();
 
@@ -107,9 +107,7 @@ const nuxtApp = useNuxtApp()
 const getComponentForm = computed(() => {
   if (!props.name) return null;
   const path = `/forms/${props.name}`;
-  const component = shallowRef(null);
-  importComp(path).then(comp => component.value = comp);
-  return component;
+  return importComp(path);
 });
 
 // Watch for locale changes
@@ -166,9 +164,9 @@ onMounted(() => {
   //   withTabs.value = val;
   // });
 
-  nuxtApp.$on("toggleWithTabs", (val) => {
-    withTabs.value = val;
-  });
+  // nuxtApp.$on("toggleWithTabs", (val) => {
+  //   withTabs.value = val;
+  // });
 
   // Handle creationView logic - attempt to get settings from the loaded component
   // This still relies on the dynamic component exposing 'settings'
