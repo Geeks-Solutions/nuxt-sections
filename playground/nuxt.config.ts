@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['../src/module', "@nuxtjs/i18n"],
+  modules: ['../src/module', "@nuxtjs/i18n", "@nuxtjs/tailwindcss"],
   i18n: {
     strategy: "no_prefix",
     detectBrowserLanguage: false,
@@ -20,6 +20,9 @@ export default defineNuxtConfig({
     ],
     lazy: true,
     langDir: "lang/"
+  },
+  tailwindcss: {
+
   },
   // myModule: {},
   devtools: { enabled: true },

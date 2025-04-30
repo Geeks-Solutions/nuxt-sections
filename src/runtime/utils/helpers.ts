@@ -47,29 +47,19 @@ export const importComp = (path: string): any => {
   const sectionPath = `/sections${path}.vue`
   const configPath = `../components/configs${path}.vue`
 
-  let importFn = sections[sectionPath]
-  try {
-    if (importFn) {
-      return defineAsyncComponent(() => {
-        return importFn()
-      })
-    } else {
-      return defineAsyncComponent({
-        loader: () => {
-          try {
-            return configs[configPath]()
-          } catch {
-            console.warn(`Component not found at: ${sectionPath}`)
-            return NullComponent
-          }
-        },
-        onError(error, retry, fail, attempts) {
-          // prevents retry loop, just fail silently
-          fail()
-        }
-      })
-    }
-  } catch {}
+  // Check if section component exists
+  if (sections[sectionPath]) {
+    return defineAsyncComponent(() => sections[sectionPath]())
+  }
+
+  // Check if config component exists
+  if (configs[configPath]) {
+    return defineAsyncComponent(() => configs[configPath]())
+  }
+
+  // If neither exists, log warning and return NullComponent directly
+  console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
+  return null
 }
 
 export const sectionHeader = (header: Record<string, string>): Record<string, string> => {
@@ -500,3 +490,107 @@ export const showToast = (title : any, variant : any, message : any, options : a
     }
   )
 }
+
+/**
+ * Interface for API request options
+ */
+interface ApiRequestOptions {
+  url: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  body?: any;
+  onSuccess?: (data: any) => void;
+  onError?: (error: ApiError) => void;
+  headers?: HeadersInit;
+  [key: string]: any; // Allow any additional fetch options
+}
+
+/**
+ * Interface for API error response
+ */
+interface ApiError {
+  response: {
+    data: any;
+    status: number;
+    statusText?: string;
+  };
+}
+
+/**
+ * A reusable fetch helper for Nuxt.js applications
+ * @template T The expected return type of the API call
+ * @param {ApiRequestOptions} options - Request configuration options
+ * @returns {Promise<T>} - Returns a promise that resolves to the response data
+ */
+export const useApiRequest = async <T = any>({
+                                               url,
+                                               method = 'GET',
+                                               body = null,
+                                               onSuccess = () => {},
+                                               onError = () => {},
+                                               headers = {},
+                                               ...fetchOptions
+                                             }: ApiRequestOptions): Promise<{ data: T; status: number } | undefined> => {
+  try {
+    // Create a Headers object from provided headers or create a new one
+    const requestHeaders = new Headers(headers);
+
+    // Set Content-Type header for JSON requests if not specified and not FormData
+    if (typeof body === 'object' &&
+      !(body instanceof FormData) &&
+      !requestHeaders.has('Content-Type')) {
+      requestHeaders.set('Content-Type', 'application/json');
+    }
+
+    // Configure request options
+    const options: RequestInit = {
+      method,
+      headers: requestHeaders,
+      ...fetchOptions
+    };
+
+    // Add body if provided
+    if (body) {
+      options.body = typeof body === 'object' && !(body instanceof FormData)
+        ? JSON.stringify(body)
+        : body;
+    }
+
+    // Make the request
+    const response = await fetch(url, options);
+
+    // Handle response
+    if (!response.ok) {
+      // Format error in a consistent way
+      const errorData = await response.json().catch(() => ({}));
+      const error: ApiError = {
+        response: {
+          data: errorData,
+          status: response.status,
+          statusText: response.statusText
+        }
+      };
+
+      // Call error callback if provided
+      if (onError && typeof onError === 'function') {
+        onError(error);
+      }
+
+      throw error;
+    }
+
+    // Parse response
+    let res: { data: T; status: number };
+
+    res = {
+      data: await response.json() as T,
+      status: response.status
+    }
+
+    // Call success callback if provided
+    if (onSuccess && typeof onSuccess === 'function') {
+      onSuccess(res);
+    }
+
+    return res;
+  } catch (error: any) {}
+};

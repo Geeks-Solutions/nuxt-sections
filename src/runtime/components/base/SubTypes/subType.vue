@@ -11,8 +11,8 @@
         />
         <!-- Dynamic Form Component -->
         <component
+          ref="dynamicFormRef"
           :is="getComponentForm"
-          :ref="dynamicFormRef"
           :locales="locales"
           :selectedLang="formLang"
           :default-lang="defaultLang"
@@ -51,8 +51,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineProps, defineEmits, watch } from 'vue';
-
 const { t, locale } = useI18n();
 
 // Props
@@ -179,54 +177,44 @@ onMounted(() => {
   }
 });
 
+defineExpose({
+  dynamicFormRef
+})
+
 </script>
 
 <style scoped> /* Changed to scoped */
 .sub-types button.submit-btn {
   border: none;
-  font-size: 1.25rem; /* Adjusted size */
-  padding: 10px 20px; /* Adjusted padding */
+  font-size: 24px;
+  margin-top: 1rem;
+  padding: 7px;
   background: #31a9db;
   color: white;
-  border-radius: 8px; /* Adjusted border-radius */
-  transition: background-color 0.2s; /* Corrected transition property */
-  width: auto; /* Let button size naturally */
-  min-width: 150px; /* Added min-width */
-  height: auto; /* Let height be natural */
+  border-radius: 16px;
+  transition: 0.2s;
+  width: 385px;
+  height: 70px;
   text-align: center;
-  cursor: pointer; /* Added cursor pointer */
 }
 .submit-btn.withTabs {
-  /* Re-evaluate if this margin is needed without the event bus */
-  /* margin-left: 14%; */
+  margin-left: 14%;
 }
-.submit-btn:hover { /* Combined hover styles */
-  background-color: #0881b3; /* Use darken color */
+.submit-btn.withTabs:hover {
+  background-color: darken(#31a9db, 17%);
+  transition: 0.2s;
 }
 .content-wrapper {
   overflow-y: scroll;
   height: 550px;
 }
 .promote-btn {
-  font-size: 1rem !important; /* Adjusted size */
-  margin-left: 10px; /* Added spacing */
-  background-color: #6c757d; /* Secondary color */
-  border-color: #6c757d;
-}
-.promote-btn:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
+  font-size: 20px !important;
 }
 @media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;
   }
-}
-.sub-types { /* Added padding */
-    padding: 20px;
-}
-.text-video { /* Ensure this class exists or styles are applied elsewhere */
-    /* Add necessary styles for layout */
 }
 </style>

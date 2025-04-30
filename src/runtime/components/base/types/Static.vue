@@ -30,6 +30,7 @@
       <form>
         <div>
            <LazyBaseSubTypesSubType
+              ref="viewSaved"
               :name="props.props.name"
               :creationView="creationView"
               :promote-button="!instance && !props.props.creation && !globalSectionMode"
@@ -39,7 +40,6 @@
               :translation-component-support="translationComponentSupport"
               :sections-user-id="sectionsUserId"
               :saved-settings="savedView?.settings"
-              ref="subTypeRef"
               @promote-section="emit('promote-section')"
               @addStatic="addStatic"
               @creationViewLoaded="(settings) => emit('creationViewLoaded', settings)"
@@ -55,8 +55,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineProps, defineEmits, shallowRef } from 'vue';
-import {getGlobalTypeData} from "~/src/runtime/utils/helpers.js";
 
 const { t } = useI18n();
 
@@ -115,7 +113,7 @@ const autoInsert = ref(false);
 const instanceNameError = ref(false);
 const instanceName = ref('');
 const pages = ref([]);
-const subTypeRef = ref(null); // Ref for subType component
+const viewSaved = ref(null); // Ref for subType component
 const importedComponentRef = ref(null); // Ref for the dynamically imported component
 const elements = ref([]); // To store fields from imported component if needed
 
@@ -175,10 +173,28 @@ async function getGlobalType() {
   }
 }
 
+watch(viewSaved, async (val) => {
+  setTimeout(() => {
+    if (val?.dynamicFormRef && props.savedView?.settings) {
+      val.dynamicFormRef.settings = props.savedView.settings
+    }
+  }, 500)
+})
+
 // Lifecycle Hooks
-onMounted(() => {
+onMounted(async () => {
   // Refactored: Settings are now passed as a prop to subType.
-  // The complex ref logic is removed.
+
+  // await nextTick()
+  // if (props.savedView?.settings) {
+  //   setTimeout(() => {
+  //     console.log(viewSaved.value.dynamicFormRef)
+  //     console.log(viewSaved.value)
+  //     if (viewSaved.value?.$refs?.[props.props.name]) {
+  //       viewSaved.value.$refs[props.props.name].settings = props.savedView.settings
+  //     }
+  //   }, 500)
+  // }
 
   // Logic to get fields from the dynamically imported component.
   // This relies on the component exposing a 'fields' property.
@@ -206,7 +222,6 @@ onMounted(() => {
 
 <style scoped> /* Changed to scoped */
 .dashboard button {
-  /* These styles seem overly broad, consider refining selectors */
   background: black;
   margin: 10px;
   width: auto;
@@ -217,9 +232,7 @@ onMounted(() => {
   max-width: 1000px;
 }
 .element-type h3 {
-  font-size: 1.5rem; /* Adjusted size */
-  margin-bottom: 1rem; /* Added spacing */
-  text-transform: capitalize; /* Added for consistency */
+  font-size: 29px;
 }
 .autoInsertRow {
   display: flex;
@@ -227,7 +240,6 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   align-items: center;
-  margin-bottom: 10px; /* Added spacing */
 }
 .autoInsertInput {
   width: 15px;
@@ -235,31 +247,5 @@ onMounted(() => {
 }
 .instanceInput {
   width: 350px;
-}
-.element-type { /* Added padding */
-    padding: 20px;
-}
-/* Added styles for consistency */
-.submit-btn {
-    padding: 10px 20px;
-    background-color: #03B1C7;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.submit-btn:hover {
-    background-color: #028a9b;
-}
-.pagesReference {
-    color: #dc3545;
-    font-size: 0.875rem;
-    display: block;
-}
-.border-FieldGray {
-  --tw-border-opacity: 1!important;
-  border-color: #f2f2f3!important;
-  border-color: rgba(242,242,243,var(--tw-border-opacity))!important;
 }
 </style>

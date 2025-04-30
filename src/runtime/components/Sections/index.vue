@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
-<!--    <nuxt-link to="/features">features {{ i18n.locale }}</nuxt-link>-->
+<!--    <nuxt-link to="/testH">features {{ i18n.locale }}</nuxt-link>-->
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
@@ -1096,7 +1096,7 @@
 
           <!-- ------------------------------------------------------------------------------------------- -->
 
-          <!-- This is the popup to updatethe page metadata     -->
+          <!-- This is the popup to update the page metadata     -->
           <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
                class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true"
@@ -1331,6 +1331,7 @@ const nuxtApp = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
 const i18n = useI18n();
+const localePath = useLocalePath()
 const config = useRuntimeConfig();
 
 // Data properties converted to refs
@@ -1344,7 +1345,7 @@ const sectionTypeName = ref("");
 const staticModal = ref(false);
 const metadataModal = ref(false);
 const sectionInPage = ref([]);
-const pageNotFound = ref(false);
+const pageNotFound = useState('pageNotFound', () => false);
 const dismissCountDown = ref(0);
 const editMode = ref(false);
 const selectedVariation = ref(pageName);
@@ -1406,18 +1407,18 @@ const selectedAppName = ref("");
 const selectedSectionTypeIndex = ref("");
 const selectedSectionTypeAppId = ref("");
 const selectedSectionRequirements = ref([]);
-const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);;
+const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);
 const requirementsInputs = ref({});
 const allSections = ref({});
 const pageId = ref("");
 const pagePath = ref("");
 const sectionsPageName = ref("");
-const pageMetadata = ref({});
+const pageMetadata = useState('pageMetadata', () => ({}));
 const projectMetadata = ref({});
 let metadataErrors = ref({
   path: [""]
 });
-const sectionsError = ref("");
+const sectionsError = useState('sectionsError', () => "");
 const sectionsErrorOptions = ref(null);
 const renderSectionError = ref("");
 const fieldsInputs = ref([
@@ -1443,7 +1444,7 @@ const layoutMode = ref(false);
 const errorInLayout = ref(false);
 const errorInViews = ref(false);
 const highlightRegions = ref(false);
-const sectionsMainErrors = ref([]);
+const sectionsMainErrors = useState('sectionsMainErrors', () => ([]));
 const sectionsLayoutErrors = ref([]);
 const availableSectionsForms = ref([]);
 const sectionsConfigurableTypeReference = ref(null);
@@ -1463,9 +1464,9 @@ const resizeData = ref({
   parentElement: null,
   maxWidth: null,
 });
-const errorResponseStatus = ref(0);
-const errorRegisteredPage = ref('');
-const errorResponseData = ref(null);
+const errorResponseStatus = useState('errorResponseStatus', () => (0));
+const errorRegisteredPage = useState('errorRegisteredPage', () => (''));
+const errorResponseData = useState('errorResponseData', () => null);
 const sectionOptions = ref({});
 const sectionsFilterName = ref('');
 const sectionsFilterAppName = ref('');
@@ -1681,7 +1682,6 @@ const initializeSections = (res) => {
   sectionsPageName.value = res.data.page
   sectionslayout.value = res.data.layout
   selectedLayout.value = res.data.layout
-  // console.log('res.data.layout', res.data)
 
   for (const langKey of locales.value) {
     if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title)
@@ -1691,27 +1691,27 @@ const initializeSections = (res) => {
   }
 
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
-    projectMetadata.media = res.data.metadata.project_metadata.media
+    projectMetadata.value.media = res.data.metadata.project_metadata.media
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.selectedCSSPreset) {
-    projectMetadata.selectedCSSPreset = res.data.metadata.project_metadata.selectedCSSPreset
+    projectMetadata.value.selectedCSSPreset = res.data.metadata.project_metadata.selectedCSSPreset
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.favicon) {
-    projectMetadata.favicon = res.data.metadata.project_metadata.favicon
+    projectMetadata.value.favicon = res.data.metadata.project_metadata.favicon
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
-    projectMetadata.languages = res.data.metadata.project_metadata.languages
+    projectMetadata.value.languages = res.data.metadata.project_metadata.languages
     selectedLanguages.value = res.data.metadata.project_metadata.languages
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
-    projectMetadata.defaultLang = res.data.metadata.project_metadata.defaultLang
+    projectMetadata.value.defaultLang = res.data.metadata.project_metadata.defaultLang
     defaultLang.value = res.data.metadata.project_metadata.defaultLang
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.activateCookieControl !== undefined && res.data.metadata.project_metadata.activateCookieControl !== null) {
-    projectMetadata.activateCookieControl = res.data.metadata.project_metadata.activateCookieControl
+    projectMetadata.value.activateCookieControl = res.data.metadata.project_metadata.activateCookieControl
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.gtmId !== undefined && res.data.metadata.project_metadata.gtmId !== null) {
-    projectMetadata.gtmId = res.data.metadata.project_metadata.gtmId
+    projectMetadata.value.gtmId = res.data.metadata.project_metadata.gtmId
   }
   if (res.data.metadata.media) {
     pageMetadata.value.media = res.data.metadata.media
@@ -1787,8 +1787,8 @@ const pageNotFoundManagement = (error, server) => {
       sectionsError.value = error.response.data.message
       sectionsErrorOptions.value = error.response.data.options
     }
-    nuxtApp.ssrContext.res.statusCode = 404
-    navigateTo(nuxtApp.localePath(error.response.data.options.project_metadata.pagePath404))
+    nuxtApp.ssrContext.event.res.statusCode = 404
+    navigateTo(localePath(error.response.data.options.project_metadata.pagePath404))
   } else {
     if (error.response.data.error) {
       showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error)
@@ -2480,10 +2480,10 @@ const createNewPage = async () => {
 
   try {
     const res = {
-      data: await (await fetch(URL, {method: 'PUT', body: {
+      data: await (await fetch(URL, {method: 'PUT', body: JSON.stringify({
           variations: [],
           sections: []
-        }, ...config})).json()
+        }), ...config})).json()
     }
 
     loading.value = false
@@ -2785,7 +2785,7 @@ const renderConfigurableSection = async (gt, options) => {
   }
 
   let language = undefined
-  const locale = i18n.locale
+  const locale = i18n.locale.value
   if (locale) {
     language = locale.value
   }
@@ -3186,7 +3186,7 @@ const openEditMode = async () => {
 
     let language = undefined
     try {
-      language = i18n.locale
+      language = i18n.locale.value
     } catch {
     }
 
@@ -3281,7 +3281,7 @@ const synch = () => {
     synched.value = false
   }, 1000)
 }
-const addSectionType = (section, showToast = true, instance = false) => {
+const addSectionType = (section, showToastBool = true, instance = false) => {
   try {
     if (savedView.value.linkedTo) {
       const confirmed = window.confirm(
@@ -3329,7 +3329,7 @@ const addSectionType = (section, showToast = true, instance = false) => {
     if (selectedVariation.value === pageName) {
       // We check if there are variations that contains a section linked to the one we just edited
       // If there are, we edit them too so they stay in sync
-      variations.value.map((variation) => {
+      variations.map((variation) => {
         const newViews = Object.values(
           displayVariations.value[variation.pageName].views
         ).map((sectionVariation) => {
@@ -3351,7 +3351,7 @@ const addSectionType = (section, showToast = true, instance = false) => {
     loading.value = false
 
     computeLayoutData()
-    if (showToast !== false) {
+    if (showToastBool !== false) {
       showToast(
         "Success",
         "info",
@@ -3394,7 +3394,7 @@ const refreshSectionView = async (sectionView, data) => {
 
   let language = undefined
   try {
-    language = i18n.locale
+    language = i18n.locale.value
   } catch {
   }
 
@@ -3718,7 +3718,7 @@ const saveVariation = () => {
   loading.value = true;
   // initialize the new views
   mutateVariation(pageName);
-  variations.value.map((variation) => {
+  variations.map((variation) => {
     mutateVariation(variation.pageName);
   });
 };
@@ -3812,7 +3812,7 @@ const deleteView = (id) => {
   if (selectedVariation.value === pageName) {
     // Check if there are variations that contain a section linked to the one we are about to delete
     // If there are, we unlink them
-    variations.value.map((variation) => {
+    variations.map((variation) => {
       const newViews = Object.values(
         displayVariations.value[variation.pageName].views
       ).map((section) => {
@@ -4235,11 +4235,11 @@ const restoreSection = () => {
   );
   currentViews.value = displayVariations.value[selectedVariation.value].views;
 };
-const registeredPage = async (type) => {
+const registeredPage = (type) => {
   let path = `/page_components/${type}`;
   // Assuming importComp is a global function or defined elsewhere
   // In Nuxt 3, you might use defineAsyncComponent instead
-  return await importComp(path);
+  return importComp(path);
 };
 const clearSectionsFilters = () => {
   sectionsFilterName.value = '';
@@ -4275,7 +4275,7 @@ onMounted(async () => {
     initiateIntroJs();
   }
 
-  if (sectionsError.value !== "" && !await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+  if (sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
     showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
   }
   if (renderSectionError.value !== "") {
@@ -4322,8 +4322,7 @@ const fetchData = async () => {
 
   getAvailableLayouts();
   getAvailableSections();
-  sectionsMainErrors.value = [];
-  metadataFormLang.value = i18n.locale.toString();
+  metadataFormLang.value = i18n.locale.value.toString();
   locales.value.forEach(lang => {
     pageMetadata.value[lang] = {
       title: "",
@@ -4335,7 +4334,7 @@ const fetchData = async () => {
     translationComponentSupport.value = true;
     locales.value = [];
     locales.value = nuxtApp.$sections.projectLocales.split(',');
-    metadataFormLang.value = i18n.locale.toString();
+    metadataFormLang.value = i18n.locale.value.toString();
     locales.value.forEach(lang => {
       pageMetadata.value[lang] = {
         title: "",
@@ -4377,7 +4376,7 @@ const fetchData = async () => {
 
   let language = undefined;
   try {
-    language = i18n.locale;
+    language = i18n.locale.value;
   } catch {
   }
 
@@ -4408,6 +4407,7 @@ const fetchData = async () => {
   }
 
   if (sectionsPageData) {
+    sectionsMainErrors.value = [];
     const res = sectionsPageData.res;
     const error = sectionsPageData.error;
     if (res) {
@@ -4425,7 +4425,7 @@ const fetchData = async () => {
         return;
       }
       errorResponseStatus.value = error.response.status;
-      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
         errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
         errorResponseData.value = error.response.data;
       } else if (error.response.data.error) {
@@ -4441,6 +4441,7 @@ const fetchData = async () => {
       emit("load", false);
     }
   } else if (inBrowser && fetchedOnServer.value === false) {
+    sectionsMainErrors.value = [];
     try {
       const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
       initializeSections({data: res});
@@ -4457,7 +4458,7 @@ const fetchData = async () => {
         return;
       }
       errorResponseStatus.value = error.response.status;
-      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
         errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
         errorResponseData.value = error.response.data;
       } else if (error.response.data.error) {
@@ -4473,46 +4474,69 @@ const fetchData = async () => {
       emit("load", false);
     }
   } else if (!inBrowser) {
+    sectionsMainErrors.value = [];
     fetchedOnServer.value = true;
     const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
     if (optionsRes.status === 200) {
-      try {
-        const res = await (await fetch(URL, {method: 'POST', body: payload, ...config})).json();
-        initializeSections({data: res});
-      } catch (error) {
-        const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
-        if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
-          pageNotFoundManagement(error, true);
-          return;
-        }
-        if (error.response.status === 400) {
-          const res = error.response;
+      await useApiRequest({
+        url: URL,
+        method: 'POST',
+        ...config,
+        onSuccess: (res) => {
           initializeSections(res);
-          return;
-        }
-        if (error.response.status === 404) {
-          if (nuxtApp.ssrContext) {
-            nuxtApp.ssrContext.event.res.statusCode = 404;
+        },
+        onError: (error) => {
+          const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
+          if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+            pageNotFoundManagement(error, true);
+            return;
           }
-        }
+          if (error.response.status === 400) {
+            const res = error.response;
+            initializeSections(res);
+            return;
+          }
+          if (error.response.status === 404) {
+            if (nuxtApp.ssrContext) {
+              nuxtApp.ssrContext.event.res.statusCode = 404;
+            }
+          }
 
-        errorResponseStatus.value = error.response.status;
-        if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && await registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-          errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
-          errorResponseData.value = error.response.data;
-        } else if (error.response.data.error) {
-          sectionsError.value = error.response.data.error;
-        } else {
-          sectionsError.value = error.response.data.message;
-          sectionsErrorOptions.value = error.response.data.options;
+          errorResponseStatus.value = error.response.status;
+          if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+            errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+            errorResponseData.value = error.response.data;
+          } else if (error.response.data.error) {
+            sectionsError.value = error.response.data.error;
+          } else {
+            sectionsError.value = error.response.data.message;
+            sectionsErrorOptions.value = error.response.data.options;
+          }
+
+          loading.value = false;
+          pageNotFound.value = true;
+          if (errorResponseStatus.value === 404) {
+            sectionsMainErrors.value.push(i18n.t('404NotFound'));
+          }
+          emit("load", false);
         }
-        loading.value = false;
-        pageNotFound.value = true;
-        if (errorResponseStatus.value === 404) {
-          sectionsMainErrors.value.push(i18n.t('404NotFound'));
-        }
-        emit("load", false);
-      }
+      });
+      // try {
+        // const response = await fetch(URL, {method: 'POST', body: payload, ...config})
+        // if (!response.ok) {
+        //   throw {
+        //     response: {
+        //       data: await response.json(),
+        //       status: response.status
+        //     }
+        //   };
+        // } else {
+        //   const res = await (response).json();
+        //   initializeSections({data: res});
+        // }
+      // } catch (error) {
+      //
+      // }
     }
   } else {
     loading.value = false;
