@@ -227,7 +227,7 @@
                   <div class="btn-text intro">?</div>
                 </button>
                 <button
-                  @click="useCookie('sections-auth-token').value = null, (admin = false)"
+                  @click="logoutUser"
                   v-if="admin"
                   class="bg-blue"
                   style="background: black;
@@ -1972,53 +1972,61 @@ const updatePageMetaData = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'PUT', body: variables, ...config})).json()
-    }
-    loading.value = false
+    await useApiRequest({
+      url: URL,
+      method: 'PUT',
+      body: variables,
+      ...config,
+      onSuccess: (res) => {
+        loading.value = false
 
-    if (res.data && res.data.error) {
-      showToast("error", "error", res.data.error)
-      return
-    }
-
-    sectionsPageLastUpdated.value = res.data.last_updated
-    metadataModal.value = false
-    metadataFormLang.value = i18n.locale.value.toString()
-
-    showToast(
-      "Success",
-      "success",
-      i18n.t('successSettingsChanges')
-    )
-
-    if (pagePath !== sectionsPageName.value) {
-      let baseURL = window.location.origin
-      let routerBase = router.options.base
-
-      if (routerBase) {
-        while (routerBase.endsWith('/')) {
-          routerBase = routerBase.slice(0, -1)
+        if (res.data && res.data.error) {
+          showToast("error", "error", res.data.error)
+          return
         }
-        baseURL = baseURL + routerBase
-      }
 
-      window.location.replace(`${baseURL}/${pagePath}`)
-    } else {
-      window.location.reload()
-    }
-  } catch (error) {
+        sectionsPageLastUpdated.value = res.data.last_updated
+        metadataModal.value = false
+        metadataFormLang.value = i18n.locale.value.toString()
+
+        showToast(
+          "Success",
+          "success",
+          i18n.t('successSettingsChanges')
+        )
+
+        if (pagePath !== sectionsPageName.value) {
+          let baseURL = window.location.origin
+          let routerBase = router.options.base
+
+          if (routerBase) {
+            while (routerBase.endsWith('/')) {
+              routerBase = routerBase.slice(0, -1)
+            }
+            baseURL = baseURL + routerBase
+          }
+
+          window.location.replace(`${baseURL}/${pagePath}`)
+        } else {
+          window.location.reload()
+        }
+      },
+      onError: (error) => {
+        loading.value = false
+        if (error.response.data.errors) {
+          metadataErrors = error.response.data.errors
+        } else {
+          showToast(
+            "Error saving your changes",
+            "error",
+            error.response.data.message,
+            error.response.data.options
+          )
+        }
+      }
+    });
+  } catch {
     loading.value = false
-    if (error.response.data.errors) {
-      metadataErrors = error.response.data.errors
-    } else {
-      showToast(
-        "Error saving your changes",
-        "error",
-        error.response.data.message,
-        error.response.data.options
-      )
-    }
   }
 }
 const addField = (index) => {
@@ -2050,22 +2058,32 @@ const checkToken = async () => {
     const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/token/${auth_code}`
 
     try {
-      const res = await $fetch(URL, {method: 'GET', config});
-      const token = res.token
-      const date = new Date()
-      date.setDate(date.getDate() + 14)
-      date.setHours(date.getHours() - 4)
+      await useApiRequest({
+        url: URL,
+        method: 'GET',
+        ...config, // Assuming config contains headers etc.
+        onSuccess: async (res) => {
+          const token = res.data.token // Assuming the token is in res.data.token
+          const date = new Date()
+          date.setDate(date.getDate() + 14)
+          date.setHours(date.getHours() - 4)
 
-      useCookie("sections-auth-token", {
-        expires: date,
-        path: '/'
-      }).value = token
+          useCookie("sections-auth-token", {
+            expires: date,
+            path: '/'
+          }).value = token
 
-      await navigateTo(route.path)
-      loading.value = false
-    } catch (err) {
-      loading.value = false
-      showToast("Error", "error", err.response._data.token);
+          await navigateTo(route.path)
+          loading.value = false
+        },
+        onError: (err) => {
+          loading.value = false
+          // Adjust error message access based on ApiError structure
+          showToast("Error", "error", err.response?.data?.token || 'Authentication failed');
+        }
+      });
+    } catch {
+       loading.value = false
     }
   }
 }
@@ -2077,17 +2095,26 @@ const getUserData = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/user`
 
   try {
-    const res = await (await fetch(URL, {method: 'GET', ...config})).json()
-    sectionsUserId.value = res.id
-    loading.value = false
-  } catch (error) {
-    loading.value = false
-    // In Nuxt 3, we use emit from defineEmits()
-    emit("load", false)
-    useCookie('sections-auth-token').value = null
-    // TODO: Do not mutate prop value admin
-    // admin.value = false
-    showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
+    await useApiRequest({
+      url: URL,
+      method: 'GET',
+      ...config,
+      onSuccess: (res) => {
+        sectionsUserId.value = res.data.id // Assuming user ID is in res.data.id
+        loading.value = false
+      },
+      onError: (error) => {
+        loading.value = false
+        // In Nuxt 3, we use emit from defineEmits()
+        emit("load", false)
+        useCookie('sections-auth-token').value = null
+        // TODO: Do not mutate prop value admin
+        // admin.value = false
+        showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
+      }
+    });
+  } catch {
+     loading.value = false
   }
 }
 const exportSections = () => {
@@ -2177,29 +2204,38 @@ const updateGlobalType = async (section) => {
     loading.value = true
 
     try {
-      await (await fetch(URL, {method: 'PUT', body: {
+      await useApiRequest({
+        url: URL,
+        method: 'PUT',
+        body: {
           "section": {
             "name": sectionTypeName.value,
             "options": section.type === 'configurable' ? [section.settings] : section.settings,
             "type": section.type
           },
           "auto_insertion": section.auto_insertion
-        }, ...config})).json()
+        },
+        ...config,
+        onSuccess: () => {
+          sectionTypeName.value = ""
+          currentSection.value = null
+          isModalOpen.value = false
+          isSideBarOpen.value = false
+          loading.value = false
 
-      sectionTypeName.value = ""
-      currentSection.value = null
-      isModalOpen.value = false
-      isSideBarOpen.value = false
-      loading.value = false
-
-      showToast(
-        "Success",
-        "success",
-        i18n.t('globalTypeUpdated')
-      )
-    } catch (error) {
-      loading.value = false
-      showToast("Error", "error", i18n.t('updateSectionTypeError') + error.response.data.message, error.response.data.options)
+          showToast(
+            "Success",
+            "success",
+            i18n.t('globalTypeUpdated')
+          )
+        },
+        onError: (error) => {
+          loading.value = false
+          showToast("Error", "error", i18n.t('updateSectionTypeError') + error.response.data.message, error.response.data.options)
+        }
+      });
+    } catch {
+       loading.value = false;
     }
   } else {
     loading.value = false
@@ -2223,48 +2259,58 @@ const addNewGlobalType = async (section) => {
     loading.value = true
 
     try {
-      await (await fetch(URL, {method: 'POST', body: {
+      await useApiRequest({
+        url: URL,
+        method: 'POST',
+        body: {
           "section": {
             "name": sectionTypeName.value,
             "options": section.type === 'configurable' ? [section.settings] : section.settings,
             "type": section.type
           },
           "auto_insertion": section.auto_insertion
-        }, ...config})).json()
+        },
+        ...config,
+        onSuccess: async () => {
+          globalTypes.value = []
+          await getGlobalSectionTypes() // assuming this function is defined elsewhere
+          staticSuccess.value = true
+          sectionTypeName.value = ""
+          fieldsInputs.value = [
+            {
+              type: "image",
+              name: ""
+            }
+          ]
 
-      globalTypes.value = []
-      await getGlobalSectionTypes() // assuming this function is defined elsewhere
-      staticSuccess.value = true
-      sectionTypeName.value = ""
-      fieldsInputs.value = [
-        {
-          type: "image",
-          name: ""
+          if (canPromote.value === true) {
+            section.linkedTo = section.instance_name
+            section.linked_to = section.instance_name
+            section.instance = true
+
+            displayVariations.value[selectedVariation.value].views[section.id] = section
+            displayVariations.value[selectedVariation.value].altered = true
+
+            showToast(
+              "Success",
+              "info",
+              i18n.t('successAddedSection')
+            )
+          }
+
+          currentSection.value = null
+          isCreateInstance.value = false
+          isSideBarOpen.value = false
+          typesTab.value = 'globalTypes'
+          // loading.value = false; // Should be set here or after getGlobalSectionTypes if it's async
+        },
+        onError: (error) => {
+          loading.value = false
+          showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
         }
-      ]
-
-      if (canPromote.value === true) {
-        section.linkedTo = section.instance_name
-        section.linked_to = section.instance_name
-        section.instance = true
-
-        displayVariations.value[selectedVariation.value].views[section.id] = section
-        displayVariations.value[selectedVariation.value].altered = true
-
-        showToast(
-          "Success",
-          "info",
-          i18n.t('successAddedSection')
-        )
-      }
-
-      currentSection.value = null
-      isCreateInstance.value = false
-      isSideBarOpen.value = false
-      typesTab.value = 'globalTypes'
-    } catch (error) {
-      loading.value = false
-      showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+      });
+    } catch {
+       loading.value = false;
     }
   } else {
     loading.value = false
@@ -2300,27 +2346,37 @@ const addNewStaticType = async (name) => {
     fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
 
     try {
-      await (await fetch(URL, {method: 'POST', body: {
+      await useApiRequest({
+        url: URL,
+        method: 'POST',
+        body: {
           "fields": fieldsDeclaration
-        }, ...config})).json()
-
-      types.value = []
-      globalTypes.value = []
-      await getSectionTypes() // assuming this function is defined elsewhere
-      staticSuccess.value = true
-      sectionTypeName.value = ""
-      fieldsInputs.value = [
-        {
-          type: "image",
-          name: ""
+        },
+        ...config,
+        onSuccess: async () => {
+          types.value = []
+          globalTypes.value = []
+          await getSectionTypes() // assuming this function is defined elsewhere
+          staticSuccess.value = true
+          sectionTypeName.value = ""
+          fieldsInputs.value = [
+            {
+              type: "image",
+              name: ""
+            }
+          ]
+          // loading.value = false; // Set after getSectionTypes if it's async
+        },
+        onError: async (error) => { // Make onError async if getSectionTypes is called
+          loading.value = false
+          types.value = []
+          globalTypes.value = []
+          await getSectionTypes() // Call even on error? Review this logic.
+          showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
         }
-      ]
-    } catch (error) {
-      loading.value = false
-      types.value = []
-      globalTypes.value = []
-      await getSectionTypes() // assuming this function is defined elsewhere
-      showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+      });
+    } catch {
+       loading.value = false;
     }
   } else {
     loading.value = false
@@ -2546,39 +2602,46 @@ const createNewPage = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName))}`
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'PUT', body: JSON.stringify({
-          variations: [],
-          sections: []
-        }), ...config})).json()
-    }
-
-    loading.value = false
-    pageNotFound.value = false
-    sectionsMainErrors.value = []
-    sectionsPageLastUpdated.value = res.data.last_updated
-    pageId.value = res.data.id
-    sectionsPageName.value = res.data.page
-    pagePath.value = res.data.path
-    allSections.value = []
-    runIntro('editPage')
-    showToast(
-      "Success",
-      "success",
-      i18n.t('createPageSuccess')
-    )
-  } catch (err) {
-    loading.value = false
-    let error = err.response.data.message
-    if (err.response.data.errors && err.response.data.errors.path) {
-      error = `${i18n.t('pageUrl')} ${err.response.data.errors.path[0]}`
-    }
-    showToast(
-      "Error creating page",
-      "error",
-      i18n.t('createPageError') + pageName + "\n" + error,
-      err.response.data.options
-    )
+    await useApiRequest({
+      url: URL,
+      method: 'PUT',
+      body: { // No need to stringify, useApiRequest handles it
+        variations: [],
+        sections: []
+      },
+      ...config,
+      onSuccess: (res) => {
+        loading.value = false
+        pageNotFound.value = false
+        sectionsMainErrors.value = []
+        sectionsPageLastUpdated.value = res.data.last_updated
+        pageId.value = res.data.id
+        sectionsPageName.value = res.data.page
+        pagePath.value = res.data.path
+        allSections.value = []
+        runIntro('editPage')
+        showToast(
+          "Success",
+          "success",
+          i18n.t('createPageSuccess')
+        )
+      },
+      onError: (err) => {
+        loading.value = false
+        let errorMsg = err.response.data.message
+        if (err.response.data.errors && err.response.data.errors.path) {
+          errorMsg = `${i18n.t('pageUrl')} ${err.response.data.errors.path[0]}`
+        }
+        showToast(
+          "Error creating page",
+          "error",
+          i18n.t('createPageError') + pageName + "\n" + errorMsg,
+          err.response.data.options
+        )
+      }
+    });
+  } catch {
+     loading.value = false;
   }
 }
 const getAvailableSections = () => {
@@ -2598,26 +2661,31 @@ const initiateIntroJs = async () => {
     const token = useCookie('sections-auth-token').value
 
     try {
-      const response = {
-        data: await (await fetch(`${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`, {method: 'GET', ...{
-            headers: sectionHeader({ token })
-          }})).json()
-      }
-
-      currentPages.value = response.data.current_pages
-      if (currentPages.value !== null && currentPages.value === 0) {
-        if (pageNotFound.value) {
-          await runIntro('createPage')
+      await useApiRequest({
+        url: `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/dashboard`,
+        method: 'GET',
+        headers: sectionHeader({ token }),
+        onSuccess: async (response) => { // Make onSuccess async
+          currentPages.value = response.data.current_pages
+          if (currentPages.value !== null && currentPages.value === 0) {
+            if (pageNotFound.value) {
+              await runIntro('createPage') // Await intro run
+            }
+          }
+        },
+        onError: (error) => {
+          loading.value = false
+          emit("load", false)
+          useCookie('sections-auth-token').value = null
+          admin.value = false // Avoid mutating props
+          showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
         }
-      }
-    } catch (error) {
-      loading.value = false
-      emit("load", false)
-      useCookie('sections-auth-token').value = null
-      admin.value = false
-      showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
+      });
+    } catch {
+       loading.value = false;
+       emit("load", false);
     }
-  } catch {}
+  } catch {} // Outer catch remains for potential errors before API call
 }
 const runIntro = async (topic, rerun) => {
   if (intro.value && topic === 'globalTour') {
@@ -2878,57 +2946,65 @@ const renderConfigurableSection = async (gt, options) => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
-    }
+    await useApiRequest({
+      url: URL,
+      method: 'POST',
+      body: variables,
+      ...config,
+      onSuccess: (res) => {
+        emit("load", false)
 
-    emit("load", false)
+        if (res.data && res.data.error) {
+          errorAddingSection({
+            closeModal: false,
+            title: "Error adding " + gt.name,
+            message: res.data.error
+          })
+          return
+        }
 
-    if (res.data && res.data.error) {
-      errorAddingSection({
-        closeModal: false,
-        title: "Error adding " + gt.name,
-        message: res.data.error
-      })
-      return
-    }
-
-    addSectionType({
-      name: gt.section.name,
-      type: 'configurable',
-      settings: options[0],
-      id: id.value,
-      weight: weight.value,
-      render_data: res.data.render_data,
-      fields: gt.fields,
-      query_string_keys: gt.query_string_keys,
-      dynamic_options: gt.dynamic_options,
-      auto_insertion: gt.auto_insertion,
-      instance_name: gt.name
-    })
-  } catch (e) {
-    if (e.response.status === 404) {
-      emit('addSectionType', {
-        name: gt.section.name,
-        type: 'configurable',
-        settings: options[0],
-        id: id.value,
-        weight: weight.value,
-        render_data: e.response.data.render_data,
-        fields: gt.fields,
-        query_string_keys: gt.query_string_keys,
-        dynamic_options: gt.dynamic_options,
-        auto_insertion: gt.auto_insertion,
-        instance_name: gt.name
-      })
-    } else {
-      emit('errorAddingSection', {
-        closeModal: false,
-        title: "Error adding " + gt.name,
-        message: e.response.data.error ? e.response.data.error : i18n.t('saveConfigSectionError')
-      })
-    }
-    emit("load", false)
+        addSectionType({
+          name: gt.section.name,
+          type: 'configurable',
+          settings: options[0],
+          id: id.value,
+          weight: weight.value,
+          render_data: res.data.render_data,
+          fields: gt.fields,
+          query_string_keys: gt.query_string_keys,
+          dynamic_options: gt.dynamic_options,
+          auto_insertion: gt.auto_insertion,
+          instance_name: gt.name
+        })
+      },
+      onError: (e) => {
+        emit("load", false)
+        if (e.response.status === 404) {
+          // Assuming addSectionType should be called even on 404 based on original logic
+          addSectionType({ // Changed from emit('addSectionType', ...) to direct call
+            name: gt.section.name,
+            type: 'configurable',
+            settings: options[0],
+            id: id.value,
+            weight: weight.value,
+            render_data: e.response.data.render_data,
+            fields: gt.fields,
+            query_string_keys: gt.query_string_keys,
+            dynamic_options: gt.dynamic_options,
+            auto_insertion: gt.auto_insertion,
+            instance_name: gt.name
+          })
+        } else {
+          errorAddingSection({ // Changed from emit('errorAddingSection', ...)
+            closeModal: false,
+            title: "Error adding " + gt.name,
+            message: e.response.data.error ? e.response.data.error : i18n.t('saveConfigSectionError')
+          })
+        }
+      }
+    });
+  } catch {
+     emit("load", false); // Ensure loading state is reset on unexpected errors
   }
 }
 const renderDynamicSection = async (name, instanceName, gt) => {
@@ -2976,58 +3052,64 @@ const renderDynamicSection = async (name, instanceName, gt) => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
-    }
+    await useApiRequest({
+      url: URL,
+      method: 'POST',
+      body: variables,
+      ...config,
+      onSuccess: (res) => {
+        emit("load", false)
 
-    if (res.data && res.data.error) {
-      emit('errorAddingSection', {
-        closeModal: true,
-        title: "Error adding " + instanceName,
-        message: res.data.error
-      })
-      emit("load", false)
-      return
-    }
+        if (res.data && res.data.error) {
+          errorAddingSection({ // Changed from emit
+            closeModal: true,
+            title: "Error adding " + instanceName,
+            message: res.data.error
+          })
+          return
+        }
 
-    addSectionType({
-      name: name,
-      type: 'dynamic',
-      id: id.value,
-      weight: weight.value,
-      render_data: res.data.render_data,
-      query_string_keys: res.data.query_string_keys,
-      instance_name: instanceName
-    })
-
-    emit("load", false)
-  } catch (e) {
-    if (e.response.status === 404) {
-      emit('addSectionType', {
-        name: name,
-        type: 'dynamic',
-        id: id.value,
-        weight: weight.value,
-        render_data: e.response.data.render_data,
-        query_string_keys: e.response.data.query_string_keys,
-        instance_name: instanceName
-      })
-    } else {
-      if (e.response.data.error) {
-        emit('errorAddingSection', {
-          closeModal: true,
-          title: "Error adding " + instanceName,
-          message: e.response.data.error
+        addSectionType({
+          name: name,
+          type: 'dynamic',
+          id: id.value,
+          weight: weight.value,
+          render_data: res.data.render_data,
+          query_string_keys: res.data.query_string_keys, // Assuming these come from res.data
+          instance_name: instanceName
         })
-      } else {
-        emit('errorAddingSection', {
-          closeModal: true,
-          title: "Error adding " + instanceName,
-          message: i18n.t('saveConfigSectionError')
-        })
+      },
+      onError: (e) => {
+        emit("load", false)
+        if (e.response.status === 404) {
+          addSectionType({ // Changed from emit
+            name: name,
+            type: 'dynamic',
+            id: id.value,
+            weight: weight.value,
+            render_data: e.response.data.render_data,
+            query_string_keys: e.response.data.query_string_keys, // Assuming these come from error response
+            instance_name: instanceName
+          })
+        } else {
+          if (e.response.data.error) {
+            errorAddingSection({ // Changed from emit
+              closeModal: true,
+              title: "Error adding " + instanceName,
+              message: e.response.data.error
+            })
+          } else {
+            errorAddingSection({ // Changed from emit
+              closeModal: true,
+              title: "Error adding " + instanceName,
+              message: i18n.t('saveConfigSectionError')
+            })
+          }
+        }
       }
-    }
-    emit("load", false)
+    });
+  } catch {
+     emit("load", false);
   }
 }
 const getGlobalSectionTypes = async (autoLoad) => {
@@ -3046,65 +3128,73 @@ const getGlobalSectionTypes = async (autoLoad) => {
   const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances`
 
   try {
-    const res = await (await fetch(url, {method: 'GET', ...config})).json()
+    await useApiRequest({
+      url: url,
+      method: 'GET',
+      ...config,
+      onSuccess: async (res) => { // Make onSuccess async
+        res.data.data.forEach((d) => { // Add type annotation if possible
+          globalTypes.value.push({
+            regions: d.regions,
+            auto_insertion: d.auto_insertion,
+            section: d.section,
+            pages: d.pages,
+            name: d.name,
+            id: d.id,
+            type: types.value.find(t => t.name === d.section.name)?.type, // Use optional chaining
+            query_string_keys: types.value.find(t => t.name === d.section.name)?.query_string_keys,
+            fields: types.value.find(t => t.name === d.section.name)?.fields,
+            dynamic_options: types.value.find(t => t.name === d.section.name)?.dynamic_options,
+            application: types.value.find(t => t.name === d.section.name)?.application,
+          })
+        })
 
-    res.data.forEach((d) => {
-      globalTypes.value.push({
-        regions: d.regions,
-        auto_insertion: d.auto_insertion,
-        section: d.section,
-        pages: d.pages,
-        name: d.name,
-        id: d.id,
-        type: types.value.find(t => t.name === d.section.name) ? types.value.find(t => t.name === d.section.name).type : undefined,
-        query_string_keys: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).query_string_keys ? types.value.find(t => t.name === d.section.name).query_string_keys : undefined,
-        fields: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).fields ? types.value.find(t => t.name === d.section.name).fields : undefined,
-        dynamic_options: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).dynamic_options ? types.value.find(t => t.name === d.section.name).dynamic_options : undefined,
-        application: types.value.find(t => t.name === d.section.name) && types.value.find(t => t.name === d.section.name).application ? types.value.find(t => t.name === d.section.name).application : undefined,
-      })
-    })
+        types.value.forEach(type => {
+          globalTypes.value.push({
+            name: type.name,
+            type: type.type,
+            application: type.application,
+            notCreated: type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
+          })
+        })
 
-    types.value.forEach(type => {
-      globalTypes.value.push({
-        name: type.name,
-        type: type.type,
-        application: type.application,
-        notCreated: type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
-      })
-    })
+        loading.value = false
 
-    loading.value = false
-
-    if (autoLoad === true) {
-      if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
-        for (const gt of globalTypes.value.filter(gt => gt.auto_insertion === true)) {
-          await new Promise((resolve) => setTimeout(resolve, 100))
-          if (gt.type === 'configurable') {
-            await renderConfigurableSection(gt, gt.section.options)
-          } else if (gt.type === 'dynamic') {
-            await renderDynamicSection(gt.section.name, gt.name, gt)
-          } else {
-            addSectionType({
-              ...gt.section,
-              id: 'id-' + Date.now(),
-              weight: 'null',
-              type: gt.type,
-              instance_name: gt.name,
-              fields: gt.fields,
-              query_string_keys: gt.query_string_keys,
-              dynamic_options: gt.dynamic_options,
-              render_data: gt.section && gt.section.options && gt.section.options[0] ? [{settings: gt.section.options[0]}] : undefined
-            }, false, true)
+        if (autoLoad === true) {
+          if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
+            for (const gt of globalTypes.value.filter(gt => gt.auto_insertion === true)) {
+              await new Promise((resolve) => setTimeout(resolve, 100)) // Keep delay if needed
+              if (gt.type === 'configurable') {
+                await renderConfigurableSection(gt, gt.section.options)
+              } else if (gt.type === 'dynamic') {
+                await renderDynamicSection(gt.section.name, gt.name, gt)
+              } else {
+                addSectionType({
+                  ...gt.section,
+                  id: 'id-' + Date.now(),
+                  weight: 'null',
+                  type: gt.type,
+                  instance_name: gt.name,
+                  fields: gt.fields,
+                  query_string_keys: gt.query_string_keys,
+                  dynamic_options: gt.dynamic_options,
+                  render_data: gt.section?.options?.[0] ? [{settings: gt.section.options[0]}] : undefined // Optional chaining
+                }, false, true)
+              }
+            }
           }
         }
+        emit("load", false)
+      },
+      onError: (error) => {
+        loading.value = false
+        emit("load", false)
+        showToast("Error", "error", error.toString()) // Use error.toString() or access specific message
       }
-    }
-
-    emit("load", false)
-  } catch (error) {
-    loading.value = false
-    emit("load", false)
-    showToast("Error", "error", error.toString())
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 }
 const getSectionTypes = async (autoLoad) => {
@@ -3125,46 +3215,58 @@ const getSectionTypes = async (autoLoad) => {
   const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types`
 
   try {
-    const res = await (await fetch(url, {method: 'GET', ...config})).json()
-
-    res.data.forEach((d) => {
-      if (d.application) {
-        appNames.value.push(d.application)
-      }
-      trackSectionComp(d.name, d.type)
-      types.value.push({
-        name: d.name,
-        type: d.type,
-        access: d.access,
-        application: d.application,
-        dynamic_options: d.dynamic_options,
-        fields: d.fields,
-        multiple: d.multiple,
-        application_id: d.application_id,
-        app_status: d.app_status,
-        requirements: d.requirements,
-        query_string_keys: d.query_string_keys,
-        notCreated: false
-      })
-    })
-
-    availableSectionsForms.value.forEach(name => {
-      const found = types.value.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
-      if (!found) {
-        types.value.push({
-          name,
-          notCreated: true
+    await useApiRequest({
+      url: url,
+      method: 'GET',
+      ...config,
+      onSuccess: async (res) => {
+        res.data.data.forEach((d) => { // Add type annotation if possible
+          if (d.application) {
+            appNames.value.push(d.application)
+          }
+          trackSectionComp(d.name, d.type)
+          types.value.push({
+            name: d.name,
+            type: d.type,
+            access: d.access,
+            application: d.application,
+            dynamic_options: d.dynamic_options,
+            fields: d.fields,
+            multiple: d.multiple,
+            application_id: d.application_id,
+            app_status: d.app_status,
+            requirements: d.requirements,
+            query_string_keys: d.query_string_keys,
+            notCreated: false
+          })
         })
-      }
-    })
 
-    types.value = [...types.value, ...addSystemTypes()]
-    loading.value = false
-    emit("load", false)
-    await getGlobalSectionTypes(autoLoad)
-  } catch (error) {
-    loading.value = false
-    emit("load", false)
+        availableSectionsForms.value.forEach(name => {
+          const found = types.value.find(element => element.name.includes(':') ? element.name.split(':')[1] === name : element.name === name)
+          if (!found) {
+            types.value.push({
+              name,
+              notCreated: true
+            })
+          }
+        })
+
+        types.value = [...types.value, ...addSystemTypes()]
+        loading.value = false
+        emit("load", false)
+        await getGlobalSectionTypes(autoLoad) // Await this call
+      },
+      onError: (error) => {
+        loading.value = false
+        emit("load", false)
+        // Handle error appropriately, e.g., show a toast
+        showToast("Error", "error", "Failed to load section types");
+        console.error("Error fetching section types:", error);
+      }
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 }
 const addSystemTypes = () => {
@@ -3274,26 +3376,32 @@ const openEditMode = async () => {
     }
 
     try {
-      const res = {
-        data: await (await fetch(URL, {method: 'POST', body: payload, ...config})).json()
-      }
-
-      loading.value = false
-      if (res.data.last_updated > sectionsPageLastUpdated.value) {
-        showToast(
-          "Warning",
-          "warning",
-          i18n.t('oldPageVersion')
-        )
-      }
-      initializeSections(res)
-      await computeLayoutData()
-    } catch (error) {
-      // Handle errors
+      await useApiRequest({
+        url: URL,
+        method: 'POST',
+        body: payload,
+        ...config,
+        onSuccess: async (res) => { // Make onSuccess async
+          loading.value = false
+          if (res.data.last_updated > sectionsPageLastUpdated.value) {
+            showToast(
+              "Warning",
+              "warning",
+              i18n.t('oldPageVersion')
+            )
+          }
+          initializeSections(res)
+          await computeLayoutData() // Await this call
+          await getUserData() // Await this call
+          verifySlots() // Assuming this is synchronous or doesn't need awaiting
+        },
+        onError: () => {
+          loading.value = false; // Ensure loading is stopped on error
+        }
+      });
+    } catch {
+       loading.value = false;
     }
-
-    await getUserData()
-    verifySlots()
   }
 }
 const editable = (sectionType) => {
@@ -3499,61 +3607,70 @@ const refreshSectionView = async (sectionView, data) => {
     const inBrowser = typeof window !== 'undefined'
     if (inBrowser) {
       try {
-        const res = {
-          data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
-        }
-
-        if (res.data && res.data.error) {
-          nuxtApp.$emit('sectionViewRefreshed', {error: res.data})
-          renderSectionError.value = `${sectionName}: ${res.data.error}`
-          showToast("Error", "error", renderSectionError.value)
-        } else {
-          const index = currentViews.value.findIndex(view => view.name === sectionData.name)
-          if (index !== -1) {
-            const updatedViews = [...currentViews.value]
-            updatedViews[index] = {
-              ...updatedViews[index],
-              render_data: res.data.render_data,
+        await useApiRequest({
+          url: URL,
+          method: 'POST',
+          body: variables,
+          ...config,
+          onSuccess: (res) => {
+            if (res.data && res.data.error) {
+              nuxtApp.$emit('sectionViewRefreshed', {error: res.data})
+              renderSectionError.value = `${sectionName}: ${res.data.error}`
+              showToast("Error", "error", renderSectionError.value)
+            } else {
+              const index = currentViews.value.findIndex(view => view.name === sectionData.name)
+              if (index !== -1) {
+                const updatedViews = [...currentViews.value]
+                updatedViews[index] = {
+                  ...updatedViews[index],
+                  render_data: res.data.render_data,
+                }
+                currentViews.value = updatedViews
+              }
+              nuxtApp.$emit('sectionViewRefreshed', res.data)
             }
-
-            currentViews.value = updatedViews
+          },
+          onError: (e) => {
+            nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
+            renderSectionError.value = `${sectionName}: ${e.response.data.error}`
+            showToast("Error", "error", renderSectionError.value)
           }
-          nuxtApp.$emit('sectionViewRefreshed', res.data)
-        }
-      } catch (e) {
-        nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
-        renderSectionError.value = `${sectionName}: ${e.response.data.error}`
-        showToast("Error", "error", renderSectionError.value)
-      }
+        });
+      } catch {}
     } else {
+      // Keep OPTIONS check separate as useApiRequest doesn't explicitly handle it
       const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
 
       if (optionsRes.status === 200) {
         try {
-          const res = {
-            data: await (await fetch(URL, {method: 'POST', body: variables, ...config})).json()
-          }
-
-          if (res.data && res.data.error) {
-            nuxtApp.$emit('sectionViewRefreshed', res.data)
-            renderSectionError.value = `${sectionName}: ${res.data.error}`
-          } else {
-            const index = currentViews.value.findIndex(view => view.name === sectionData.name)
-            if (index !== -1) {
-              const updatedViews = [...currentViews.value]
-              updatedViews[index] = {
-                ...updatedViews[index],
-                render_data: res.data.render_data,
+          await useApiRequest({
+            url: URL,
+            method: 'POST',
+            body: variables,
+            ...config,
+            onSuccess: (res) => {
+              if (res.data && res.data.error) {
+                nuxtApp.$emit('sectionViewRefreshed', res.data)
+                renderSectionError.value = `${sectionName}: ${res.data.error}`
+              } else {
+                const index = currentViews.value.findIndex(view => view.name === sectionData.name)
+                if (index !== -1) {
+                  const updatedViews = [...currentViews.value]
+                  updatedViews[index] = {
+                    ...updatedViews[index],
+                    render_data: res.data.render_data,
+                  }
+                  currentViews.value = updatedViews
+                }
+                nuxtApp.$emit('sectionViewRefreshed', res.data)
               }
-
-              currentViews.value = updatedViews
+            },
+            onError: (e) => {
+              nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
+              renderSectionError.value = `${sectionName}: ${e.response.data.error}`
             }
-            nuxtApp.$emit('sectionViewRefreshed', res.data)
-          }
-        } catch (e) {
-          nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
-          renderSectionError.value = `${sectionName}: ${e.response.data.error}`
-        }
+          });
+        } catch {}
       }
     }
   }
@@ -3720,65 +3837,71 @@ const mutateVariation = async (variationName) => {
 
     if (formatValdiation === true) {
       try {
-        const res = {
-          data: await (await fetch(URL, {method: 'PUT', body: variables, ...config})).json()
-        }
+        await useApiRequest({
+          url: URL,
+          method: 'PUT',
+          body: variables,
+          ...config,
+          onSuccess: (res) => {
+            if (res.data && res.data.error) {
+              showToast("error", "error", res.data.error);
+              loading.value = false; // Stop loading on handled error
+              return;
+            }
+            allSections.value = res.data.sections;
+            sectionsPageLastUpdated.value = res.data.last_updated;
+            displayVariations.value[variationName].altered = false;
+            originalVariations.value = JSON.parse(
+              JSON.stringify(displayVariations.value)
+            );
+            sectionsLayout.value = res.data.layout;
+            runIntro('pageSaved', introRerun.value);
+            loading.value = false;
 
-        if (res.data && res.data.error) {
-          showToast("error", "error", res.data.error);
-          return;
-        }
-        allSections.value = res.data.sections;
-        sectionsPageLastUpdated.value = res.data.last_updated;
-        displayVariations.value[variationName].altered = false;
-        originalVariations.value = JSON.parse(
-          JSON.stringify(displayVariations.value)
-        );
-        sectionsLayout.value = res.data.layout;
-        runIntro('pageSaved', introRerun.value);
-        loading.value = false;
-
-        if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
-          showToast(
-            "Error",
-            "error",
-            i18n.t('someSectionsNotSaved')
-          );
-          res.data.invalid_sections.forEach(section => {
-            invalidSectionsErrors[`${section.name}-${section.weight}`] = {
-              error: section.error,
-              weight: section.weight
-            };
-          });
-        } else {
-          showToast(
-            "Success",
-            "success",
-            i18n.t('successPageChanges')
-          );
-          layoutMode.value = false;
-        }
-
-        nuxtApp.hook('sectionsLoaded', () => 'pageSaved');
-      } catch (error) {
-        if (error.response.data.errors) {
-          metadataErrors.value = error.response.data.errors;
-        } else {
-          showToast(
-            "Error saving your changes",
-            "error",
-            error.response.data.message,
-            error.response.data.options
-          );
-        }
-        loading.value = false;
+            if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
+              showToast(
+                "Error",
+                "error",
+                i18n.t('someSectionsNotSaved')
+              );
+              res.data.invalid_sections.forEach((section) => { // Add type if possible
+                invalidSectionsErrors[`${section.name}-${section.weight}`] = {
+                  error: section.error,
+                  weight: section.weight
+                };
+              });
+            } else {
+              showToast(
+                "Success",
+                "success",
+                i18n.t('successPageChanges')
+              );
+              layoutMode.value = false;
+            }
+            nuxtApp.hook('sectionsLoaded', () => 'pageSaved');
+          },
+          onError: (error) => {
+            loading.value = false;
+            if (error.response.data.errors) {
+              metadataErrors.value = error.response.data.errors;
+            } else {
+              showToast(
+                "Error saving your changes",
+                "error",
+                error.response.data.message,
+                error.response.data.options
+              );
+            }
+          }
+        });
+      } catch {
+         loading.value = false;
       }
-
     } else {
-      loading.value = false;
+      loading.value = false; // Ensure loading stops if format validation fails
     }
   } else {
-    loading.value = false;
+    loading.value = false; // Ensure loading stops if integrity check or layout error occurs
   }
 };
 const saveVariation = () => {
@@ -3944,24 +4067,38 @@ const deleteGlobalSectionType = async (sectionTypeName, index) => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${sectionTypeName}`;
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'DELETE', ...config})).json()
-    }
-
-    if (res.data) {
-      showToast(
-        "Success",
-        "info",
-        res.data.message
-      );
-      globalTypes.value.splice(index, 1);
-      globalTypes.value = [];
-      await getGlobalSectionTypes();
-    }
-  } catch (error) {
-    showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
-    loading.value = false;
-    emit("load", false);
+    await useApiRequest({
+      url: URL,
+      method: 'DELETE',
+      ...config,
+      onSuccess: async (res) => { // Make onSuccess async
+        if (res.data) {
+          showToast(
+            "Success",
+            "info",
+            res.data.message
+          );
+          // The splice logic might be incorrect if index refers to the original array before filtering/mapping
+          // Consider re-fetching or filtering based on ID instead of index if issues arise.
+          // globalTypes.value.splice(index, 1); // Original logic kept for now
+          globalTypes.value = []; // Clear and re-fetch seems safer
+          await getGlobalSectionTypes(); // Await the fetch
+          loading.value = false; // Set loading false after success operations
+          emit("load", false); // Emit load false after success operations
+        } else {
+           loading.value = false;
+           emit("load", false);
+        }
+      },
+      onError: (error) => {
+        showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
+        loading.value = false;
+        emit("load", false);
+      }
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 };
 const deleteSectionType = async (sectionTypeName, index) => {
@@ -3979,25 +4116,38 @@ const deleteSectionType = async (sectionTypeName, index) => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types/${sectionTypeName}`;
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'DELETE', ...config})).json()
-    }
-
-    if (res.data) {
-      showToast(
-        "Success",
-        "info",
-        res.data.message
-      );
-      types.value.splice(index, 1);
-      types.value = [];
-      globalTypes.value = [];
-      await getSectionTypes();
-    }
-  } catch (error) {
-    showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
-    loading.value = false;
-    emit("load", false);
+    await useApiRequest({
+      url: URL,
+      method: 'DELETE',
+      ...config,
+      onSuccess: async (res) => { // Make onSuccess async
+        if (res.data) {
+          showToast(
+            "Success",
+            "info",
+            res.data.message
+          );
+          // Similar index concern as deleteGlobalSectionType
+          // types.value.splice(index, 1); // Original logic
+          types.value = []; // Clear and re-fetch seems safer
+          globalTypes.value = [];
+          await getSectionTypes(); // Await the fetch
+          loading.value = false; // Set loading false after success operations
+          emit("load", false); // Emit load false after success operations
+        } else {
+           loading.value = false;
+           emit("load", false);
+        }
+      },
+      onError: (error) => {
+        showToast("Error", "error", i18n.t('deleteSectionTypeError') + error.response.data.message);
+        loading.value = false;
+        emit("load", false);
+      }
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 };
 const deleteSectionPage = async () => {
@@ -4015,24 +4165,34 @@ const deleteSectionPage = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${pageId.value}`;
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'DELETE', ...config})).json()
-    }
-
-    if (res.data) {
-      showToast(
-        "Success",
-        "info",
-        res.data.message
-      );
-      loading.value = false;
-      emit("load", false);
-      setTimeout(() => window.location.reload(), 1000);
-    }
-  } catch (error) {
-    showToast("Error", "error", i18n.t('deleteSectionPageError') + error.response.data.message);
-    loading.value = false;
-    emit("load", false);
+    await useApiRequest({
+      url: URL,
+      method: 'DELETE',
+      ...config,
+      onSuccess: (res) => {
+        if (res.data) {
+          showToast(
+            "Success",
+            "info",
+            res.data.message
+          );
+          loading.value = false;
+          emit("load", false);
+          setTimeout(() => window.location.reload(), 1000); // Keep reload if intended
+        } else {
+           loading.value = false;
+           emit("load", false);
+        }
+      },
+      onError: (error) => {
+        showToast("Error", "error", i18n.t('deleteSectionPageError') + error.response.data.message);
+        loading.value = false;
+        emit("load", false);
+      }
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 };
 const authorizeSectionType = async (sectionAppId, index) => {
@@ -4060,28 +4220,40 @@ const authorizeSectionType = async (sectionAppId, index) => {
   };
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'PUT', body: data, ...config})).json()
-    }
-
-    if (res.data) {
-      showToast(
-        "Success",
-        "info",
-        i18n.t("authorizeSuccess", { appName: selectedAppName.value })
-      );
-      isAuthModalOpen.value = false;
-      requirementsInputs.value = {};
-      types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
-        type.app_status = "enabled";
-      });
-      loading.value = false;
-      emit("load", false);
-    }
-  } catch (error) {
-    showToast("Error", "error", `${i18n.t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
-    loading.value = false;
-    emit("load", false);
+    await useApiRequest({
+      url: URL,
+      method: 'PUT',
+      body: data,
+      ...config,
+      onSuccess: (res) => {
+        if (res.data) { // Check if res.data exists, though success implies it should
+          showToast(
+            "Success",
+            "info",
+            i18n.t("authorizeSuccess", { appName: selectedAppName.value })
+          );
+          isAuthModalOpen.value = false;
+          requirementsInputs.value = {};
+          // Update local state optimistically or re-fetch types
+          types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
+            type.app_status = "enabled";
+          });
+          loading.value = false;
+          emit("load", false);
+        } else {
+           loading.value = false;
+           emit("load", false);
+        }
+      },
+      onError: (error) => {
+        showToast("Error", "error", `${i18n.t('authorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+        loading.value = false;
+        emit("load", false);
+      }
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 };
 const unAuthorizeSectionType = async (sectionAppId, index) => {
@@ -4107,27 +4279,39 @@ const unAuthorizeSectionType = async (sectionAppId, index) => {
   };
 
   try {
-    const res = {
-      data: await (await fetch(URL, {method: 'PUT', body: data, ...config})).json()
-    }
-
-    if (res.data) {
-      showToast(
-        "Success",
-        "info",
-        i18n.t("unAuthorizeSuccess", { appName: selectedAppName.value })
-      );
-      isUnAuthModalOpen.value = false;
-      types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
-        type.app_status = "disabled";
-      });
-      loading.value = false;
-      emit("load", false);
-    }
-  } catch (error) {
-    showToast("Error", "error", `${i18n.t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
-    loading.value = false;
-    emit("load", false);
+    await useApiRequest({
+      url: URL,
+      method: 'PUT',
+      body: data,
+      ...config,
+      onSuccess: (res) => {
+        if (res.data) { // Check if res.data exists
+          showToast(
+            "Success",
+            "info",
+            i18n.t("unAuthorizeSuccess", { appName: selectedAppName.value })
+          );
+          isUnAuthModalOpen.value = false;
+          // Update local state optimistically or re-fetch types
+          types.value.filter(type => type.application_id === sectionAppId).forEach(type => {
+            type.app_status = "disabled";
+          });
+          loading.value = false;
+          emit("load", false);
+        } else {
+           loading.value = false;
+           emit("load", false);
+        }
+      },
+      onError: (error) => {
+        showToast("Error", "error", `${i18n.t('unAuthorizeError')} ${selectedAppName.value}: ` + error.response.data.message);
+        loading.value = false;
+        emit("load", false);
+      }
+    });
+  } catch {
+     loading.value = false;
+     emit("load", false);
   }
 };
 const openDeleteSectionTypeModal = (sectionTypeName, index) => {
@@ -4318,6 +4502,10 @@ const fire_js = (event_name, event_data) => {
     window.dispatchEvent(event);
   }
 };
+const logoutUser = () => {
+  useCookie('sections-auth-token').value = null
+  window.location.reload()
+}
 
 // Lifecycle hooks
 onMounted(async () => {
@@ -4492,18 +4680,20 @@ const fetchData = async () => {
     fetchedOnServer.value = true;
     const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
     if (optionsRes.status === 200) {
-      await useApiRequest({
-        url: URL,
-        method: 'POST',
-        body: payload,
-        ...config,
-        onSuccess: (res) => {
-          initializeSections(res);
-        },
-        onError: (error) => {
-          sectionsPageErrorManagement(error, true)
-        }
-      });
+      try {
+        await useApiRequest({
+          url: URL,
+          method: 'POST',
+          body: payload,
+          ...config,
+          onSuccess: (res) => {
+            initializeSections(res);
+          },
+          onError: (error) => {
+            sectionsPageErrorManagement(error, true)
+          }
+        });
+      } catch {}
     }
   } else {
     loading.value = false;

@@ -26,7 +26,6 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
 
 const { t } = useI18n(); // Get translation function
 
