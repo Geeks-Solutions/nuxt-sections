@@ -844,16 +844,16 @@
           </div>
           <div v-else-if="selectedLayout === 'standard'" class="views">
             <draggable
-              v-model="currentViews"
+              v-model="alteredViews"
               group="people"
               @start="drag = true"
               @end="drag = false"
               handle=".handle"
+              item-key="id"
             >
               <!-- <transition-group> -->
-              <template #item="{ element }">
+              <template #item="{ element: view, index }">
                 <section
-                  v-for="(view, index) in alteredViews"
                   :key="index"
                   :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
                   :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
@@ -941,18 +941,18 @@
                   </div>
                   <div class="views">
                     <draggable
-                      v-model="viewsPerRegions[slotName]"
+                      v-model="alteredViewsPerRegions[slotName]"
                       group="people"
                       @start="drag = true; highlightRegions = true;"
                       @end="drag = false; highlightRegions = false;"
                       @change="logDrag"
                       handle=".handle"
-                      :class="{ 'highlited-regions-plus': viewsPerRegions[slotName].length === 0 && highlightRegions, }"
+                      item-key="id"
+                      :class="{ 'highlighted-regions-plus': alteredViewsPerRegions[slotName].length === 0 && highlightRegions, }"
                     >
                       <!-- <transition-group> -->
-                      <template #item="{ element }">
+                      <template #item="{ element: view, index }">
                         <section
-                          v-for="(view, index) in alteredViewsPerRegions[slotName]"
                           v-if="view.region[selectedLayout].slot === slotName"
                           :key="index"
                           :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
@@ -1438,7 +1438,7 @@ const layoutSlotNames = ref([]);
 const availableLayouts = ref(['standard']);
 const selectedLayout = ref('standard');
 const viewsPerRegions = ref({});
-const sectionslayout = ref('standard');
+const sectionsLayout = ref('standard');
 const selectedSlotRegion = ref('');
 const layoutMode = ref(false);
 const errorInLayout = ref(false);
@@ -1478,6 +1478,7 @@ const intro = ref(null);
 const currentPages = ref(null);
 const introRerun = ref(false);
 const creationView = ref(false);
+const drag = ref(false);
 const fetchedOnServer = useState('fetchedOnServer', () => false);
 const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
@@ -1519,49 +1520,59 @@ const currentViews = computed({
   },
 });
 
-const alteredViews = computed(() => {
-  let alteredSections = null;
-  let hooksJs = importJs(`/js/global-hooks`);
-  if (hooksJs['page_pre_render'] && pageData.value) {
-    if (typeof hooksJs['page_pre_render'] === 'function') {
-      alteredSections = hooksJs['page_pre_render'](
-        JSON.parse(JSON.stringify(pageData.value)),
-        JSON.parse(JSON.stringify(currentViews.value)),
-        sectionsWebsiteDomain.value,
-        nuxtApp.$sections,
-        config
-      );
+const alteredViews = computed({
+  get: () => {
+    let alteredSections = null;
+    let hooksJs = importJs(`/js/global-hooks`);
+    if (hooksJs['page_pre_render'] && pageData.value) {
+      if (typeof hooksJs['page_pre_render'] === 'function') {
+        alteredSections = hooksJs['page_pre_render'](
+          JSON.parse(JSON.stringify(pageData.value)),
+          JSON.parse(JSON.stringify(currentViews.value)),
+          sectionsWebsiteDomain.value,
+          nuxtApp.$sections,
+          config
+        );
+      }
     }
-  }
-  if (alteredSections) {
-    fire_js("page_payload_preprocess", alteredSections);
-    return alteredSections;
-  } else {
-    fire_js("page_payload_preprocess", currentViews.value);
-    return currentViews.value;
+    if (alteredSections) {
+      fire_js("page_payload_preprocess", alteredSections);
+      return alteredSections;
+    } else {
+      fire_js("page_payload_preprocess", currentViews.value);
+      return currentViews.value;
+    }
+  },
+  set: (newValue) => {
+    currentViews.value = newValue
   }
 });
 
-const alteredViewsPerRegions = computed(() => {
-  let alteredSections = null;
-  let hooksJs = importJs(`/js/global-hooks`);
-  if (hooksJs['page_pre_render'] && pageData.value && viewsPerRegions.value && Object.keys(viewsPerRegions.value).length > 0) {
-    if (typeof hooksJs['page_pre_render'] === 'function') {
-      alteredSections = hooksJs['page_pre_render'](
-        JSON.parse(JSON.stringify(pageData.value)),
-        JSON.parse(JSON.stringify(viewsPerRegions.value)),
-        sectionsWebsiteDomain.value,
-        nuxtApp.$sections,
-        config
-      );
+const alteredViewsPerRegions = computed({
+  get: () => {
+    let alteredSections = null;
+    let hooksJs = importJs(`/js/global-hooks`);
+    if (hooksJs['page_pre_render'] && pageData.value && viewsPerRegions.value && Object.keys(viewsPerRegions.value).length > 0) {
+      if (typeof hooksJs['page_pre_render'] === 'function') {
+        alteredSections = hooksJs['page_pre_render'](
+          JSON.parse(JSON.stringify(pageData.value)),
+          JSON.parse(JSON.stringify(viewsPerRegions.value)),
+          sectionsWebsiteDomain.value,
+          nuxtApp.$sections,
+          config
+        );
+      }
     }
-  }
-  if (alteredSections) {
-    fire_js("page_payload_preprocess", alteredSections);
-    return alteredSections;
-  } else {
-    fire_js("page_payload_preprocess", viewsPerRegions.value);
-    return viewsPerRegions.value;
+    if (alteredSections) {
+      fire_js("page_payload_preprocess", alteredSections);
+      return alteredSections;
+    } else {
+      fire_js("page_payload_preprocess", viewsPerRegions.value);
+      return viewsPerRegions.value;
+    }
+  },
+  set: (newValue) => {
+    viewsPerRegions.value = newValue
   }
 });
 
@@ -1680,8 +1691,23 @@ const initializeSections = (res) => {
   pageId.value = res.data.id
   pagePath.value = res.data.path
   sectionsPageName.value = res.data.page
-  sectionslayout.value = res.data.layout
+  sectionsLayout.value = res.data.layout
   selectedLayout.value = res.data.layout
+
+  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
+    projectMetadata.value.languages = res.data.metadata.project_metadata.languages
+    selectedLanguages.value = res.data.metadata.project_metadata.languages
+  }
+
+  if (projectMetadata.value && projectMetadata.value['languages'] && projectMetadata.value['languages'].length > 0) {
+    if (projectMetadata.value['languages'].length > 1) {
+      translationComponentSupport.value = true;
+    } else {
+      translationComponentSupport.value = false;
+    }
+    locales.value = [];
+    locales.value = projectMetadata.value['languages'];
+  }
 
   for (const langKey of locales.value) {
     if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title)
@@ -1698,10 +1724,6 @@ const initializeSections = (res) => {
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.favicon) {
     projectMetadata.value.favicon = res.data.metadata.project_metadata.favicon
-  }
-  if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
-    projectMetadata.value.languages = res.data.metadata.project_metadata.languages
-    selectedLanguages.value = res.data.metadata.project_metadata.languages
   }
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
     projectMetadata.value.defaultLang = res.data.metadata.project_metadata.defaultLang
@@ -1779,24 +1801,69 @@ const initializeSections = (res) => {
 
   sectionsPageLastUpdated.value = res.data.last_updated
 }
-const pageNotFoundManagement = (error, server) => {
-  if (server) {
-    if (error.response.data.error) {
-      sectionsError.value = error.response.data.error
-    } else {
-      sectionsError.value = error.response.data.message
-      sectionsErrorOptions.value = error.response.data.options
-    }
-    nuxtApp.ssrContext.event.res.statusCode = 404
-    navigateTo(localePath(error.response.data.options.project_metadata.pagePath404))
-  } else {
-    if (error.response.data.error) {
-      showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error)
-    } else {
-      showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options)
-    }
-    navigateTo(route.localePath(error.response.data.options.project_metadata.pagePath404))
+const sectionsPageErrorManagement = (error, server) => {
+  const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
+  if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
+    pageNotFoundManagement(error);
+    return;
   }
+  if (error.response.status === 400) {
+    const res = error.response;
+    initializeSections(res);
+    return;
+  }
+  if (error.response.status === 404 && server) {
+    if (nuxtApp.ssrContext) {
+      nuxtApp.ssrContext.event.res.statusCode = 404;
+    }
+  }
+
+  errorResponseStatus.value = error.response.status;
+  if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+    errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
+    errorResponseData.value = error.response.data;
+  } else if (error.response.data.error) {
+    sectionsError.value = error.response.data.error;
+  } else {
+    sectionsError.value = error.response.data.message;
+    sectionsErrorOptions.value = error.response.data.options;
+  }
+
+  loading.value = false;
+  pageNotFound.value = true;
+  if (errorResponseStatus.value === 404) {
+    sectionsMainErrors.value.push(i18n.t('404NotFound'));
+  }
+  emit("load", false);
+}
+const pageNotFoundManagement = (error) => {
+  if (error.response.data.error) {
+    sectionsError.value = error.response.data.error
+  } else {
+    sectionsError.value = error.response.data.message
+    sectionsErrorOptions.value = error.response.data.options
+  }
+  if (nuxtApp.ssrContext) {
+    nuxtApp.ssrContext.event.res.statusCode = 404
+  }
+  navigateTo(localePath(error.response.data.options.project_metadata.pagePath404))
+  // if (server) {
+  //   if (error.response.data.error) {
+  //     sectionsError.value = error.response.data.error
+  //   } else {
+  //     sectionsError.value = error.response.data.message
+  //     sectionsErrorOptions.value = error.response.data.options
+  //   }
+  //   nuxtApp.ssrContext.event.res.statusCode = 404
+  //   navigateTo(localePath(error.response.data.options.project_metadata.pagePath404))
+  // } else {
+  //   if (error.response.data.error) {
+  //     showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error)
+  //   } else {
+  //     showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options)
+  //   }
+  //   navigateTo(route.localePath(error.response.data.options.project_metadata.pagePath404))
+  // }
 }
 const selectedCSS = (mediaObject, mediaFieldName) => {
   const media = {
@@ -1898,7 +1965,7 @@ const updatePageMetaData = async () => {
     path: pagePath,
     metadata: {...pageMetadata.value},
     variations: [],
-    layout: sectionslayout.value,
+    layout: sectionsLayout.value,
     sections
   }
 
@@ -2429,7 +2496,7 @@ const computeLayoutData = async () => {
 
     viewsPerRegions.value = {...viewsPerRegions.value}
 
-    if (admin.value && editMode.value) {
+    if (admin && editMode.value) {
       verifySlots()
     }
   }
@@ -3667,7 +3734,7 @@ const mutateVariation = async (variationName) => {
         originalVariations.value = JSON.parse(
           JSON.stringify(displayVariations.value)
         );
-        sectionslayout.value = res.data.layout;
+        sectionsLayout.value = res.data.layout;
         runIntro('pageSaved', introRerun.value);
         loading.value = false;
 
@@ -3797,7 +3864,7 @@ const restoreVariations = () => {
   displayVariations.value = JSON.parse(
     JSON.stringify(originalVariations.value)
   );
-  selectedLayout.value = sectionslayout.value;
+  selectedLayout.value = sectionsLayout.value;
   computeLayoutData();
   showToast(
     "Revert Successful",
@@ -4255,24 +4322,9 @@ const fire_js = (event_name, event_data) => {
 // Lifecycle hooks
 onMounted(async () => {
   await fetchData()
-  try {
-    let hooksJavascript = importJs(`/js/global-hooks`);
-    if (hooksJavascript['init_params']) {
-      const paramsUpdate = hooksJavascript['init_params'](nuxtApp.$sections, {
-        qs: route.query,
-        headers: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.headers : {},
-        reqBody: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.body : {},
-        url: window.location.host
-      });
-      if (paramsUpdate) {
-        nuxtApp.$sections = paramsUpdate;
-      }
-    }
-  } catch {}
-
   initializeSectionsCMSEvents();
   if (admin) {
-    initiateIntroJs();
+    await initiateIntroJs();
   }
 
   if (sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
@@ -4312,7 +4364,7 @@ const fetchData = async () => {
         qs: route.query,
         headers: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.headers : {},
         reqBody: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req ? nuxtApp.ssrContext.event.req.body : {},
-        url: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req && nuxtApp.ssrContext.event.req.headers ? nuxtApp.ssrContext.event.req.headers.host : ''
+        url: nuxtApp.ssrContext && nuxtApp.ssrContext.event.req && nuxtApp.ssrContext.event.req.headers ? nuxtApp.ssrContext.event.req.headers.host : window.location.host
       });
       if (paramsUpdate) {
         nuxtApp.$sections = paramsUpdate;
@@ -4320,9 +4372,12 @@ const fetchData = async () => {
     }
   } catch {}
 
-  getAvailableLayouts();
-  getAvailableSections();
-  metadataFormLang.value = i18n.locale.value.toString();
+  if (admin === true) {
+    getAvailableLayouts();
+    getAvailableSections();
+    metadataFormLang.value = i18n.locale.value.toString();
+  }
+
   locales.value.forEach(lang => {
     pageMetadata.value[lang] = {
       title: "",
@@ -4334,7 +4389,6 @@ const fetchData = async () => {
     translationComponentSupport.value = true;
     locales.value = [];
     locales.value = nuxtApp.$sections.projectLocales.split(',');
-    metadataFormLang.value = i18n.locale.value.toString();
     locales.value.forEach(lang => {
       pageMetadata.value[lang] = {
         title: "",
@@ -4344,8 +4398,7 @@ const fetchData = async () => {
   }
 
   loading.value = true;
-  sectionsError.value = "";
-  checkToken();
+  await checkToken();
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
@@ -4407,73 +4460,34 @@ const fetchData = async () => {
   }
 
   if (sectionsPageData) {
+    sectionsError.value = "";
     sectionsMainErrors.value = [];
     const res = sectionsPageData.res;
     const error = sectionsPageData.error;
     if (res) {
-      initializeSections({data: res});
+      initializeSections(res);
       nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
     } else if (error) {
-      const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
-      if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
-        pageNotFoundManagement(error);
-        return;
-      }
-      if (error.response.status === 400) {
-        const res = error.response;
-        initializeSections({data: res});
-        return;
-      }
-      errorResponseStatus.value = error.response.status;
-      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-        errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
-        errorResponseData.value = error.response.data;
-      } else if (error.response.data.error) {
-        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
-      } else {
-        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
-      }
-      loading.value = false;
-      pageNotFound.value = true;
-      if (errorResponseStatus.value === 404) {
-        sectionsMainErrors.value.push(i18n.t('404NotFound'));
-      }
-      emit("load", false);
+      sectionsPageErrorManagement(error)
     }
   } else if (inBrowser && fetchedOnServer.value === false) {
+    sectionsError.value = "";
     sectionsMainErrors.value = [];
-    try {
-      const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
-      initializeSections({data: res});
-      nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
-    } catch (error) {
-      const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
-      if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
-        pageNotFoundManagement(error);
-        return;
-      }
-      if (error.response.status === 400) {
-        const res = error.response;
+    await useApiRequest({
+      url: URL,
+      method: 'POST',
+      body: payload,
+      ...config,
+      onSuccess: (res) => {
         initializeSections(res);
-        return;
+        nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+      },
+      onError: (error) => {
+        sectionsPageErrorManagement(error)
       }
-      errorResponseStatus.value = error.response.status;
-      if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-        errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
-        errorResponseData.value = error.response.data;
-      } else if (error.response.data.error) {
-        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.error);
-      } else {
-        showToast("Error", "error", i18n.t('loadPageError') + error.response.data.message, error.response.data.options);
-      }
-      loading.value = false;
-      pageNotFound.value = true;
-      if (errorResponseStatus.value === 404) {
-        sectionsMainErrors.value.push(i18n.t('404NotFound'));
-      }
-      emit("load", false);
-    }
+    });
   } else if (!inBrowser) {
+    sectionsError.value = "";
     sectionsMainErrors.value = [];
     fetchedOnServer.value = true;
     const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
@@ -4481,78 +4495,22 @@ const fetchData = async () => {
       await useApiRequest({
         url: URL,
         method: 'POST',
+        body: payload,
         ...config,
         onSuccess: (res) => {
           initializeSections(res);
         },
         onError: (error) => {
-          const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
-          if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
-            pageNotFoundManagement(error, true);
-            return;
-          }
-          if (error.response.status === 400) {
-            const res = error.response;
-            initializeSections(res);
-            return;
-          }
-          if (error.response.status === 404) {
-            if (nuxtApp.ssrContext) {
-              nuxtApp.ssrContext.event.res.statusCode = 404;
-            }
-          }
-
-          errorResponseStatus.value = error.response.status;
-          if ((errorResponseStatus.value === 404 || errorResponseStatus.value === 401) && registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-            errorRegisteredPage.value = errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found';
-            errorResponseData.value = error.response.data;
-          } else if (error.response.data.error) {
-            sectionsError.value = error.response.data.error;
-          } else {
-            sectionsError.value = error.response.data.message;
-            sectionsErrorOptions.value = error.response.data.options;
-          }
-
-          loading.value = false;
-          pageNotFound.value = true;
-          if (errorResponseStatus.value === 404) {
-            sectionsMainErrors.value.push(i18n.t('404NotFound'));
-          }
-          emit("load", false);
+          sectionsPageErrorManagement(error, true)
         }
       });
-      // try {
-        // const response = await fetch(URL, {method: 'POST', body: payload, ...config})
-        // if (!response.ok) {
-        //   throw {
-        //     response: {
-        //       data: await response.json(),
-        //       status: response.status
-        //     }
-        //   };
-        // } else {
-        //   const res = await (response).json();
-        //   initializeSections({data: res});
-        // }
-      // } catch (error) {
-      //
-      // }
     }
   } else {
     loading.value = false;
   }
-
-  if (projectMetadata.value && projectMetadata.value['languages'] && projectMetadata.value['languages'].length > 0) {
-    locales.value = [];
-    locales.value = projectMetadata.value['languages'];
-  }
   await computeLayoutData();
 };
 
-// Call fetch on component creation
-// await useAsyncData('fetchData', async () => {
-//   await fetchData();
-// })
 onServerPrefetch(async () => {await fetchData()});
 </script>
 
@@ -5347,7 +5305,7 @@ span.handle {
   margin: 2px;
 }
 
-.highlited-regions-plus {
+.highlighted-regions-plus {
   width: 100%;
   min-height: 20px;
   border: solid 1.5px #31a9db;

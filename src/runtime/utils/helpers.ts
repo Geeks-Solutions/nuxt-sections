@@ -35,31 +35,33 @@ export const importJs = (path: string): any => {
 const sections = import.meta.glob('/sections/**/*.vue')
 // @ts-ignore
 const configs = import.meta.glob('../components/configs/**/*.vue')
+const importCache : any = {}
 
-const NullComponent = {
-  name: 'NullComponent',
-  render() {
-    return null // renders nothing
+export const importComp = (path: string) => {
+  if (importCache[path]) {
+    return importCache[path]
   }
-}
 
-export const importComp = (path: string): any => {
   const sectionPath = `/sections${path}.vue`
   const configPath = `../components/configs${path}.vue`
 
+  let component = null
+
   // Check if section component exists
   if (sections[sectionPath]) {
-    return defineAsyncComponent(() => sections[sectionPath]())
+    component = defineAsyncComponent(() => sections[sectionPath]())
   }
-
   // Check if config component exists
-  if (configs[configPath]) {
-    return defineAsyncComponent(() => configs[configPath]())
+  else if (configs[configPath]) {
+    component = defineAsyncComponent(() => configs[configPath]())
+  }
+  else {
+    console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
+    return null
   }
 
-  // If neither exists, log warning and return NullComponent directly
-  console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
-  return null
+  importCache[path] = component
+  return component
 }
 
 export const sectionHeader = (header: Record<string, string>): Record<string, string> => {
@@ -393,13 +395,9 @@ export const populateWithDummyValues = (obj: any, presets: Record<string, any[]>
   return obj; // For non-object, non-array values, return as is
 }
 
-interface RenderPageDataParams {
-  app: any;
-  pageName: string;
-}
-
 // Function to render page data
-export const renderPageData = async ({ app, pageName }: RenderPageDataParams) => {
+export const renderPageData = async () => {
+  const app : any = useNuxtApp();
   const route = useRoute()
   try {
     const hooksJavascript = await importJs(`/js/global-hooks`);
@@ -428,10 +426,10 @@ export const renderPageData = async ({ app, pageName }: RenderPageDataParams) =>
     ? route.params.pathMatch.join('/')
     : route.params.pathMatch || ''
 
-  let URL = `${app.$sections.serverUrl}/project/${app.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName ? pageName : pathMatch ? pathMatch : '/'))}`;
+  let URL = `${app.$sections.serverUrl}/project/${app.$sections.projectId}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`;
 
   if (app.$sections.cname === "active") {
-    URL = `${app.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(pageName ? pageName : pathMatch ? pathMatch : '/'))}`;
+    URL = `${app.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`;
   }
 
   let payload : any = {};
@@ -459,11 +457,23 @@ export const renderPageData = async ({ app, pageName }: RenderPageDataParams) =>
   }
 
   try {
-    const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
+    const res = await useApiRequest({
+      url: URL,
+      method: 'POST',
+      body: payload,
+      ...config
+    });
     return { res, error: null };
   } catch (error) {
     return { res: null, error };
   }
+
+  // try {
+  //   const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
+  //   return { res, error: null };
+  // } catch (error) {
+  //   return { res: null, error };
+  // }
 };
 
 export const showToast = (title : any, variant : any, message : any, options : any) => {
@@ -560,7 +570,6 @@ export const useApiRequest = async <T = any>({
 
     // Handle response
     if (!response.ok) {
-      // Format error in a consistent way
       const errorData = await response.json().catch(() => ({}));
       const error: ApiError = {
         response: {
@@ -569,28 +578,24 @@ export const useApiRequest = async <T = any>({
           statusText: response.statusText
         }
       };
-
       // Call error callback if provided
       if (onError && typeof onError === 'function') {
         onError(error);
       }
-
       throw error;
+    } else {
+      let res: { data: T; status: number };
+      res = {
+        data: await response.json() as T,
+        status: response.status
+      }
+      // Call success callback if provided
+      if (onSuccess && typeof onSuccess === 'function') {
+        onSuccess(res);
+      }
+      return res;
     }
-
-    // Parse response
-    let res: { data: T; status: number };
-
-    res = {
-      data: await response.json() as T,
-      status: response.status
-    }
-
-    // Call success callback if provided
-    if (onSuccess && typeof onSuccess === 'function') {
-      onSuccess(res);
-    }
-
-    return res;
-  } catch (error: any) {}
+  } catch (error: any) {
+    throw error;
+  }
 };

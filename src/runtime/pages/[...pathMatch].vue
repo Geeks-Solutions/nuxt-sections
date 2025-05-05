@@ -37,7 +37,7 @@ useHead({
 // Load sectionsPageData
 const { data: sectionsPageData } = await useAsyncData('sectionsPageData', async () => {
   if (import.meta.client && !nuxtApp.isHydrating) {
-    return await renderPageData({app: useNuxtApp()})
+    return await renderPageData()
   } else return null
 }, {
   immediate: true
