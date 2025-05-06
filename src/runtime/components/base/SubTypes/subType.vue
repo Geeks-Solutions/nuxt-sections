@@ -105,7 +105,7 @@ const nuxtApp = useNuxtApp()
 const getComponentForm = computed(() => {
   if (!props.name) return null;
   const path = `/forms/${props.name}`;
-  return importComp(path);
+  return importComp(path).component;
 });
 
 // Watch for locale changes

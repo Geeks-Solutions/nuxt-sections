@@ -345,7 +345,7 @@ const getComponentForm = computed(() => {
   // Use shallowRef for components to avoid deep reactivity tracking
   const component = shallowRef(null);
   importComp(path).then(comp => {
-      component.value = comp;
+      component.value = comp.component;
       // Check if the component loaded successfully to show the tab
       if (comp) {
           showCustomFormTab.value = true;
@@ -816,7 +816,7 @@ async function loadRegisteredComponent(type, key) {
     if (!registeredComponents[componentKey]) {
         let path = `/configurable_components/${type}_${key}`;
         try {
-            const comp = await importComp(path);
+            const comp = await importComp(path).component;
             if (comp) {
                 // Use shallowRef for performance with components
                 registeredComponents[componentKey] = shallowRef(comp);

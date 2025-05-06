@@ -122,7 +122,7 @@ const component = computed(() => {
   // Access nested props.props.name and props.props.type
   if (!props.props.name || !props.props.type) return null;
   const path = `/views/${props.props.name}_${props.props.type}`;
-  return importComp(path);
+  return importComp(path).component;
 });
 
 const id = computed(() => props.savedView.id || `id-${Date.now()}`);

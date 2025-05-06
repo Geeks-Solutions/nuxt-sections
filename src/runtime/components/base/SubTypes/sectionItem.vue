@@ -1,11 +1,11 @@
 <template>
   <div class="item text-center" :class="{ active }">
-    <div class="card-content" :class="{'card-content-preview': (section && section.type === 'local') || (section && section.settings) || (section && section.render_data)}">
-      <div v-if="(section && section.type === 'local') || (section && section.settings) || (section && section.render_data)" class="comp-preview">
+    <div class="card-content" :class="{'card-content-preview': (sectionData && sectionData.type === 'local') || (sectionData && sectionData.settings) || (sectionData && sectionData.render_data)}">
+      <div v-if="(sectionData && sectionData.type === 'local') || (sectionData && sectionData.settings) || (sectionData && sectionData.render_data)" class="comp-preview">
         <!-- Use Vue's built-in component tag for dynamic components -->
 		<component
 			 :is="componentItem"
-			 :section="section"
+			 :section="sectionData"
 			 :lang="lang"
 			 :locales="locales"
 		/>
@@ -52,9 +52,7 @@ const props = defineProps({
   }
 });
 
-// Props are automatically available in the template, no need to destructure unless used in script logic
-// const { title, active, view, section, lang, locales, componentItem } = props;
-
+const sectionData = props.section
 </script>
 
 <style scoped>

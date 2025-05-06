@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
-<!--    <nuxt-link to="/testH">features {{ i18n.locale }}</nuxt-link>-->
+    <nuxt-link to="/testHasd">features {{ i18n.locale }}</nuxt-link>
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
@@ -366,7 +366,7 @@
                     :class="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
                   >
                     <div
-                      v-if="type.type === 'local' || getComponent(type.name, type.type ? type.type : 'static', true).settings || getComponent(type.name, type.type, true).render_data"
+                      v-if="type.type === 'local' || componentsSetupData(type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.name, type.type).render_data"
                       :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
                       {{ formatTexts(formatName(type.name), " ") }}
                     </div>
@@ -402,7 +402,7 @@
                         class="bg-light-blue"
                         :title="formatName(type.name)"
                         :component-item="getComponent(type.name, type.type ? type.type : 'static')"
-                        :section="getComponent(type.name, type.type ? type.type : 'static', true)"
+                        :section="componentsSetupData(type.name, type.type ? type.type : 'static')"
                         :active="type.notCreated !== true"
                       />
                     </div>
@@ -459,7 +459,7 @@
                     :key="`${type.name}-${index}`"
                   >
                     <div
-                      v-if="type.type === 'local' || getComponent(type && type.section ? type.section.name : type.name, type.type, true).settings || getComponent(type && type.section ? type.section.name : type.name, type.type, true).render_data"
+                      v-if="type.type === 'local' || componentsSetupData(type && type.section ? type.section.name : type.name, type.type).settings || componentsSetupData(type && type.section ? type.section.name : type.name, type.type).render_data"
                       :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
                       {{ formatTexts(formatName(type.name), " ") }}
                     </div>
@@ -484,7 +484,7 @@
                         class="bg-light-blue"
                         :title="formatName(type.name)"
                         :component-item="getComponent(type && type.section ? type.section.name : type.name, type.type)"
-                        :section="getComponent(type && type.section ? type.section.name : type.name, type.type, true)"
+                        :section="componentsSetupData(type && type.section ? type.section.name : type.name, type.type)"
                         :active="true"
                       />
                     </div>
@@ -1098,7 +1098,7 @@
 
           <!-- This is the popup to update the page metadata     -->
           <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer"
+               class="sections-fixed sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true"
                :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
             <div
@@ -1384,6 +1384,7 @@ const sectionsMediaComponent = ref(null)
 const jsonFilePick = ref(null)
 const resizeTarget = ref(null)
 const sectionsMainTarget = ref(null)
+const componentsSetup = ref({});
 
 
 // Display variations object
@@ -1436,7 +1437,7 @@ const invalidSectionsErrors = ref({});
 const sectionsFormatErrors = ref({});
 const layoutSlotNames = ref([]);
 const availableLayouts = ref(['standard']);
-const selectedLayout = ref('standard');
+const selectedLayout = useState('selectedLayout', () => 'standard');
 const viewsPerRegions = ref({});
 const sectionsLayout = ref('standard');
 const selectedSlotRegion = ref('');
@@ -1591,6 +1592,9 @@ const weight = computed(() => {
 });
 
 const filteredTypes = computed(() => {
+  types.value.forEach((type) => {
+    getComponentSetup(type && type.section ? type.section.name : type.name, type.type ? type.type : 'static')
+  })
   return types.value.filter(item => {
     const nameMatch = sectionsFilterName.value
       ? item.name.toLowerCase().includes(sectionsFilterName.value.toLowerCase())
@@ -1605,6 +1609,9 @@ const filteredTypes = computed(() => {
 });
 
 const filteredGlobalTypes = computed(() => {
+  globalTypes.value.forEach((type) => {
+    getComponentSetup(type && type.section ? type.section.name : type.name, type.type ? type.type : 'static')
+  })
   return globalTypes.value.filter(item => {
     const nameMatch = sectionsFilterName.value
       ? item.name.toLowerCase().includes(sectionsFilterName.value.toLowerCase())
@@ -1621,7 +1628,7 @@ const filteredGlobalTypes = computed(() => {
 const getCreationComponent = computed(() => {
   try {
     const path = `/views/${currentSection.value.name}_${currentSection.value.type}`;
-    return importComp(path);
+    return importComp(path).component;
   } catch {
     return '';
   }
@@ -1890,10 +1897,10 @@ const removeMedia = (media) => {
 }
 const updatePageMetaData = async () => {
   loading.value = true
-  metadataErrors.path[0] = ''
+  metadataErrors.value.path[0] = ''
 
   const sections = []
-  let views = originalVariations[sectionsPageName.value].views
+  let views = originalVariations.value[sectionsPageName.value].views
   views = Object.values(views)
   views.forEach((view) => {
     if (!view.error || view.status_code === 404) {
@@ -1940,29 +1947,29 @@ const updatePageMetaData = async () => {
     headers: sectionHeader({ token }),
   }
 
-  let pagePath = pagePath.value && pagePath.value !== "" ? pagePath.value.trim() : ""
+  let updatedPagePath = pagePath.value && pagePath.value !== "" ? pagePath.value.trim() : ""
 
-  if (pagePath !== '/') {
+  if (updatedPagePath !== '/') {
     // Split the URL into individual path segments
-    const pathSegments = pagePath.split('/')
+    const pathSegments = updatedPagePath.split('/')
 
     // Filter out empty segments and remove duplicates
     const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1])
 
     // Reconstruct the URL with the unique path segments
-    pagePath = pagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/')
+    updatedPagePath = updatedPagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/')
 
-    if (pagePath[0] && pagePath[0] === '/') {
-      pagePath = pagePath.replace(/^\/+/, '')
+    if (updatedPagePath[0] && updatedPagePath[0] === '/') {
+      updatedPagePath = updatedPagePath.replace(/^\/+/, '')
     }
-    while (pagePath.endsWith('//')) {
-      pagePath = pagePath.slice(0, -1)
+    while (updatedPagePath.endsWith('//')) {
+      updatedPagePath = updatedPagePath.slice(0, -1)
     }
   }
 
   const variables = {
     page: sectionsPageName.value,
-    path: pagePath,
+    path: updatedPagePath,
     metadata: {...pageMetadata.value},
     variations: [],
     layout: sectionsLayout.value,
@@ -1995,7 +2002,7 @@ const updatePageMetaData = async () => {
           i18n.t('successSettingsChanges')
         )
 
-        if (pagePath !== sectionsPageName.value) {
+        if (updatedPagePath !== sectionsPageName.value) {
           let baseURL = window.location.origin
           let routerBase = router.options.base
 
@@ -2006,7 +2013,7 @@ const updatePageMetaData = async () => {
             baseURL = baseURL + routerBase
           }
 
-          window.location.replace(`${baseURL}/${pagePath}`)
+          window.location.replace(`${baseURL}/${updatedPagePath}`)
         } else {
           window.location.reload()
         }
@@ -2014,7 +2021,7 @@ const updatePageMetaData = async () => {
       onError: (error) => {
         loading.value = false
         if (error.response.data.errors) {
-          metadataErrors = error.response.data.errors
+          metadataErrors.value = error.response.data.errors
         } else {
           showToast(
             "Error saving your changes",
@@ -2336,7 +2343,7 @@ const addNewStaticType = async (name) => {
     if (name) {
       // In Nuxt 3, dynamic imports use different syntax
       // We'd need to know more about how importComp is used
-      const formComp = importComp(`/forms/${sectionTypeName.value}`)
+      const formComp = importComp(`/forms/${sectionTypeName.value}`).component
 
       if (formComp.props && formComp.props.mediaFields) {
         fieldsDeclaration = formComp.props.mediaFields
@@ -2400,60 +2407,77 @@ const trackSectionComp = (sectionName, sectionType) => {
     )
   }
 }
-const getComponent = (sectionName, sectionType, returnProps) => {
+const getComponentPath = (sectionName, sectionType) => {
+  let path = ""
+  if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+    path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
+  } else if (sectionName && sectionName.includes(":")) {
+    path = `/views/${sectionName.split(":")[1]}_${sectionType}`
+  } else if (sectionName && sectionName.includes("_-_")) {
+    path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
+  } else {
+    path = `/views/${sectionName}_${sectionType}`
+  }
+  return path
+}
+const componentsSetupData = (sectionName, sectionType) => {
+  let path = getComponentPath(sectionName, sectionType)
+  if (componentsSetup.value[path]) {
+    return componentsSetup.value[path]
+  } else return {}
+}
+const getComponentSetup = async (sectionName, sectionType) => {
+  let path = getComponentPath(sectionName, sectionType)
+
+  const moduleData = await importComp(path).setup.then(d => d.default)
+  if (moduleData && moduleData.props && moduleData.props.viewStructure &&
+    (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
+    const setupData = {
+      settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets),
+      render_data: populateWithDummyValues(moduleData.props.viewStructure.render_data, dummyDataPresets),
+      type: sectionType
+    }
+    componentsSetup.value[path] = setupData
+    return setupData
+  } else {
+    const setupData = {type: sectionType}
+    componentsSetup.value[path] = setupData
+    return setupData
+  }
+}
+const getComponent = (sectionName, sectionType) => {
   const hooksJs = importJs(`/js/global-hooks`)
   if (hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
     return hooksJs['section_pre_render']({sectionName, sectionType})
-  } else if (returnProps === true) {
-    let path = ""
-    if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
-      path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
-    } else if (sectionName && sectionName.includes(":")) {
-      path = `/views/${sectionName.split(":")[1]}_${sectionType}`
-    } else if (sectionName && sectionName.includes("_-_")) {
-      path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
-    } else {
-      path = `/views/${sectionName}_${sectionType}`
-    }
-
-    const moduleData = importComp(path)
-    if (moduleData && moduleData.props && moduleData.props.viewStructure &&
-      (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
-      return {
-        settings: populateWithDummyValues(moduleData.props.viewStructure.settings, dummyDataPresets),
-        render_data: populateWithDummyValues(moduleData.props.viewStructure.render_data, dummyDataPresets),
-        type: sectionType
-      }
-    } else return {type: sectionType}
   } else if (nuxtApp.$sections.cname === "active") {
     let path = ""
     if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
       path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     } else if (sectionName && sectionName.includes(":")) {
       path = `/views/${sectionName.split(":")[1]}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     } else if (sectionName && sectionName.includes("_-_")) {
       path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     } else {
       path = `/views/${sectionName}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     }
   } else {
     let path = ""
     if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
       path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     } else if (sectionName && sectionName.includes(":")) {
       path = `/views/${sectionName.split(":")[1]}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     } else if (sectionName && sectionName.includes("_-_")) {
       path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     } else {
       path = `/views/${sectionName}_${sectionType}`
-      return importComp(path)
+      return importComp(path).component
     }
   }
 }
@@ -2473,7 +2497,7 @@ const getSelectedLayout = () => {
   let path = `/layouts/${selectedLayout.value}`
   if (selectedLayout.value === 'standard') {
     return 'div'
-  } else return importComp(path)
+  } else return importComp(path).component
 }
 const computeLayoutData = async () => {
   const slotNameExample = 'i.e. slotNames: { type: Array, default() { return [\'region1\'] }}'
@@ -2485,7 +2509,7 @@ const computeLayoutData = async () => {
     let path = `/layouts/${selectedLayout.value}`
     layoutSlotNames.value = []
 
-    let layoutComp = await importComp(path)
+    let layoutComp = await importComp(path).setup.then(d => d.default)
     if (!layoutComp.props) {
       errorInLayout.value = true
       sectionsMainErrors.value.push(i18n.t('layoutErrors.missingComp'))
@@ -2504,7 +2528,7 @@ const computeLayoutData = async () => {
     }
 
     try {
-      layoutSlotNames.value = [...importComp(path).props.slotNames.default()]
+      layoutSlotNames.value = [...layoutComp.props.slotNames.default()]
     } catch {
       errorInLayout.value = true
       sectionsMainErrors.value.push(i18n.t('layoutErrors.propArray'))
@@ -2558,19 +2582,21 @@ const computeLayoutData = async () => {
   }
 }
 const verifySlots = () => {
-  nextTick(() => {
-    if (selectedLayout.value !== 'standard') {
-      sectionsLayoutErrors.value = []
-      layoutSlotNames.value.forEach(slotName => {
-        if (!document.getElementById(`sections-slot-region-${selectedLayout.value}-${slotName}`)) {
-          errorInLayout.value = true
-          sectionsLayoutErrors.value.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + i18n.t('layoutErrors.regionNotConfigured'))
-          sectionsLayoutErrors.value.push(`<slot name=\"${slotName}\"></slot> ${i18n.t('layoutErrors.layoutTemp')}`)
-          return
-        }
-      })
-    }
-  })
+  setTimeout(() => {
+    nextTick(() => {
+      if (selectedLayout.value !== 'standard') {
+        sectionsLayoutErrors.value = []
+        layoutSlotNames.value.forEach(slotName => {
+          if (!document.getElementById(`sections-slot-region-${selectedLayout.value}-${slotName}`)) {
+            errorInLayout.value = true
+            sectionsLayoutErrors.value.push(slotName.charAt(0).toUpperCase() + slotName.slice(1) + ' ' + i18n.t('layoutErrors.regionNotConfigured'))
+            sectionsLayoutErrors.value.push(`<slot name=\"${slotName}\"></slot> ${i18n.t('layoutErrors.layoutTemp')}`)
+            return
+          }
+        })
+      }
+    })
+  }, 500)
 }
 const logDrag = (evt) => {
   Object.keys(viewsPerRegions.value).forEach(slotName => {
@@ -2883,21 +2909,6 @@ const introSteps = (topic) => {
           intro: i18n.t('intro.promoteSection')
         }
       ]
-  }
-}
-const getSectionProjectIdentity = () => {
-
-  if (nuxtApp.$sections.cname === "active") {
-    // In Nuxt 3, process.client replaces typeof window !== 'undefined'
-    if (process.client) {
-      return window.location.host
-    } else {
-      // In Nuxt 3, this would typically use the context from useRequestHeaders
-      const headers = useRequestHeaders()
-      return headers.host
-    }
-  } else {
-    return nuxtApp.$sections.projectId
   }
 }
 const renderConfigurableSection = async (gt, options) => {
@@ -4490,7 +4501,7 @@ const registeredPage = (type) => {
   let path = `/page_components/${type}`;
   // Assuming importComp is a global function or defined elsewhere
   // In Nuxt 3, you might use defineAsyncComponent instead
-  return importComp(path);
+  return importComp(path).component;
 };
 const clearSectionsFilters = () => {
   sectionsFilterName.value = '';
@@ -5057,6 +5068,7 @@ span.handle {
   padding: 20px;
   position: fixed !important;
   inset: 0;
+  z-index: 10;
 }
 
 .modalContainer .section-item {

@@ -1,4 +1,4 @@
-import {useCookie, useNuxtApp, useRoute} from "#app";
+import {useCookie, useNuxtApp, useRequestHeaders, useRoute} from "#app";
 import {defineAsyncComponent} from "vue";
 
 export function formatName(name: string): string {
@@ -46,22 +46,25 @@ export const importComp = (path: string) => {
   const configPath = `../components/configs${path}.vue`
 
   let component = null
+  let setup : any = null
 
   // Check if section component exists
   if (sections[sectionPath]) {
-    component = defineAsyncComponent(() => sections[sectionPath]())
+    setup = sections[sectionPath]()
+    component = defineAsyncComponent(() => setup)
   }
   // Check if config component exists
   else if (configs[configPath]) {
-    component = defineAsyncComponent(() => configs[configPath]())
+    setup = configs[configPath]()
+    component = defineAsyncComponent(() => setup)
   }
   else {
     console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
     return null
   }
 
-  importCache[path] = component
-  return component
+  importCache[path] = {component, setup}
+  return {component, setup}
 }
 
 export const sectionHeader = (header: Record<string, string>): Record<string, string> => {
@@ -395,6 +398,24 @@ export const populateWithDummyValues = (obj: any, presets: Record<string, any[]>
   return obj; // For non-object, non-array values, return as is
 }
 
+export const getSectionProjectIdentity = () => {
+  const nuxtApp : any = useNuxtApp()
+  if (nuxtApp.$sections.cname === "active") {
+    // In Nuxt 3, process.client replaces typeof window !== 'undefined'
+    if (process.client) {
+      return 'csstest.k8s-dev.geeks.solutions'
+      // return window.location.host
+    } else {
+      // In Nuxt 3, this would typically use the context from useRequestHeaders
+      const headers = useRequestHeaders()
+      return 'csstest.k8s-dev.geeks.solutions'
+      // return headers.host
+    }
+  } else {
+    return nuxtApp.$sections.projectId
+  }
+}
+
 // Function to render page data
 export const renderPageData = async () => {
   const app : any = useNuxtApp();
@@ -426,11 +447,7 @@ export const renderPageData = async () => {
     ? route.params.pathMatch.join('/')
     : route.params.pathMatch || ''
 
-  let URL = `${app.$sections.serverUrl}/project/${app.$sections.projectId}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`;
-
-  if (app.$sections.cname === "active") {
-    URL = `${app.$sections.serverUrl}/project/${websiteDomain}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`;
-  }
+  let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`;
 
   let payload : any = {};
 
@@ -468,12 +485,6 @@ export const renderPageData = async () => {
     return { res: null, error };
   }
 
-  // try {
-  //   const res = await (await fetch(URL, {method: "POST", body: payload, ...config})).json();
-  //   return { res, error: null };
-  // } catch (error) {
-  //   return { res: null, error };
-  // }
 };
 
 export const showToast = (title : any, variant : any, message : any, options : any) => {

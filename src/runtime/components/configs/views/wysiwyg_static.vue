@@ -25,15 +25,12 @@ const props = defineProps({
   },
   // viewStructure prop seems unused in the original script logic, kept for compatibility if needed elsewhere.
   viewStructure: {
-    type: Object,
-    default: () => ({
-      settings: [
-        {
-          en: 'wysiwyg',
-          fr: 'wysiwyg'
-        }
-      ]
-    })
+    settings: [
+      {
+        en: 'wysiwyg',
+        fr: 'wysiwyg'
+      }
+    ]
   }
 });
 
