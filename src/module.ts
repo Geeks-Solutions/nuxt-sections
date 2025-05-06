@@ -35,21 +35,6 @@ export default defineNuxtModule<ModuleOptions>({
         },
       ]
     })
-    // _nuxt.hook('i18n:registerModule', register => {
-    //   register({
-    //     langDir: resolve('./runtime/lang'),
-    //     locales: [
-    //       {
-    //         code: 'en',
-    //         file: 'en.json'
-    //       },
-    //       {
-    //         code: 'fr',
-    //         file: 'fr.json'
-    //       }
-    //     ]
-    //   })
-    // })
 
     // Extend routes
     extendPages((pages) => {
@@ -79,9 +64,6 @@ export default defineNuxtModule<ModuleOptions>({
     addPluginTemplate(resolve('./runtime/plugin'))
 
     // await installModule('@geeks.solutions/vue-components/nuxt')
-
-
-
 
     // Detect Tailwind installation
     // const isTailwindInstalled = ['@nuxtjs/tailwindcss'].some(pkg =>
@@ -118,35 +100,5 @@ export default defineNuxtModule<ModuleOptions>({
     // _nuxt.options.modules.push('@geeks.solutions/vue-components/nuxt')
     // _nuxt.options.css.push('@geeks.solutions/vue-components/assets/icons/icomoon/style.css')
 
-    // Add plugins
-    // const pluginsToRegister = ['plugin.js', 'src/components/index.js', 'src/utils/index.js']
-    // for (const plugin of pluginsToRegister) {
-    //   addPlugin({
-    //     src: resolver.resolve(plugin),
-    //     mode: 'client',
-    //     // filename: join(namespace, plugin),
-    //     // options,
-    //   })
-    // }
-
-    // Sync files into build directory
-    // const foldersToSync = [
-    //   'src/components/Sections', 'src/components/Translations', 'src/components/Tooltip',
-    //   'src/components/Editor', 'src/components/Medias', 'src/components/SectionsForms',
-    //   'src/components/SectionsViews', 'src/utils', 'src/configs/forms',
-    //   'src/configs/type-icons', 'src/configs/views', 'src/base/SubTypes',
-    //   'src/base/types', 'src/base/icons', 'src/base/assets',
-    // ]
-
-    // for (const folder of foldersToSync) {
-    //   const absPath = resolver.resolve(folder)
-    //   for (const file of readdirSync(absPath)) {
-    //     addTemplate({
-    //       src: resolve(absPath, file),
-    //       // filename: join(namespace, folder, file),
-    //       options,
-    //     })
-    //   }
-    // }
   }
 })

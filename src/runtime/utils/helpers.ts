@@ -24,8 +24,10 @@ export const formatTexts = (text: string, sep: string = " "): string => {
 }
 
 export const importJs = (path: string): any => {
+  // @ts-ignore
+  const jsHooks = import.meta.glob(`/sections/js/*.js`, { eager: true })
   try {
-    return require(`@/sections${path}.js`);
+    return jsHooks[`/sections${path}.js`]
   } catch (e) {
     return '';
   }
@@ -250,7 +252,7 @@ export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, 
     headers: sectionHeader({ token }),
   };
   const URL =
-    `${$nuxt.$sections.serverUrl}/project/${$nuxt.$sections.projectId}/global-instances/${linked_to}`;
+    `${$nuxt.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances/${linked_to}`;
 
   const result = {
     res: {},

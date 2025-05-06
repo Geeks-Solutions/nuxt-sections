@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
-    <nuxt-link to="/testHasd">features {{ i18n.locale }}</nuxt-link>
+<!--    <nuxt-link to="/testHasd">features {{ i18n.locale }}</nuxt-link>-->
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
@@ -282,7 +282,7 @@
 
           <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
           <div v-if="isModalOpen && admin && editMode" ref="modal"
-               class="sections-fixed section-modal-content sections-z-50 bg-grey sections-bg-opacity-25 sections-inset-0 modalContainer"
+               class="sections-fixed section-modal-content sections-z-200 bg-grey sections-bg-opacity-25 sections-inset-0 modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections sections-items-center sections-justify-center sections-px-4 sections-pb-20 sections-text-center">
@@ -564,7 +564,7 @@
 
           <!-- This is delete section types popup that opens when the admin click on the trash icon located at the top right of each section type inside the popup list above -->
           <div v-if="isDeleteModalOpen && admin && editMode" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -601,7 +601,7 @@
 
 
           <div v-if="isRestoreSectionOpen && admin && editMode" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -636,7 +636,7 @@
 
           <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
           <div v-if="isDeletePageModalOpen && admin && editMode" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -677,7 +677,7 @@
 
           <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
           <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal"
-               class="fixed sections-z-50 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
+               class="fixed sections-z-200 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -739,7 +739,7 @@
 
           <!-- This is the popup that has the required fields loaded from section response requirements in order to authorize configurable section types, it opens when clicking on the lock icon located at the bottom left of a section configurable type -->
           <div v-if="isAuthModalOpen && admin && editMode" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -786,7 +786,7 @@
 
           <!-- This is the popup that opens when clicking on the lock icon located at the bottom left of a section configurable type to unAuthorize it -->
           <div v-if="isUnAuthModalOpen && admin && editMode" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -1032,7 +1032,7 @@
 
           <!-- This is the popup to create a new static section type     -->
           <div v-if="staticModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -1200,7 +1200,7 @@
 
           <!-- This is popup to show the successfully created new static section message      -->
           <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
-               class="sections-fixed sections-z-50 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
+               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
@@ -1263,9 +1263,6 @@
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, onMounted, reactive, ref} from 'vue';
-import {useCookie, useHead, useNuxtApp, useRoute, useRouter} from '#app';
-
 import draggable from "vuedraggable";
 
 import camelCase from "lodash/camelCase";
@@ -1337,9 +1334,6 @@ const config = useRuntimeConfig();
 // Data properties converted to refs
 const locales = ref(['en', 'fr']);
 const translationComponentSupport = ref(true);
-const sectionSettings = ref({
-  settings: {}
-});
 const staticSuccess = ref(false);
 const sectionTypeName = ref("");
 const staticModal = ref(false);
@@ -1352,7 +1346,6 @@ const selectedVariation = ref(pageName);
 const typesTab = ref('types');
 const globalTypes = ref([]);
 const types = ref([]);
-const sectionTypes = ref([]);
 const sectionsQsKeys = ref([]);
 const originalVariations = ref({});
 const updatedVariations = ref({});
@@ -1360,7 +1353,6 @@ const updatedVariations = ref({});
 const views = ref({});
 const getSections = ref([]);
 const loading = ref(false);
-const dragging = ref(false);
 const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
@@ -1473,7 +1465,7 @@ const sectionsFilterName = ref('');
 const sectionsFilterAppName = ref('');
 const appNames = ref([]);
 const sectionsWebsiteDomain = ref('');
-const pageData = ref(null);
+const pageData = useState('pageData', () => null);
 const canPromote = ref(false);
 const intro = ref(null);
 const currentPages = ref(null);
@@ -1525,7 +1517,7 @@ const alteredViews = computed({
   get: () => {
     let alteredSections = null;
     let hooksJs = importJs(`/js/global-hooks`);
-    if (hooksJs['page_pre_render'] && pageData.value) {
+    if (hooksJs && hooksJs['page_pre_render'] && pageData.value) {
       if (typeof hooksJs['page_pre_render'] === 'function') {
         alteredSections = hooksJs['page_pre_render'](
           JSON.parse(JSON.stringify(pageData.value)),
@@ -1553,7 +1545,7 @@ const alteredViewsPerRegions = computed({
   get: () => {
     let alteredSections = null;
     let hooksJs = importJs(`/js/global-hooks`);
-    if (hooksJs['page_pre_render'] && pageData.value && viewsPerRegions.value && Object.keys(viewsPerRegions.value).length > 0) {
+    if (hooksJs && hooksJs['page_pre_render'] && pageData.value && viewsPerRegions.value && Object.keys(viewsPerRegions.value).length > 0) {
       if (typeof hooksJs['page_pre_render'] === 'function') {
         alteredSections = hooksJs['page_pre_render'](
           JSON.parse(JSON.stringify(pageData.value)),
@@ -2447,7 +2439,7 @@ const getComponentSetup = async (sectionName, sectionType) => {
 }
 const getComponent = (sectionName, sectionType) => {
   const hooksJs = importJs(`/js/global-hooks`)
-  if (hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
+  if (hooksJs && hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
     return hooksJs['section_pre_render']({sectionName, sectionType})
   } else if (nuxtApp.$sections.cname === "active") {
     let path = ""
@@ -2484,7 +2476,7 @@ const getComponent = (sectionName, sectionType) => {
 const getAvailableLayouts = () => {
   try {
     // In Nuxt 3, you'd typically use import.meta.glob instead of require.context
-    const layoutFiles = import.meta.glob('@/sections/layouts/*.vue')
+    const layoutFiles = import.meta.glob('/sections/layouts/*.vue')
     const layoutNames = Object.keys(layoutFiles).map((filename) => {
       return filename.replace(/^.*\/(.+)\.vue$/, '$1')
     })
@@ -2673,7 +2665,7 @@ const createNewPage = async () => {
 const getAvailableSections = () => {
   try {
     // Use import.meta.glob instead of require.context
-    const formSections = import.meta.glob('@/sections/forms/*.vue')
+    const formSections = import.meta.glob('/sections/forms/*.vue')
     const formNames = Object.keys(formSections).map((filename) => {
       return filename.replace(/^.*\/(.+)\.vue$/, '$1')
     })
@@ -3290,8 +3282,8 @@ const addSystemTypes = () => {
   let externalPath = ""
 
   try {
-    externalViews = import.meta.glob('@/sections/views/*.vue')
-    externalPath = '@/sections/views'
+    externalViews = import.meta.glob('/sections/views/*.vue')
+    externalPath = '/sections/views'
   } catch (error) {
     throw new Error(i18n.t('noSectionsFolder'))
   }
@@ -4657,7 +4649,7 @@ const fetchData = async () => {
       } catch {}
     }
   }
-
+console.log(nuxtApp.$sections)
   if (sectionsPageData) {
     sectionsError.value = "";
     sectionsMainErrors.value = [];
@@ -5177,8 +5169,8 @@ span.handle {
   width: 45px;
 }
 
-.sections-z-50 {
-  z-index: 20000000000  !important;
+.sections-z-200 {
+  z-index: 200;
 }
 
 .section-modal-wrapper {
@@ -5974,7 +5966,7 @@ span.handle {
   width: 527px;
   min-width: 422px;
   max-width: 50%;
-  z-index: 9999;
+  z-index: 190;
 }
 
 .sections-aside

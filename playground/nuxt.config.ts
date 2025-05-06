@@ -36,7 +36,8 @@ export default defineNuxtConfig({
         queryStringSupport: process.env.NUXT_ENV_SECTIONS_QUERY_STRING_SUPPORT,
         // projectLocales: process.env.NUXT_ENV_SECTIONS_LOCALES ?? 'en,fr',
         cname: process.env.NUXT_ENV_SECTIONS_CNAME
-      }
+      },
+      SIGNATURE_PACKAGES: process.env.NUXT_ENV_SIGNATURE_PACKAGES
     }
   }
 })

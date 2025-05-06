@@ -46,7 +46,7 @@ const { data: sectionsPageData } = await useAsyncData('sectionsPageData', async 
 // Optional: Dynamic lifecycle hook imports
 const importHooks = (hook, params) => {
   const hooksJs = importJs('/js/hooks')
-  if (hooksJs[hook]) {
+  if (hooksJs && hooksJs[hook]) {
     return hooksJs[hook](params)
   }
 }
