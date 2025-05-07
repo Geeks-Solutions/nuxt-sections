@@ -28,8 +28,6 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-
 // --- Composables ---
 const nuxtApp = useNuxtApp()
 const sectionsConfig = nuxtApp.$sections;

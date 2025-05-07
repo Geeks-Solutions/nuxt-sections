@@ -10,7 +10,6 @@
 </template>
 
 <script setup> // Remove types and use js
-import { computed } from 'vue';
 // Removed TypeScript interfaces and PropType import
 
 // --- Props ---

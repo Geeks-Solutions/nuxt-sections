@@ -52,7 +52,7 @@
                 </div>
                 <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
               </div>
-              <div v-if="!props.linked_to" class="autoInsertRow">
+              <div v-if="!props.props.linked_to" class="autoInsertRow">
                 <input
                   class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
                   type="text"
@@ -235,8 +235,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, defineProps, defineEmits, shallowRef, nextTick } from 'vue';
-import { useNuxtApp, useCookie, useRoute } from '#app'; // Import Nuxt 3 composables
 
 // Composables
 const nuxtApp = useNuxtApp();
@@ -343,15 +341,11 @@ const getComponentForm = computed(() => {
       return null; // Return null or a placeholder if name is not available
   }
   // Use shallowRef for components to avoid deep reactivity tracking
-  const component = shallowRef(null);
-  importComp(path).then(comp => {
-      component.value = comp.component;
-      // Check if the component loaded successfully to show the tab
-      if (comp) {
-          showCustomFormTab.value = true;
-      }
-  });
-  return component;
+  const component = importComp(path).component
+  if (component) {
+    showCustomFormTab.value = true;
+    return component;
+  } else return ''
 });
 
 const globalSectionMode = computed(() => props.instance || props.linked);
@@ -495,30 +489,6 @@ function onEditorChange(html, idx, fieldname) {
   options[0][fieldname][formLang.value] = html; // Legacy
 }
 
-function addAnother() {
-  // This logic seems flawed, it adds the *first* field definition again.
-  // Re-evaluate if this feature is needed or how it should work.
-  // If needed, it should likely clone the last set of fields/options.
-  console.warn("'addAnother' functionality needs review for Nuxt 3 migration.");
-  // Original logic (potentially problematic):
-  // errorMessage.value = "";
-  // let error = false;
-  // options.forEach(opt => {
-  //   const fields = props.fields[0]; // Always uses the first field definition
-  //   fields.forEach(field => {
-  //     if (!opt[field.name] || opt[field.name] === "no-value") {
-  //       error = true;
-  //     }
-  //   });
-  // });
-  // if (error) {
-  //   errorMessage.value = "You must fill your current fields before adding a new one";
-  // } else {
-  //   props.fields.push(props.fields[0]); // Mutating props!
-  //   options.push({});
-  // }
-}
-
 function getTag(type, name) {
   // Simplified logic based on original
   if ((type === 'integer' || type === 'string' || type === 'textfield' || type === 'textarea') && optionValues.field === name && optionValues.option_values) {
@@ -535,83 +505,101 @@ function getType(type) {
   return 'text'; // Default for string, integer, textfield, textarea, hidden, wysiwyg
 }
 
+function isFieldRequired(field) {
+  return !('required' in field) || field.required === true
+}
+
 async function addConfigurable() {
   instanceNameError.value = false;
-  if (globalSectionMode.value && !instanceName.value) {
+
+  if (globalSectionMode && instanceName === '') {
     instanceNameError.value = true;
     return;
   }
 
-  errorMessage.value = "";
-  let error = false;
-  let errorField = '';
+  errorMessage.value = '';
+  let validationError = '';
 
-  // Validate fields using optionsData
-  // Iterate over nested props.props.fields
-  for (const field of props.props.fields) {
-      const key = field.key;
-      const type = field.type;
-      const value = optionsData[key];
-      const isStringType = stringType(type);
+  Object.keys(options[0]).forEach((key) => {
+    const fields = props.props.fields.find(field => field.key === key);
+    if (!fields) return;
 
-      // Check registered component validation first
-      const registeredComp = registeredComponents[type + '_' + key];
-      if (registeredComp?.methods?.validateOptions) { // Check if component and method exist
-          try {
-              // Pass reactive optionsData, field definition, key, and component context (if needed)
-              let validatedOptions = registeredComp.methods.validateOptions(optionsData, field, key, /* component instance proxy if needed */);
-              if (validatedOptions.errorMessage === true) {
-                  error = true;
-                  errorField = `${key} (${validatedOptions.errors})`;
-                  break;
-              }
-          } catch (e) {
-              console.warn(`Error validating options for custom component ${key}:`, e);
+    const typeComp = registeredComponents[fields.type + '_' + fields.key];
+
+    // Set default value for boolean fields
+    if (fields.type === 'boolean' && options[0][key] === null) {
+      options[0][key] = false;
+    }
+
+    if (isFieldRequired(fields)) {
+      // Check string fields
+      if (
+        ((typeof options[0][key] === 'string' && !options[0][key]) ||
+          (typeof options[0][key] === 'object' && stringType(fields.type) && !options[0][key][props.defaultLang])) &&
+        typeof options[0][key] !== "boolean" &&
+        !Array.isArray(options[0][key])
+      ) {
+        if (typeof options[0][key] === 'string') {
+          validationError = t('fillRequiredFields') + ` (${key})`;
+        } else {
+          validationError = t('fillRequiredFields') + ` (${key})` + ` / (${props.defaultLang})`;
+        }
+      }
+      // Check integer fields
+      else if (
+        fields.type === 'integer' &&
+        !Array.isArray(options[0][key]) &&
+        (options[0][key] === null || isNaN(options[0][key]))
+      ) {
+        validationError = t('fillRequiredFields') + ` (${key})`;
+      }
+      // Check null values
+      else if (options[0][key] === null) {
+        validationError = t('fillRequiredFields') + ` (${key})`;
+      }
+      // Check with type component validation
+      else if (typeComp && typeComp.methods) {
+        try {
+          const validatedOptions = typeComp.methods.validateOptions(options, fields, key, this);
+          if (validatedOptions.errorMessage === true) {
+            validationError = t('fillRequiredFields') + ` (${key} ${validatedOptions.errors})`;
           }
+        } catch (e) {
+          // Handle exceptions
+        }
       }
-
-      // Standard validation
-      if (type === 'boolean' && value === null) {
-          optionsData[key] = false; // Default boolean to false if null
-      } else if (isStringType && typeof value === 'object' && value !== null && !value[props.defaultLang]) {
-          error = true;
-          errorField = `${key} / (${props.defaultLang})`;
-          break;
-      } else if (isStringType && typeof value !== 'object' && !value && typeof value !== 'boolean' && !Array.isArray(value)) {
-          error = true;
-          errorField = key;
-          break;
-      } else if (type === 'integer' && !Array.isArray(value) && (value === null || isNaN(value))) {
-          error = true;
-          errorField = key;
-          break;
-      } else if (value === null && type !== 'boolean') { // Allow null for non-required fields? Add check if field is required
-          // This condition might be too strict depending on requirements
-          // error = true;
-          // errorField = key;
-          // break;
-      }
-  }
-
-
-  if (error) {
-    errorMessage.value = `${t('fillRequiredFields')} (${errorField})`;
-    return;
-  }
-
-  // Notify registered components validation passed (if method exists)
-  // Iterate over nested props.props.fields
-  props.props.fields.forEach(field => {
-      const registeredComp = registeredComponents[field.type + '_' + field.key];
-      if (registeredComp?.methods?.optionsValidated) {
-          try {
-              registeredComp.methods.optionsValidated(/* component instance proxy if needed */);
-          } catch (e) {
-              console.warn(`Error calling optionsValidated for custom component ${field.key}:`, e);
-          }
-      }
+    }
   });
 
+  if (validationError) {
+    errorMessage.value = validationError;
+
+    // Using nextTick to ensure DOM is updated before scrolling
+    nextTick(() => {
+      const errorEl = document.querySelector('.config-sections-errors.error-message');
+      if (errorEl) {
+        errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    return;
+  } else {
+    // Process after successful validation
+    Object.keys(options[0]).forEach((key) => {
+      const fields = props.props.fields.find(field => field.key === key);
+      if (!fields) return;
+
+      const typeComp = registeredComponents[fields.type + '_' + fields.key];
+
+      try {
+        if (typeComp && typeComp.methods) {
+          typeComp.methods.optionsValidated(this);
+        }
+      } catch (e) {
+        // Handle exceptions
+      }
+    });
+  }
 
   emit("load", true);
 
@@ -662,7 +650,7 @@ async function addConfigurable() {
     };
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`;
 
   try {
     // Use $fetch for Nuxt 3
@@ -859,9 +847,9 @@ function changeFieldLabel(field) {
   let importedHook = importHooks('updateFieldLabel', field);
   if (importedHook) {
     return importedHook;
-  }
-  // Add * only if field is considered required (add logic if needed)
-  return field.name.replace(/_/g, " ") + '*';
+  } else if (isFieldRequired(field)) {
+    return field.name.replace("_", " ")+'*'
+  } else return field.name.replace(/_/g, " ");
 }
 
 // Lifecycle Hooks
@@ -887,9 +875,7 @@ onMounted(() => {
                     props.locales.reduce((acc, loc) => ({ ...acc, [loc]: '' }), {}) :
                     null; // Or appropriate default like [] for multi-select
             }
-            if (optionsData[field.key] === undefined) {
-                 optionsData[field.key] = JSON.parse(JSON.stringify(initialOptions[field.key])); // Deep copy initial value
-            }
+          optionsData[field.key] = JSON.parse(JSON.stringify(initialOptions[field.key])); // Deep copy initial value
         });
     }
 
@@ -897,8 +883,8 @@ onMounted(() => {
     let alteredOptions = null;
     try {
         const hooksJs = importJs(`/js/configurable-hooks`);
-        if (hooksJs?.configurable_pre_render) {
-            alteredOptions = hooksJs.configurable_pre_render(
+        if (hooksJs && hooksJs['configurable_pre_render']) {
+            alteredOptions = hooksJs['configurable_pre_render'] (
                 JSON.parse(JSON.stringify([initialOptions])), // Pass options structure expected by hook
                 props.defaultLang,
                 props.locales,
@@ -919,7 +905,6 @@ onMounted(() => {
     }
      // Update the legacy options array as well
      options[0] = { ...initialOptions, ...(alteredOptions ? alteredOptions[0] : {}) };
-
 
   } else {
       // Initialize optionsData for fields even if no savedView
@@ -949,7 +934,7 @@ onMounted(() => {
     const header = { token: authToken.value || '' };
     const config = { headers: sectionHeader(header) };
     // Access nested props.props.nameID and props.props.name
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/${props.props.nameID || props.props.name}/options`;
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/${props.props.nameID || props.props.name}/options`;
 
     $fetch(URL, { headers: config.headers })
       .then((res) => {

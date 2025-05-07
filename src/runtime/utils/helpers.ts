@@ -62,7 +62,7 @@ export const importComp = (path: string) => {
   }
   else {
     console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
-    return null
+    return {component: null, setup: null}
   }
 
   importCache[path] = {component, setup}
@@ -103,7 +103,7 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
     };
     const result = {
       data: await (await fetch($nuxt.$sections.serverUrl +
-        `/project/${$nuxt.$sections.projectId}/media`, {method: "POST", body: data, ...config})).json()
+        `/project/${getSectionProjectIdentity()}/media`, {method: "POST", body: data, ...config})).json()
     }
 
     return { data: result.data, success: true, error: '' };
@@ -120,7 +120,7 @@ export async function deleteMedia(id: string): Promise<{ data: any, success: boo
       headers: sectionHeader({ token }),
     };
     const result = {
-      data: await (await fetch($nuxt.$sections.serverUrl + `/project/${$nuxt.$sections.projectId}/media/${id}`,
+      data: await (await fetch($nuxt.$sections.serverUrl + `/project/${getSectionProjectIdentity()}/media/${id}`,
         {method: "DELETE", ...config})).json()
     }
 
@@ -137,7 +137,7 @@ export async function addNewStaticType(sectionTypeName: string): Promise<{ statu
     const config = {
       headers: sectionHeader({ token })
     };
-    const URL = $nuxt.$sections.serverUrl + `/project/${$nuxt.$sections.projectId}/section-types/${sectionTypeName}`;
+    const URL = $nuxt.$sections.serverUrl + `/project/${getSectionProjectIdentity()}/section-types/${sectionTypeName}`;
     try {
       await $fetch(URL, {method: "POST", body: {}, ...config})
 
@@ -271,7 +271,7 @@ export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, 
 }
 
 export const validateQS = (qsObject: Record<string, any>, qsKeys: string[], editMode: boolean): Record<string, any> | undefined => {
-  if (editMode === true) {
+  if (editMode) {
     let qsObjectNA: Record<string, string> = {};
     qsKeys.forEach(qsKey => {
       if (qsObject[qsKey] === null || qsObject[qsKey] === undefined) {
@@ -405,12 +405,12 @@ export const getSectionProjectIdentity = () => {
   if (nuxtApp.$sections.cname === "active") {
     // In Nuxt 3, process.client replaces typeof window !== 'undefined'
     if (process.client) {
-      return 'csstest.k8s-dev.geeks.solutions'
+      return 'blogssection.k8s-dev.geeks.solutions'
       // return window.location.host
     } else {
       // In Nuxt 3, this would typically use the context from useRequestHeaders
       const headers = useRequestHeaders()
-      return 'csstest.k8s-dev.geeks.solutions'
+      return 'blogssection.k8s-dev.geeks.solutions'
       // return headers.host
     }
   } else {
@@ -455,7 +455,7 @@ export const renderPageData = async () => {
 
   let language;
   try {
-    language = app.i18n.locale;
+    language = app.$i18n.locale.value;
   } catch {}
 
   if (app.$sections.queryStringSupport === "enabled") {

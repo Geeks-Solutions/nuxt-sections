@@ -55,7 +55,7 @@
           />
           <LazyBaseTypesConfigurable
             v-if="currentSection.type === 'configurable'"
-            ref="sections-configurable-type"
+            ref="sectionsConfigurableType"
             @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
             @errorAddingSection="errorAddingSection"
             :props="currentSection"
@@ -70,7 +70,7 @@
             :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
             :base-path="pagePath"
             :is-side-bar-open="isSideBarOpen"
-            @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
+            @loadReference="sectionsConfigurableTypeReference = sectionsConfigurableType"
             @load="(value) => loading = value"
             @promote-section="currentSection = {...currentSection, instance: true}"
           />
@@ -528,7 +528,7 @@
                     />
                     <LazyBaseTypesConfigurable
                       v-if="currentSection.type === 'configurable'"
-                      ref="sections-configurable-type"
+                      ref="sectionsConfigurableType"
                       @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
                       @errorAddingSection="errorAddingSection"
                       :props="currentSection"
@@ -542,7 +542,7 @@
                       :instance="currentSection.instance === true"
                       :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                       :base-path="pagePath"
-                      @loadReference="sectionsConfigurableTypeReference = $refs['sections-configurable-type']"
+                      @loadReference="sectionsConfigurableTypeReference = sectionsConfigurableType"
                       @load="(value) => loading = value"
                       @promote-section="currentSection = {...currentSection, instance: true}"
                     />
@@ -1346,7 +1346,7 @@ const selectedVariation = ref(pageName);
 const typesTab = ref('types');
 const globalTypes = ref([]);
 const types = ref([]);
-const sectionsQsKeys = ref([]);
+const sectionsQsKeys = useState('sectionsQsKeys', () => ([]));
 const originalVariations = ref({});
 const updatedVariations = ref({});
 // current visible views
@@ -1402,7 +1402,7 @@ const selectedSectionTypeAppId = ref("");
 const selectedSectionRequirements = ref([]);
 const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);
 const requirementsInputs = ref({});
-const allSections = ref({});
+const allSections = useState('allSections', () => ({}));
 const pageId = ref("");
 const pagePath = ref("");
 const sectionsPageName = ref("");
@@ -1440,6 +1440,7 @@ const highlightRegions = ref(false);
 const sectionsMainErrors = useState('sectionsMainErrors', () => ([]));
 const sectionsLayoutErrors = ref([]);
 const availableSectionsForms = ref([]);
+const sectionsConfigurableType = ref(null);
 const sectionsConfigurableTypeReference = ref(null);
 const supportedLanguages = ref([
   {id: 'fr', label: 'French (fr)', selected: false},
@@ -1619,7 +1620,7 @@ const filteredGlobalTypes = computed(() => {
 
 const getCreationComponent = computed(() => {
   try {
-    const path = `/views/${currentSection.value.name}_${currentSection.value.type}`;
+    const path = getComponentPath(currentSection.value.name, currentSection.value.type);
     return importComp(path).component;
   } catch {
     return '';
@@ -1968,7 +1969,7 @@ const updatePageMetaData = async () => {
     sections
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`
 
   try {
     await useApiRequest({
@@ -2054,7 +2055,7 @@ const checkToken = async () => {
       headers: sectionHeader({}),
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/token/${auth_code}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/token/${auth_code}`
 
     try {
       await useApiRequest({
@@ -2091,7 +2092,7 @@ const getUserData = async () => {
     headers: sectionHeader({token: useCookie("sections-auth-token").value}),
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/user`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/user`
 
   try {
     await useApiRequest({
@@ -2199,7 +2200,7 @@ const updateGlobalType = async (section) => {
       headers: sectionHeader({token}),
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${section.instance_name}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances/${section.instance_name}`
     loading.value = true
 
     try {
@@ -2254,7 +2255,7 @@ const addNewGlobalType = async (section) => {
       headers: sectionHeader({token}),
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${section.instance_name}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances/${section.instance_name}`
     loading.value = true
 
     try {
@@ -2327,7 +2328,7 @@ const addNewStaticType = async (name) => {
       headers: sectionHeader({token}),
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types/${sectionTypeName.value}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section-types/${sectionTypeName.value}`
     loading.value = true
 
     let fieldsDeclaration = fieldsInputs.value
@@ -2420,8 +2421,7 @@ const componentsSetupData = (sectionName, sectionType) => {
 }
 const getComponentSetup = async (sectionName, sectionType) => {
   let path = getComponentPath(sectionName, sectionType)
-
-  const moduleData = await importComp(path).setup.then(d => d.default)
+  const moduleData = await importComp(path).setup?.then(d => d.default)
   if (moduleData && moduleData.props && moduleData.props.viewStructure &&
     (moduleData.props.viewStructure.settings || moduleData.props.viewStructure.render_data)) {
     const setupData = {
@@ -2617,7 +2617,7 @@ const createNewPage = async () => {
     headers: sectionHeader(header)
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
   try {
     await useApiRequest({
@@ -2946,7 +2946,7 @@ const renderConfigurableSection = async (gt, options) => {
     }
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`
 
   try {
     await useApiRequest({
@@ -3052,7 +3052,7 @@ const renderDynamicSection = async (name, instanceName, gt) => {
     }
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`
 
   try {
     await useApiRequest({
@@ -3128,7 +3128,7 @@ const getGlobalSectionTypes = async (autoLoad) => {
     }),
   }
 
-  const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances`
+  const url = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances`
 
   try {
     await useApiRequest({
@@ -3215,7 +3215,7 @@ const getSectionTypes = async (autoLoad) => {
     }),
   }
 
-  const url = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types`
+  const url = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section-types`
 
   try {
     await useApiRequest({
@@ -3352,7 +3352,7 @@ const openEditMode = async () => {
       headers: sectionHeader((inBrowser) ? {} : {origin: nuxtApp.$sections.projectUrl}),
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(pageName))}`
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
     let payload = {}
 
@@ -3836,7 +3836,7 @@ const mutateVariation = async (variationName) => {
       }
     }
 
-    const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`;
+    const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(sectionsPageName.value))}`;
 
     if (formatValdiation === true) {
       try {
@@ -4067,7 +4067,7 @@ const deleteGlobalSectionType = async (sectionTypeName, index) => {
     headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
   };
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/global-instances/${sectionTypeName}`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances/${sectionTypeName}`;
 
   try {
     await useApiRequest({
@@ -4116,7 +4116,7 @@ const deleteSectionType = async (sectionTypeName, index) => {
     headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
   };
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section-types/${sectionTypeName}`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section-types/${sectionTypeName}`;
 
   try {
     await useApiRequest({
@@ -4165,7 +4165,7 @@ const deleteSectionPage = async () => {
     headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
   };
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/page/${pageId.value}`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${pageId.value}`;
 
   try {
     await useApiRequest({
@@ -4210,7 +4210,7 @@ const authorizeSectionType = async (sectionAppId, index) => {
     headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
   };
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/authorization_fields/${sectionAppId}`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/authorization_fields/${sectionAppId}`;
 
   let authorization_fields = {};
 
@@ -4271,7 +4271,7 @@ const unAuthorizeSectionType = async (sectionAppId, index) => {
     headers: sectionHeader({ origin: nuxtApp.$sections.projectUrl, token }),
   };
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}`;
 
   let data = {
     configured_fields: {
@@ -4363,10 +4363,12 @@ const openCurrentSection = (type, global) => {
       isModalOpen.value = false;
       isSideBarOpen.value = true;
 
-      currentSection.value = { ...type, creation: true, id: 'creation-view' };
-      createdView.value = currentSection.value;
-      creationView.value = true;
-      sideBarSizeManagement();
+      nextTick(() => {
+        currentSection.value = { ...type, creation: true, id: 'creation-view' };
+        createdView.value = currentSection.value;
+        creationView.value = true;
+        sideBarSizeManagement();
+      })
     } else {
       currentSection.value = { ...type, creation: true };
     }
@@ -4639,9 +4641,10 @@ const fetchData = async () => {
   }
 
   let hooksJs = importJs(`/js/global-hooks`);
-  if (typeof hooksJs?.page_pre_load === 'function') {
+  if (hooksJs && hooksJs['page_pre_load']) {
     // Call only once and check the result
-    const hookResult = hooksJs.page_pre_load(payload);
+    const hookResult = hooksJs['page_pre_load'](payload);
+
     if (hookResult && typeof hookResult === 'object') {
       // Ensure we only take serializable data
       try {
@@ -4649,7 +4652,6 @@ const fetchData = async () => {
       } catch {}
     }
   }
-console.log(nuxtApp.$sections)
   if (sectionsPageData) {
     sectionsError.value = "";
     sectionsMainErrors.value = [];

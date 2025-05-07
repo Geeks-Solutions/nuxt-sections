@@ -34,8 +34,6 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
-
 // --- Props ---
 const props = defineProps({
   media: {

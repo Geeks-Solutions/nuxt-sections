@@ -30,8 +30,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-
 // --- Composables ---
 const { t, locale } = useI18n(); // Get translation function and reactive locale
 

@@ -30,8 +30,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-
 defineOptions({
   name: 'Medias'
 });

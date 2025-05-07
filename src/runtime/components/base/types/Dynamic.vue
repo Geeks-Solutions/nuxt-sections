@@ -1,7 +1,7 @@
 <template>
   <div class="sub-types dynamic-s">
     <!-- Use props directly in template -->
-    <h4 :class="{'dynamic-t': !isSideBarOpen}">{{ props.linked_to ? formatTexts(formatName(props.linked_to, '/')) : t('Adding section') }}</h4>
+    <h4 :class="{'dynamic-t': !isSideBarOpen}">{{ props.props.linked_to ? formatTexts(formatName(props.props.linked_to, '/')) : t('Adding section') }}</h4>
 
     <!-- Global Instance Fields -->
     <div v-if="globalSectionMode" class="mt-4">
@@ -11,12 +11,12 @@
         </div>
         <input v-model="autoInsert" type="checkbox" class="autoInsertInput" />
       </div>
-      <div v-if="!props.linked_to" class="autoInsertRow">
+      <div v-if="!props.props.linked_to" class="autoInsertRow">
         <input
             class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
             type="text"
             :placeholder="t('instanceName')+'*'"
-            :disabled="!!props.linked_to"
+            :disabled="!!props.props.linked_to"
             v-model="instanceName"
         />
       </div>
@@ -37,10 +37,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, defineProps, defineEmits } from 'vue';
-import { useNuxtApp, useCookie, useRoute } from '#app';
 
-// Composables
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -130,7 +127,7 @@ async function renderSection(sectionName) { // Use parameter instead of props.na
     };
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/section/render`;
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`;
 
   try {
     const res = await $fetch(URL, {

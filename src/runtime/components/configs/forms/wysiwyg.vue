@@ -17,16 +17,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, watch } from 'vue';
-
+<script setup>
 // --- Composables ---
 const { t } = useI18n();
 
 // --- Props ---
 const props = defineProps({
   locales: {
-    type: Array as () => string[],
+    type: Array,
     default: () => ['en', 'fr']
   },
   quillKey: {
@@ -47,7 +45,7 @@ const props = defineProps({
 
 
 // Initialize settings based on the original data structure
-const settings = ref<any[]>([
+const settings = ref([
   {
     en: "",
     fr: "",
@@ -79,7 +77,7 @@ watch(() => settings.value, (newVal) => { // Example if using initialSettings pr
 
 
 // --- Methods ---
-const updateContent = (content: string) => {
+const updateContent = (content) => {
   // Ensure the language key exists
   if (!settings.value[0][props.selectedLang]) {
      settings.value[0][props.selectedLang] = "";
@@ -87,7 +85,7 @@ const updateContent = (content: string) => {
   settings.value[0][props.selectedLang] = content;
 };
 
-const wysiwygMediaAdded = (media: any) => {
+const wysiwygMediaAdded = (media) => {
   // This logic seems to add media info alongside the main content object.
   // Ensure this structure is intended.
   settings.value.push({
@@ -96,7 +94,7 @@ const wysiwygMediaAdded = (media: any) => {
   });
 };
 
-const validate = (): boolean => {
+const validate = () => {
   errors.value.quill = false;
 
   // 1. Clean up unused media references

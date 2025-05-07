@@ -20,8 +20,6 @@
 </template>
 
 <script setup>
-import { ref, defineProps, onMounted, onUnmounted } from 'vue';
-
 // Props definition
 const props = defineProps({
   tabs: {
