@@ -25,8 +25,7 @@ const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
   : route.params.pathMatch || ''
 const pageName = pathMatch || '/'
-// const lang = useNuxtApp().$i18n.locale.value.toString()
-const lang = 'en'
+const lang = useI18n().locale.value
 const admin = !!useCookie('sections-auth-token').value
 
 // Head title
