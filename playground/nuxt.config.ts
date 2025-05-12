@@ -24,7 +24,6 @@ export default defineNuxtConfig({
   tailwindcss: {
 
   },
-  // myModule: {},
   devtools: { enabled: true },
   compatibilityDate: '2025-04-08',
   runtimeConfig: {

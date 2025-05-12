@@ -405,12 +405,12 @@ export const getSectionProjectIdentity = () => {
   if (nuxtApp.$sections.cname === "active") {
     // In Nuxt 3, process.client replaces typeof window !== 'undefined'
     if (process.client) {
-      // return 'blogssection.k8s-dev.geeks.solutions'
+      // return 'csstest.k8s-dev.geeks.solutions'
       return window.location.host
     } else {
       // In Nuxt 3, this would typically use the context from useRequestHeaders
       const headers = useRequestHeaders()
-      // return 'blogssection.k8s-dev.geeks.solutions'
+      // return 'csstest.k8s-dev.geeks.solutions'
       return headers.host
     }
   } else {

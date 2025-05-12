@@ -30,10 +30,6 @@
 </template>
 
 <script setup>
-defineOptions({
-  name: 'Medias'
-});
-
 const props = defineProps({
   sectionsUserId: {
     type: String,

@@ -1098,7 +1098,7 @@
 
           <!-- This is the popup to update the page metadata     -->
           <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
-               class="sections-fixed sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 modalContainer"
+               class="sections-fixed sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 pageSettingsModalContainer"
                aria-labelledby="modal-title" role="dialog" aria-modal="true"
                :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
             <div
@@ -4723,7 +4723,7 @@ onServerPrefetch(async () => {await fetchData()});
 
 .sections-config .control-button {
   position: fixed;
-  z-index: 999;
+  z-index: 190;
   left: 0;
   top: 60px;
 }
@@ -5058,6 +5058,13 @@ span.handle {
   animation: spin 1.5s linear infinite;
 }
 
+.pageSettingsModalContainer {
+  padding: 20px;
+  position: fixed !important;
+  inset: 0;
+  z-index: 191;
+}
+
 .modalContainer {
   padding: 20px;
   position: fixed !important;
@@ -5229,6 +5236,7 @@ span.handle {
 }
 
 .section-modal-wrapper .closeIcon {
+  color: #31a9db;
   position: absolute;
   top: 25px;
   right: 10px;

@@ -63,7 +63,8 @@ export default defineNuxtModule<ModuleOptions>({
     // Register $sections configuration plugin
     addPluginTemplate(resolve('./runtime/plugin'))
 
-    // await installModule('@geeks.solutions/vue-components/nuxt')
+    await installModule('@geeks.solutions/vue-components')
+    _nuxt.options.css.push('@geeks.solutions/vue-components/icomoon.css')
 
     // Detect Tailwind installation
     // const isTailwindInstalled = ['@nuxtjs/tailwindcss'].some(pkg =>
