@@ -270,5 +270,9 @@
     "cssClasses": "CSS classes",
     "cssClassesDesc": "(used to add one or more css class to quill content container)",
     "cssClassesDesc2": "(use class 'grey-bg' to add a grey background to the quill content container)"
-  }
+  },
+  "quillEditor": {
+    "quillDesc": "To edit an image added to your editor, you need to select it and click on the image icon of the toolbar"
+  },
+  "mediaTooLarge": "The size of your media exceeds the authorized limit. Please refer to your package details to check the maximum supported size."
 }

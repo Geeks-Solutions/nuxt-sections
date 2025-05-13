@@ -1,19 +1,18 @@
 <template>
   <div class="fieldsets">
-    <draggable
-      v-model="arrayData"
-      :group="{ name: props.fieldsetGroup }"
-      class="array-list-fieldsets"
-      :class="props.draggableClasses"
-      handle=".handle"
-      item-key="id"
-      animation="200"
-      :disabled="props.dragDisabled"
-      ghost-class="ghost"
-      @start="drag = true"
-      @end="drag = false">
-      <template #item="{element: object, index: idx}">
-        <transition-group type="transition" :name="!drag ? 'flip-list' : null">
+    <transition-group type="transition" :name="!drag ? 'flip-list' : null">
+      <draggable
+        v-model="arrayData"
+        :group="{ name: props.fieldsetGroup }"
+        class="array-list-fieldsets"
+        :class="props.draggableClasses"
+        handle=".handle"
+        item-key="id"
+        animation="200"
+        :disabled="props.dragDisabled"
+        @start="drag = true"
+        @end="drag = false">
+        <template #item="{element: object, index: idx}">
           <div
             :key="object.id"
             class="flex flex-col"
@@ -38,9 +37,9 @@
 
             </fieldset>
           </div>
-        </transition-group>
-      </template>
-    </draggable>
+        </template>
+      </draggable>
+    </transition-group>
   </div>
 </template>
 

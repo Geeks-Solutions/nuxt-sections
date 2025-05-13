@@ -66,40 +66,5 @@ export default defineNuxtModule<ModuleOptions>({
     await installModule('@geeks.solutions/vue-components')
     _nuxt.options.css.push('@geeks.solutions/vue-components/icomoon.css')
 
-    // Detect Tailwind installation
-    // const isTailwindInstalled = ['@nuxtjs/tailwindcss'].some(pkg =>
-    //     _nuxt.options.modules?.some(m =>
-    //       typeof m === 'string' ? m.includes(pkg) : m[0]?.includes(pkg)
-    //     ) || _nuxt.options.buildModules?.some(m =>
-    //       typeof m === 'string' ? m.includes(pkg) : m[0]?.includes(pkg)
-    //     )
-    // )
-
-    // Fallback CSS if Tailwind not installed
-    // if (!isTailwindInstalled) {
-    //   _nuxt.options.css.push(resolver.resolve('src/assets/css/sections.css'))
-    //   _nuxt.options.css.push('@geeks.solutions/vue-components/assets/media/media.css')
-    // }
-
-    // Public runtime config override
-    // const runtimeOptions = _nuxt.options.runtimeConfig.public?.sections || {}
-    // const options = {
-    //   ..._options,
-    //   ...runtimeOptions
-    // }
-
-    // if (!options.namespace) options.namespace = 'sections'
-    // const { namespace } = options
-
-    // Ensure quill is transpiled
-    // _nuxt.options.build.transpile = _nuxt.options.build.transpile || []
-    // if (!_nuxt.options.build.transpile.includes('quill')) {
-    //   _nuxt.options.build.transpile.push('quill')
-    // }
-
-    // Add third-party module
-    // _nuxt.options.modules.push('@geeks.solutions/vue-components/nuxt')
-    // _nuxt.options.css.push('@geeks.solutions/vue-components/assets/icons/icomoon/style.css')
-
   }
 })
