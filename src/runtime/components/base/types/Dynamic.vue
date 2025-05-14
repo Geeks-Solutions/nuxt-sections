@@ -37,6 +37,7 @@
 </template>
 
 <script setup>
+import { getGlobalTypeData, useI18n, ref, computed, useNuxtApp, useRoute, useCookie, onMounted, sectionHeader, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity } from '#imports'
 
 const nuxtApp = useNuxtApp();
 const route = useRoute();

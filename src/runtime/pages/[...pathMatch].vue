@@ -11,6 +11,10 @@
 </template>
 
 <script setup>
+import { useNuxtApp, useRoute, useHead, useCookie, useAsyncData } from '#app'
+import {definePageMeta, useI18n, onMounted, onBeforeMount, importJs, renderPageData} from "#imports";
+
+
 defineOptions({
   name: 'DynamicSectionsPage'
 })

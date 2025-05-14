@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import draggable from 'vuedraggable';
+import { ref, computed } from '#imports'
 
 // --- Props ---
 const props = defineProps({

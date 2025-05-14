@@ -1,4 +1,5 @@
 import { defineNuxtPlugin, useRuntimeConfig } from '#app'
+import draggable from "@marshallswain/vuedraggable"
 import * as vt from 'vue-toastification'
 import "vue-toastification/dist/index.css"
 
@@ -32,5 +33,7 @@ export default defineNuxtPlugin((_nuxtApp) => {
   }
 
   _nuxtApp.vueApp.use(vt.default, options)
-  _nuxtApp.provide('toast', vt.useToast())
+  _nuxtApp.vueApp.component('draggable', draggable);
+  // @ts-ignore
+  _nuxtApp.provide('toast', vt.useToast ? vt.useToast() : vt.default.useToast())
 })

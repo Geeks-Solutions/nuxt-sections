@@ -20,6 +20,8 @@
 </template>
 
 <script setup>
+import { ref, useNuxtApp, onMounted } from '#imports'
+
 // Props definition
 const props = defineProps({
   tabs: {

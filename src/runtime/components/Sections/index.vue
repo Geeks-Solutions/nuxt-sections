@@ -1263,11 +1263,8 @@
 </template>
 
 <script setup>
-import draggable from "vuedraggable";
-
-import camelCase from "lodash/camelCase";
-import upperFirst from "lodash/upperFirst";
-
+import { useI18n, ref, nextTick, computed, useApiRequest, useNuxtApp, useRoute, useRouter, useRuntimeConfig, useCookie, useState, navigateTo, useHead, useLocalePath, onMounted, onBeforeUnmount ,watch, onServerPrefetch, sectionHeader, importJs, importComp, formatName, formatTexts, parsePath, parseQS, validateQS, populateWithDummyValues, getSectionProjectIdentity, showToast, dummyDataPresets } from '#imports';
+import { camelCase, upperFirst } from 'lodash-es';
 const {
   pageName,
   admin,
@@ -3264,7 +3261,6 @@ const getSectionTypes = async (autoLoad) => {
         emit("load", false)
         // Handle error appropriately, e.g., show a toast
         showToast("Error", "error", "Failed to load section types");
-        console.error("Error fetching section types:", error);
       }
     });
   } catch {

@@ -13,6 +13,8 @@
 // Removed TypeScript interfaces and PropType import
 
 // --- Props ---
+import {computed} from "#imports";
+
 const props = defineProps({
   section: {
     type: Object, // Removed 'as PropType<Section>'

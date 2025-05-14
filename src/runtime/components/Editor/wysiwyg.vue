@@ -28,6 +28,8 @@
 </template>
 
 <script setup>
+import { useI18n, ref, useNuxtApp, useRoute, useCookie ,watch } from '#imports'
+
 // --- Composables ---
 const nuxtApp = useNuxtApp()
 const sectionsConfig = nuxtApp.$sections;

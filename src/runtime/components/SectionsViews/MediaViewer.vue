@@ -34,6 +34,7 @@
 </template>
 
 <script setup>
+
 // --- Props ---
 const props = defineProps({
   media: {

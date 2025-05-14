@@ -3,6 +3,8 @@
 </template>
 
 <script setup>
+import { useHead } from '#imports'
+
 defineOptions({
   name: 'Health'
 })

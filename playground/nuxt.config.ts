@@ -38,5 +38,8 @@ export default defineNuxtConfig({
       },
       SIGNATURE_PACKAGES: process.env.NUXT_ENV_SIGNATURE_PACKAGES
     }
+  },
+  imports: {
+    autoImport: false
   }
 })

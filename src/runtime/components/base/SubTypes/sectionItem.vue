@@ -19,6 +19,8 @@
 </template>
 
 <script setup>
+import { formatTexts } from '#imports'
+
 
 // Define component props using defineProps
 const props = defineProps({

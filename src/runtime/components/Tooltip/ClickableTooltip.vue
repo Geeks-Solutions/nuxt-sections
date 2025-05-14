@@ -16,6 +16,8 @@
 </template>
 
 <script setup>
+import { ref, computed } from '#imports'
+
 defineOptions({
   name: 'ClickableTooltip'
 });

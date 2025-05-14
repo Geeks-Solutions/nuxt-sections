@@ -30,6 +30,8 @@
 </template>
 
 <script setup>
+import { ref, useNuxtApp, useRoute, useCookie, onMounted } from '#imports'
+
 const props = defineProps({
   sectionsUserId: {
     type: String,

@@ -14,7 +14,7 @@ export function formatName(name: string): string {
 export const formatTexts = (text: string, sep: string = " "): string => {
   let updatedText = text;
   const hooksJs = importJs(`/js/global-hooks`);
-  if (hooksJs['update_section_name']) {
+  if (hooksJs && hooksJs['update_section_name']) {
     if (hooksJs['update_section_name'](text)) {
       updatedText = hooksJs['update_section_name'](text);
     }

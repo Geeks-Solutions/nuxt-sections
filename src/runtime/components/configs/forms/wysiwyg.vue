@@ -18,7 +18,8 @@
 </template>
 
 <script setup>
-// --- Composables ---
+import { ref, watch, useI18n } from '#imports'
+
 const { t } = useI18n();
 
 // --- Props ---

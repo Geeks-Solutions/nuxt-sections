@@ -235,6 +235,8 @@
 </template>
 
 <script setup>
+import { getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast } from '#imports'
+
 
 // Composables
 const nuxtApp = useNuxtApp();
@@ -736,21 +738,6 @@ async function getGlobalType() {
   } finally {
       emit("load", false);
   }
-}
-
-function showToast(title, variant, message) {
-  // Use a Nuxt 3 compatible toast library or implement a simple notification system
-  // Example: console.log(`[${variant.toUpperCase()}] ${title}: ${message}`);
-   if (nuxtApp.$toast && typeof nuxtApp.$toast[variant] === 'function') {
-       nuxtApp.$toast[variant](message, {
-           // Nuxt 3 toast options might differ
-           position: "top-right",
-           timeout: 5000,
-           // ... other options
-       });
-   } else {
-       console.warn(`Toast notification: [${variant}] ${title} - ${message}`);
-   }
 }
 
 function updateWhitelistId(id) {

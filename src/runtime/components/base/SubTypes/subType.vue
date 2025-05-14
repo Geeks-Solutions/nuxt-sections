@@ -51,6 +51,8 @@
 </template>
 
 <script setup>
+import { useI18n, ref, computed, useNuxtApp, onMounted ,watch, importComp } from '#imports'
+
 const { t, locale } = useI18n();
 
 // Props

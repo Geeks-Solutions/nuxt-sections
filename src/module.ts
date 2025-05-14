@@ -22,7 +22,6 @@ export default defineNuxtModule<ModuleOptions>({
     const { resolve } = createResolver(import.meta.url)
 
     await installModule('@nuxtjs/i18n', {
-      vueI18n: resolve('./runtime/i18n.config.ts'),
       langDir: resolve('./runtime/lang'),
       locales: [
         {
@@ -64,7 +63,21 @@ export default defineNuxtModule<ModuleOptions>({
     addPluginTemplate(resolve('./runtime/plugin'))
 
     await installModule('@geeks.solutions/vue-components')
-    _nuxt.options.css.push('@geeks.solutions/vue-components/icomoon.css')
+
+    // https://github.com/nuxt/nuxt/issues/27000
+    _nuxt.hook('vite:extendConfig', (config: any) => {
+      config.optimizeDeps = config.optimizeDeps || {}
+      config.optimizeDeps.include = config.optimizeDeps.include || []
+      config.optimizeDeps.needsInterop = config.optimizeDeps.needsInterop || []
+
+      if (!config.optimizeDeps.include.includes('@marshallswain/vuedraggable')) {
+        config.optimizeDeps.include.push('@marshallswain/vuedraggable')
+      }
+
+      if (!config.optimizeDeps.needsInterop.includes('@marshallswain/vuedraggable')) {
+        config.optimizeDeps.needsInterop.push('@marshallswain/vuedraggable')
+      }
+    })
 
   }
 })

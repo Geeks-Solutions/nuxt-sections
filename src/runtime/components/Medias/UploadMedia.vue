@@ -48,6 +48,8 @@
 </template>
 
 <script setup>
+import { useI18n } from '#imports'
+
 defineOptions({
   name: 'UploadMedia'
 });

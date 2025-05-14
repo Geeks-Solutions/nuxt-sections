@@ -30,6 +30,8 @@
 </template>
 
 <script setup>
+import { useI18n, ref } from '#imports'
+
 // --- Composables ---
 const { t, locale } = useI18n(); // Get translation function and reactive locale
 

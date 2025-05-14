@@ -55,6 +55,7 @@
 </template>
 
 <script setup>
+import { getGlobalTypeData, useI18n, ref, computed, onMounted ,watch, importComp, formatName, formatTexts } from '#imports'
 
 const { t } = useI18n();
 
