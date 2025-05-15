@@ -1681,7 +1681,7 @@ const initializeSectionsCMSEvents = () => {
   }
 }
 const initializeSections = (res) => {
-  nuxtApp.hook('page_pre_render', res)
+  nuxtApp.callHook('page_pre_render', res)
   const sections = res.data.sections
   pageData.value = res.data
   allSections.value = res.data.sections
@@ -3620,7 +3620,7 @@ const refreshSectionView = async (sectionView, data) => {
           ...config,
           onSuccess: (res) => {
             if (res.data && res.data.error) {
-              nuxtApp.$emit('sectionViewRefreshed', {error: res.data})
+              nuxtApp.callHook('sectionViewRefreshed', {error: res.data})
               renderSectionError.value = `${sectionName}: ${res.data.error}`
               showToast("Error", "error", renderSectionError.value)
             } else {
@@ -3633,11 +3633,11 @@ const refreshSectionView = async (sectionView, data) => {
                 }
                 currentViews.value = updatedViews
               }
-              nuxtApp.$emit('sectionViewRefreshed', res.data)
+              nuxtApp.callHook('sectionViewRefreshed', res.data)
             }
           },
           onError: (e) => {
-            nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
+            nuxtApp.callHook('sectionViewRefreshed', {error: e.response.data})
             renderSectionError.value = `${sectionName}: ${e.response.data.error}`
             showToast("Error", "error", renderSectionError.value)
           }
@@ -3656,7 +3656,7 @@ const refreshSectionView = async (sectionView, data) => {
             ...config,
             onSuccess: (res) => {
               if (res.data && res.data.error) {
-                nuxtApp.$emit('sectionViewRefreshed', res.data)
+                nuxtApp.callHook('sectionViewRefreshed', res.data)
                 renderSectionError.value = `${sectionName}: ${res.data.error}`
               } else {
                 const index = currentViews.value.findIndex(view => view.name === sectionData.name)
@@ -3668,11 +3668,11 @@ const refreshSectionView = async (sectionView, data) => {
                   }
                   currentViews.value = updatedViews
                 }
-                nuxtApp.$emit('sectionViewRefreshed', res.data)
+                nuxtApp.callHook('sectionViewRefreshed', res.data)
               }
             },
             onError: (e) => {
-              nuxtApp.$emit('sectionViewRefreshed', {error: e.response.data})
+              nuxtApp.callHook('sectionViewRefreshed', {error: e.response.data})
               renderSectionError.value = `${sectionName}: ${e.response.data.error}`
             }
           });
@@ -3884,7 +3884,7 @@ const mutateVariation = async (variationName) => {
               );
               layoutMode.value = false;
             }
-            nuxtApp.hook('sectionsLoaded', () => 'pageSaved');
+            nuxtApp.callHook('sectionsLoaded', 'pageSaved');
           },
           onError: (error) => {
             loading.value = false;
@@ -4662,7 +4662,7 @@ const fetchData = async () => {
     const error = sectionsPageData.error;
     if (res) {
       initializeSections(res);
-      nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+      nuxtApp.callHook('sectionsLoaded', 'pageMounted');
     } else if (error) {
       sectionsPageErrorManagement(error)
     }
@@ -4676,7 +4676,7 @@ const fetchData = async () => {
       ...config,
       onSuccess: (res) => {
         initializeSections(res);
-        nuxtApp.hook('page:mounted', () => emit('sectionsLoaded', 'pageMounted'));
+        nuxtApp.callHook('sectionsLoaded', 'pageMounted');
       },
       onError: (error) => {
         sectionsPageErrorManagement(error)

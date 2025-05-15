@@ -2,6 +2,7 @@ import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 import draggable from "@marshallswain/vuedraggable"
 import * as vt from 'vue-toastification'
 import "vue-toastification/dist/index.css"
+import mitt from "mitt";
 
 export default defineNuxtPlugin((_nuxtApp) => {
   const config = useRuntimeConfig()
@@ -36,4 +37,13 @@ export default defineNuxtPlugin((_nuxtApp) => {
   _nuxtApp.vueApp.component('draggable', draggable);
   // @ts-ignore
   _nuxtApp.provide('toast', vt.useToast ? vt.useToast() : vt.default.useToast())
+
+  const emitter = mitt()
+
+  return {
+    provide: {
+      event: emitter.emit, // Will emit an event
+      listen: emitter.on // Will register a listener for an event
+    }
+  }
 })
