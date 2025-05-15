@@ -1263,7 +1263,7 @@
 </template>
 
 <script setup>
-import { useI18n, ref, nextTick, computed, useApiRequest, useNuxtApp, useRoute, useRouter, useRuntimeConfig, useCookie, useState, navigateTo, useHead, useLocalePath, onMounted, onBeforeUnmount ,watch, onServerPrefetch, sectionHeader, importJs, importComp, formatName, formatTexts, parsePath, parseQS, validateQS, populateWithDummyValues, getSectionProjectIdentity, showToast, dummyDataPresets } from '#imports';
+import { reactive, useI18n, ref, nextTick, computed, useApiRequest, useNuxtApp, useRoute, useRouter, useRuntimeConfig, useCookie, useState, navigateTo, useHead, useLocalePath, onMounted, onBeforeUnmount ,watch, onServerPrefetch, sectionHeader, importJs, importComp, formatName, formatTexts, parsePath, parseQS, validateQS, populateWithDummyValues, getSectionProjectIdentity, showToast, dummyDataPresets } from '#imports';
 import { camelCase, upperFirst } from 'lodash-es';
 const {
   pageName,
@@ -2902,7 +2902,7 @@ const introSteps = (topic) => {
 }
 const renderConfigurableSection = async (gt, options) => {
   emit("load", true)
-
+  loading.value = true
   const token = useCookie('sections-auth-token').value
 
   const header = { token }
@@ -2953,6 +2953,7 @@ const renderConfigurableSection = async (gt, options) => {
       ...config,
       onSuccess: (res) => {
         emit("load", false)
+        loading.value = false
 
         if (res.data && res.data.error) {
           errorAddingSection({
@@ -2979,6 +2980,7 @@ const renderConfigurableSection = async (gt, options) => {
       },
       onError: (e) => {
         emit("load", false)
+        loading.value = false
         if (e.response.status === 404) {
           // Assuming addSectionType should be called even on 404 based on original logic
           addSectionType({ // Changed from emit('addSectionType', ...) to direct call
@@ -3005,10 +3007,12 @@ const renderConfigurableSection = async (gt, options) => {
     });
   } catch {
      emit("load", false); // Ensure loading state is reset on unexpected errors
+    loading.value = false
   }
 }
 const renderDynamicSection = async (name, instanceName, gt) => {
   emit("load", true)
+  loading.value = true
 
   const token = useCookie('sections-auth-token').value
 
@@ -3059,6 +3063,7 @@ const renderDynamicSection = async (name, instanceName, gt) => {
       ...config,
       onSuccess: (res) => {
         emit("load", false)
+        loading.value = false
 
         if (res.data && res.data.error) {
           errorAddingSection({ // Changed from emit
@@ -3081,6 +3086,7 @@ const renderDynamicSection = async (name, instanceName, gt) => {
       },
       onError: (e) => {
         emit("load", false)
+        loading.value = false
         if (e.response.status === 404) {
           addSectionType({ // Changed from emit
             name: name,
@@ -3110,6 +3116,7 @@ const renderDynamicSection = async (name, instanceName, gt) => {
     });
   } catch {
      emit("load", false);
+    loading.value = false
   }
 }
 const getGlobalSectionTypes = async (autoLoad) => {
@@ -3158,11 +3165,10 @@ const getGlobalSectionTypes = async (autoLoad) => {
           })
         })
 
-        loading.value = false
-
         if (autoLoad === true) {
           if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
             for (const gt of globalTypes.value.filter(gt => gt.auto_insertion === true)) {
+              loading.value = true
               await new Promise((resolve) => setTimeout(resolve, 100)) // Keep delay if needed
               if (gt.type === 'configurable') {
                 await renderConfigurableSection(gt, gt.section.options)
@@ -3184,6 +3190,7 @@ const getGlobalSectionTypes = async (autoLoad) => {
             }
           }
         }
+        loading.value = false
         emit("load", false)
       },
       onError: (error) => {
