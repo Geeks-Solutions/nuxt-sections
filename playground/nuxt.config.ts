@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   modules: ['../src/module', "@nuxtjs/i18n", "@nuxtjs/tailwindcss"],
   i18n: {
-    strategy: "no_prefix",
+    strategy: "prefix_and_default",
     detectBrowserLanguage: false,
     defaultLocale: "en",
     locales: [
