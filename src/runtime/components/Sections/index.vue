@@ -4377,7 +4377,7 @@ const openCurrentSection = (type, global) => {
       instance_name: type.name,
       instance: type.notCreated === true,
       render_data: type.section && type.section.options && type.section.options[0] ? [{ settings: type.section.options[0] }] : undefined,
-      addToPage: type.type === 'configurable' ? true : undefined
+      addToPage: type.type === 'configurable' && isCreateInstance.value === false ? true : undefined
     };
 
     if (!currentSection.value.linked_to) {

@@ -201,7 +201,7 @@
             {{ t('Submit data') }}
           </button>
           <button
-            v-if="!instance && !props.creation && !globalSectionMode"
+            v-if="!instance && !props.props.creation && !globalSectionMode"
             class="mt-4 submit-btn promote-btn"
             type="button"
             @click="emit('promote-section')"
@@ -294,11 +294,6 @@ const props = defineProps({
   isSideBarOpen: {
     type: Boolean,
     default: false
-  },
-  // Removed incorrect top-level props. Access via props.props.fieldName
-  creation: { // Used in template logic - IS THIS PASSED SEPARATELY OR INSIDE props.props? Assuming separate for now.
-      type: Boolean,
-      default: false
   }
 });
 
@@ -529,7 +524,7 @@ function isFieldRequired(field) {
 async function addConfigurable() {
   instanceNameError.value = false;
 
-  if (globalSectionMode && instanceName === '') {
+  if (globalSectionMode.value && instanceName.value === '' && !props.props.addToPage) {
     instanceNameError.value = true;
     return;
   }
@@ -917,7 +912,9 @@ onMounted(() => {
                       props.locales.reduce((acc, loc) => ({ ...acc, [loc]: '' }), {}) :
                       null; // Or appropriate default
                   options[0][field.key] = optionsData[field.key]; // Sync legacy options
-              }
+              } else {
+                options[0][field.key] = optionsData[field.key];
+            }
           });
       }
   }

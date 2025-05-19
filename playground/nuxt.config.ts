@@ -1,9 +1,9 @@
 export default defineNuxtConfig({
-  // devServer: {
-  //   https: {},
-  //   host: '0.0.0.0',
-  //   port: 443,
-  // },
+  devServer: {
+    https: {},
+    host: '0.0.0.0',
+    port: 443,
+  },
   modules: ['../src/module', "@nuxtjs/i18n", "@nuxtjs/tailwindcss"],
   i18n: {
     strategy: "prefix_and_default",
