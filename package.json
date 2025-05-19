@@ -45,7 +45,7 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit",
-    "link": "npm link   //  In host project use \"link-module\": \"npm link my-module\""
+    "link": "npm link"
   },
   "dependencies": {
     "@nuxt/kit": "^3.17.1",

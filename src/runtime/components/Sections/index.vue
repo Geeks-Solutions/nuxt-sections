@@ -70,7 +70,7 @@
             :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
             :base-path="pagePath"
             :is-side-bar-open="isSideBarOpen"
-            @loadReference="sectionsConfigurableTypeReference = sectionsConfigurableType"
+            @loadReference="sectionsConfigurableTypeReference.value = sectionsConfigurableType"
             @load="(value) => loading = value"
             @promote-section="currentSection = {...currentSection, instance: true}"
           />
@@ -542,7 +542,7 @@
                       :instance="currentSection.instance === true"
                       :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
                       :base-path="pagePath"
-                      @loadReference="sectionsConfigurableTypeReference = sectionsConfigurableType"
+                      @loadReference="sectionsConfigurableTypeReference.value = sectionsConfigurableType"
                       @load="(value) => loading = value"
                       @promote-section="currentSection = {...currentSection, instance: true}"
                     />
@@ -1108,7 +1108,7 @@
                 <div class="section-modal-wrapper">
                   <div class="sections-text-center h4 sectionTypeHeader">
                     <div class="title">{{ $t("Metadata") }}</div>
-                    <div class="closeIcon" @click="metadataModal = false; metadataFormLang = i18n.locale.toString()">
+                    <div class="closeIcon" @click="metadataModal = false; metadataFormLang = i18n.locale.value.toString()">
                       <LazyBaseIconsClose/>
                     </div>
                   </div>
@@ -1263,8 +1263,41 @@
 </template>
 
 <script setup>
-import { reactive, useI18n, ref, nextTick, computed, useApiRequest, useNuxtApp, useRoute, useRouter, useRuntimeConfig, useCookie, useState, navigateTo, useHead, useLocalePath, onMounted, onBeforeUnmount ,watch, onServerPrefetch, sectionHeader, importJs, importComp, formatName, formatTexts, parsePath, parseQS, validateQS, populateWithDummyValues, getSectionProjectIdentity, showToast, dummyDataPresets } from '#imports';
-import { camelCase, upperFirst } from 'lodash-es';
+import {
+  computed,
+  dummyDataPresets,
+  formatName,
+  formatTexts,
+  getSectionProjectIdentity,
+  importComp,
+  importJs,
+  navigateTo,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onServerPrefetch,
+  parsePath,
+  parseQS,
+  populateWithDummyValues,
+  reactive,
+  ref,
+  sectionHeader,
+  showToast,
+  useApiRequest,
+  useCookie,
+  useHead,
+  useI18n,
+  useLocalePath,
+  useNuxtApp,
+  useRoute,
+  useRouter,
+  useRuntimeConfig,
+  useState,
+  validateQS,
+  watch
+} from '#imports';
+import {camelCase, upperFirst} from 'lodash-es';
+
 const {
   pageName,
   admin,
@@ -1438,7 +1471,7 @@ const sectionsMainErrors = useState('sectionsMainErrors', () => ([]));
 const sectionsLayoutErrors = ref([]);
 const availableSectionsForms = ref([]);
 const sectionsConfigurableType = ref(null);
-const sectionsConfigurableTypeReference = ref(null);
+const sectionsConfigurableTypeReference = ref({});
 const supportedLanguages = ref([
   {id: 'fr', label: 'French (fr)', selected: false},
   {id: 'en', label: 'English (en)', selected: false}
@@ -2285,8 +2318,11 @@ const addNewGlobalType = async (section) => {
             section.linked_to = section.instance_name
             section.instance = true
 
+            section.region = displayVariations.value[selectedVariation.value].views[section.id].region
             displayVariations.value[selectedVariation.value].views[section.id] = section
             displayVariations.value[selectedVariation.value].altered = true
+
+            await computeLayoutData()
 
             showToast(
               "Success",
@@ -2439,33 +2475,25 @@ const getComponent = (sectionName, sectionType) => {
   if (hooksJs && hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
     return hooksJs['section_pre_render']({sectionName, sectionType})
   } else if (nuxtApp.$sections.cname === "active") {
-    let path = ""
+    const path = getComponentPath(sectionName, sectionType)
     if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
-      path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
       return importComp(path).component
     } else if (sectionName && sectionName.includes(":")) {
-      path = `/views/${sectionName.split(":")[1]}_${sectionType}`
       return importComp(path).component
     } else if (sectionName && sectionName.includes("_-_")) {
-      path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
       return importComp(path).component
     } else {
-      path = `/views/${sectionName}_${sectionType}`
       return importComp(path).component
     }
   } else {
-    let path = ""
+    const path = getComponentPath(sectionName, sectionType)
     if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
-      path = `/views/${sectionName.split(":")[1].split("_-_")[0]}_${sectionType}`
       return importComp(path).component
     } else if (sectionName && sectionName.includes(":")) {
-      path = `/views/${sectionName.split(":")[1]}_${sectionType}`
       return importComp(path).component
     } else if (sectionName && sectionName.includes("_-_")) {
-      path = `/views/${sectionName.split("_-_")[0]}_${sectionType}`
       return importComp(path).component
     } else {
-      path = `/views/${sectionName}_${sectionType}`
       return importComp(path).component
     }
   }
@@ -3307,7 +3335,7 @@ const buildComp = (staticTypes, views, compType, path) => {
     const mainName = splitName[0]
 
     if (type) {
-      if (type == "local") {
+      if (type == "local.vue") {
         const name = camelCase(
           mainName
             .split("/")
@@ -3319,7 +3347,7 @@ const buildComp = (staticTypes, views, compType, path) => {
           trackSectionComp(name, "local")
           staticTypes.push({
             name,
-            type,
+            type: 'local',
             compType,
           })
           names.push(name)
@@ -3967,7 +3995,7 @@ const edit = (view, viewAnchor) => {
     setTimeout(() => {
       if (sectionsMainTarget.value) {
         const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`;
-        const targetElement = sectionsMainTarget.value.querySelector(safeViewAnchor);
+        const targetElement = sectionsMainTarget.value.querySelector(`[id="${safeViewAnchor.substring(1)}"]`);
         if (targetElement) {
           const targetPosition = targetElement.offsetTop;
           sectionsMainTarget.value.scrollTo({
@@ -4394,7 +4422,7 @@ const sideBarSizeManagement = () => {
         }
         if (sectionsMainTarget.value) {
           const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`;
-          const targetElement = sectionsMainTarget.value.querySelector(safeViewAnchor);
+          const targetElement = sectionsMainTarget.value.querySelector(`[id="${safeViewAnchor.substring(1)}"]`);
           if (targetElement) {
             const targetPosition = targetElement.offsetTop;
             sectionsMainTarget.value.scrollTo({
@@ -5243,6 +5271,7 @@ span.handle {
   position: absolute;
   top: 25px;
   right: 10px;
+  cursor: pointer;
 }
 
 .section-modal-wrapper .closeIcon svg {

@@ -3,7 +3,7 @@
     <div class="flex d-inline-flex w-full justify-center ml-2 md:ml-0">
       <div>
         <div
-          class="px-2 h-45px flex justify-center items-center rounded-tl-lg"
+          class="px-2 h-[45px] flex justify-center items-center rounded-tl-lg"
           :class="currentTab === 'config' ? 'active-tab' : 'inactive-tab border border-Blue'"
           style="border-top-left-radius: 10px 10px; cursor: pointer;"
           @click="currentTab = 'config'"
@@ -19,7 +19,7 @@
       </div>
       <!-- Custom form tab -->
       <div v-if="showCustomFormTab"
-        class="px-2 h-45px flex justify-center items-center rounded-br-lg"
+        class="px-2 h-[45px] flex justify-center items-center rounded-br-lg"
         :class="currentTab === 'custom' ? 'active-tab' : 'inactive-tab border border-Blue'"
         style="border-bottom-right-radius: 10px 10px; cursor: pointer;"
         @click="currentTab = 'custom'"
@@ -54,7 +54,7 @@
               </div>
               <div v-if="!props.props.linked_to" class="autoInsertRow">
                 <input
-                  class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+                  class="py-4 pl-6 border rounded-xl border-FieldGray h-[48px] instanceInput my-2 focus:outline-none"
                   type="text"
                   :placeholder="t('instanceName')+'*'"
                   :disabled="!!props.props.linked_to"
@@ -128,7 +128,7 @@
                 <div v-else-if="stringType(field.key)" class="w-full">
                    <input
                       v-model="optionsData[field.key][formLang]"
-                      class="d-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none"
+                      class="d-input pl-6 border rounded-xl border-FieldGray h-[48px] w-full focus:outline-none"
                       :name="field.name"
                       :placeholder="changeFieldLabel(field)"
                       @change="changeFieldValue($event, idx, field.type, field.key)"
@@ -141,7 +141,7 @@
                     <img
                       :src="optionsData[field.key][0].url"
                       alt="image"
-                      class="w-95px h-63px object-contain"
+                      class="w-[95px] h-[63px] object-contain"
                     />
                     <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
                       <LazyBaseIconsClose />
@@ -151,7 +151,7 @@
                     <img
                       :src="previewMedia"
                       alt="image"
-                      class="w-95px h-63px object-contain"
+                      class="w-[95px] h-[63px] object-contain"
                     />
                     <div class="cursor-pointer pl-2" @click="removeImage(field.key)">
                       <LazyBaseIconsClose />
@@ -173,7 +173,7 @@
                   <component
                     v-show="(field.type === 'string' || field.type === 'textfield') || (!Array.isArray(optionValues.option_values) && field.type !== 'media' || (field.type === 'media' && !previewMedia && ( !optionsData[field.key] || (optionsData[field.key] && (optionsData[field.key].length === 0 || (optionsData[field.key].length > 0 && !optionsData[field.key][0].url))))))"
                     :value="computedComponentValue(field)"
-                    :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-48px w-full focus:outline-none' : ''"
+                    :class="optionValues.field === field.name && optionValues.option_values ? 'd-input pl-6 border rounded-xl border-FieldGray w-full focus:outline-none' : field.type !== 'media' ? 'd-input pl-6 border rounded-xl border-FieldGray h-[48px] w-full focus:outline-none' : ''"
                     :id="field.key"
                     :is="getTag(field.type, field.name && field.name.includes(':') ? field.name.split(':')[1] : field.name)"
                     :type="getType(field.type)"
@@ -235,7 +235,7 @@
 </template>
 
 <script setup>
-import { getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast } from '#imports'
+import { reactive, getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast } from '#imports'
 
 
 // Composables
@@ -502,9 +502,24 @@ function getTag(type, name) {
 }
 
 function getType(type) {
-  // Simplified logic based on original
-  if (type === 'file' || type === 'media') return 'file';
-  return 'text'; // Default for string, integer, textfield, textarea, hidden, wysiwyg
+  switch (type) {
+    case "file":
+      return "file";
+    case "media":
+      return "file";
+    case "string":
+      return "text";
+    case "integer":
+      return "text";
+    case "textfield":
+      return "text";
+    case "textarea":
+      return "text";
+    case "hidden":
+      return "text";
+    case "wysiwyg":
+      return "text";
+  }
 }
 
 function isFieldRequired(field) {
@@ -793,8 +808,7 @@ async function loadRegisteredComponent(type, key) {
         try {
             const comp = await importComp(path).component;
             if (comp) {
-                // Use shallowRef for performance with components
-                registeredComponents[componentKey] = shallowRef(comp);
+                registeredComponents[componentKey] = comp;
             } else {
                 registeredComponents[componentKey] = null; // Mark as tried but failed
             }
@@ -966,10 +980,14 @@ onMounted(() => {
   }
 });
 
+defineExpose({
+  optionsData,
+  options
+})
+
 </script>
 
 <style scoped>
-/* Styles remain largely the same, ensure preprocessor (like SASS for darken()) is set up */
 .element {
   margin: 15px;
   flex-direction: column;
@@ -1022,17 +1040,16 @@ onMounted(() => {
 }
 .content-wrapper {
   overflow-y: scroll;
-  height: 550px; /* Consider using CSS variables or making this dynamic */
+  height: 550px;
 }
 .error-message {
-  color: #dc3545; /* Standard Bootstrap danger color */
+  color: #dc3545;
 }
 .inactive-text {
   color: #03B1C7;
 }
 .active-tab {
   background: #03B1C7;
-  color: white; /* Ensure text is visible */
 }
 .inactive-tab {
   background: #ffffff;
@@ -1048,7 +1065,7 @@ onMounted(() => {
 .selectMultipleOptions {
   border-radius: 0.75rem;
   border-width: 1px;
-  border-color: #f2f2f3; /* Match input border */
+  border-radius: 0.75rem;
   overflow-y: scroll;
   align-items: flex-start;
   flex-direction: column;
@@ -1068,17 +1085,13 @@ onMounted(() => {
 .multiple-options-wrapper {
   width: 100%;
 }
-.multiple-options-wrapper:hover .single-multiple-option:not(.multiple-options-selected) {
-    background-color: #f0f0f0; /* Add hover effect */
-}
 
 .multiple-options-selected {
   background: #C2C2C2;
-  font-weight: bold; /* Indicate selection */
 }
 
 .text-area-field {
-  min-height: 96px; /* Increase min-height for better usability */
+  min-height: [48px];
 }
 
 .wl-col {
@@ -1091,7 +1104,6 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   align-items: center;
-  margin-bottom: 10px; /* Add some spacing */
 }
 .autoInsertInput {
   width: 15px;
@@ -1101,35 +1113,19 @@ onMounted(() => {
   width: 350px;
 }
 .promote-btn {
-  font-size: 1rem !important; /* Adjust size */
-  margin-left: 10px; /* Add spacing */
-  background-color: #6c757d; /* Secondary color */
-  border-color: #6c757d;
+  font-size: 20px !important;
 }
-.promote-btn:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
+.sub-types button.submit-btn {
+  border: none;
+  font-size: 24px;
+  margin-top: 1rem;
+  padding: 7px;
+  background: #31a9db;
+  color: white;
+  border-radius: 16px;
+  transition: 0.2s;
+  width: 385px;
+  height: 70px;
+  text-align: center;
 }
-.unsupportedFieldType {
-    color: #dc3545;
-    font-style: italic;
-    padding: 10px;
-    border: 1px dashed #dc3545;
-    border-radius: 5px;
-    margin-top: 10px;
-}
-.submit-btn {
-    /* Add styles from your project's design system */
-    padding: 10px 20px;
-    background-color: #03B1C7;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.submit-btn:hover {
-    background-color: #028a9b;
-}
-
 </style>

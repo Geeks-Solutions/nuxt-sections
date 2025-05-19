@@ -260,18 +260,18 @@ onMounted(() => {
   text-align: center;
   padding: 20px; /* Added padding */
 }
-/* Added styles for submit button for consistency */
-.submit-btn {
-    padding: 10px 20px;
-    background-color: #03B1C7;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.submit-btn:hover {
-    background-color: #028a9b;
+.sub-types button.submit-btn {
+  border: none;
+  font-size: 24px;
+  margin-top: 1rem;
+  padding: 7px;
+  background: #31a9db;
+  color: white;
+  border-radius: 16px;
+  transition: 0.2s;
+  width: 385px;
+  height: 70px;
+  text-align: center;
 }
 .pagesReference { /* Style for error message */
     color: #dc3545;

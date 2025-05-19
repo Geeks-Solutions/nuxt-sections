@@ -1,11 +1,11 @@
 <template>
   <div class="item text-center" :class="{ active }">
-    <div class="card-content" :class="{'card-content-preview': (sectionData && sectionData.type === 'local') || (sectionData && sectionData.settings) || (sectionData && sectionData.render_data)}">
-      <div v-if="(sectionData && sectionData.type === 'local') || (sectionData && sectionData.settings) || (sectionData && sectionData.render_data)" class="comp-preview">
+    <div class="card-content" :class="{'card-content-preview': (props.section && props.section.type === 'local') || (props.section && props.section.settings) || (props.section && props.section.render_data)}">
+      <div v-if="(props.section && props.section.type === 'local') || (props.section && props.section.settings) || (props.section && props.section.render_data)" class="comp-preview">
         <!-- Use Vue's built-in component tag for dynamic components -->
 		<component
 			 :is="componentItem"
-			 :section="sectionData"
+			 :section="props.section"
 			 :lang="lang"
 			 :locales="locales"
 		/>
@@ -53,8 +53,6 @@ const props = defineProps({
     required: true,
   }
 });
-
-const sectionData = props.section
 </script>
 
 <style scoped>

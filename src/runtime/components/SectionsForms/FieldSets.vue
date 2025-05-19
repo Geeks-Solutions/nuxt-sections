@@ -96,30 +96,15 @@ const drag = ref(false);
 
 // --- Computed ---
 // Handles getting/setting the array for v-model on draggable
-const arrayData = computed({
+let arrayData = computed({
   get() {
     // Ensure every item has a unique ID for draggable and keys
-    return props.arrayDataPop.map((object, idx) => ({
-      ...object,
-      // Assign index as ID only if 'id' doesn't exist or is undefined/null
-      id: object.id ?? `fieldset-item-${idx}-${Math.random().toString(36).substring(7)}` // Fallback to a more unique ID
-    }));
+    return props.arrayDataPop
   },
   set(newData) {
-    // When draggable updates the order, emit the change
-    // Optional: Remove the temporary IDs if they were added
-    // const dataToEmit = newData.map(item => {
-    //   const { id, ...rest } = item;
-    //   // Only remove ID if it was one of our generated ones? Complex.
-    //   // Simplest is to emit with the IDs draggable needs.
-    //   return item;
-    // });
     emit('array-updated', newData);
   }
 });
-
-// Components needed in the template are automatically available in <script setup>
-// No need for a components object unless importing dynamically/globally
 
 </script>
 
