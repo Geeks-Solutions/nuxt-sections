@@ -35,59 +35,6 @@ global.useApiRequest = useApiRequest
 global.showToast = showToast
 global.validateQS = validateQS
 
-// Mock Nuxt composables
-// vi.mock('#imports', async () => {
-//   const actual = await vi.importActual('#imports')
-//   return {
-//     ...actual,
-//     useNuxtApp: () => ({
-//       $sections: {
-//         projectLocales: ''
-//       },
-//     }),
-//     useRoute: () => ({
-//       params: { pathMatch: [] },
-//       query: {},
-//     }),
-//     useRouter: () => ({
-//       push: vi.fn(),
-//       replace: vi.fn(),
-//     }),
-//     useI18n: () => ({
-//       locale: 'en',
-//     }),
-//     useLocalePath: () => (path) => path,
-//     useState: (key, init) => {
-//       const stateMap = {
-//         sectionsQsKeys: [],
-//         displayVariations: {
-//           default: {
-//             name: 'default',
-//             views: {},
-//             altered: false,
-//           },
-//         },
-//         pageMetadata: {},
-//         sectionsPageLastUpdated: null,
-//         sectionsMainErrors: [],
-//         selectedLayout: 'standard',
-//         fetchedOnServer: false,
-//         errorResponseStatus: 0,
-//         errorRegisteredPage: '',
-//         errorResponseData: null,
-//         pageData: null,
-//         pageNotFound: false,
-//       }
-//       return ref(init ? init() : stateMap[key] ?? null)
-//     },
-//     useRuntimeConfig: () => ({
-//       public: {
-//         baseURL: 'http://localhost',
-//       },
-//     }),
-//   }
-// })
-
 vi.mock('./src/runtime/utils/helpers.ts', { spy: true })
 
 import SectionsPage from '../src/runtime/components/Sections/index.vue';
