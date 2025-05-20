@@ -1434,7 +1434,7 @@ const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);
 const requirementsInputs = ref({});
 const allSections = useState('allSections', () => ({}));
 const pageId = ref("");
-const pagePath = ref("");
+const pagePath = useState('pagePath', () => "");
 const sectionsPageName = ref("");
 const pageMetadata = useState('pageMetadata', () => ({}));
 const projectMetadata = ref({});
