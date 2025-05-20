@@ -1667,7 +1667,8 @@ useHead(() => {
 
   return {
     htmlAttrs: {
-      title: computedTitle.value
+      title: computedTitle.value,
+      lang: i18n.locale.value
     },
     title: computedTitle.value,
     meta: [
@@ -1923,7 +1924,7 @@ const updatePageMetaData = async () => {
   metadataErrors.value.path[0] = ''
 
   const sections = []
-  let views = originalVariations.value[sectionsPageName.value].views
+  let views = originalVariations.value[pageName].views
   views = Object.values(views)
   views.forEach((view) => {
     if (!view.error || view.status_code === 404) {
