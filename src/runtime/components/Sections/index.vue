@@ -3592,7 +3592,9 @@ const refreshSectionView = async (sectionView, data) => {
     })
     sectionDatas.map(section => {
       const valueToCompare = section.nameID || section.name
-      section.qs = data.sections.find(sec => sec.name === valueToCompare) && data.sections.find(sec => sec.name === valueToCompare).qs ? data.sections.find(sec => sec.name === valueToCompare).qs : null
+      const sectionTarget = data.sections.find(sec => sec.name === valueToCompare)
+      section.qs = sectionTarget && sectionTarget.qs ? sectionTarget.qs : null
+      section.renderOptions = sectionTarget && sectionTarget.options ? sectionTarget.options : null
       return section
     })
   } else {
@@ -3640,7 +3642,11 @@ const refreshSectionView = async (sectionView, data) => {
     }
 
     if (sectionData.type === 'configurable') {
-      variables['section']['options'] = [sectionData.render_data[0].settings]
+      if (sectionData.renderOptions) {
+        variables['section']['options'] = sectionData.renderOptions
+      } else {
+        variables['section']['options'] = [sectionData.render_data[0].settings]
+      }
     }
 
     if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled" && reRenderMultipleSections === true) {

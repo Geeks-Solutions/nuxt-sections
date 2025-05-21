@@ -698,6 +698,7 @@ window.SectionsCMS.value.reRenderSection(
         {
           sections: [
             {
+              id: "6800b27be6e9830006bce308", // Optional to target section IDs specifically
               name: "60df8a48d66ef20008f8e03a:categories_articles",
               qs: {
                 "page_path": "blogs",
@@ -707,7 +708,12 @@ window.SectionsCMS.value.reRenderSection(
                 "sort": {},
                 "offset_ca": 0,
                 "language": "en"
-              }
+              },
+              options: [ // Optional to overid configurable sections options, if not set the existing options for the targeted configurable section will be used
+                {
+                  "article_page_path": "customPath/rerender"
+                }
+              ]
             }
           ]
         }
