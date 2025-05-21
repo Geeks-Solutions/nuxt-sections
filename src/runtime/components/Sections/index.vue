@@ -3583,7 +3583,12 @@ const refreshSectionView = async (sectionView, data) => {
   if (reRenderMultipleSections === true) {
     sectionDatas = allSections.value.filter(section => {
       const valueToCompare = section.nameID || section.name
-      return data.sections.some(filteredSection => filteredSection.name === valueToCompare)
+      return data.sections.some(filteredSection => {
+        if (filteredSection.id) {
+          return filteredSection.id === section.id
+        }
+        return filteredSection.name === valueToCompare
+      })
     })
     sectionDatas.map(section => {
       const valueToCompare = section.nameID || section.name
@@ -3624,7 +3629,7 @@ const refreshSectionView = async (sectionView, data) => {
   const seen = new Set()
   sectionDatas = sectionDatas.filter(section => {
     const key = section.nameID || section.name
-    return seen.has(key) ? false : seen.add(key)
+    return seen.has(key) && section.type !== 'configurable' ? false : seen.add(key)
   })
 
   for (const sectionData of sectionDatas) {
