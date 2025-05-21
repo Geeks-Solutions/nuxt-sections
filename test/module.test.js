@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {flushPromises, mount, shallowMount} from '@vue/test-utils'
 import {useNuxtApp} from "#app";
 import * as vt from 'vue-toastification';
+import draggable from "@marshallswain/vuedraggable"
 
 const mockedSectionsConfig = {
   cname: true,
@@ -82,7 +83,8 @@ let stubs = { // Add basic stubs for common lazy components
   LazyBaseIconsCelebrate: true,
   LazyBaseIconsLoading: true,
   SettingsIcon: true, // If SettingsIcon is a separate component
-  NuxtLink: { template: '<a><slot /></a>' } // Stub NuxtLink
+  NuxtLink: { template: '<a><slot /></a>' }, // Stub NuxtLink,
+  draggable
 };
 
 const i18n = createI18n({
@@ -149,7 +151,7 @@ describe('SectionsPage.vue', () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({}),
+        json: () => Promise.resolve(mockPageData),
       })
     )
 
@@ -717,6 +719,9 @@ describe('FieldSets.vue', () => {
 
   const createComponent = (propsData = {}, slots = {}) => {
     wrapper = mount(FieldSets, {
+      global: {
+        stubs,
+      },
       propsData: {
         arrayDataPop: mockData,
         legendLabel: 'Test Legend',

@@ -2527,8 +2527,8 @@ const computeLayoutData = async () => {
     let path = `/layouts/${selectedLayout.value}`
     layoutSlotNames.value = []
 
-    let layoutComp = await importComp(path).setup.then(d => d.default)
-    if (!layoutComp.props) {
+    let layoutComp = await importComp(path).setup?.then(d => d.default)
+    if (!layoutComp?.props) {
       errorInLayout.value = true
       sectionsMainErrors.value.push(i18n.t('layoutErrors.missingComp'))
       return
@@ -3621,6 +3621,12 @@ const refreshSectionView = async (sectionView, data) => {
 
   const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section/render`
 
+  const seen = new Set()
+  sectionDatas = sectionDatas.filter(section => {
+    const key = section.nameID || section.name
+    return seen.has(key) ? false : seen.add(key)
+  })
+
   for (const sectionData of sectionDatas) {
     const sectionName = sectionData.nameID ? sectionData.nameID : sectionData.name
     variables['section'] = {
@@ -3653,15 +3659,15 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${res.data.error}`
               showToast("Error", "error", renderSectionError.value)
             } else {
-              const index = currentViews.value.findIndex(view => view.name === sectionData.name)
-              if (index !== -1) {
-                const updatedViews = [...currentViews.value]
-                updatedViews[index] = {
-                  ...updatedViews[index],
-                  render_data: res.data.render_data,
+              currentViews.value = currentViews.value.map(view => {
+                if (view.name === sectionData.name) {
+                  return {
+                    ...view,
+                    render_data: res.data.render_data,
+                  }
                 }
-                currentViews.value = updatedViews
-              }
+                return view
+              })
               nuxtApp.callHook('sectionViewRefreshed', res.data)
             }
           },
