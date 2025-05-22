@@ -1,6 +1,5 @@
 <template>
-  <div class="sections-container" :class="{'sections-container-edit-mode': isSideBarOpen === true}">
-<!--    <nuxt-link to="/testHasd">features {{ i18n.locale }}</nuxt-link>-->
+  <div class="sections-container" :class="{'sections-container-edit-mode': admin === true}">
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
            class="sections-aside">
       <div
