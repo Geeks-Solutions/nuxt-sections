@@ -3593,8 +3593,14 @@ const refreshSectionView = async (sectionView, data) => {
     sectionDatas.map(section => {
       const valueToCompare = section.nameID || section.name
       const sectionTarget = data.sections.find(sec => sec.name === valueToCompare)
-      section.qs = sectionTarget && sectionTarget.qs ? sectionTarget.qs : null
-      section.renderOptions = sectionTarget && sectionTarget.options ? sectionTarget.options : null
+      const sectionTargetByID = data.sections.find(sec => sec.id === section.id)
+      if (sectionTargetByID && sectionTargetByID.id) {
+        section.qs = sectionTargetByID && sectionTargetByID.qs ? sectionTargetByID.qs : null
+      } else {
+        section.qs = sectionTarget && sectionTarget.qs ? sectionTarget.qs : null
+      }
+      section.renderOptions = sectionTargetByID && sectionTargetByID.options ? sectionTargetByID.options : null
+      section.renderID = sectionTargetByID && sectionTargetByID.id ? sectionTargetByID.id : null
       return section
     })
   } else {
@@ -3670,15 +3676,27 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${res.data.error}`
               showToast("Error", "error", renderSectionError.value)
             } else {
-              currentViews.value = currentViews.value.map(view => {
-                if (view.name === sectionData.name) {
-                  return {
-                    ...view,
-                    render_data: res.data.render_data,
+              if (sectionData.type === 'configurable') {
+                currentViews.value = currentViews.value.map(view => {
+                  if (view.type === 'configurable' && sectionData.renderID && sectionData.renderID === view.id) {
+                    return {
+                      ...view,
+                      render_data: res.data.render_data,
+                    }
                   }
-                }
-                return view
-              })
+                  return view
+                })
+              } else {
+                currentViews.value = currentViews.value.map(view => {
+                  if (view.name === sectionData.name) {
+                    return {
+                      ...view,
+                      render_data: res.data.render_data,
+                    }
+                  }
+                  return view
+                })
+              }
               nuxtApp.callHook('sectionViewRefreshed', res.data)
             }
           },
