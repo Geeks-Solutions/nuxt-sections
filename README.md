@@ -6,7 +6,7 @@ In order to benefit from this service you should register for free on the follow
 
 # Nuxt Sections
 
-> Is a Nuxtjs 2 module for sections supporting SSR and migrated from [Vue Sections library](https://www.npmjs.com/package/@geeks.solutions/vue-sections)
+> Is a Nuxtjs 3 module for sections supporting SSR and migrated from [Nuxt Sections library](https://www.npmjs.com/package/@geeks.solutions/nuxt-sections/v/1.1.5)
 
 
 [📖 **Release Notes**](./CHANGELOG.md)
@@ -30,63 +30,30 @@ And configure the library, the possible configurations are as follow:
 - `projectLocales`: _to use only if you intend to have multiple supported languages for your website. Its value must be a string of language code separated by comma and with no spaces ex.: `en,fr,it,es`. See Language Support section below for more details on how to use this feature
 
 > The following packages are installed by the module:
-`cookie-universal-nuxt`
-`@nuxtjs/axios`
 `@nuxtjs/i18n`
 `vue-toastification/nuxt` 
 >
-> For the module to work properly, they should be added to the modules inside `nuxt.config.js` like below:
+> For the module to work properly, the i18n configuration should be added to the `nuxt.config.ts` file like below:
 
 ```js
-{
-  modules: [
-    [
-      '@geeks.solutions/nuxt-sections',
-      {
-        projectId: '',
-        projectUrl: '',
-        environment: '',
-        queryStringSupport: ''
-      }
-    ],
-    'cookie-universal-nuxt',
-    '@nuxtjs/axios',
-    [
-      "@nuxtjs/i18n",
-      {
-        lazy: true,
-        locales: [
-          {
-            name: "French",
-            code: "fr",
-            iso: "fr",
-            file: "fr.js"
-          },
-          {
-            name: "English",
-            code: "en",
-            iso: "en",
-            file: "en.js"
-          }
-        ],
-        loadLanguagesAsync: true,
-        langDir: "lang/",
-        defaultLocale: "en",
-        vueI18n: {
-          silentTranslationWarn: true,
-          silentFallbackWarn: true
-        }
-      }
-    ],
-    [
-      "vue-toastification/nuxt",
-      {
-        transition: "Vue-Toastification__fade",
-        maxToasts: 20,
-        newestOnTop: true
-      }
-    ]
-  ]
+i18n: {
+  detectBrowserLanguage: false,
+    defaultLocale: "en",
+    locales: [
+    {
+      name: "French",
+      code: "fr",
+      iso: "fr",
+      file: "fr.js"
+    },
+    {
+      name: "English",
+      code: "en",
+      iso: "en",
+      file: "en.js"
+    }
+  ],
+    langDir: "lang/"
 }
 ```
 
@@ -97,14 +64,16 @@ modules: [
     '@geeks.solutions/nuxt-sections',
     ...
 ],
-
-publicRuntimeConfig: {
-    sections: {
-      projectId: '62ff7827628cfa00099de9e1',
-      projectUrl: 'http://localhost:3000',
-      environment: 'testing',
-      queryStringSupport: "enabled", 
-      projectLocales: 'en,fr'
+  
+runtimeConfig: {
+    public: {
+      sections: {
+        projectId: '62ff7827628cfa00099de9e1',
+          projectUrl: 'http://localhost:3000',
+          environment: 'testing',
+          queryStringSupport: "enabled",
+          projectLocales: 'en,fr'
+      }
     }
 }
 ````
@@ -123,6 +92,8 @@ publicRuntimeConfig: {
 </template>
 
 <script>
+import { useCookie } from '#imports'
+  
 export default {
   name: 'IndexPage',
   data() {
@@ -136,7 +107,7 @@ export default {
       return this.$i18n.locale.toString()
     },
     admin() {
-      return !!this.$cookies.get("sections-auth-token")
+      return !!useCookie("sections-auth-token").value
     }
   },
   async asyncData({ app }) {
@@ -175,7 +146,7 @@ const fetch = () => {
   // fetch code goes here
 }
 
-module.exports = {
+export {
   mounted,
   created,
   fetch
@@ -267,7 +238,7 @@ const mounted = () => {
     // mounted code goes here
 }
 
-module.exports = {
+export {
   mounted
 };
 ```
@@ -300,7 +271,7 @@ const configurable_pre_render = (options, defaultLang, locales, props) => {
   }
 }
 
-module.exports = {
+export {
   configurable_pre_render
 };
 ```
@@ -461,15 +432,11 @@ In order to track the update of language selected from the Translation Component
 
 ````html
 <template>
-  <UploadMedia :media-label="$t('Media')" :upload-text="$t('Upload')" :change-text="$t('Change')" :seo-tag="$t('seoTag')" :media="settings[0].media" @uploadContainerClicked="$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)" @removeUploadedImage="removeImage" />
+  <LazyMediasUploadMedia :media-label="$t('Media')" :upload-text="$t('Upload')" :change-text="$t('Change')" :seo-tag="$t('seoTag')" :media="settings[0].media" @uploadContainerClicked="$emit('openMediaModal', settings[0].media.length > 0 ? settings[0].media[0].media_id : null)" @removeUploadedImage="removeImage" />
 </template>
 
 <script>
-  import UploadMedia from "@geeks.solutions/nuxt-sections/lib/src/components/Medias/UploadMedia.vue";
   export default {
-    components: {
-      UploadMedia
-    },
     methods: {
       removeImage() {
         this.settings[0].media = []
@@ -724,13 +691,14 @@ this.$emit('refresh-section', {
       })
 ```
 
-* A re-render sections function has been exposed and added to window, it can be called from any script in the site `window.SectionsCMS.reRenderSection`, it takes as params a list of section names and qs for each section:
+* A re-render sections function has been exposed and added to window, it can be called from any script in the site `window.SectionsCMS.value.reRenderSection`, it takes as params a list of section names and qs for each section:
 
 ```js
-window.SectionsCMS.reRenderSection(
+window.SectionsCMS.value.reRenderSection(
         {
           sections: [
             {
+              id: "6800b27be6e9830006bce308", // Optional to target section IDs specifically
               name: "60df8a48d66ef20008f8e03a:categories_articles",
               qs: {
                 "page_path": "blogs",
@@ -740,7 +708,12 @@ window.SectionsCMS.reRenderSection(
                 "sort": {},
                 "offset_ca": 0,
                 "language": "en"
-              }
+              },
+              options: [ // Optional to overid configurable sections options, if not set the existing options for the targeted configurable section will be used
+                {
+                  "article_page_path": "customPath/rerender"
+                }
+              ]
             }
           ]
         }
@@ -1186,6 +1159,8 @@ html {
 
 * `page_pre_render`: When a page is loaded and about to be rendered, will contain the response from your section page as a payload
 
+* Implemented 2 events that fires on page render `page_payload_preprocess` and `page_payload_postprocess` and that can be listened to by any external js code
+
 ### Callbacks you can implement
 
 Inside `sections/js/global-hooks.js`
@@ -1204,7 +1179,7 @@ const section_pre_render = (payload) => {
     return false
 }
 
-module.exports = {
+export {
     page_pre_load,
     section_pre_render
 };
@@ -1294,7 +1269,7 @@ const page_pre_render = (payload, sections, websiteDomain, $sections, $config) =
   return null
 }
 
-module.exports = {
+export {
   page_pre_render
 };
 
@@ -1314,7 +1289,7 @@ The two below components allow you to change the default behavior of the library
 
 1. Clone this repository
 2. Install dependencies using `npm install`
-3. Start development server using `npm run dev`
+3. Start development server using `npm run dev:prepare` then `npm run dev`
 
 ## For Contributors
 
