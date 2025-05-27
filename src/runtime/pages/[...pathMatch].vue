@@ -12,7 +12,7 @@
 
 <script setup>
 import { useNuxtApp, useRoute, useHead, useCookie, useAsyncData } from '#app'
-import {definePageMeta, useI18n, onMounted, onBeforeMount, importJs, renderPageData} from "#imports";
+import {definePageMeta, useI18n, onMounted, onBeforeMount, importJs, renderPageData, computed} from "#imports";
 
 
 defineOptions({
@@ -30,7 +30,12 @@ const pathMatch = Array.isArray(route.params.pathMatch)
   : route.params.pathMatch || ''
 const pageName = pathMatch || '/'
 const lang = useI18n().locale.value
-const admin = !!useCookie('sections-auth-token').value
+
+const admin = computed({
+  get() {
+    return !!useCookie('sections-auth-token').value
+  }
+});
 
 // Head title
 useHead({

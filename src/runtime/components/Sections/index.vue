@@ -944,7 +944,7 @@
                       group="people"
                       @start="drag = true; highlightRegions = true;"
                       @end="drag = false; highlightRegions = false;"
-                      @change="logDrag"
+                      @change="(evt) => logDrag(evt, slotName)"
                       handle=".handle"
                       item-key="id"
                       :class="{ 'highlighted-regions-plus': alteredViewsPerRegions[slotName].length === 0 && highlightRegions, }"
@@ -2138,8 +2138,6 @@ const getUserData = async () => {
         // In Nuxt 3, we use emit from defineEmits()
         emit("load", false)
         useCookie('sections-auth-token').value = null
-        // TODO: Do not mutate prop value admin
-        // admin.value = false
         showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
       }
     });
@@ -2187,7 +2185,11 @@ const importSections = (e) => {
           )
         }
       }
-      addSectionType(section, false)
+      if (section.linked_to && section.linked_to !== "") {
+        section.instance_name = section.linked_to
+        section.options = section.settings
+      }
+      addSectionType(section, false, section.linked_to && section.linked_to !== "")
     })
 
     showToast(
@@ -2615,21 +2617,11 @@ const verifySlots = () => {
     })
   }, 500)
 }
-const logDrag = (evt) => {
-  Object.keys(viewsPerRegions.value).forEach(slotName => {
-    viewsPerRegions.value[slotName].forEach((view, index) => {
-      if (view.region[selectedLayout.value] === undefined) {
-        view.region[selectedLayout.value] = {}
-      }
-      if (view.region[selectedLayout.value]['slot'] === undefined) {
-        view.region[selectedLayout.value]['slot'] = ''
-      }
-      if (view.region[selectedLayout.value]['slot'] !== slotName) {
-        view.region[selectedLayout.value]['slot'] = slotName
-      }
-      view.region[selectedLayout.value]['weight'] = index
-    })
-  })
+const logDrag = (evt, slotName) => {
+  if (evt.added) {
+    displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].slot = slotName
+    displayVariations.value[selectedVariation.value].altered = true
+  }
   computeLayoutData()
 }
 const createNewPage = async () => {
@@ -2720,7 +2712,6 @@ const initiateIntroJs = async () => {
           loading.value = false
           emit("load", false)
           useCookie('sections-auth-token').value = null
-          admin.value = false // Avoid mutating props
           showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
         }
       });
