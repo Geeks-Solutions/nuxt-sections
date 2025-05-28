@@ -944,7 +944,7 @@
                       group="people"
                       @start="drag = true; highlightRegions = true;"
                       @end="drag = false; highlightRegions = false;"
-                      @change="logDrag"
+                      @change="(evt) => logDrag(evt, slotName)"
                       handle=".handle"
                       item-key="id"
                       :class="{ 'highlighted-regions-plus': alteredViewsPerRegions[slotName].length === 0 && highlightRegions, }"
@@ -2138,8 +2138,6 @@ const getUserData = async () => {
         // In Nuxt 3, we use emit from defineEmits()
         emit("load", false)
         useCookie('sections-auth-token').value = null
-        // TODO: Do not mutate prop value admin
-        // admin.value = false
         showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
       }
     });
@@ -2187,7 +2185,11 @@ const importSections = (e) => {
           )
         }
       }
-      addSectionType(section, false)
+      if (section.linked_to && section.linked_to !== "") {
+        section.instance_name = section.linked_to
+        section.options = section.settings
+      }
+      addSectionType(section, false, section.linked_to && section.linked_to !== "")
     })
 
     showToast(
@@ -2615,21 +2617,57 @@ const verifySlots = () => {
     })
   }, 500)
 }
-const logDrag = (evt) => {
-  Object.keys(viewsPerRegions.value).forEach(slotName => {
-    viewsPerRegions.value[slotName].forEach((view, index) => {
-      if (view.region[selectedLayout.value] === undefined) {
-        view.region[selectedLayout.value] = {}
-      }
-      if (view.region[selectedLayout.value]['slot'] === undefined) {
-        view.region[selectedLayout.value]['slot'] = ''
-      }
-      if (view.region[selectedLayout.value]['slot'] !== slotName) {
-        view.region[selectedLayout.value]['slot'] = slotName
-      }
-      view.region[selectedLayout.value]['weight'] = index
-    })
+// Alternative simpler approach using array insertion
+const sanitizeWeightsByInsertion = (views, layoutKey, targetSlot, priorityViewId, priorityWeight) => {
+  // Get all views in the target slot except the priority view
+  const otherViews = Object.entries(views)
+    .filter(([id, view]) =>
+      view.region?.[layoutKey]?.slot === targetSlot && id !== priorityViewId
+    )
+    .map(([id, view]) => ({ id, view }))
+    .sort((a, b) => (a.view.region[layoutKey].weight || 0) - (b.view.region[layoutKey].weight || 0))
+
+  // Insert the priority view at the specified position
+  const priorityView = { id: priorityViewId, view: views[priorityViewId] }
+  const finalOrder = [...otherViews]
+  finalOrder.splice(priorityWeight, 0, priorityView)
+
+  // Reassign weights starting from 0
+  finalOrder.forEach((item, index) => {
+    views[item.id].region[layoutKey].weight = index
   })
+}
+const logDrag = (evt, slotName) => {
+  if (evt.added) {
+    const viewId = evt.added.element.id
+    displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].slot = slotName
+    displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].weight = evt.added.newIndex
+
+    sanitizeWeightsByInsertion(
+      displayVariations.value[selectedVariation.value].views,
+      selectedLayout.value,
+      slotName,
+      viewId,
+      evt.added.newIndex
+    )
+
+    displayVariations.value[selectedVariation.value].altered = true
+  } else if (evt.moved) {
+    const viewId = evt.moved.element.id
+    displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].weight = evt.moved.newIndex
+
+    const movedSlot = displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].slot
+
+    sanitizeWeightsByInsertion(
+      displayVariations.value[selectedVariation.value].views,
+      selectedLayout.value,
+      movedSlot,
+      viewId,
+      evt.moved.newIndex
+    )
+
+    displayVariations.value[selectedVariation.value].altered = true
+  }
   computeLayoutData()
 }
 const createNewPage = async () => {
@@ -2720,7 +2758,6 @@ const initiateIntroJs = async () => {
           loading.value = false
           emit("load", false)
           useCookie('sections-auth-token').value = null
-          admin.value = false // Avoid mutating props
           showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
         }
       });
