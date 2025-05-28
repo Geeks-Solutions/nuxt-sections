@@ -2620,6 +2620,10 @@ const verifySlots = () => {
 const logDrag = (evt, slotName) => {
   if (evt.added) {
     displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].slot = slotName
+    displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].weight = evt.added.newIndex
+    displayVariations.value[selectedVariation.value].altered = true
+  } else if(evt.moved) {
+    displayVariations.value[selectedVariation.value].views[evt.moved.element.id].region[selectedLayout.value].weight = evt.moved.newIndex
     displayVariations.value[selectedVariation.value].altered = true
   }
   computeLayoutData()

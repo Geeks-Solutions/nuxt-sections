@@ -673,6 +673,196 @@ describe('SectionsPage.vue', () => {
 
 })
 
+const mockUseState = vi.fn()
+const mockSelectedLayout = { value: 'standard' }
+const mockDisplayVariations = {
+  value: {
+    'testPage': {
+      name: 'testPage',
+      views: {
+        'element1': {
+          region: {
+            standard: { slot: '', weight: 0 }
+          }
+        },
+        'element2': {
+          region: {
+            standard: { slot: '', weight: 0 }
+          }
+        }
+      },
+      altered: false
+    }
+  }
+}
+const mockSelectedVariation = { value: 'testPage' }
+
+describe('logDrag function, layout region position updates', () => {
+  let logDrag
+
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks()
+
+    // Setup useState mock to return our mock state objects
+    mockUseState
+      .mockReturnValueOnce(mockSelectedLayout)     // selectedLayout
+      .mockReturnValueOnce(mockDisplayVariations)  // displayVariations
+
+    // Reset the mock data
+    mockDisplayVariations.value.testPage.views.element1.region.standard = { slot: '', weight: 0 }
+    mockDisplayVariations.value.testPage.views.element2.region.standard = { slot: '', weight: 0 }
+    mockDisplayVariations.value.testPage.altered = false
+
+    // Define the function (normally this would be imported from your component/composable)
+    const pageName = 'testPage'
+    const selectedLayout = mockSelectedLayout
+    const displayVariations = mockDisplayVariations
+    const selectedVariation = mockSelectedVariation
+
+    logDrag = (evt, slotName) => {
+      if (evt.added) {
+        displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].slot = slotName
+        displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].weight = evt.added.newIndex
+        displayVariations.value[selectedVariation.value].altered = true
+      } else if(evt.moved) {
+        displayVariations.value[selectedVariation.value].views[evt.moved.element.id].region[selectedLayout.value].weight = evt.moved.newIndex
+        displayVariations.value[selectedVariation.value].altered = true
+      }
+    }
+  })
+
+  it('should update slot, weight, and altered status when element is added', () => {
+    const evt = {
+      added: {
+        element: { id: 'element1' },
+        newIndex: 2
+      }
+    }
+    const slotName = 'header'
+
+    logDrag(evt, slotName)
+
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.slot).toBe('header')
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(2)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+  })
+
+  it('should handle different slot names when element is added', () => {
+    const evt = {
+      added: {
+        element: { id: 'element2' },
+        newIndex: 1
+      }
+    }
+    const slotName = 'sidebar'
+
+    logDrag(evt, slotName)
+
+    expect(mockDisplayVariations.value.testPage.views.element2.region.standard.slot).toBe('sidebar')
+    expect(mockDisplayVariations.value.testPage.views.element2.region.standard.weight).toBe(1)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+  })
+
+  it('should handle zero index when element is added', () => {
+    const evt = {
+      added: {
+        element: { id: 'element1' },
+        newIndex: 0
+      }
+    }
+    const slotName = 'footer'
+
+    logDrag(evt, slotName)
+
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.slot).toBe('footer')
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(0)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+  })
+
+  it('should update weight and altered status when element is moved', () => {
+    const evt = {
+      moved: {
+        element: { id: 'element1' },
+        newIndex: 3
+      }
+    }
+
+    logDrag(evt, 'anySlot')
+
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(3)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+    // Slot should remain unchanged when moving
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.slot).toBe('')
+  })
+
+  it('should handle different elements being moved', () => {
+    const evt = {
+      moved: {
+        element: { id: 'element2' },
+        newIndex: 5
+      }
+    }
+
+    logDrag(evt, 'header')
+
+    expect(mockDisplayVariations.value.testPage.views.element2.region.standard.weight).toBe(5)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+  })
+
+  it('should not modify any state when neither added nor moved', () => {
+    const evt = {
+      removed: {
+        element: { id: 'element1' }
+      }
+    }
+
+    logDrag(evt, 'header')
+
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.slot).toBe('')
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(0)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(false)
+  })
+
+  it('should handle empty event object', () => {
+    const evt = {}
+
+    logDrag(evt, 'header')
+
+    expect(mockDisplayVariations.value.testPage.altered).toBe(false)
+  })
+
+  it('should handle undefined slotName for added elements', () => {
+    const evt = {
+      added: {
+        element: { id: 'element1' },
+        newIndex: 1
+      }
+    }
+
+    logDrag(evt, undefined)
+
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.slot).toBeUndefined()
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(1)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+  })
+
+  it('should handle null slotName for added elements', () => {
+    const evt = {
+      added: {
+        element: { id: 'element1' },
+        newIndex: 1
+      }
+    }
+
+    logDrag(evt, null)
+
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.slot).toBeNull()
+    expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(1)
+    expect(mockDisplayVariations.value.testPage.altered).toBe(true)
+  })
+
+})
 
 
 describe('Add section type side bar view', () => {
