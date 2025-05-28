@@ -2617,13 +2617,55 @@ const verifySlots = () => {
     })
   }, 500)
 }
+// Alternative simpler approach using array insertion
+const sanitizeWeightsByInsertion = (views, layoutKey, targetSlot, priorityViewId, priorityWeight) => {
+  // Get all views in the target slot except the priority view
+  const otherViews = Object.entries(views)
+    .filter(([id, view]) =>
+      view.region?.[layoutKey]?.slot === targetSlot && id !== priorityViewId
+    )
+    .map(([id, view]) => ({ id, view }))
+    .sort((a, b) => (a.view.region[layoutKey].weight || 0) - (b.view.region[layoutKey].weight || 0))
+
+  // Insert the priority view at the specified position
+  const priorityView = { id: priorityViewId, view: views[priorityViewId] }
+  const finalOrder = [...otherViews]
+  finalOrder.splice(priorityWeight, 0, priorityView)
+
+  // Reassign weights starting from 0
+  finalOrder.forEach((item, index) => {
+    views[item.id].region[layoutKey].weight = index
+  })
+}
 const logDrag = (evt, slotName) => {
   if (evt.added) {
-    displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].slot = slotName
-    displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].weight = evt.added.newIndex
+    const viewId = evt.added.element.id
+    displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].slot = slotName
+    displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].weight = evt.added.newIndex
+
+    sanitizeWeightsByInsertion(
+      displayVariations.value[selectedVariation.value].views,
+      selectedLayout.value,
+      slotName,
+      viewId,
+      evt.added.newIndex
+    )
+
     displayVariations.value[selectedVariation.value].altered = true
-  } else if(evt.moved) {
-    displayVariations.value[selectedVariation.value].views[evt.moved.element.id].region[selectedLayout.value].weight = evt.moved.newIndex
+  } else if (evt.moved) {
+    const viewId = evt.moved.element.id
+    displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].weight = evt.moved.newIndex
+
+    const movedSlot = displayVariations.value[selectedVariation.value].views[viewId].region[selectedLayout.value].slot
+
+    sanitizeWeightsByInsertion(
+      displayVariations.value[selectedVariation.value].views,
+      selectedLayout.value,
+      movedSlot,
+      viewId,
+      evt.moved.newIndex
+    )
+
     displayVariations.value[selectedVariation.value].altered = true
   }
   computeLayoutData()
