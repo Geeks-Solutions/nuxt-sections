@@ -237,6 +237,7 @@ onMounted(() => {
 </script>
 
 <style scoped> /* Changed from <style> to <style scoped> */
+@import "../../../assets/admin.css";
 .dynamic-t {
   min-width: 550px;
   min-height: 40px;
@@ -259,19 +260,6 @@ onMounted(() => {
 .dynamic-s {
   text-align: center;
   padding: 20px; /* Added padding */
-}
-.sub-types button.submit-btn {
-  border: none;
-  font-size: 24px;
-  margin-top: 1rem;
-  padding: 7px;
-  background: #31a9db;
-  color: white;
-  border-radius: 16px;
-  transition: 0.2s;
-  width: 385px;
-  height: 70px;
-  text-align: center;
 }
 .pagesReference { /* Style for error message */
     color: #dc3545;

@@ -186,24 +186,12 @@ defineExpose({
 </script>
 
 <style scoped> /* Changed to scoped */
-.sub-types button.submit-btn {
-  border: none;
-  font-size: 24px;
-  margin-top: 1rem;
-  padding: 7px;
-  background: #31a9db;
-  color: white;
-  border-radius: 16px;
-  transition: 0.2s;
-  width: 385px;
-  height: 70px;
-  text-align: center;
-}
+@import "../../../assets/admin.css";
 .submit-btn.withTabs {
   margin-left: 14%;
 }
 .submit-btn.withTabs:hover {
-  background-color: darken(#31a9db, 17%);
+  background-color: darken(#03b1c7, 17%);
   transition: 0.2s;
 }
 .content-wrapper {

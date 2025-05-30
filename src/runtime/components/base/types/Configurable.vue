@@ -985,6 +985,7 @@ defineExpose({
 </script>
 
 <style scoped>
+@import "../../../assets/admin.css";
 .element {
   margin: 15px;
   flex-direction: column;
@@ -1017,7 +1018,7 @@ defineExpose({
   border-color: rgba(242,242,243,var(--tw-border-opacity))!important;
 }
 .bg-blue {
-  background: #31a9db;
+  background: #03b1c7;
   color: white;
   border: none;
   outline: none !important;
@@ -1028,7 +1029,7 @@ defineExpose({
   transition: 0.2s;
 }
 .text-Blue {
-  background: #31a9db;
+  background: #03b1c7;
 }
 
 .loadingCircle {
@@ -1111,18 +1112,5 @@ defineExpose({
 }
 .promote-btn {
   font-size: 20px !important;
-}
-.sub-types button.submit-btn {
-  border: none;
-  font-size: 24px;
-  margin-top: 1rem;
-  padding: 7px;
-  background: #31a9db;
-  color: white;
-  border-radius: 16px;
-  transition: 0.2s;
-  width: 385px;
-  height: 70px;
-  text-align: center;
 }
 </style>

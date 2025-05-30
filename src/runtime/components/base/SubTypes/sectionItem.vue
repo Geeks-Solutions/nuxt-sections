@@ -67,12 +67,12 @@ const props = defineProps({
   background: #adadad;
 }
 .item.active {
-  background: #31a9db;
+  background: #03b1c7;
   transition: 0.2s;
 }
 .item.active:hover {
   transition: 0.2s;
-  background: darken(#31a9db, 10%);
+  background: darken(#03b1c7, 10%);
 }
 .icon svg {
   color: white;
