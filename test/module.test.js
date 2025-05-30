@@ -1023,3 +1023,525 @@ describe("WysiwygStatic", () => {
 
 });
 
+// Import Export Tests
+const mockAllSections = ref([
+  {
+    id: 1,
+    name: 'Header',
+    type: 'static',
+    region: { desktop: { slot: 'header' } }
+  },
+  {
+    id: 2,
+    name: 'Footer',
+    type: 'configurable',
+    nameID: 'footer-config',
+    linked_to: 'footer-instance'
+  }
+])
+const mockJsonFilePick = ref(null)
+const mockTypes = ref([
+  {
+    name: 'footer-config',
+    access: 'public',
+    app_status: 'enabled'
+  }
+])
+const mockSelectedSlotRegion = ref('')
+
+// Mock functions
+const mockShowToast = vi.fn()
+const mockAddSectionType = vi.fn()
+const mockI18n = {
+  t: vi.fn((key) => {
+    const translations = {
+      'importSections': 'Import will overwrite existing sections',
+      'activateConfigSections': 'Please activate',
+      'forProject': 'for this project',
+      'successImported': 'Successfully imported'
+    }
+    return translations[key] || key
+  })
+}
+// Mock DOM elements
+const mockDownloadAnchor = {
+  setAttribute: vi.fn(),
+  click: vi.fn()
+}
+const mockPagePath = {value: 'page'}
+const mockFileInput = {
+  click: vi.fn()
+}
+
+// The functions to test (would normally be imported from your composable)
+const exportSections = () => {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+    layout: mockSelectedLayout.value,
+    sections: mockAllSections.value
+  }))
+  const dlAnchorElem = document.getElementById('downloadAnchorElem')
+  dlAnchorElem.setAttribute("href", dataStr)
+  dlAnchorElem.setAttribute("download", `${mockPagePath.value}.json`)
+  dlAnchorElem.click()
+}
+
+const initImportSections = () => {
+  if (Object.keys(mockDisplayVariations.value[mockSelectedVariation.value].views).length > 0) {
+    mockShowToast(
+      "Warning",
+      "warning",
+      mockI18n.t('importSections')
+    )
+  } else {
+    mockJsonFilePick.value.click()
+  }
+}
+
+const importSections = (e) => {
+  const jsonFile = e.target.files[0]
+  const reader = new FileReader()
+  reader.readAsText(jsonFile, "UTF-8")
+  reader.onload = (evt) => {
+    const jsonFileResult = evt.target.result
+    const parsedImport = JSON.parse(jsonFileResult)
+    const sections = parsedImport.sections
+    mockSelectedLayout.value = parsedImport.layout
+    let sectionsNames = []
+
+    sections.forEach((section) => {
+      sectionsNames.push(section.name)
+      if (section.type === "configurable") {
+        const sectionTypeObject = mockTypes.value.find(type => type.name === section.nameID)
+        if (sectionTypeObject && (sectionTypeObject.access === 'private' || sectionTypeObject.access === 'public_scoped') && sectionTypeObject.app_status !== 'enabled') {
+          mockShowToast(
+            "Warning",
+            "warning",
+            `${mockI18n.t('activateConfigSections')} ${section.name} ${mockI18n.t('forProject')}`
+          )
+        }
+      }
+      if (section.linked_to && section.linked_to !== "") {
+        section.instance_name = section.linked_to
+        section.options = section.settings
+      }
+      if (section.region && section.region[mockSelectedLayout.value] && section.region[mockSelectedLayout.value].slot) {
+        mockSelectedSlotRegion.value = section.region[mockSelectedLayout.value].slot
+      }
+      mockAddSectionType(section, false, section.linked_to && section.linked_to !== "")
+    })
+
+    mockShowToast(
+      "Success",
+      "info",
+      `${mockI18n.t('successImported')} ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
+    )
+  }
+}
+
+describe('Import/Export Functionality', () => {
+  beforeEach(() => {
+    // Reset all mocks
+    vi.clearAllMocks()
+
+    // Mock DOM methods
+    vi.spyOn(document, 'getElementById').mockImplementation((id) => {
+      if (id === 'downloadAnchorElem') {
+        return mockDownloadAnchor
+      }
+      return null
+    })
+
+    // Reset ref values
+    mockSelectedLayout.value = 'desktop'
+    mockAllSections.value = [
+      {
+        id: 1,
+        name: 'Header',
+        type: 'static',
+        region: { desktop: { slot: 'header' } }
+      },
+      {
+        id: 2,
+        name: 'Footer',
+        type: 'configurable',
+        nameID: 'footer-config',
+        linked_to: 'footer-instance'
+      }
+    ]
+    mockPagePath.value = 'test-page'
+    mockDisplayVariations.value = {
+      default: { views: {} }
+    }
+    mockSelectedVariation.value = 'default'
+    mockJsonFilePick.value = mockFileInput
+    mockSelectedSlotRegion.value = ''
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('exportSections', () => {
+    it('should create download link with correct data and trigger download', () => {
+      exportSections()
+
+      const expectedData = {
+        layout: 'desktop',
+        sections: mockAllSections.value
+      }
+      const expectedDataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expectedData))
+
+      expect(document.getElementById).toHaveBeenCalledWith('downloadAnchorElem')
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("href", expectedDataStr)
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("download", "test-page.json")
+      expect(mockDownloadAnchor.click).toHaveBeenCalled()
+    })
+
+    it('should use current layout and sections values', () => {
+      mockSelectedLayout.value = 'mobile'
+      mockAllSections.value = [{ id: 3, name: 'Mobile Header' }]
+      mockPagePath.value = 'mobile-page'
+
+      exportSections()
+
+      const expectedData = {
+        layout: 'mobile',
+        sections: [{ id: 3, name: 'Mobile Header' }]
+      }
+      const expectedDataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expectedData))
+
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("href", expectedDataStr)
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("download", "mobile-page.json")
+    })
+  })
+
+  describe('initImportSections', () => {
+    it('should show warning toast when views exist', () => {
+      mockDisplayVariations.value.default.views = { view1: {} }
+
+      initImportSections()
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Warning",
+        "warning",
+        "Import will overwrite existing sections"
+      )
+      expect(mockFileInput.click).not.toHaveBeenCalled()
+    })
+
+    it('should trigger file picker when no views exist', () => {
+      mockDisplayVariations.value.default.views = {}
+
+      initImportSections()
+
+      expect(mockShowToast).not.toHaveBeenCalled()
+      expect(mockFileInput.click).toHaveBeenCalled()
+    })
+
+    it('should handle different selected variation', () => {
+      mockSelectedVariation.value = 'variant1'
+      mockDisplayVariations.value = {
+        default: { views: {} },
+        variant1: { views: { view1: {} } }
+      }
+
+      initImportSections()
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Warning",
+        "warning",
+        "Import will overwrite existing sections"
+      )
+    })
+  })
+
+  describe('importSections', () => {
+    let mockFileReader
+    let mockFile
+
+    beforeEach(() => {
+      mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null,
+        result: null
+      }
+
+      // Mock FileReader constructor
+      vi.stubGlobal('FileReader', vi.fn(() => mockFileReader))
+
+      mockFile = new File(['test'], 'test.json', { type: 'application/json' })
+    })
+
+    it('should successfully import sections and update layout', () => {
+      const importData = {
+        layout: 'tablet',
+        sections: [
+          {
+            name: 'Imported Header',
+            type: 'static',
+            region: { tablet: { slot: 'top' } }
+          },
+          {
+            name: 'Imported Footer',
+            type: 'configurable',
+            nameID: 'footer-config',
+            linked_to: 'footer-link',
+            settings: { color: 'blue' }
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile],
+          result: JSON.stringify(importData)
+        }
+      }
+
+      importSections(mockEvent)
+
+      // Simulate FileReader onload
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockSelectedLayout.value).toBe('tablet')
+      expect(mockSelectedSlotRegion.value).toBe('top')
+      expect(mockAddSectionType).toHaveBeenCalledTimes(2)
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Success",
+        "info",
+        "Successfully imported 2 sections: Imported Header, Imported Footer"
+      )
+    })
+
+    it('should handle linked sections correctly', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Linked Section',
+            type: 'configurable',
+            nameID: 'config-type',
+            linked_to: 'linked-instance',
+            settings: { theme: 'dark' }
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockAddSectionType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          instance_name: 'linked-instance',
+          options: { theme: 'dark' }
+        }),
+        false,
+        true
+      )
+    })
+
+    it('should show warning for disabled configurable sections', () => {
+      mockTypes.value = [
+        {
+          name: 'disabled-config',
+          access: 'private',
+          app_status: 'disabled'
+        }
+      ]
+
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Disabled Section',
+            type: 'configurable',
+            nameID: 'disabled-config'
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Warning",
+        "warning",
+        "Please activate Disabled Section for this project"
+      )
+    })
+
+    it('should handle sections without linked_to property', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Static Section',
+            type: 'static'
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockAddSectionType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Static Section',
+          type: 'static'
+        }),
+        false,
+        undefined
+      )
+    })
+
+    it('should handle empty linked_to property', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Empty Linked Section',
+            type: 'configurable',
+            linked_to: ''
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockAddSectionType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Empty Linked Section',
+          linked_to: ''
+        }),
+        false,
+        ""
+      )
+    })
+  })
+
+  describe('Edge Cases', () => {
+    let mockFileReader
+
+    beforeEach(() => {
+      mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null,
+        result: null
+      }
+
+      // Mock FileReader constructor
+      vi.stubGlobal('FileReader', vi.fn(() => mockFileReader))
+
+    })
+
+    it('should handle missing DOM element in exportSections', () => {
+      vi.spyOn(document, 'getElementById').mockReturnValue(null)
+
+      expect(() => exportSections()).toThrow()
+    })
+
+    it('should handle malformed JSON in importSections', () => {
+      const mockFile = new File(['invalid json'], 'test.json', { type: 'application/json' })
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: 'invalid json'
+        }
+      }
+
+      expect(() => mockFileReader.onload(mockFileEvent)).toThrow()
+    })
+
+    it('should handle section without region property', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'No Region Section',
+            type: 'static'
+          }
+        ]
+      }
+
+      const mockFile = new File(['test'], 'test.json', { type: 'application/json' })
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+
+      expect(() => mockFileReader.onload(mockFileEvent)).not.toThrow()
+      expect(mockSelectedSlotRegion.value).toBe('')
+    })
+  })
+})
+

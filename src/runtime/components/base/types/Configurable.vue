@@ -197,17 +197,19 @@
             </div>
           </div>
           <!-- Submit Buttons -->
-          <button class="submit-btn mt-4" type="button" @click="addConfigurable">
-            {{ t('Submit data') }}
-          </button>
-          <button
-            v-if="!instance && !props.props.creation && !globalSectionMode"
-            class="mt-4 submit-btn promote-btn"
-            type="button"
-            @click="emit('promote-section')"
-          >
-            {{ t('promoteSection') }}
-          </button>
+          <div class="sections-btns-submission">
+            <button class="submit-btn mt-4" type="button" @click="addConfigurable">
+              {{ t('Submit data') }}
+            </button>
+            <button
+              v-if="!instance && !props.props.creation && !globalSectionMode"
+              class="mt-4 submit-btn promote-btn"
+              type="button"
+              @click="emit('promote-section')"
+            >
+              {{ t('promoteSection') }}
+            </button>
+          </div>
         </form>
       </div>
       <!-- Media Component -->
@@ -235,7 +237,7 @@
 </template>
 
 <script setup>
-import { reactive, getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast } from '#imports'
+import { reactive, getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast,globalFileUpload } from '#imports'
 
 
 // Composables
@@ -1109,8 +1111,5 @@ defineExpose({
 }
 .instanceInput {
   width: 350px;
-}
-.promote-btn {
-  font-size: 20px !important;
 }
 </style>

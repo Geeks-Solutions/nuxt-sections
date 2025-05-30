@@ -28,25 +28,27 @@
         />
       </div>
     </div>
-    <!-- Submit Button -->
-    <button
-      class="mt-4 submit-btn"
-      type="button"
-      @click="sendJsonData"
-      :class="{ withTabs }"
-    >
-      {{ t('Submit data') }}
-    </button>
-    <!-- Promote Button -->
-    <button
+    <div class="sections-btns-submission">
+      <!-- Submit Button -->
+      <button
+        class="mt-4 submit-btn"
+        type="button"
+        @click="sendJsonData"
+        :class="{ withTabs }"
+      >
+        {{ t('Submit data') }}
+      </button>
+      <!-- Promote Button -->
+      <button
         v-if="promoteButton"
         class="mt-4 submit-btn promote-btn"
         type="button"
         @click="emit('promote-section')"
         :class="{ withTabs }"
-    >
-      {{ t('promoteSection') }}
-    </button>
+      >
+        {{ t('promoteSection') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -197,9 +199,6 @@ defineExpose({
 .content-wrapper {
   overflow-y: scroll;
   height: 550px;
-}
-.promote-btn {
-  font-size: 20px !important;
 }
 @media only screen and (max-height: 850px) {
   .content-wrapper {
