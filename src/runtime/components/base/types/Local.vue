@@ -143,6 +143,7 @@ onMounted(() => {
 </script>
 
 <style scoped> /* Changed to scoped */
+@import "../../../assets/admin.css";
 .autoInsertRow {
   display: flex;
   flex-direction: row;
@@ -166,19 +167,6 @@ onMounted(() => {
 .sub-types { /* Added padding */
     padding: 20px;
     text-align: center;
-}
-.sub-types button.submit-btn {
-  border: none;
-  font-size: 24px;
-  margin-top: 1rem;
-  padding: 7px;
-  background: #31a9db;
-  color: white;
-  border-radius: 16px;
-  transition: 0.2s;
-  width: 385px;
-  height: 70px;
-  text-align: center;
 }
 .pagesReference {
     color: #dc3545;

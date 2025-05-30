@@ -141,7 +141,7 @@ defineExpose({
 }
 
 .section-module-modal-close-icon svg {
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 /* Scrollbar Styles */

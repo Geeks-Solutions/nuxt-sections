@@ -98,20 +98,18 @@
             :ref="!editMode ? 'intro-edit-page' : undefined"
             @click="openEditMode()"
             v-if="admin && !isSideBarOpen"
-            class="intro-edit-page bg-blue control-button hide-mobile btn-text"
+            class="intro-edit-page bg-blue control-button hide-mobile btn-text edit-page"
+            :title="!editMode ? $t('Edit page') : $t('View page')"
           >
-            {{ !editMode ? $t("Edit page") : $t("View page") }}
+            <LazyBaseIconsEdit v-if="!editMode" />
+            <LazyBaseIconsEye v-else />
           </button>
           <div class="bg-light-grey-hp hide-mobile section-wrapper">
-            <div v-if="admin && editMode && !isSideBarOpen" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
-              {{ $t('changesPublished') }}
-            </div>
-
             <div
-              class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
+              class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
               v-if="admin && editMode && !isSideBarOpen"
             >
-              <div ref="intro-top-bar" class="intro-top-bar sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
+              <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center hide-mobile">
                 <button
                   class="hp-button"
                   @click="layoutMode = !layoutMode"
@@ -185,7 +183,7 @@
                   <div class="btn-text">{{ $t("Restore") }}</div>
                 </button>
               </div>
-              <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
+              <div class="flexSections config-buttons">
                 <button
                   class="hp-button "
                   :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -238,42 +236,8 @@
                 </button>
               </div>
             </div>
-          </div>
-          <div
-            class="bg-light-grey-hp sections-p-3 flexSections sections-flex-row sections-justify-center part2 hide-mobile"
-            v-if="admin && editMode && !isSideBarOpen"
-          >
-            <button
-              class="hp-button "
-              :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              @click="selectedVariation = pageName"
-            >
-              <div class="btn-text">{{
-                  decodeURIComponent(parsePath(encodeURIComponent(pageName))) + " " + "Main"
-                }}
-              </div>
-            </button>
-            <div v-for="(v, idx) in variations" :key="idx">
-              <button
-                class="hp-button"
-                :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
-                @click="
-              displayVariations.value[pageName].altered ? dismissCountDown = 4 :
-              selectedVariation = v.pageName
-            "
-              >
-                <div class="btn-text">{{ v.name }}</div>
-              </button>
-              <div
-                class="sync flexSections sections-flex-row sections-p-4 sections-justify-center"
-                v-if="selectedVariation === v.pageName"
-                @click="synch()"
-              >
-                <div class="icon" :class="{ synched }">
-                  <LazyBaseIconsSync/>
-                </div>
-                <span>{{ $t("Synchronise") }}</span>
-              </div>
+            <div v-if="admin && editMode && !isSideBarOpen && sectionsChanged" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
+              {{ $t('changesPublished') }}
             </div>
           </div>
 
@@ -1386,6 +1350,7 @@ const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
 const isSideBarOpen = ref(false);
+const sectionsChanged = ref(false);
 const backToAddSectionList = ref(false);
 const isDeleteModalOpen = ref(false);
 const isRestoreSectionOpen = ref(false);
@@ -2146,7 +2111,7 @@ const getUserData = async () => {
   }
 }
 const exportSections = () => {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allSections.value))
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({layout: selectedLayout.value, sections: allSections.value}))
   const dlAnchorElem = document.getElementById('downloadAnchorElem')
   dlAnchorElem.setAttribute("href", dataStr)
   dlAnchorElem.setAttribute("download", `${pagePath.value}.json`)
@@ -2170,7 +2135,9 @@ const importSections = (e) => {
   reader.readAsText(jsonFile, "UTF-8")
   reader.onload = (evt) => {
     const jsonFileResult = evt.target.result
-    const sections = JSON.parse(jsonFileResult)
+    const parsedImport = JSON.parse(jsonFileResult)
+    const sections = parsedImport.sections
+    selectedLayout.value = parsedImport.layout
     let sectionsNames = []
 
     sections.forEach((section) => {
@@ -2188,6 +2155,9 @@ const importSections = (e) => {
       if (section.linked_to && section.linked_to !== "") {
         section.instance_name = section.linked_to
         section.options = section.settings
+      }
+      if (section.region && section.region[selectedLayout.value] && section.region[selectedLayout.value].slot) {
+        selectedSlotRegion.value = section.region[selectedLayout.value].slot
       }
       addSectionType(section, false, section.linked_to && section.linked_to !== "")
     })
@@ -3598,6 +3568,7 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
 
     computeLayoutData()
     if (showToastBool !== false) {
+      sectionsChanged.value = true
       showToast(
         "Success",
         "info",
@@ -3977,6 +3948,7 @@ const mutateVariation = async (variationName) => {
                 };
               });
             } else {
+              sectionsChanged.value = false;
               showToast(
                 "Success",
                 "success",
@@ -4817,18 +4789,19 @@ onServerPrefetch(async () => {await fetchData()});
   min-height: 100vh;
 }
 
-.sections-config .control-button.config-buttons {
-  position: absolute;
-  z-index: 190;
-  left: 0;
-  top: 60px;
+.sections-config .config-buttons {
+  height: max-content;
 }
 
 .sections-config .control-button {
   position: fixed;
   z-index: 190;
   left: 0;
-  top: 60px;
+  top: 0;
+}
+
+.sections-config .control-button.edit-page {
+  opacity: 60%;
 }
 
 .section-view .controls {
@@ -4850,13 +4823,14 @@ onServerPrefetch(async () => {await fetchData()});
   right: 8px !important;
   top: 10px;
   z-index: 50 !important;
+  opacity: 60%;
 }
 
 .section-view .controls svg {
   cursor: pointer;
   width: 40px;
   height: 40px;
-  color: #31a9db;
+  color: #03b1c7;
   margin: 3px;
 }
 
@@ -4864,12 +4838,12 @@ onServerPrefetch(async () => {await fetchData()});
   cursor: pointer;
   width: 15px;
   height: 15px;
-  color: #31a9db;
+  color: #03b1c7;
   margin: 3px;
 }
 
 .bg-blue {
-  background: #31a9db;
+  background: #03b1c7;
   color: white;
   border: none;
   outline: none !important;
@@ -4882,7 +4856,6 @@ onServerPrefetch(async () => {await fetchData()});
 }
 
 .sections-config button {
-  max-height: 64px;
   width: auto;
   min-width: auto;
   border-radius: 16px;
@@ -4901,7 +4874,7 @@ button svg {
   outline: none;
   max-width: 1000px;
   display: flex;
-  background: #31a9db;
+  background: #03b1c7;
   border: none;
   color: white;
   align-items: center;
@@ -4953,6 +4926,12 @@ button svg {
 
 .section-wrapper {
   position: relative;
+}
+
+.section-wrapper .edit-mode-wrapper {
+  align-items: center;
+  padding-top: 48px;
+  padding-bottom: 16px;
 }
 
 .part2 .create-static-section {
@@ -5183,7 +5162,7 @@ span.handle {
 
 .modalContainer .section-item.active {
   margin: 10px 0px;
-  border: 1px solid #31a9db;
+  border: 1px solid #03b1c7;
 }
 
 .modalContainer .section-item.inactive {
@@ -5206,7 +5185,7 @@ span.handle {
 .modalContainer .section-item-box {
   display: flex;
   flex-direction: column;
-  background: #31a9db;
+  background: #03b1c7;
   color: white;
   position: relative;
 }
@@ -5269,12 +5248,12 @@ span.handle {
 .closeIcon svg {
   width: 45px;
   height: 45px;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .modalContainer
 .closeIcon svg:hover {
-  color: darken(#31a9db, 10%);
+  color: darken(#03b1c7, 10%);
 }
 
 .widthSpace {
@@ -5318,7 +5297,7 @@ span.handle {
 }
 
 .section-modal-wrapper .dot {
-  color: #31a9db;
+  color: #03b1c7;
   margin-top: 8px;
   margin-right: 10px;
 }
@@ -5339,7 +5318,7 @@ span.handle {
 }
 
 .section-modal-wrapper .closeIcon {
-  color: #31a9db;
+  color: #03b1c7;
   position: absolute;
   top: 25px;
   right: 10px;
@@ -5371,7 +5350,7 @@ span.handle {
 }
 
 .section-modal-wrapper .footer .hp-button {
-  width: 200px;
+  display: block;
 }
 
 .flexSections {
@@ -5532,7 +5511,7 @@ span.handle {
 
 .slot-name {
   align-self: center;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .custom-checkbox {
@@ -5586,11 +5565,11 @@ span.handle {
 }
 
 .custom-checkbox input:checked + .slider {
-  background-color: #31a9db;
+  background-color: #03b1c7;
 }
 
 .custom-checkbox input:focus + .slider {
-  box-shadow: 0 0 1px #31a9db;
+  box-shadow: 0 0 1px #03b1c7;
 }
 
 .custom-checkbox input:checked + .slider:before {
@@ -5609,14 +5588,14 @@ span.handle {
 }
 
 .highlited-regions {
-  border: solid 1.5px #31a9db;
+  border: solid 1.5px #03b1c7;
   margin: 2px;
 }
 
 .highlighted-regions-plus {
   width: 100%;
   min-height: 20px;
-  border: solid 1.5px #31a9db;
+  border: solid 1.5px #03b1c7;
   margin: 2px 0 2px 0;
 }
 
@@ -5757,7 +5736,7 @@ span.handle {
 }
 
 .selectedTypesTab {
-  color: #31a9db;
+  color: #03b1c7;
   text-decoration: underline;
 }
 
@@ -6094,12 +6073,12 @@ span.handle {
 .closeIcon svg {
   width: 35px;
   height: 35px;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .sections-aside
 .closeIcon svg:hover {
-  color: darken(#31a9db, 10%);
+  color: darken(#03b1c7, 10%);
 }
 
 .sections-aside
@@ -6114,12 +6093,12 @@ span.handle {
 .anchorIcon svg {
   width: 25px;
   height: 25px;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .sections-aside
 .anchorIcon svg:hover {
-  color: darken(#31a9db, 10%);
+  color: darken(#03b1c7, 10%);
 }
 
 .sections-container > .sections-main {
@@ -6173,7 +6152,7 @@ span.handle {
 .metadata-media .css-preset {
   cursor: pointer;
   text-decoration: underline;
-  color: #31a9db;
+  color: #03b1c7;
   font-size: 14px;
   align-content: center;
 }
@@ -6204,12 +6183,12 @@ span.handle {
 }
 .fieldsets .controls svg {
   cursor: pointer;
-  color: #31a9db;
+  color: #03b1c7;
   margin: 3px;
 }
 .sections-container .sections-aside .step-back-aside {
   cursor: pointer;
-  color: #31a9db;
+  color: #03b1c7;
   position: absolute;
 }
 .sections-container .sections-aside .step-back-aside svg {
@@ -6238,7 +6217,7 @@ section .ql-editor.ql-snow.grey-bg {
 }
 .anchor-copied-tooltip {
   position: fixed;
-  background-color: #31a9db;
+  background-color: #03b1c7;
   color: white;
   font-size: 0.75rem;
   padding: 0.5rem 0.5rem;
