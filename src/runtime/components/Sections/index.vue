@@ -1407,7 +1407,7 @@ let metadataErrors = ref({
 });
 const sectionsError = useState('sectionsError', () => "");
 const sectionsErrorOptions = ref(null);
-const renderSectionError = ref("");
+const renderSectionError = useState("renderSectionError", () => "");
 const fieldsInputs = ref([
   {
     type: "image",
@@ -2032,6 +2032,12 @@ const addField = (index) => {
 const removeField = (index) => {
   fieldsInputs.value.splice(index, 1)
 }
+const sanitizeURL = async () => {
+  const updatedQuery = { ...route.query }
+  delete updatedQuery.auth_code
+  delete updatedQuery.project_id
+  await router.replace({path: useRoute().path, query: updatedQuery})
+}
 const checkToken = async () => {
   const auth_code = route.query.auth_code
 
@@ -2068,13 +2074,12 @@ const checkToken = async () => {
             path: '/'
           }).value = token
 
-          await navigateTo(route.path)
+          await sanitizeURL()
           loading.value = false
         },
         onError: (err) => {
           loading.value = false
-          // Adjust error message access based on ApiError structure
-          showToast("Error", "error", err.response?.data?.token || 'Authentication failed');
+          renderSectionError.value = err.response?.data?.token
         }
       });
     } catch {
@@ -4666,7 +4671,6 @@ const fetchData = async () => {
   }
 
   loading.value = true;
-  await checkToken();
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
@@ -4674,6 +4678,16 @@ const fetchData = async () => {
 
   let websiteDomain = "";
   const isServer = process.server;
+
+  if (isServer) {
+    await checkToken();
+  } else {
+    const auth_code = route.query.auth_code
+    if (auth_code) {
+      await sanitizeURL()
+    }
+  }
+
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
     : window.location.protocol.replace(':', '');

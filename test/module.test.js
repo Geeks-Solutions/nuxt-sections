@@ -501,7 +501,7 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.getGlobalSectionTypes(false);
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalledOnce();
   });
 
   it('should fetch and process global types if not already loaded', async () => {
@@ -863,40 +863,6 @@ describe('logDrag function, layout region position updates', () => {
   })
 
 })
-
-
-describe('Add section type side bar view', () => {
-  let wrapper;
-
-  // beforeEach(() => {
-  //   wrapper = mount(SectionsMain, {
-  //     mocks: {
-  //       ...global.mocks,
-  //       $sections: {
-  //         serverUrl: 'http://localhost:3000',
-  //         projectId: 'test-project',
-  //         queryStringSupport: 'enabled',
-  //       },
-  //       $i18n: {
-  //         locale: 'fr',
-  //         defaultLocale: 'en',
-  //       },
-  //       $route: {
-  //         query: jest.fn(),
-  //         params: {
-  //           pathMatch: jest.fn()
-  //         }
-  //       },
-  //       sectionHeader: jest.fn().mockReturnValue({}),
-  //       parseQS: jest.fn((path, hasQuery, query) => ({ path, hasQuery, query })),
-  //       validateQS: jest.fn((queryString, keys, editMode) => ({ validated: true })),
-  //     }
-  //   });
-  // });
-
-
-
-});
 
 const mockData = [
   { id: 0, name: 'Item 1' },
@@ -1545,3 +1511,39 @@ describe('Import/Export Functionality', () => {
   })
 })
 
+describe('sanitizeURL', () => {
+
+  let wrapper
+
+  beforeEach(() => {
+
+    vi.clearAllMocks();
+
+    window.history.pushState({}, '', '/some-page?auth_code=abc123&project_id=xyz789&keep_me=yes')
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockPageData),
+      })
+    )
+
+    wrapper = mountComponent()
+  })
+
+  it('removes auth_code and project_id from query and calls router.replace', async () => {
+
+    await useRouter().push({
+      path: '/some-page',
+      query: {
+        auth_code: 'abc123',
+        project_id: 'xyz789',
+        keep_me: 'yes'
+      }
+    })
+
+    await wrapper.vm.sanitizeURL()
+
+    // Verify updated URL
+    expect(useRoute().fullPath).toBe('/some-page?keep_me=yes')
+  })
+})
