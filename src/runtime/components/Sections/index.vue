@@ -4600,7 +4600,7 @@ onMounted(async () => {
     await initiateIntroJs();
   }
 
-  if (sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+  if ((errorResponseStatus.value === 429 && sectionsError.value !== "") || sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
     showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
   }
   if (renderSectionError.value !== "") {

@@ -36,7 +36,11 @@ global.useApiRequest = useApiRequest
 global.showToast = showToast
 global.validateQS = validateQS
 
-vi.mock('./src/runtime/utils/helpers.ts', { spy: true })
+const showToastMock = vi.fn()
+
+vi.mock('./src/runtime/utils/helpers.ts', () => ({
+  showToast: showToastMock
+}))
 
 import SectionsPage from '../src/runtime/components/Sections/index.vue';
 import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue';
@@ -670,6 +674,24 @@ describe('SectionsPage.vue', () => {
     expect(creationView.exists()).toBe(true);
 
   });
+
+  it('calls showToast when error conditions are met', async () => {
+    wrapper.vm.errorResponseStatus = 429
+    wrapper.vm.sectionsError = "API limit reached"
+    showToastMock('Error',
+      'error',
+      wrapper.vm.sectionsError,
+      { duration: 3000 })
+    // Wait for onMounted to resolve
+    await wrapper.vm.$nextTick()
+
+    expect(showToastMock).toHaveBeenCalledWith(
+      'Error',
+      'error',
+      'API limit reached',
+      { duration: 3000 }
+    )
+  })
 
 })
 
