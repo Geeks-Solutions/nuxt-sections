@@ -274,5 +274,7 @@
   "quillEditor": {
     "quillDesc": "Pour éditer une image ajoutée à votre éditeur, vous devez la sélectionner et cliquer sur l'icone image de la barre d'outil"
   },
-  "mediaTooLarge": "La taille de votre média dépasse la limite autorisée. Veuillez vous référer aux détails de votre colis pour vérifier la taille maximale prise en charge."
+  "mediaTooLarge": "La taille de votre média dépasse la limite autorisée. Veuillez vous référer aux détails de votre colis pour vérifier la taille maximale prise en charge.",
+  "seoDisable": "Désactiver",
+  "seoEnable": "Activer"
 }

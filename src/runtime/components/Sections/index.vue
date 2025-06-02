@@ -847,6 +847,11 @@
                           :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                           class="edit-icon"/>
                       </div>
+                      <div
+                        v-if="seoSectionsSupport[view.name]"
+                        @click="seoBtnClicked(view.name)">
+                        <div :title="pageMetadata.seo && pageMetadata.seo[view.name] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.name] === true}">SEO</div>
+                      </div>
                     </div>
                     <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
                          class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
@@ -870,6 +875,7 @@
                         :lang="lang"
                         :locales="locales"
                         :default-lang="defaultLang"
+                        @seo-support="seoSectionsSupport[view.name] = true;"
                         @refresh-section="(data) => refreshSectionView(view, data)"
                       />
                     </div>
@@ -948,6 +954,11 @@
                                   :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                                   class="edit-icon"/>
                               </div>
+                              <div
+                                v-if="seoSectionsSupport[view.name]"
+                                @click="seoBtnClicked(view.name)">
+                                <div :title="pageMetadata.seo && pageMetadata.seo[view.name] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.name] === true}">SEO</div>
+                              </div>
                             </div>
                             <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
                                  class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
@@ -970,6 +981,7 @@
                                 :lang="lang"
                                 :locales="locales"
                                 :default-lang="defaultLang"
+                                @seo-support="seoSectionsSupport[view.name] = true;"
                                 @refresh-section="(data) => refreshSectionView(view, data)"
                               />
                             </div>
@@ -1472,6 +1484,8 @@ const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
   : route.params.pathMatch || ''
 
+const seoSectionsSupport = ref({})
+
 // Computed properties
 const activeVariation = computed(() => {
   // If variation true return its page name
@@ -1672,6 +1686,17 @@ useHead(() => {
 });
 
 // Methods (now as regular functions)
+const seoBtnClicked = (name) => {
+  if (!pageMetadata.value.seo) {
+    pageMetadata.value.seo = {}
+  }
+  if (pageMetadata.value.seo[name] === true) {
+    delete pageMetadata.value.seo[name];
+  } else {
+    pageMetadata.value.seo[name] = true;
+  }
+  updatePageMetaData(true);
+}
 const initializeSectionsCMSEvents = () => {
   if (!window.SectionsCMS) {
     window.SectionsCMS = ref({})
@@ -1735,6 +1760,9 @@ const initializeSections = (res) => {
   }
   if (res.data.metadata.mediaMetatag) {
     pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
+  }
+  if (res.data.metadata.seo) {
+    pageMetadata.value.seo = res.data.metadata.seo
   }
 
   computedTitle.value = pageMetadata.value[lang].title
@@ -1883,7 +1911,7 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
 const removeMedia = (media) => {
   pageMetadata.value[media] = {}
 }
-const updatePageMetaData = async () => {
+const updatePageMetaData = async (seo) => {
   loading.value = true
   metadataErrors.value.path[0] = ''
 
@@ -1980,6 +2008,9 @@ const updatePageMetaData = async () => {
           return
         }
 
+        if (res.data.metadata.seo) {
+          pageMetadata.value.seo = res.data.metadata.seo;
+        }
         sectionsPageLastUpdated.value = res.data.last_updated
         metadataModal.value = false
         metadataFormLang.value = i18n.locale.value.toString()
@@ -2001,9 +2032,13 @@ const updatePageMetaData = async () => {
             baseURL = baseURL + routerBase
           }
 
-          window.location.replace(`${baseURL}/${updatedPagePath}`)
+          if (seo !== true) {
+            window.location.replace(`${baseURL}/${updatedPagePath}`)
+          }
         } else {
-          window.location.reload()
+          if (seo !== true) {
+            window.location.reload()
+          }
         }
       },
       onError: (error) => {
@@ -6243,5 +6278,22 @@ section .ql-editor.ql-snow.grey-bg {
   transform: translate(-100%, -100%);
   pointer-events: none;
   white-space: nowrap;
+}
+.section-view .controls .seo-btn {
+  padding: 0rem 0.5rem;
+  border: 2px solid #03b1c7;
+  border-radius: 4px;
+  color: #03b1c7;
+  text-align: center;
+  align-content: center;
+  cursor: pointer;
+  height: 40px;
+  font-size: 23px;
+  transition: background-color 0.3s, color 0.3s;
+  margin: 3px;
+}
+.section-view .controls .seo-btn.enabled {
+  background-color: #03b1c7;
+  color: white;
 }
 </style>
