@@ -689,7 +689,7 @@ async function addConfigurable() {
       nameID: props.props.name && props.props.name.includes(":") ? props.props.name : `${props.savedView.application_id}:${props.props.name}`, // Ensure savedView.application_id
       type: 'configurable',
       settings: currentOptions, // Send validated data
-      id: id.value,
+      id: props.props.addToPage ? res.id || id.value : id.value,
       weight: weight.value,
       render_data: res.render_data,
       query_string_keys: res.query_string_keys,
