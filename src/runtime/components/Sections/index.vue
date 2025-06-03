@@ -2859,14 +2859,12 @@ const runIntro = async (topic, rerun) => {
       addIntroSteps(topic, rerun)
     } else if (
       topic === 'inventoryOpened' &&
-      document.querySelector('.intro-simple-CTA-section-inventory') &&
-      document.querySelector('.intro-simple-CTA-section-inventory')[0]
+      document.querySelector('.intro-simple-CTA-section-inventory')
     ) {
       addIntroSteps(topic, rerun)
     } else if (
       topic === 'availableSectionOpened' &&
-      document.querySelector('.intro-simple-CTA-section-available') &&
-      document.querySelector('.intro-simple-CTA-section-available')[0]
+      document.querySelector('.intro-simple-CTA-section-available')
     ) {
       addIntroSteps(topic, rerun)
     }
@@ -2946,13 +2944,13 @@ const introSteps = (topic) => {
           element: document.querySelector('.intro-inventory'),
           intro: simpleCTAIndex === -1 ?
             i18n.t('intro.inventoryDesc') :
-            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${i18n.t('intro.checkIt')}</span>`
+            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened', introRerun);">${i18n.t('intro.checkIt')}</span>`
         }
       ]
     case 'inventoryOpened':
       return [
         {
-          element: document.querySelector('.intro-simple-CTA-section-inventory')[0],
+          element: document.querySelector('.intro-simple-CTA-section-inventory'),
           intro: `${i18n.t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${i18n.t('intro.createSection')}</span>`
         }
       ]
@@ -2966,7 +2964,7 @@ const introSteps = (topic) => {
     case 'availableSectionOpened':
       return [
         {
-          element: document.querySelector('.intro-simple-CTA-section-available')[0],
+          element: document.querySelector('.intro-simple-CTA-section-available'),
           intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${i18n.t('intro.here')}</span>`
         }
       ]
@@ -3456,7 +3454,9 @@ const openEditMode = async () => {
   editMode.value = !editMode.value
 
   if (editMode.value === true) {
-    await runIntro('topBar')
+    setTimeout(async () => {
+      await runIntro('topBar')
+    }, 500)
 
     loading.value = true
     const inBrowser = typeof window !== 'undefined'
@@ -4886,6 +4886,8 @@ onServerPrefetch(async () => {await fetchData()});
 
 .sections-config .control-button.edit-page {
   opacity: 60%;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .section-view .controls {
@@ -6330,5 +6332,8 @@ section .ql-editor.ql-snow.grey-bg {
 .section-view .controls .seo-btn.enabled {
   background-color: #03b1c7;
   color: white;
+}
+.intro-top-bar {
+  min-width: fit-content;
 }
 </style>
