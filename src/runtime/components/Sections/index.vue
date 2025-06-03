@@ -3757,7 +3757,7 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${res.data.error}`
               showToast("Error", "error", renderSectionError.value)
             } else {
-              if (sectionData.type === 'configurable') {
+              if (sectionData.type === 'configurable' && sectionData.renderID) {
                 currentViews.value = currentViews.value.map(view => {
                   if (view.type === 'configurable' && sectionData.renderID && sectionData.renderID === view.id) {
                     return {
