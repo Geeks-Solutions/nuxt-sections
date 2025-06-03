@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [3.0.2] - 2025-06-02
 
+### Added
+
+- SEO Management: Overriding the meta data of the page by the one of the full articles section #178
+
 ### Updated
 
 - Display fixes requested by julien #155

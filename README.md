@@ -1275,6 +1275,40 @@ export {
 
 ```
 
+* `seo_management`: When a view section component is being picked up for rendering (before rendering), it allows you to overwrite the seo metas of your page (title, description, image).
+  The hook takes as params the section data and the page current localization.
+  The callback is expected to return an object including the metas of your section to overwrite the page metas.
+
+ex.:
+
+```js
+const seo_management = (section, locale) => {
+  let sectionName = section.name
+  if (sectionName.includes(':')) {
+    sectionName = section.name.split(':')[1]
+  }
+  switch (sectionName) {
+    case 'selective_articles_-_dev':
+      return {
+        title: section.render_data[0].settings.title[locale],
+        description: section.render_data[0].settings.description[locale]
+      }
+    case 'full_article_-_dev':
+      return {
+        title: section.render_data.title,
+        description: section.render_data.description,
+        image: section.render_data.medias[0].files[0].url
+      }
+    default:
+      return {}
+  }
+}
+
+export {
+  seo_management
+};
+```
+
 ### The following will require a specific component to be implemented in your project:
 
 Inside `sections/page_components/page_not_found.vue` or `sections/page_components/project_not_found.vue`
@@ -1284,6 +1318,20 @@ The two below components allow you to change the default behavior of the library
 * `page_not_found.vue`: When a page was not found or it was requested for a non existing project, will contain the page name and qs requested as a prop
 * `project_not_found.vue`: When a page was requested for a non existing project, will contain the page name and qs requested as a prop
 
+
+### SEO Management:
+
+This feature allows you to overwrite the meta data of your page by the metas coming from your sections based on your choice and conditions that you set using the `seo_management` global-hook described above.  
+To enable this feature for a section, simply add inside the (created, onMounted) hook of the desired section the below code:
+
+```js
+created() {
+    this.$emit('seo-support', true)
+  }
+```
+
+This will add an additional `SEO` button to your section options (edit, drag, delete), that you can use(by clicking on it) to enable/disable overwriting the metas of your page by the ones of this section, based on the return value from the `seo_management` global-hook described above.
+The sections metas complies to the sections order in the page (following their weights). And so the section with the lowest weight and having a meta (ie. `title`) will be the one overwriting the page title meta even if other sections has SEO enabled and returning a title. 
 
 ## Development
 

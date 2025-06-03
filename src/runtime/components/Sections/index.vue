@@ -849,11 +849,11 @@
                       </div>
                       <div
                         v-if="seoSectionsSupport[view.name]"
-                        @click="seoBtnClicked(view.name)">
-                        <div :title="pageMetadata.seo && pageMetadata.seo[view.name] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.name] === true}">SEO</div>
+                        @click="seoBtnClicked(view.id)">
+                        <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                       </div>
                     </div>
-                    <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                    <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
                          class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
                       <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                     </div>
@@ -870,7 +870,7 @@
                       </div>
                       <component
                         v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                        :is="getComponent(view.name, view.type)"
+                        :is="getComponent(view.name, view.type, view)"
                         :section="view"
                         :lang="lang"
                         :locales="locales"
@@ -956,11 +956,11 @@
                               </div>
                               <div
                                 v-if="seoSectionsSupport[view.name]"
-                                @click="seoBtnClicked(view.name)">
-                                <div :title="pageMetadata.seo && pageMetadata.seo[view.name] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.name] === true}">SEO</div>
+                                @click="seoBtnClicked(view.id)">
+                                <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                               </div>
                             </div>
-                            <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                            <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
                                  class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
                               <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                             </div>
@@ -976,7 +976,7 @@
                               </div>
                               <component
                                 v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                                :is="getComponent(view.name, view.type)"
+                                :is="getComponent(view.name, view.type, view)"
                                 :section="view"
                                 :lang="lang"
                                 :locales="locales"
@@ -1427,8 +1427,9 @@ const fieldsInputs = ref([
   }
 ]);
 const metadataFormLang = ref('');
-const computedTitle = ref('');
+const computedTitle = useState("computedTitle", () => '');
 const computedDescription = ref('');
+const computedImage = ref('');
 const sectionsUserId = ref('');
 const displayedErrorFormat = ref('');
 const invalidSectionsErrors = ref({});
@@ -1657,10 +1658,10 @@ useHead(() => {
       },
       { hid: "og:title", property: "og:title", content: computedTitle.value },
       { hid: "og:description", property: "og:description", content: computedDescription.value },
-      pageMetadata.value['mediaMetatag'] && pageMetadata.value['mediaMetatag'].url ? {
+      computedImage.value ? {
         hid: "og:image",
         property: "og:image",
-        content: pageMetadata.value['mediaMetatag'].url
+        content: computedImage.value
       } : {},
       { hid: "og:url", property: "og:url", content: fullURL },
     ],
@@ -1686,14 +1687,14 @@ useHead(() => {
 });
 
 // Methods (now as regular functions)
-const seoBtnClicked = (name) => {
+const seoBtnClicked = (id) => {
   if (!pageMetadata.value.seo) {
     pageMetadata.value.seo = {}
   }
-  if (pageMetadata.value.seo[name] === true) {
-    delete pageMetadata.value.seo[name];
+  if (pageMetadata.value.seo[id] === true) {
+    delete pageMetadata.value.seo[id];
   } else {
-    pageMetadata.value.seo[name] = true;
+    pageMetadata.value.seo[id] = true;
   }
   updatePageMetaData(true);
 }
@@ -1758,15 +1759,20 @@ const initializeSections = (res) => {
   if (res.data.metadata.media) {
     pageMetadata.value.media = res.data.metadata.media
   }
-  if (res.data.metadata.mediaMetatag) {
-    pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
-  }
   if (res.data.metadata.seo) {
     pageMetadata.value.seo = res.data.metadata.seo
   }
 
-  computedTitle.value = pageMetadata.value[lang].title
-  computedDescription.value = pageMetadata.value[lang].description
+  if (!computedTitle.value) {
+    computedTitle.value = pageMetadata.value[lang].title
+  }
+  if (!computedDescription.value) {
+    computedDescription.value = pageMetadata.value[lang].description
+  }
+  if (!computedImage.value && res.data.metadata.mediaMetatag) {
+    pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
+    computedImage.value = res.data.metadata.mediaMetatag
+  }
 
   const views = {}
   sections.map((section) => {
@@ -1947,6 +1953,7 @@ const updatePageMetaData = async (seo) => {
       if (view.linked_to) {
         sections.push({
           ...{
+            id: view.id.startsWith('id-') ? undefined : view.id,
             weight: view.weight,
             linked_to: view.linked_to,
             region: view.region ? view.region : {}
@@ -2482,8 +2489,35 @@ const getComponentSetup = async (sectionName, sectionType) => {
     return setupData
   }
 }
-const getComponent = (sectionName, sectionType) => {
+const sectionSEO = ref({
+  title: "",
+  description: "",
+  image: ""
+})
+const seoManagement = (view, hooksJs) => {
+  try {
+    if (view && pageMetadata.value.seo && pageMetadata.value.seo[view.id] === true) {
+      if (hooksJs && hooksJs['seo_management']) {
+        const seo = JSON.parse(JSON.stringify(hooksJs['seo_management'](view, i18n.locale.value)))
+        if (seo.title && !sectionSEO.value.title) {
+          sectionSEO.value.title = seo.title
+          computedTitle.value = seo.title
+        }
+        if (seo.description && !sectionSEO.value.description) {
+          sectionSEO.value.description = seo.description
+          computedDescription.value = seo.description
+        }
+        if (seo.image && !sectionSEO.value.image) {
+          sectionSEO.value.image = seo.image
+          computedImage.value = seo.image
+        }
+      }
+    }
+  } catch {}
+}
+const getComponent = (sectionName, sectionType, view) => {
   const hooksJs = importJs(`/js/global-hooks`)
+  seoManagement(view, hooksJs)
   if (hooksJs && hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
     return hooksJs['section_pre_render']({sectionName, sectionType})
   } else if (nuxtApp.$sections.cname === "active") {
@@ -3846,6 +3880,7 @@ const mutateVariation = async (variationName) => {
       if (view.linked_to) {
         sections.push({
           ...{
+            id: view.id.startsWith('id-') ? undefined : view.id,
             weight: view.weight,
             linked_to: view.linked_to,
             region: view.region ? view.region : {}
