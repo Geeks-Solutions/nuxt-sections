@@ -1,7 +1,7 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': admin === true}">
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
-           class="sections-aside">
+           class="sections-aside" :class="{'sections-aside-z': introSectionFormStep === true}">
       <div
         class="step-back-aside"
         v-if="currentSection && creationView"
@@ -18,8 +18,8 @@
           :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`"
           class="edit-icon"/>
       </a>
-      <div class="flexSections">
-        <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="component-view">
+      <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections">
+        <div class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
           <LazyBaseTypesStatic
@@ -143,7 +143,7 @@
                     v-if="selectedLayout === 'standard'"
                     class="hp-button"
                     @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun))
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
             "
                   >
                     <div class="btn-icon plus-icon">
@@ -255,7 +255,7 @@
                        class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                     <div class="flexSections sections-flex-row sections-justify-center">
                       <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
-                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun)">
+                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun); checkIntroLastStep('availableSectionOpened')">
                         {{ $t("availableSections") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
@@ -267,7 +267,7 @@
                       <div class="sections-text-center h2 sections-px-4">/</div>
                       <div ref="intro-inventory" class="intro-inventory sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                           @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened')">
+                           @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened'); checkIntroLastStep('inventoryOpened')">
                         {{ $t("typeInventory") }}
                       </div>
                     </div>
@@ -457,8 +457,8 @@
                     </div>
                   </div>
                 </div>
-                <div v-else class="flexSections">
-                  <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="component-view">
+                <div v-else :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections">
+                  <div class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
                     <LazyBaseTypesStatic
@@ -1199,7 +1199,7 @@
                        class="flexSections sections-w-full sections-justify-center">
                   </div>
                   <div class="footer">
-                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun)">
+                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun);">
                       <div class="btn-icon check-icon"></div>
                       <div class="btn-text">{{ $t("Done") }}</div>
                     </button>
@@ -1478,6 +1478,7 @@ const canPromote = ref(false);
 const intro = ref(null);
 const currentPages = ref(null);
 const introRerun = ref(false);
+const introSectionFormStep = ref(false);
 const creationView = ref(false);
 const drag = ref(false);
 const fetchedOnServer = useState('fetchedOnServer', () => false);
@@ -2811,9 +2812,14 @@ const initiateIntroJs = async () => {
     }
   } catch {} // Outer catch remains for potential errors before API call
 }
-const runIntro = async (topic, rerun) => {
+const runIntro = async (topic, rerun, lastSavedTopic) => {
+  if (topic === 'sectionFormOpened') {
+    introSectionFormStep.value = true
+  }
+
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
+    useCookie('intro-last-step').value = null
   }
 
   if (rerun === true) {
@@ -2823,6 +2829,13 @@ const runIntro = async (topic, rerun) => {
   }
 
   if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
+    if (topic && lastSavedTopic !== true) {
+      if (topic === 'sectionCreationConfirmed') {
+        useCookie('intro-last-step').value = 'availableSectionOpened'
+      } else {
+        useCookie('intro-last-step').value = topic
+      }
+    }
     if (intro.value) {
       intro.value.exit(true)
     }
@@ -2878,24 +2891,22 @@ const addIntroSteps = (topic, rerun) => {
     intro.value.refresh(true)
     intro.value.start()
 
-    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
+    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed' || topic === 'availableSectionOpened') {
       window.runIntro = runIntro
       window.introRerun = introRerun.value
       window.setTypesTab = (value) => {
         typesTab.value = value
       }
-    } else if (topic === 'inventoryOpened') {
-      window.addNewStaticType = addNewStaticType
-      window.closeIntro = () => {
-        intro.value.exit(true)
-      }
-    } else if (topic === 'availableSectionOpened') {
+
       window.simpleCTAType = filteredTypes.value.filter(
         type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
       ).find(type => type.name === 'SimpleCTA')
-
       window.openCurrentSection = openCurrentSection
-      window.introRerun = introRerun.value
+      window.closeIntro = () => {
+        intro.value.exit(true)
+      }
+    } else if (topic === 'inventoryOpened') {
+      window.addNewStaticType = addNewStaticType
       window.closeIntro = () => {
         intro.value.exit(true)
       }
@@ -2965,7 +2976,7 @@ const introSteps = (topic) => {
       return [
         {
           element: document.querySelector('.intro-simple-CTA-section-available'),
-          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${i18n.t('intro.here')}</span>`
+          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); setTimeout(() => {runIntro('sectionFormOpened', introRerun)}, 200);">${i18n.t('intro.here')}</span>`
         }
       ]
     case 'sectionFormOpened':
@@ -3455,7 +3466,8 @@ const openEditMode = async () => {
 
   if (editMode.value === true) {
     setTimeout(async () => {
-      await runIntro('topBar')
+      checkIntroLastStep('topBar')
+      await runIntro('topBar', introRerun.value)
     }, 500)
 
     loading.value = true
@@ -3649,6 +3661,7 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
         i18n.t('successAddedSection')
       )
     }
+    checkIntroLastStep('sectionSubmitted')
   } catch (e) {
     showToast(
       "Error",
@@ -4007,6 +4020,7 @@ const mutateVariation = async (variationName) => {
               JSON.stringify(displayVariations.value)
             );
             sectionsLayout.value = res.data.layout;
+            checkIntroLastStep('pageSaved');
             runIntro('pageSaved', introRerun.value);
             loading.value = false;
 
@@ -4523,6 +4537,7 @@ const openCurrentSection = (type, global) => {
       currentSection.value = { ...type, creation: true };
     }
   }
+  setTimeout(() => {checkIntroLastStep('sectionFormOpened')}, 200)
 };
 const updateCreationView = (settings) => {
   createdView.value.settings = settings;
@@ -4662,6 +4677,12 @@ const logoutUser = () => {
   window.location.reload()
 }
 
+const checkIntroLastStep = (topic) => {
+  if (useCookie('intro-last-step').value && useCookie('introjs-dontShowAgain').value !== true && useCookie('intro-last-step').value === topic) {
+    runIntro(useCookie('intro-last-step').value, true, true)
+  }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   await fetchData()
@@ -4680,6 +4701,13 @@ onMounted(async () => {
     nuxtApp.$sections.projectId = useCookie(`sections-project-id`).value;
   }
   fire_js("page_payload_postprocess", document.documentElement.outerHTML);
+
+  if (useCookie('introjs-dontShowAgain').value === true) {
+    useCookie('intro-last-step').value = null
+  }
+  if (!pageNotFound.value) {
+    checkIntroLastStep('editPage')
+  }
 });
 
 onBeforeUnmount(() => {
@@ -6146,6 +6174,9 @@ span.handle {
   min-width: 422px;
   max-width: 50%;
   z-index: 190;
+}
+.sections-container > .sections-aside-z {
+  z-index: 9999999;
 }
 
 .sections-aside

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Export page problem for Global section and if there is a layout #170
 - Duplicate call requests on server side when connecting as admin: When you connect to your site from Sections BO, you have the same request called twice #186
+- Guide scenarios that needs to be fixed #130
 
 ### [3.0.1] - 2025-05-26
 
