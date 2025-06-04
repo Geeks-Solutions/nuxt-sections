@@ -106,7 +106,7 @@
           </button>
           <div class="bg-light-grey-hp hide-mobile section-wrapper">
             <div
-              class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
+              class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
               v-if="admin && editMode && !isSideBarOpen"
             >
               <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center hide-mobile">
@@ -116,27 +116,29 @@
                 >
                   <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
                 </button>
-                <div v-if="layoutMode === true" class="layoutSelect-container">
-                  <div class="layoutSelect-select-wrapper">
-                    <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                            @change="computeLayoutData">
-                      <option disabled value="">-- Select layout --</option>
-                      <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-                    </select>
-                    <div class="layoutSelect-arrow-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path d="M10 12L5 7h10l-5 5z"/>
-                      </svg>
+                <div class="flexSections">
+                  <div v-if="layoutMode === true" class="layoutSelect-container">
+                    <div class="layoutSelect-select-wrapper">
+                      <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                              @change="computeLayoutData">
+                        <option disabled value="">-- Select layout --</option>
+                        <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+                      </select>
+                      <div class="layoutSelect-arrow-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                          <path d="M10 12L5 7h10l-5 5z"/>
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div v-if="layoutMode === true" class="custom-checkbox">
-                  <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                  <label class="switch">
-                    <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                    <span class="slider round"></span>
-                  </label>
-                  <label for="highlightRegions"></label>
+                  <div v-if="layoutMode === true" class="custom-checkbox">
+                    <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                    <label class="switch">
+                      <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                      <span class="slider round"></span>
+                    </label>
+                    <label for="highlightRegions"></label>
+                  </div>
                 </div>
                 <div ref="intro-add-new-section" class="intro-add-new-section">
                   <button
@@ -152,24 +154,26 @@
                     <div class="btn-text">{{ $t("Add") }}</div>
                   </button>
                 </div>
-                <button
-                  class="hp-button"
-                  @click="
+                <div class="flexSections">
+                  <button
+                    class="hp-button"
+                    @click="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
-                >
-                  <div class="btn-icon plus-icon">
-                    <LazyBaseIconsPlus/>
-                  </div>
-                  <div class="btn-text">{{ $t("createGlobal") }}</div>
-                </button>
-                <button
-                  ref="intro-find-more-blobal"
-                  class="intro-find-more-blobal hp-button globalTour"
-                  @click="runIntro('globalTour', true)"
-                >
-                  <div class="btn-text intro">?</div>
-                </button>
+                  >
+                    <div class="btn-icon plus-icon">
+                      <LazyBaseIconsPlus/>
+                    </div>
+                    <div class="btn-text">{{ $t("createGlobal") }}</div>
+                  </button>
+                  <button
+                    ref="intro-find-more-blobal"
+                    class="intro-find-more-blobal hp-button globalTour"
+                    @click="runIntro('globalTour', true)"
+                  >
+                    <div class="btn-text intro">?</div>
+                  </button>
+                </div>
                 <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
                   <div class="btn-icon check-icon">
                     <LazyBaseIconsSave/>
@@ -184,56 +188,60 @@
                 </button>
               </div>
               <div class="flexSections config-buttons">
-                <button
-                  class="hp-button "
-                  :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                  data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
-                  @click="exportSections"
-                >
-                  <LazyBaseIconsImport/>
-                </button>
-                <a id="downloadAnchorElem" style="display:none"></a>
-                <button
-                  class="hp-button "
-                  :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                  data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
-                  @click="initImportSections"
-                >
-                  <LazyBaseIconsExport/>
-                </button>
-                <button
-                  class="hp-button danger"
-                  data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
-                  @click="isDeletePageModalOpen = true">
-                  <LazyBaseIconsTrash class="trash-icon-style"/>
-                </button>
-                <button
-                  class="hp-button "
-                  :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                  data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-                  @click="metadataModal = true"
-                >
-                  <LazyBaseIconsSettings/>
-                </button>
+                <div class="flexSections">
+                  <button
+                    class="hp-button "
+                    :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                    data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
+                    @click="exportSections"
+                  >
+                    <LazyBaseIconsImport/>
+                  </button>
+                  <a id="downloadAnchorElem" style="display:none"></a>
+                  <button
+                    class="hp-button "
+                    :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                    data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
+                    @click="initImportSections"
+                  >
+                    <LazyBaseIconsExport/>
+                  </button>
+                  <button
+                    class="hp-button danger"
+                    data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+                    @click="isDeletePageModalOpen = true">
+                    <LazyBaseIconsTrash class="trash-icon-style"/>
+                  </button>
+                  <button
+                    class="hp-button "
+                    :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                    data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+                    @click="metadataModal = true"
+                  >
+                    <LazyBaseIconsSettings/>
+                  </button>
+                </div>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
-                <button
-                  ref="intro-relaunch"
-                  class="intro-relaunch hp-button"
-                  @click="runIntro('topBar', true)"
-                >
-                  <div class="btn-text intro">?</div>
-                </button>
-                <button
-                  @click="logoutUser"
-                  v-if="admin"
-                  class="bg-blue"
-                  style="background: black;
+                <div class="flexSections">
+                  <button
+                    ref="intro-relaunch"
+                    class="intro-relaunch hp-button"
+                    @click="runIntro('topBar', true)"
+                  >
+                    <div class="btn-text intro">?</div>
+                  </button>
+                  <button
+                    @click="logoutUser"
+                    v-if="admin"
+                    class="bg-blue"
+                    style="background: black;
                   font-size: 13px;
                   border-radius: 5px;
                   padding: 3px 6px;"
-                >
-                  {{ $t("Logout") }}
-                </button>
+                  >
+                    {{ $t("Logout") }}
+                  </button>
+                </div>
               </div>
             </div>
             <div v-if="admin && editMode && !isSideBarOpen && sectionsChanged" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
@@ -5045,8 +5053,7 @@ button svg {
 
 .section-wrapper .edit-mode-wrapper {
   align-items: center;
-  padding-top: 48px;
-  padding-bottom: 16px;
+  margin-left: 48px;
 }
 
 .part2 .create-static-section {
@@ -6365,7 +6372,26 @@ section .ql-editor.ql-snow.grey-bg {
   background-color: #03b1c7;
   color: white;
 }
-.intro-top-bar {
-  min-width: fit-content;
+@media only screen and (max-width: 768px) {
+  .section-wrapper .edit-mode-wrapper {
+    flex-direction: column-reverse;
+  }
+  .sections-config .config-buttons {
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+  .intro-top-bar {
+    flex-direction: column;
+    align-items: center;
+  }
+  .section-wrapper .edit-mode-wrapper {
+    margin-left: 0
+  }
+  .sections-container > .sections-aside {
+    min-width: fit-content;
+  }
+  .sections-aside .component-view .element-type {
+    padding-top: 30px;
+  }
 }
 </style>
