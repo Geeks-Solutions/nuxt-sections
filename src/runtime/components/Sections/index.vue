@@ -1652,17 +1652,17 @@ useHead(() => {
     },
     title: computedTitle.value,
     meta: [
-      {
+      computedDescription.value ? {
         hid: 'description',
         name: 'description',
         content: computedDescription.value
-      },
+      } : {},
       { hid: "og:title", property: "og:title", content: computedTitle.value },
-      { hid: "og:description", property: "og:description", content: computedDescription.value },
+      computedDescription.value ? { hid: "og:description", property: "og:description", content: computedDescription.value } : {},
       computedImage.value ? {
         hid: "og:image",
         property: "og:image",
-        content: computedImage.value
+        content: computedImage.value.url ? computedImage.value.url : computedImage.value
       } : {},
       { hid: "og:url", property: "og:url", content: fullURL },
     ],
@@ -4685,6 +4685,7 @@ const checkIntroLastStep = (topic) => {
 
 // Lifecycle hooks
 onMounted(async () => {
+  computedTitle.value = ""
   await fetchData()
   initializeSectionsCMSEvents();
   if (admin) {
