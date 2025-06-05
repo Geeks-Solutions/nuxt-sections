@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duplicate call requests on server side when connecting as admin: When you connect to your site from Sections BO, you have the same request called twice #186
 - Guide scenarios that needs to be fixed #130
 - Feedback Display issue for the library #187
+- Section creation Media fields declaration: When you create a new site and you enable the section from the inventory, the sections type fields are not picked up from the section code and added #190
 
 ### [3.0.1] - 2025-05-26
 

@@ -1,3 +1,28 @@
+vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
+  const mod
+    = await importOriginal
+  () // type is inferred
+  return {
+    ...mod,
+    showToast: vi.fn(),
+    importComp: vi.fn(() => {
+      return {
+        setup: Promise.resolve({
+          default: {
+            props: {
+              mediaFields: [
+                { name: 'media_field_1' },
+                { name: '' }, // will be filtered
+                { name: 'media_field_2' }
+              ]
+            }
+          }
+        })
+      }
+    })
+  }
+})
+
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {flushPromises, mount, shallowMount} from '@vue/test-utils'
 import {useNuxtApp} from "#app";
@@ -37,10 +62,6 @@ global.showToast = showToast
 global.validateQS = validateQS
 
 const showToastMock = vi.fn()
-
-vi.mock('./src/runtime/utils/helpers.ts', () => ({
-  showToast: showToastMock
-}))
 
 import SectionsPage from '../src/runtime/components/Sections/index.vue';
 import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue';
@@ -1567,5 +1588,58 @@ describe('sanitizeURL', () => {
 
     // Verify updated URL
     expect(useRoute().fullPath).toBe('/some-page?keep_me=yes')
+  })
+})
+
+describe('addNewStaticType', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+
+    // Set initial states
+    wrapper.vm.fieldsInputs = [
+      { type: 'image', name: 'media_1' },
+      { type: 'text', name: '   ' }, // should be filtered
+    ]
+    wrapper.vm.sectionTypeName = ''
+    wrapper.vm.loading = false
+    wrapper.vm.types = []
+    wrapper.vm.globalTypes = []
+    wrapper.vm.staticSuccess = false
+
+    // importComp.mockResolvedValue({
+    //   setup: Promise.resolve({
+    //     default: {
+    //       props: {
+    //         mediaFields: [
+    //           { name: 'media_field_1' },
+    //           { name: '' }, // will be filtered
+    //           { name: 'media_field_2' }
+    //         ]
+    //       }
+    //     }
+    //   })
+    // })
+
+    // Mock getSectionTypes
+    // wrapper.vm.getSectionTypes = vi.fn().mockResolvedValue(undefined)
+
+  })
+
+  it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields', async () => {
+
+    await vi.resetAllMocks()
+
+    await wrapper.vm.addNewStaticType('customForm')
+
+    await wrapper.vm.$nextTick()
+    // Expect URL includes correct path
+    expect(global.fetch.mock.calls[1][0]).toContain(
+      '/section-types/customForm'
+    );
+
+    // Expect filtered fields only (non-empty name)
+    expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
   })
 })

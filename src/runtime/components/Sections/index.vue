@@ -18,7 +18,7 @@
           :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`"
           class="edit-icon"/>
       </a>
-      <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections">
+      <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
         <div class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
@@ -465,7 +465,7 @@
                     </div>
                   </div>
                 </div>
-                <div v-else :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections">
+                <div v-else :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
                   <div class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
@@ -1086,7 +1086,7 @@
                :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
-              <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl"
+              <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl page-settings"
                    :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
                 <div class="section-modal-wrapper">
                   <div class="sections-text-center h4 sectionTypeHeader">
@@ -1100,7 +1100,7 @@
                   <div class="flexSections sections-w-full sections-justify-center"
                        :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
                     <div class="body metadataFieldsContainer">
-                      <div class="flexSections sections-flex-row sections-gap-4">
+                      <div class="flexSections sections-flex-row sections-gap-4 metadataFieldsContainerRow">
                         <div class='sections-w-full'>
                           <div class="sectionsFieldsLabels">
                             {{ $t("projectId") }}: {{ nuxtApp.$sections.projectId }}
@@ -2092,13 +2092,20 @@ const sanitizeURL = async () => {
 const checkToken = async () => {
   const auth_code = route.query.auth_code
 
+  const date = new Date()
+  date.setDate(date.getDate() + 14)
+  date.setHours(date.getHours() - 4)
+
   if (nuxtApp.$sections.cname === "active") {
     if (useCookie("sections-project-id").value) {
       nuxtApp.$sections.projectId = useCookie("sections-project-id").value
     } else {
       const project_id = route.query.project_id
       nuxtApp.$sections.projectId = project_id
-      useCookie("sections-project-id").value = project_id
+      useCookie("sections-project-id", {
+        expires: date,
+        path: '/'
+      }).value = project_id
     }
   }
 
@@ -2116,9 +2123,6 @@ const checkToken = async () => {
         ...config, // Assuming config contains headers etc.
         onSuccess: async (res) => {
           const token = res.data.token // Assuming the token is in res.data.token
-          const date = new Date()
-          date.setDate(date.getDate() + 14)
-          date.setHours(date.getHours() - 4)
 
           useCookie("sections-auth-token", {
             expires: date,
@@ -2395,9 +2399,8 @@ const addNewStaticType = async (name) => {
     let fieldsDeclaration = fieldsInputs.value
 
     if (name) {
-      // In Nuxt 3, dynamic imports use different syntax
-      // We'd need to know more about how importComp is used
-      const formComp = importComp(`/forms/${sectionTypeName.value}`).component
+
+      const formComp = await importComp(`/forms/${sectionTypeName.value}`).setup?.then(d => d.default)
 
       if (formComp.props && formComp.props.mediaFields) {
         fieldsDeclaration = formComp.props.mediaFields
@@ -6372,26 +6375,47 @@ section .ql-editor.ql-snow.grey-bg {
   background-color: #03b1c7;
   color: white;
 }
-@media only screen and (max-width: 768px) {
-  .section-wrapper .edit-mode-wrapper {
-    flex-direction: column-reverse;
+@media only screen and (max-width: 400px) {
+  .sections-aside .component-view {
+    width: 350px;
   }
-  .sections-config .config-buttons {
-    flex-direction: column-reverse;
-    align-items: center;
-  }
-  .intro-top-bar {
-    flex-direction: column;
-    align-items: center;
-  }
-  .section-wrapper .edit-mode-wrapper {
-    margin-left: 0
-  }
-  .sections-container > .sections-aside {
-    min-width: fit-content;
-  }
-  .sections-aside .component-view .element-type {
-    padding-top: 30px;
+  .sections-aside .component-view-wrapper {
+    width: 350px;
   }
 }
+@media only screen and (max-width: 768px) {
+    .section-wrapper .edit-mode-wrapper {
+      flex-direction: column-reverse;
+    }
+    .sections-config .config-buttons {
+      flex-direction: column-reverse;
+      align-items: center;
+    }
+    .intro-top-bar {
+      flex-direction: column;
+      align-items: center;
+    }
+    .section-wrapper .edit-mode-wrapper {
+      margin-left: 0
+    }
+    .sections-container > .sections-aside {
+      min-width: fit-content;
+    }
+    .sections-aside .component-view .element-type {
+      padding-top: 30px;
+    }
+    .sections-aside .component-view-wrapper {
+      width: 410px;
+    }
+    .metadataFieldsContainerRow {
+      flex-direction: column;
+    }
+    .section-modal-content.page-settings {
+      min-width: 320px;
+      max-height: 600px;
+    }
+    .hp-button.danger {
+      height: 36px;
+    }
+  }
 </style>
