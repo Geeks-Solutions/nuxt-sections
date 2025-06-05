@@ -8,6 +8,7 @@
     "generate": "nuxi generate"
   },
   "dependencies": {
+    "@nuxt/image": "^1.10.0",
     "@nuxtjs/i18n": "^9.5.3",
     "h3-compression": "^0.3.2",
     "nuxt": "^3.17.1"

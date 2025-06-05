@@ -2408,7 +2408,11 @@ const addNewStaticType = async (name) => {
       const formComp = await importComp(`/forms/${sectionTypeName.value}`).setup?.then(d => d.default)
 
       if (formComp.props && formComp.props.mediaFields) {
-        fieldsDeclaration = formComp.props.mediaFields
+        if (formComp.props.mediaFields.default && formComp.props.mediaFields.default()) {
+          fieldsDeclaration = formComp.props.mediaFields.default()
+        } else {
+          fieldsDeclaration = formComp.props.mediaFields
+        }
       }
     }
 

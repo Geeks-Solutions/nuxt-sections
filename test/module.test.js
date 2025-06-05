@@ -1643,6 +1643,40 @@ describe('addNewStaticType', () => {
     // Expect filtered fields only (non-empty name)
     expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
   })
+
+  it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields when mediaFields prop has a default() function', async () => {
+
+    await vi.resetAllMocks()
+
+    importComp.mockReturnValue({
+      setup: Promise.resolve({
+        default: {
+          props: {
+            mediaFields: {
+              default: () => {
+                return [
+                  { name: 'media_field_1' },
+                  { name: '' }, // will be filtered
+                  { name: 'media_field_2' }
+                ]
+              }
+            }
+          }
+        }
+      })
+    })
+
+    await wrapper.vm.addNewStaticType('customForm')
+
+    await wrapper.vm.$nextTick()
+    // Expect URL includes correct path
+    expect(global.fetch.mock.calls[1][0]).toContain(
+      '/section-types/customForm'
+    );
+
+    // Expect filtered fields only (non-empty name)
+    expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
+  })
 })
 
 describe('Wysiwyg - validate default language content', () => {
