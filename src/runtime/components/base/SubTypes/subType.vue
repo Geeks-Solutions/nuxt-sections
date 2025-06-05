@@ -28,25 +28,27 @@
         />
       </div>
     </div>
-    <!-- Submit Button -->
-    <button
-      class="mt-4 submit-btn"
-      type="button"
-      @click="sendJsonData"
-      :class="{ withTabs }"
-    >
-      {{ t('Submit data') }}
-    </button>
-    <!-- Promote Button -->
-    <button
+    <div class="sections-btns-submission">
+      <!-- Submit Button -->
+      <button
+        class="mt-4 submit-btn"
+        type="button"
+        @click="sendJsonData"
+        :class="{ withTabs }"
+      >
+        {{ t('Submit data') }}
+      </button>
+      <!-- Promote Button -->
+      <button
         v-if="promoteButton"
         class="mt-4 submit-btn promote-btn"
         type="button"
         @click="emit('promote-section')"
         :class="{ withTabs }"
-    >
-      {{ t('promoteSection') }}
-    </button>
+      >
+        {{ t('promoteSection') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -186,32 +188,17 @@ defineExpose({
 </script>
 
 <style scoped> /* Changed to scoped */
-.sub-types button.submit-btn {
-  border: none;
-  font-size: 24px;
-  margin-top: 1rem;
-  padding: 7px;
-  background: #31a9db;
-  color: white;
-  border-radius: 16px;
-  transition: 0.2s;
-  width: 385px;
-  height: 70px;
-  text-align: center;
-}
+@import "../../../assets/admin.css";
 .submit-btn.withTabs {
   margin-left: 14%;
 }
 .submit-btn.withTabs:hover {
-  background-color: darken(#31a9db, 17%);
+  background-color: darken(#03b1c7, 17%);
   transition: 0.2s;
 }
 .content-wrapper {
   overflow-y: scroll;
   height: 550px;
-}
-.promote-btn {
-  font-size: 20px !important;
 }
 @media only screen and (max-height: 850px) {
   .content-wrapper {

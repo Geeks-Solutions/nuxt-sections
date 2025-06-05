@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### [3.0.1] - 2025-05-20
+### [3.0.2] - 2025-06-02
+
+### Added
+
+- SEO Management: Overriding the meta data of the page by the one of any dynamic/configurable section type #178
+
+### Updated
+
+- Display fixes requested by julien #155
+- SectionsCMSEvents Initialization: added two events for openEditMode and runIntro functions
+- Update vue components library version to live version 3.0.1
+
+### Fixed
+
+- Export page problem for Global section and if there is a layout #170
+- Duplicate call requests on server side when connecting as admin: When you connect to your site from Sections BO, you have the same request called twice #186
+- Guide scenarios that needs to be fixed #130
+- Feedback Display issue for the library #187
+- Section creation Media fields declaration: When you create a new site and you enable the section from the inventory, the sections type fields are not picked up from the section code and added #190
+- Default language issues in Wysiwyg Form: When in Sections BO you select only French as language and then French as default language, you are not able to submit data for a section #191
+
+### [3.0.1] - 2025-05-26
 
 ### Updated
 

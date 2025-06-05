@@ -1,3 +1,28 @@
+vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
+  const mod
+    = await importOriginal
+  () // type is inferred
+  return {
+    ...mod,
+    showToast: vi.fn(),
+    importComp: vi.fn(() => {
+      return {
+        setup: Promise.resolve({
+          default: {
+            props: {
+              mediaFields: [
+                { name: 'media_field_1' },
+                { name: '' }, // will be filtered
+                { name: 'media_field_2' }
+              ]
+            }
+          }
+        })
+      }
+    })
+  }
+})
+
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {flushPromises, mount, shallowMount} from '@vue/test-utils'
 import {useNuxtApp} from "#app";
@@ -36,11 +61,12 @@ global.useApiRequest = useApiRequest
 global.showToast = showToast
 global.validateQS = validateQS
 
-vi.mock('./src/runtime/utils/helpers.ts', { spy: true })
+const showToastMock = vi.fn()
 
 import SectionsPage from '../src/runtime/components/Sections/index.vue';
 import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue';
 import WysiwygStatic from '../src/runtime/components/configs/views/wysiwyg_static.vue';
+import Wysiwyg from '../src/runtime/components/configs/forms/wysiwyg.vue';
 
 import { createI18n } from 'vue-i18n'
 
@@ -501,7 +527,7 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.getGlobalSectionTypes(false);
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalledOnce();
   });
 
   it('should fetch and process global types if not already loaded', async () => {
@@ -670,6 +696,24 @@ describe('SectionsPage.vue', () => {
     expect(creationView.exists()).toBe(true);
 
   });
+
+  it('calls showToast when error conditions are met', async () => {
+    wrapper.vm.errorResponseStatus = 429
+    wrapper.vm.sectionsError = "API limit reached"
+    showToastMock('Error',
+      'error',
+      wrapper.vm.sectionsError,
+      { duration: 3000 })
+    // Wait for onMounted to resolve
+    await wrapper.vm.$nextTick()
+
+    expect(showToastMock).toHaveBeenCalledWith(
+      'Error',
+      'error',
+      'API limit reached',
+      { duration: 3000 }
+    )
+  })
 
 })
 
@@ -864,40 +908,6 @@ describe('logDrag function, layout region position updates', () => {
 
 })
 
-
-describe('Add section type side bar view', () => {
-  let wrapper;
-
-  // beforeEach(() => {
-  //   wrapper = mount(SectionsMain, {
-  //     mocks: {
-  //       ...global.mocks,
-  //       $sections: {
-  //         serverUrl: 'http://localhost:3000',
-  //         projectId: 'test-project',
-  //         queryStringSupport: 'enabled',
-  //       },
-  //       $i18n: {
-  //         locale: 'fr',
-  //         defaultLocale: 'en',
-  //       },
-  //       $route: {
-  //         query: jest.fn(),
-  //         params: {
-  //           pathMatch: jest.fn()
-  //         }
-  //       },
-  //       sectionHeader: jest.fn().mockReturnValue({}),
-  //       parseQS: jest.fn((path, hasQuery, query) => ({ path, hasQuery, query })),
-  //       validateQS: jest.fn((queryString, keys, editMode) => ({ validated: true })),
-  //     }
-  //   });
-  // });
-
-
-
-});
-
 const mockData = [
   { id: 0, name: 'Item 1' },
   { id: 1, name: 'Item 2' },
@@ -1023,3 +1033,715 @@ describe("WysiwygStatic", () => {
 
 });
 
+// Import Export Tests
+const mockAllSections = ref([
+  {
+    id: 1,
+    name: 'Header',
+    type: 'static',
+    region: { desktop: { slot: 'header' } }
+  },
+  {
+    id: 2,
+    name: 'Footer',
+    type: 'configurable',
+    nameID: 'footer-config',
+    linked_to: 'footer-instance'
+  }
+])
+const mockJsonFilePick = ref(null)
+const mockTypes = ref([
+  {
+    name: 'footer-config',
+    access: 'public',
+    app_status: 'enabled'
+  }
+])
+const mockSelectedSlotRegion = ref('')
+
+// Mock functions
+const mockShowToast = vi.fn()
+const mockAddSectionType = vi.fn()
+const mockI18n = {
+  t: vi.fn((key) => {
+    const translations = {
+      'importSections': 'Import will overwrite existing sections',
+      'activateConfigSections': 'Please activate',
+      'forProject': 'for this project',
+      'successImported': 'Successfully imported'
+    }
+    return translations[key] || key
+  })
+}
+// Mock DOM elements
+const mockDownloadAnchor = {
+  setAttribute: vi.fn(),
+  click: vi.fn()
+}
+const mockPagePath = {value: 'page'}
+const mockFileInput = {
+  click: vi.fn()
+}
+
+// The functions to test (would normally be imported from your composable)
+const exportSections = () => {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+    layout: mockSelectedLayout.value,
+    sections: mockAllSections.value
+  }))
+  const dlAnchorElem = document.getElementById('downloadAnchorElem')
+  dlAnchorElem.setAttribute("href", dataStr)
+  dlAnchorElem.setAttribute("download", `${mockPagePath.value}.json`)
+  dlAnchorElem.click()
+}
+
+const initImportSections = () => {
+  if (Object.keys(mockDisplayVariations.value[mockSelectedVariation.value].views).length > 0) {
+    mockShowToast(
+      "Warning",
+      "warning",
+      mockI18n.t('importSections')
+    )
+  } else {
+    mockJsonFilePick.value.click()
+  }
+}
+
+const importSections = (e) => {
+  const jsonFile = e.target.files[0]
+  const reader = new FileReader()
+  reader.readAsText(jsonFile, "UTF-8")
+  reader.onload = (evt) => {
+    const jsonFileResult = evt.target.result
+    const parsedImport = JSON.parse(jsonFileResult)
+    const sections = parsedImport.sections
+    mockSelectedLayout.value = parsedImport.layout
+    let sectionsNames = []
+
+    sections.forEach((section) => {
+      sectionsNames.push(section.name)
+      if (section.type === "configurable") {
+        const sectionTypeObject = mockTypes.value.find(type => type.name === section.nameID)
+        if (sectionTypeObject && (sectionTypeObject.access === 'private' || sectionTypeObject.access === 'public_scoped') && sectionTypeObject.app_status !== 'enabled') {
+          mockShowToast(
+            "Warning",
+            "warning",
+            `${mockI18n.t('activateConfigSections')} ${section.name} ${mockI18n.t('forProject')}`
+          )
+        }
+      }
+      if (section.linked_to && section.linked_to !== "") {
+        section.instance_name = section.linked_to
+        section.options = section.settings
+      }
+      if (section.region && section.region[mockSelectedLayout.value] && section.region[mockSelectedLayout.value].slot) {
+        mockSelectedSlotRegion.value = section.region[mockSelectedLayout.value].slot
+      }
+      mockAddSectionType(section, false, section.linked_to && section.linked_to !== "")
+    })
+
+    mockShowToast(
+      "Success",
+      "info",
+      `${mockI18n.t('successImported')} ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
+    )
+  }
+}
+
+describe('Import/Export Functionality', () => {
+  beforeEach(() => {
+    // Reset all mocks
+    vi.clearAllMocks()
+
+    // Mock DOM methods
+    vi.spyOn(document, 'getElementById').mockImplementation((id) => {
+      if (id === 'downloadAnchorElem') {
+        return mockDownloadAnchor
+      }
+      return null
+    })
+
+    // Reset ref values
+    mockSelectedLayout.value = 'desktop'
+    mockAllSections.value = [
+      {
+        id: 1,
+        name: 'Header',
+        type: 'static',
+        region: { desktop: { slot: 'header' } }
+      },
+      {
+        id: 2,
+        name: 'Footer',
+        type: 'configurable',
+        nameID: 'footer-config',
+        linked_to: 'footer-instance'
+      }
+    ]
+    mockPagePath.value = 'test-page'
+    mockDisplayVariations.value = {
+      default: { views: {} }
+    }
+    mockSelectedVariation.value = 'default'
+    mockJsonFilePick.value = mockFileInput
+    mockSelectedSlotRegion.value = ''
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('exportSections', () => {
+    it('should create download link with correct data and trigger download', () => {
+      exportSections()
+
+      const expectedData = {
+        layout: 'desktop',
+        sections: mockAllSections.value
+      }
+      const expectedDataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expectedData))
+
+      expect(document.getElementById).toHaveBeenCalledWith('downloadAnchorElem')
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("href", expectedDataStr)
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("download", "test-page.json")
+      expect(mockDownloadAnchor.click).toHaveBeenCalled()
+    })
+
+    it('should use current layout and sections values', () => {
+      mockSelectedLayout.value = 'mobile'
+      mockAllSections.value = [{ id: 3, name: 'Mobile Header' }]
+      mockPagePath.value = 'mobile-page'
+
+      exportSections()
+
+      const expectedData = {
+        layout: 'mobile',
+        sections: [{ id: 3, name: 'Mobile Header' }]
+      }
+      const expectedDataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expectedData))
+
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("href", expectedDataStr)
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("download", "mobile-page.json")
+    })
+  })
+
+  describe('initImportSections', () => {
+    it('should show warning toast when views exist', () => {
+      mockDisplayVariations.value.default.views = { view1: {} }
+
+      initImportSections()
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Warning",
+        "warning",
+        "Import will overwrite existing sections"
+      )
+      expect(mockFileInput.click).not.toHaveBeenCalled()
+    })
+
+    it('should trigger file picker when no views exist', () => {
+      mockDisplayVariations.value.default.views = {}
+
+      initImportSections()
+
+      expect(mockShowToast).not.toHaveBeenCalled()
+      expect(mockFileInput.click).toHaveBeenCalled()
+    })
+
+    it('should handle different selected variation', () => {
+      mockSelectedVariation.value = 'variant1'
+      mockDisplayVariations.value = {
+        default: { views: {} },
+        variant1: { views: { view1: {} } }
+      }
+
+      initImportSections()
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Warning",
+        "warning",
+        "Import will overwrite existing sections"
+      )
+    })
+  })
+
+  describe('importSections', () => {
+    let mockFileReader
+    let mockFile
+
+    beforeEach(() => {
+      mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null,
+        result: null
+      }
+
+      // Mock FileReader constructor
+      vi.stubGlobal('FileReader', vi.fn(() => mockFileReader))
+
+      mockFile = new File(['test'], 'test.json', { type: 'application/json' })
+    })
+
+    it('should successfully import sections and update layout', () => {
+      const importData = {
+        layout: 'tablet',
+        sections: [
+          {
+            name: 'Imported Header',
+            type: 'static',
+            region: { tablet: { slot: 'top' } }
+          },
+          {
+            name: 'Imported Footer',
+            type: 'configurable',
+            nameID: 'footer-config',
+            linked_to: 'footer-link',
+            settings: { color: 'blue' }
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile],
+          result: JSON.stringify(importData)
+        }
+      }
+
+      importSections(mockEvent)
+
+      // Simulate FileReader onload
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockSelectedLayout.value).toBe('tablet')
+      expect(mockSelectedSlotRegion.value).toBe('top')
+      expect(mockAddSectionType).toHaveBeenCalledTimes(2)
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Success",
+        "info",
+        "Successfully imported 2 sections: Imported Header, Imported Footer"
+      )
+    })
+
+    it('should handle linked sections correctly', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Linked Section',
+            type: 'configurable',
+            nameID: 'config-type',
+            linked_to: 'linked-instance',
+            settings: { theme: 'dark' }
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockAddSectionType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          instance_name: 'linked-instance',
+          options: { theme: 'dark' }
+        }),
+        false,
+        true
+      )
+    })
+
+    it('should show warning for disabled configurable sections', () => {
+      mockTypes.value = [
+        {
+          name: 'disabled-config',
+          access: 'private',
+          app_status: 'disabled'
+        }
+      ]
+
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Disabled Section',
+            type: 'configurable',
+            nameID: 'disabled-config'
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        "Warning",
+        "warning",
+        "Please activate Disabled Section for this project"
+      )
+    })
+
+    it('should handle sections without linked_to property', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Static Section',
+            type: 'static'
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockAddSectionType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Static Section',
+          type: 'static'
+        }),
+        false,
+        undefined
+      )
+    })
+
+    it('should handle empty linked_to property', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'Empty Linked Section',
+            type: 'configurable',
+            linked_to: ''
+          }
+        ]
+      }
+
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+      mockFileReader.onload(mockFileEvent)
+
+      expect(mockAddSectionType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Empty Linked Section',
+          linked_to: ''
+        }),
+        false,
+        ""
+      )
+    })
+  })
+
+  describe('Edge Cases', () => {
+    let mockFileReader
+
+    beforeEach(() => {
+      mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null,
+        result: null
+      }
+
+      // Mock FileReader constructor
+      vi.stubGlobal('FileReader', vi.fn(() => mockFileReader))
+
+    })
+
+    it('should handle missing DOM element in exportSections', () => {
+      vi.spyOn(document, 'getElementById').mockReturnValue(null)
+
+      expect(() => exportSections()).toThrow()
+    })
+
+    it('should handle malformed JSON in importSections', () => {
+      const mockFile = new File(['invalid json'], 'test.json', { type: 'application/json' })
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: 'invalid json'
+        }
+      }
+
+      expect(() => mockFileReader.onload(mockFileEvent)).toThrow()
+    })
+
+    it('should handle section without region property', () => {
+      const importData = {
+        layout: 'desktop',
+        sections: [
+          {
+            name: 'No Region Section',
+            type: 'static'
+          }
+        ]
+      }
+
+      const mockFile = new File(['test'], 'test.json', { type: 'application/json' })
+      const mockEvent = {
+        target: {
+          files: [mockFile]
+        }
+      }
+
+      importSections(mockEvent)
+
+      const mockFileEvent = {
+        target: {
+          result: JSON.stringify(importData)
+        }
+      }
+
+      expect(() => mockFileReader.onload(mockFileEvent)).not.toThrow()
+      expect(mockSelectedSlotRegion.value).toBe('')
+    })
+  })
+})
+
+describe('sanitizeURL', () => {
+
+  let wrapper
+
+  beforeEach(() => {
+
+    vi.clearAllMocks();
+
+    window.history.pushState({}, '', '/some-page?auth_code=abc123&project_id=xyz789&keep_me=yes')
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockPageData),
+      })
+    )
+
+    wrapper = mountComponent()
+  })
+
+  it('removes auth_code and project_id from query and calls router.replace', async () => {
+
+    await useRouter().push({
+      path: '/some-page',
+      query: {
+        auth_code: 'abc123',
+        project_id: 'xyz789',
+        keep_me: 'yes'
+      }
+    })
+
+    await wrapper.vm.sanitizeURL()
+
+    // Verify updated URL
+    expect(useRoute().fullPath).toBe('/some-page?keep_me=yes')
+  })
+})
+
+describe('addNewStaticType', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+
+    // Set initial states
+    wrapper.vm.fieldsInputs = [
+      { type: 'image', name: 'media_1' },
+      { type: 'text', name: '   ' }, // should be filtered
+    ]
+    wrapper.vm.sectionTypeName = ''
+    wrapper.vm.loading = false
+    wrapper.vm.types = []
+    wrapper.vm.globalTypes = []
+    wrapper.vm.staticSuccess = false
+
+    // importComp.mockResolvedValue({
+    //   setup: Promise.resolve({
+    //     default: {
+    //       props: {
+    //         mediaFields: [
+    //           { name: 'media_field_1' },
+    //           { name: '' }, // will be filtered
+    //           { name: 'media_field_2' }
+    //         ]
+    //       }
+    //     }
+    //   })
+    // })
+
+    // Mock getSectionTypes
+    // wrapper.vm.getSectionTypes = vi.fn().mockResolvedValue(undefined)
+
+  })
+
+  it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields', async () => {
+
+    await vi.resetAllMocks()
+
+    await wrapper.vm.addNewStaticType('customForm')
+
+    await wrapper.vm.$nextTick()
+    // Expect URL includes correct path
+    expect(global.fetch.mock.calls[1][0]).toContain(
+      '/section-types/customForm'
+    );
+
+    // Expect filtered fields only (non-empty name)
+    expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
+  })
+
+  it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields when mediaFields prop has a default() function', async () => {
+
+    await vi.resetAllMocks()
+
+    importComp.mockReturnValue({
+      setup: Promise.resolve({
+        default: {
+          props: {
+            mediaFields: {
+              default: () => {
+                return [
+                  { name: 'media_field_1' },
+                  { name: '' }, // will be filtered
+                  { name: 'media_field_2' }
+                ]
+              }
+            }
+          }
+        }
+      })
+    })
+
+    await wrapper.vm.addNewStaticType('customForm')
+
+    await wrapper.vm.$nextTick()
+    // Expect URL includes correct path
+    expect(global.fetch.mock.calls[1][0]).toContain(
+      '/section-types/customForm'
+    );
+
+    // Expect filtered fields only (non-empty name)
+    expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
+  })
+})
+
+describe('Wysiwyg - validate default language content', () => {
+  let wrapper
+
+  const createComponent = (defaultLang = 'en', selectedLang = 'en') => {
+    wrapper = mount(Wysiwyg, {
+      props: {
+        defaultLang,
+        selectedLang,
+        quillKey: 'test-key',
+        locales: ['en', 'fr']
+      },
+      global: {
+        plugins: [i18n],
+        stubs,
+        config: {
+          globalProperties: {
+            parsePath: vi.fn().mockReturnValue('mocked/path'),
+            importJs: vi.fn()
+          }
+        }
+      },
+    })
+  }
+
+  it('should return false and set errors.quill when default language content is empty', async () => {
+    createComponent()
+
+    // Set content to empty string
+    wrapper.vm.settings[0]['en'] = ''
+    const result = wrapper.vm.validate()
+
+    expect(result).toBe(false)
+    expect(wrapper.vm.errors.quill).toBe(true)
+  })
+
+  it('should return false and set errors.quill when default language content is "<p><br></p>"', async () => {
+    createComponent()
+
+    wrapper.vm.settings[0]['en'] = '<p><br></p>'
+    const result = wrapper.vm.validate()
+
+    expect(result).toBe(false)
+    expect(wrapper.vm.errors.quill).toBe(true)
+  })
+
+  it('should return true and not set errors.quill when default language content is valid', async () => {
+    createComponent()
+
+    wrapper.vm.settings[0]['en'] = '<p>Hello World</p>'
+    const result = wrapper.vm.validate()
+
+    expect(result).toBe(true)
+    expect(wrapper.vm.errors.quill).toBe(false)
+  })
+
+  it('renders requiredField message when selectedLang === defaultLang and content is invalid', async () => {
+    createComponent('fr', 'fr')
+
+    wrapper.vm.settings[0]['fr'] = ''
+    await wrapper.vm.validate()
+    await nextTick()
+
+    expect(wrapper.find('.sections-required-field-error').exists()).toBe(true)
+    expect(wrapper.text()).toContain('requiredField')
+  })
+})

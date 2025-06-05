@@ -197,17 +197,19 @@
             </div>
           </div>
           <!-- Submit Buttons -->
-          <button class="submit-btn mt-4" type="button" @click="addConfigurable">
-            {{ t('Submit data') }}
-          </button>
-          <button
-            v-if="!instance && !props.props.creation && !globalSectionMode"
-            class="mt-4 submit-btn promote-btn"
-            type="button"
-            @click="emit('promote-section')"
-          >
-            {{ t('promoteSection') }}
-          </button>
+          <div class="sections-btns-submission">
+            <button class="submit-btn mt-4" type="button" @click="addConfigurable">
+              {{ t('Submit data') }}
+            </button>
+            <button
+              v-if="!instance && !props.props.creation && !globalSectionMode"
+              class="mt-4 submit-btn promote-btn"
+              type="button"
+              @click="emit('promote-section')"
+            >
+              {{ t('promoteSection') }}
+            </button>
+          </div>
         </form>
       </div>
       <!-- Media Component -->
@@ -235,7 +237,7 @@
 </template>
 
 <script setup>
-import { reactive, getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast } from '#imports'
+import { reactive, getGlobalTypeData, useI18n, ref, nextTick, computed, useNuxtApp, useRoute, useCookie, onMounted, watch, sectionHeader, importJs, importComp, formatName, formatTexts, parseQS, validateQS, getSectionProjectIdentity, showToast,globalFileUpload } from '#imports'
 
 
 // Composables
@@ -687,7 +689,7 @@ async function addConfigurable() {
       nameID: props.props.name && props.props.name.includes(":") ? props.props.name : `${props.savedView.application_id}:${props.props.name}`, // Ensure savedView.application_id
       type: 'configurable',
       settings: currentOptions, // Send validated data
-      id: id.value,
+      id: props.props.addToPage ? res.id || id.value : id.value,
       weight: weight.value,
       render_data: res.render_data,
       query_string_keys: res.query_string_keys,
@@ -985,6 +987,7 @@ defineExpose({
 </script>
 
 <style scoped>
+@import "../../../assets/admin.css";
 .element {
   margin: 15px;
   flex-direction: column;
@@ -1017,7 +1020,7 @@ defineExpose({
   border-color: rgba(242,242,243,var(--tw-border-opacity))!important;
 }
 .bg-blue {
-  background: #31a9db;
+  background: #03b1c7;
   color: white;
   border: none;
   outline: none !important;
@@ -1028,7 +1031,7 @@ defineExpose({
   transition: 0.2s;
 }
 .text-Blue {
-  background: #31a9db;
+  background: #03b1c7;
 }
 
 .loadingCircle {
@@ -1108,21 +1111,5 @@ defineExpose({
 }
 .instanceInput {
   width: 350px;
-}
-.promote-btn {
-  font-size: 20px !important;
-}
-.sub-types button.submit-btn {
-  border: none;
-  font-size: 24px;
-  margin-top: 1rem;
-  padding: 7px;
-  background: #31a9db;
-  color: white;
-  border-radius: 16px;
-  transition: 0.2s;
-  width: 385px;
-  height: 70px;
-  text-align: center;
 }
 </style>

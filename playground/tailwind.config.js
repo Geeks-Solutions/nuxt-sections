@@ -7,6 +7,7 @@ export default {
     path.resolve(__dirname, './sections/**/*.vue'),
     path.resolve(__dirname, '../node_modules/@geeks.solutions/vue-components/src/runtime/components/**/*.{js,vue,ts}')
   ],
+  important: true,
   theme: {
     extend: {
       spacing: {

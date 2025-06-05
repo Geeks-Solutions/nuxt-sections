@@ -126,7 +126,7 @@
   "requiredField": "Required field",
   "projectId": "Project ID",
   "editingSection": "You cannot edit a section while already editing one",
-  "checkRequiredField": "There are required field(s) for the english version, please to check it to fill them",
+  "checkRequiredField": "There are required field(s) for the { lang } version, please to check it to fill them",
   "filterName": "Name",
   "filterApply": "Apply",
   "filterClear": "Clear",
@@ -274,5 +274,7 @@
   "quillEditor": {
     "quillDesc": "To edit an image added to your editor, you need to select it and click on the image icon of the toolbar"
   },
-  "mediaTooLarge": "The size of your media exceeds the authorized limit. Please refer to your package details to check the maximum supported size."
+  "mediaTooLarge": "The size of your media exceeds the authorized limit. Please refer to your package details to check the maximum supported size.",
+  "seoDisable": "Disable",
+  "seoEnable": "Enable"
 }

@@ -126,7 +126,7 @@
   "requiredField": "Champ requis",
   "projectId": "ID du projet",
   "editingSection": "Vous ne pouvez pas modifier une section lorsque vous en modifiez déjà une",
-  "checkRequiredField": "Il y a des champ(s) requis pour la version anglaise, veuillez s'il vous plait y accéder pour les remplir",
+  "checkRequiredField": "Il y a des champ(s) requis pour la version { lang }, veuillez s'il vous plait y accéder pour les remplir",
   "filterName": "Nom",
   "filterApply": "Appliquer",
   "filterClear": "Effacer",
@@ -274,5 +274,7 @@
   "quillEditor": {
     "quillDesc": "Pour éditer une image ajoutée à votre éditeur, vous devez la sélectionner et cliquer sur l'icone image de la barre d'outil"
   },
-  "mediaTooLarge": "La taille de votre média dépasse la limite autorisée. Veuillez vous référer aux détails de votre colis pour vérifier la taille maximale prise en charge."
+  "mediaTooLarge": "La taille de votre média dépasse la limite autorisée. Veuillez vous référer aux détails de votre colis pour vérifier la taille maximale prise en charge.",
+  "seoDisable": "Désactiver",
+  "seoEnable": "Activer"
 }

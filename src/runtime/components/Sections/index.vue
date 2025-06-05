@@ -1,7 +1,7 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': admin === true}">
     <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
-           class="sections-aside">
+           class="sections-aside" :class="{'sections-aside-z': introSectionFormStep === true}">
       <div
         class="step-back-aside"
         v-if="currentSection && creationView"
@@ -18,8 +18,8 @@
           :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`"
           class="edit-icon"/>
       </a>
-      <div class="flexSections">
-        <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="component-view">
+      <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
+        <div class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
           <LazyBaseTypesStatic
@@ -98,54 +98,54 @@
             :ref="!editMode ? 'intro-edit-page' : undefined"
             @click="openEditMode()"
             v-if="admin && !isSideBarOpen"
-            class="intro-edit-page bg-blue control-button hide-mobile btn-text"
+            class="intro-edit-page bg-blue control-button hide-mobile btn-text edit-page"
+            :title="!editMode ? $t('Edit page') : $t('View page')"
           >
-            {{ !editMode ? $t("Edit page") : $t("View page") }}
+            <LazyBaseIconsEdit v-if="!editMode" />
+            <LazyBaseIconsEye v-else />
           </button>
           <div class="bg-light-grey-hp hide-mobile section-wrapper">
-            <div v-if="admin && editMode && !isSideBarOpen" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
-              {{ $t('changesPublished') }}
-            </div>
-
             <div
-              class="sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile"
+              class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
               v-if="admin && editMode && !isSideBarOpen"
             >
-              <div ref="intro-top-bar" class="intro-top-bar sections-pb-4 flexSections sections-flex-row sections-justify-center hide-mobile">
+              <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center hide-mobile">
                 <button
                   class="hp-button"
                   @click="layoutMode = !layoutMode"
                 >
                   <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
                 </button>
-                <div v-if="layoutMode === true" class="layoutSelect-container">
-                  <div class="layoutSelect-select-wrapper">
-                    <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                            @change="computeLayoutData">
-                      <option disabled value="">-- Select layout --</option>
-                      <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-                    </select>
-                    <div class="layoutSelect-arrow-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path d="M10 12L5 7h10l-5 5z"/>
-                      </svg>
+                <div class="flexSections">
+                  <div v-if="layoutMode === true" class="layoutSelect-container">
+                    <div class="layoutSelect-select-wrapper">
+                      <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                              @change="computeLayoutData">
+                        <option disabled value="">-- Select layout --</option>
+                        <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
+                      </select>
+                      <div class="layoutSelect-arrow-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                          <path d="M10 12L5 7h10l-5 5z"/>
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div v-if="layoutMode === true" class="custom-checkbox">
-                  <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                  <label class="switch">
-                    <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                    <span class="slider round"></span>
-                  </label>
-                  <label for="highlightRegions"></label>
+                  <div v-if="layoutMode === true" class="custom-checkbox">
+                    <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                    <label class="switch">
+                      <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                      <span class="slider round"></span>
+                    </label>
+                    <label for="highlightRegions"></label>
+                  </div>
                 </div>
                 <div ref="intro-add-new-section" class="intro-add-new-section">
                   <button
                     v-if="selectedLayout === 'standard'"
                     class="hp-button"
                     @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun))
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
             "
                   >
                     <div class="btn-icon plus-icon">
@@ -154,24 +154,26 @@
                     <div class="btn-text">{{ $t("Add") }}</div>
                   </button>
                 </div>
-                <button
-                  class="hp-button"
-                  @click="
+                <div class="flexSections">
+                  <button
+                    class="hp-button"
+                    @click="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
             "
-                >
-                  <div class="btn-icon plus-icon">
-                    <LazyBaseIconsPlus/>
-                  </div>
-                  <div class="btn-text">{{ $t("createGlobal") }}</div>
-                </button>
-                <button
-                  ref="intro-find-more-blobal"
-                  class="intro-find-more-blobal hp-button globalTour"
-                  @click="runIntro('globalTour', true)"
-                >
-                  <div class="btn-text intro">?</div>
-                </button>
+                  >
+                    <div class="btn-icon plus-icon">
+                      <LazyBaseIconsPlus/>
+                    </div>
+                    <div class="btn-text">{{ $t("createGlobal") }}</div>
+                  </button>
+                  <button
+                    ref="intro-find-more-blobal"
+                    class="intro-find-more-blobal hp-button globalTour"
+                    @click="runIntro('globalTour', true)"
+                  >
+                    <div class="btn-text intro">?</div>
+                  </button>
+                </div>
                 <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
                   <div class="btn-icon check-icon">
                     <LazyBaseIconsSave/>
@@ -185,95 +187,65 @@
                   <div class="btn-text">{{ $t("Restore") }}</div>
                 </button>
               </div>
-              <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0;">
-                <button
-                  class="hp-button "
-                  :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                  data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
-                  @click="exportSections"
-                >
-                  <LazyBaseIconsImport/>
-                </button>
-                <a id="downloadAnchorElem" style="display:none"></a>
-                <button
-                  class="hp-button "
-                  :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                  data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
-                  @click="initImportSections"
-                >
-                  <LazyBaseIconsExport/>
-                </button>
-                <button
-                  class="hp-button danger"
-                  data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
-                  @click="isDeletePageModalOpen = true">
-                  <LazyBaseIconsTrash class="trash-icon-style"/>
-                </button>
-                <button
-                  class="hp-button "
-                  :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                  data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-                  @click="metadataModal = true"
-                >
-                  <LazyBaseIconsSettings/>
-                </button>
+              <div class="flexSections config-buttons">
+                <div class="flexSections">
+                  <button
+                    class="hp-button "
+                    :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                    data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
+                    @click="exportSections"
+                  >
+                    <LazyBaseIconsImport/>
+                  </button>
+                  <a id="downloadAnchorElem" style="display:none"></a>
+                  <button
+                    class="hp-button "
+                    :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                    data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
+                    @click="initImportSections"
+                  >
+                    <LazyBaseIconsExport/>
+                  </button>
+                  <button
+                    class="hp-button danger"
+                    data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+                    @click="isDeletePageModalOpen = true">
+                    <LazyBaseIconsTrash class="trash-icon-style"/>
+                  </button>
+                  <button
+                    class="hp-button "
+                    :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                    data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+                    @click="metadataModal = true"
+                  >
+                    <LazyBaseIconsSettings/>
+                  </button>
+                </div>
                 <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
-                <button
-                  ref="intro-relaunch"
-                  class="intro-relaunch hp-button"
-                  @click="runIntro('topBar', true)"
-                >
-                  <div class="btn-text intro">?</div>
-                </button>
-                <button
-                  @click="logoutUser"
-                  v-if="admin"
-                  class="bg-blue"
-                  style="background: black;
+                <div class="flexSections">
+                  <button
+                    ref="intro-relaunch"
+                    class="intro-relaunch hp-button"
+                    @click="runIntro('topBar', true)"
+                  >
+                    <div class="btn-text intro">?</div>
+                  </button>
+                  <button
+                    @click="logoutUser"
+                    v-if="admin"
+                    class="bg-blue"
+                    style="background: black;
                   font-size: 13px;
                   border-radius: 5px;
                   padding: 3px 6px;"
-                >
-                  {{ $t("Logout") }}
-                </button>
+                  >
+                    {{ $t("Logout") }}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div
-            class="bg-light-grey-hp sections-p-3 flexSections sections-flex-row sections-justify-center part2 hide-mobile"
-            v-if="admin && editMode && !isSideBarOpen"
-          >
-            <button
-              class="hp-button "
-              :class="selectedVariation === pageName ? 'danger' : 'grey'"
-              @click="selectedVariation = pageName"
-            >
-              <div class="btn-text">{{
-                  decodeURIComponent(parsePath(encodeURIComponent(pageName))) + " " + "Main"
-                }}
-              </div>
-            </button>
-            <div v-for="(v, idx) in variations" :key="idx">
-              <button
-                class="hp-button"
-                :class="selectedVariation === v.pageName ? 'danger' : 'grey'"
-                @click="
-              displayVariations.value[pageName].altered ? dismissCountDown = 4 :
-              selectedVariation = v.pageName
-            "
-              >
-                <div class="btn-text">{{ v.name }}</div>
-              </button>
-              <div
-                class="sync flexSections sections-flex-row sections-p-4 sections-justify-center"
-                v-if="selectedVariation === v.pageName"
-                @click="synch()"
-              >
-                <div class="icon" :class="{ synched }">
-                  <LazyBaseIconsSync/>
-                </div>
-                <span>{{ $t("Synchronise") }}</span>
-              </div>
+            <div v-if="admin && editMode && !isSideBarOpen && sectionsChanged" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
+              {{ $t('changesPublished') }}
             </div>
           </div>
 
@@ -291,7 +263,7 @@
                        class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                     <div class="flexSections sections-flex-row sections-justify-center">
                       <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
-                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun)">
+                           :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun); checkIntroLastStep('availableSectionOpened')">
                         {{ $t("availableSections") }}
                       </div>
                       <div class="sections-text-center h2 sections-px-4">/</div>
@@ -303,7 +275,7 @@
                       <div class="sections-text-center h2 sections-px-4">/</div>
                       <div ref="intro-inventory" class="intro-inventory sections-text-center h2 sections-cursor-pointer"
                            :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                           @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened')">
+                           @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened'); checkIntroLastStep('inventoryOpened')">
                         {{ $t("typeInventory") }}
                       </div>
                     </div>
@@ -493,8 +465,8 @@
                     </div>
                   </div>
                 </div>
-                <div v-else class="flexSections">
-                  <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="component-view">
+                <div v-else :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
+                  <div class="component-view">
                     <!-- we can use this short hand too -->
                     <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
                     <LazyBaseTypesStatic
@@ -883,8 +855,13 @@
                           :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                           class="edit-icon"/>
                       </div>
+                      <div
+                        v-if="seoSectionsSupport[view.name]"
+                        @click="seoBtnClicked(view.id)">
+                        <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
+                      </div>
                     </div>
-                    <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                    <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
                          class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
                       <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                     </div>
@@ -901,11 +878,12 @@
                       </div>
                       <component
                         v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                        :is="getComponent(view.name, view.type)"
+                        :is="getComponent(view.name, view.type, view)"
                         :section="view"
                         :lang="lang"
                         :locales="locales"
                         :default-lang="defaultLang"
+                        @seo-support="seoSectionsSupport[view.name] = true;"
                         @refresh-section="(data) => refreshSectionView(view, data)"
                       />
                     </div>
@@ -984,8 +962,13 @@
                                   :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
                                   class="edit-icon"/>
                               </div>
+                              <div
+                                v-if="seoSectionsSupport[view.name]"
+                                @click="seoBtnClicked(view.id)">
+                                <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
+                              </div>
                             </div>
-                            <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? view.linked_to : view.name" @click="toggleSectionsOptions(view.id)"
+                            <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
                                  class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
                               <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
                             </div>
@@ -1001,11 +984,12 @@
                               </div>
                               <component
                                 v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                                :is="getComponent(view.name, view.type)"
+                                :is="getComponent(view.name, view.type, view)"
                                 :section="view"
                                 :lang="lang"
                                 :locales="locales"
                                 :default-lang="defaultLang"
+                                @seo-support="seoSectionsSupport[view.name] = true;"
                                 @refresh-section="(data) => refreshSectionView(view, data)"
                               />
                             </div>
@@ -1102,7 +1086,7 @@
                :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
             <div
               class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
-              <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl"
+              <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl page-settings"
                    :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
                 <div class="section-modal-wrapper">
                   <div class="sections-text-center h4 sectionTypeHeader">
@@ -1116,7 +1100,7 @@
                   <div class="flexSections sections-w-full sections-justify-center"
                        :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
                     <div class="body metadataFieldsContainer">
-                      <div class="flexSections sections-flex-row sections-gap-4">
+                      <div class="flexSections sections-flex-row sections-gap-4 metadataFieldsContainerRow">
                         <div class='sections-w-full'>
                           <div class="sectionsFieldsLabels">
                             {{ $t("projectId") }}: {{ nuxtApp.$sections.projectId }}
@@ -1223,7 +1207,7 @@
                        class="flexSections sections-w-full sections-justify-center">
                   </div>
                   <div class="footer">
-                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun)">
+                    <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun);">
                       <div class="btn-icon check-icon"></div>
                       <div class="btn-text">{{ $t("Done") }}</div>
                     </button>
@@ -1274,6 +1258,7 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  onBeforeMount,
   onServerPrefetch,
   parsePath,
   parseQS,
@@ -1386,6 +1371,7 @@ const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
 const isSideBarOpen = ref(false);
+const sectionsChanged = ref(false);
 const backToAddSectionList = ref(false);
 const isDeleteModalOpen = ref(false);
 const isRestoreSectionOpen = ref(false);
@@ -1442,7 +1428,7 @@ let metadataErrors = ref({
 });
 const sectionsError = useState('sectionsError', () => "");
 const sectionsErrorOptions = ref(null);
-const renderSectionError = ref("");
+const renderSectionError = useState("renderSectionError", () => "");
 const fieldsInputs = ref([
   {
     type: "image",
@@ -1450,8 +1436,9 @@ const fieldsInputs = ref([
   }
 ]);
 const metadataFormLang = ref('');
-const computedTitle = ref('');
+const computedTitle = useState("computedTitle", () => '');
 const computedDescription = ref('');
+const computedImage = ref('');
 const sectionsUserId = ref('');
 const displayedErrorFormat = ref('');
 const invalidSectionsErrors = ref({});
@@ -1500,12 +1487,15 @@ const canPromote = ref(false);
 const intro = ref(null);
 const currentPages = ref(null);
 const introRerun = ref(false);
+const introSectionFormStep = ref(false);
 const creationView = ref(false);
 const drag = ref(false);
 const fetchedOnServer = useState('fetchedOnServer', () => false);
 const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
   : route.params.pathMatch || ''
+
+const seoSectionsSupport = ref({})
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -1671,17 +1661,17 @@ useHead(() => {
     },
     title: computedTitle.value,
     meta: [
-      {
+      computedDescription.value ? {
         hid: 'description',
         name: 'description',
         content: computedDescription.value
-      },
+      } : {},
       { hid: "og:title", property: "og:title", content: computedTitle.value },
-      { hid: "og:description", property: "og:description", content: computedDescription.value },
-      pageMetadata.value['mediaMetatag'] && pageMetadata.value['mediaMetatag'].url ? {
+      computedDescription.value ? { hid: "og:description", property: "og:description", content: computedDescription.value } : {},
+      computedImage.value ? {
         hid: "og:image",
         property: "og:image",
-        content: pageMetadata.value['mediaMetatag'].url
+        content: computedImage.value.url ? computedImage.value.url : computedImage.value
       } : {},
       { hid: "og:url", property: "og:url", content: fullURL },
     ],
@@ -1707,10 +1697,25 @@ useHead(() => {
 });
 
 // Methods (now as regular functions)
+const seoBtnClicked = (id) => {
+  if (!pageMetadata.value.seo) {
+    pageMetadata.value.seo = {}
+  }
+  if (pageMetadata.value.seo[id] === true) {
+    delete pageMetadata.value.seo[id];
+  } else {
+    pageMetadata.value.seo[id] = true;
+  }
+  updatePageMetaData(true);
+}
 const initializeSectionsCMSEvents = () => {
   if (!window.SectionsCMS) {
     window.SectionsCMS = ref({})
     window.SectionsCMS.value.reRenderSection = (data) => refreshSectionView('SectionView', data)
+    if (admin) {
+      window.SectionsCMS.value.openEditMode = openEditMode
+      window.SectionsCMS.value.runIntro = (topic, rerun, lastSavedTopic) => runIntro(topic, rerun, lastSavedTopic)
+    }
   }
 }
 const initializeSections = (res) => {
@@ -1768,12 +1773,20 @@ const initializeSections = (res) => {
   if (res.data.metadata.media) {
     pageMetadata.value.media = res.data.metadata.media
   }
-  if (res.data.metadata.mediaMetatag) {
-    pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
+  if (res.data.metadata.seo) {
+    pageMetadata.value.seo = res.data.metadata.seo
   }
 
-  computedTitle.value = pageMetadata.value[lang].title
-  computedDescription.value = pageMetadata.value[lang].description
+  if (!computedTitle.value) {
+    computedTitle.value = pageMetadata.value[lang].title
+  }
+  if (!computedDescription.value) {
+    computedDescription.value = pageMetadata.value[lang].description
+  }
+  if (!computedImage.value && res.data.metadata.mediaMetatag) {
+    pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
+    computedImage.value = res.data.metadata.mediaMetatag
+  }
 
   const views = {}
   sections.map((section) => {
@@ -1918,7 +1931,7 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
 const removeMedia = (media) => {
   pageMetadata.value[media] = {}
 }
-const updatePageMetaData = async () => {
+const updatePageMetaData = async (seo) => {
   loading.value = true
   metadataErrors.value.path[0] = ''
 
@@ -1954,6 +1967,7 @@ const updatePageMetaData = async () => {
       if (view.linked_to) {
         sections.push({
           ...{
+            id: view.id.startsWith('id-') ? undefined : view.id,
             weight: view.weight,
             linked_to: view.linked_to,
             region: view.region ? view.region : {}
@@ -2015,6 +2029,9 @@ const updatePageMetaData = async () => {
           return
         }
 
+        if (res.data.metadata.seo) {
+          pageMetadata.value.seo = res.data.metadata.seo;
+        }
         sectionsPageLastUpdated.value = res.data.last_updated
         metadataModal.value = false
         metadataFormLang.value = i18n.locale.value.toString()
@@ -2036,9 +2053,13 @@ const updatePageMetaData = async () => {
             baseURL = baseURL + routerBase
           }
 
-          window.location.replace(`${baseURL}/${updatedPagePath}`)
+          if (seo !== true) {
+            window.location.replace(`${baseURL}/${updatedPagePath}`)
+          }
         } else {
-          window.location.reload()
+          if (seo !== true) {
+            window.location.reload()
+          }
         }
       },
       onError: (error) => {
@@ -2067,8 +2088,18 @@ const addField = (index) => {
 const removeField = (index) => {
   fieldsInputs.value.splice(index, 1)
 }
+const sanitizeURL = async () => {
+  const updatedQuery = { ...route.query }
+  delete updatedQuery.auth_code
+  delete updatedQuery.project_id
+  await router.replace({path: useRoute().path, query: updatedQuery})
+}
 const checkToken = async () => {
   const auth_code = route.query.auth_code
+
+  const date = new Date()
+  date.setDate(date.getDate() + 14)
+  date.setHours(date.getHours() - 4)
 
   if (nuxtApp.$sections.cname === "active") {
     if (useCookie("sections-project-id").value) {
@@ -2076,7 +2107,10 @@ const checkToken = async () => {
     } else {
       const project_id = route.query.project_id
       nuxtApp.$sections.projectId = project_id
-      useCookie("sections-project-id").value = project_id
+      useCookie("sections-project-id", {
+        expires: date,
+        path: '/'
+      }).value = project_id
     }
   }
 
@@ -2094,22 +2128,18 @@ const checkToken = async () => {
         ...config, // Assuming config contains headers etc.
         onSuccess: async (res) => {
           const token = res.data.token // Assuming the token is in res.data.token
-          const date = new Date()
-          date.setDate(date.getDate() + 14)
-          date.setHours(date.getHours() - 4)
 
           useCookie("sections-auth-token", {
             expires: date,
             path: '/'
           }).value = token
 
-          await navigateTo(route.path)
+          await sanitizeURL()
           loading.value = false
         },
         onError: (err) => {
           loading.value = false
-          // Adjust error message access based on ApiError structure
-          showToast("Error", "error", err.response?.data?.token || 'Authentication failed');
+          renderSectionError.value = err.response?.data?.token
         }
       });
     } catch {
@@ -2146,7 +2176,7 @@ const getUserData = async () => {
   }
 }
 const exportSections = () => {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allSections.value))
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({layout: selectedLayout.value, sections: allSections.value}))
   const dlAnchorElem = document.getElementById('downloadAnchorElem')
   dlAnchorElem.setAttribute("href", dataStr)
   dlAnchorElem.setAttribute("download", `${pagePath.value}.json`)
@@ -2170,7 +2200,9 @@ const importSections = (e) => {
   reader.readAsText(jsonFile, "UTF-8")
   reader.onload = (evt) => {
     const jsonFileResult = evt.target.result
-    const sections = JSON.parse(jsonFileResult)
+    const parsedImport = JSON.parse(jsonFileResult)
+    const sections = parsedImport.sections
+    selectedLayout.value = parsedImport.layout
     let sectionsNames = []
 
     sections.forEach((section) => {
@@ -2188,6 +2220,9 @@ const importSections = (e) => {
       if (section.linked_to && section.linked_to !== "") {
         section.instance_name = section.linked_to
         section.options = section.settings
+      }
+      if (section.region && section.region[selectedLayout.value] && section.region[selectedLayout.value].slot) {
+        selectedSlotRegion.value = section.region[selectedLayout.value].slot
       }
       addSectionType(section, false, section.linked_to && section.linked_to !== "")
     })
@@ -2369,12 +2404,15 @@ const addNewStaticType = async (name) => {
     let fieldsDeclaration = fieldsInputs.value
 
     if (name) {
-      // In Nuxt 3, dynamic imports use different syntax
-      // We'd need to know more about how importComp is used
-      const formComp = importComp(`/forms/${sectionTypeName.value}`).component
+
+      const formComp = await importComp(`/forms/${sectionTypeName.value}`).setup?.then(d => d.default)
 
       if (formComp.props && formComp.props.mediaFields) {
-        fieldsDeclaration = formComp.props.mediaFields
+        if (formComp.props.mediaFields.default && formComp.props.mediaFields.default()) {
+          fieldsDeclaration = formComp.props.mediaFields.default()
+        } else {
+          fieldsDeclaration = formComp.props.mediaFields
+        }
       }
     }
 
@@ -2472,8 +2510,35 @@ const getComponentSetup = async (sectionName, sectionType) => {
     return setupData
   }
 }
-const getComponent = (sectionName, sectionType) => {
+const sectionSEO = ref({
+  title: "",
+  description: "",
+  image: ""
+})
+const seoManagement = (view, hooksJs) => {
+  try {
+    if (view && pageMetadata.value.seo && pageMetadata.value.seo[view.id] === true) {
+      if (hooksJs && hooksJs['seo_management']) {
+        const seo = JSON.parse(JSON.stringify(hooksJs['seo_management'](view, i18n.locale.value)))
+        if (seo.title && !sectionSEO.value.title) {
+          sectionSEO.value.title = seo.title
+          computedTitle.value = seo.title
+        }
+        if (seo.description && !sectionSEO.value.description) {
+          sectionSEO.value.description = seo.description
+          computedDescription.value = seo.description
+        }
+        if (seo.image && !sectionSEO.value.image) {
+          sectionSEO.value.image = seo.image
+          computedImage.value = seo.image
+        }
+      }
+    }
+  } catch {}
+}
+const getComponent = (sectionName, sectionType, view) => {
   const hooksJs = importJs(`/js/global-hooks`)
+  seoManagement(view, hooksJs)
   if (hooksJs && hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
     return hooksJs['section_pre_render']({sectionName, sectionType})
   } else if (nuxtApp.$sections.cname === "active") {
@@ -2767,9 +2832,14 @@ const initiateIntroJs = async () => {
     }
   } catch {} // Outer catch remains for potential errors before API call
 }
-const runIntro = async (topic, rerun) => {
+const runIntro = async (topic, rerun, lastSavedTopic) => {
+  if (topic === 'sectionFormOpened') {
+    introSectionFormStep.value = true
+  }
+
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
+    useCookie('intro-last-step').value = null
   }
 
   if (rerun === true) {
@@ -2779,6 +2849,13 @@ const runIntro = async (topic, rerun) => {
   }
 
   if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
+    if (topic && lastSavedTopic !== true) {
+      if (topic === 'sectionCreationConfirmed') {
+        useCookie('intro-last-step').value = 'availableSectionOpened'
+      } else {
+        useCookie('intro-last-step').value = topic
+      }
+    }
     if (intro.value) {
       intro.value.exit(true)
     }
@@ -2815,14 +2892,12 @@ const runIntro = async (topic, rerun) => {
       addIntroSteps(topic, rerun)
     } else if (
       topic === 'inventoryOpened' &&
-      document.querySelector('.intro-simple-CTA-section-inventory') &&
-      document.querySelector('.intro-simple-CTA-section-inventory')[0]
+      document.querySelector('.intro-simple-CTA-section-inventory')
     ) {
       addIntroSteps(topic, rerun)
     } else if (
       topic === 'availableSectionOpened' &&
-      document.querySelector('.intro-simple-CTA-section-available') &&
-      document.querySelector('.intro-simple-CTA-section-available')[0]
+      document.querySelector('.intro-simple-CTA-section-available')
     ) {
       addIntroSteps(topic, rerun)
     }
@@ -2836,24 +2911,22 @@ const addIntroSteps = (topic, rerun) => {
     intro.value.refresh(true)
     intro.value.start()
 
-    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed') {
+    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed' || topic === 'availableSectionOpened') {
       window.runIntro = runIntro
       window.introRerun = introRerun.value
       window.setTypesTab = (value) => {
         typesTab.value = value
       }
-    } else if (topic === 'inventoryOpened') {
-      window.addNewStaticType = addNewStaticType
-      window.closeIntro = () => {
-        intro.value.exit(true)
-      }
-    } else if (topic === 'availableSectionOpened') {
+
       window.simpleCTAType = filteredTypes.value.filter(
         type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
       ).find(type => type.name === 'SimpleCTA')
-
       window.openCurrentSection = openCurrentSection
-      window.introRerun = introRerun.value
+      window.closeIntro = () => {
+        intro.value.exit(true)
+      }
+    } else if (topic === 'inventoryOpened') {
+      window.addNewStaticType = addNewStaticType
       window.closeIntro = () => {
         intro.value.exit(true)
       }
@@ -2902,13 +2975,13 @@ const introSteps = (topic) => {
           element: document.querySelector('.intro-inventory'),
           intro: simpleCTAIndex === -1 ?
             i18n.t('intro.inventoryDesc') :
-            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened');">${i18n.t('intro.checkIt')}</span>`
+            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened', introRerun);">${i18n.t('intro.checkIt')}</span>`
         }
       ]
     case 'inventoryOpened':
       return [
         {
-          element: document.querySelector('.intro-simple-CTA-section-inventory')[0],
+          element: document.querySelector('.intro-simple-CTA-section-inventory'),
           intro: `${i18n.t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${i18n.t('intro.createSection')}</span>`
         }
       ]
@@ -2922,8 +2995,8 @@ const introSteps = (topic) => {
     case 'availableSectionOpened':
       return [
         {
-          element: document.querySelector('.intro-simple-CTA-section-available')[0],
-          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); runIntro('sectionFormOpened', introRerun);">${i18n.t('intro.here')}</span>`
+          element: document.querySelector('.intro-simple-CTA-section-available'),
+          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); setTimeout(() => {runIntro('sectionFormOpened', introRerun)}, 200);">${i18n.t('intro.here')}</span>`
         }
       ]
     case 'sectionFormOpened':
@@ -3412,7 +3485,10 @@ const openEditMode = async () => {
   editMode.value = !editMode.value
 
   if (editMode.value === true) {
-    await runIntro('topBar')
+    setTimeout(async () => {
+      checkIntroLastStep('topBar')
+      await runIntro('topBar', introRerun.value)
+    }, 500)
 
     loading.value = true
     const inBrowser = typeof window !== 'undefined'
@@ -3598,12 +3674,14 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
 
     computeLayoutData()
     if (showToastBool !== false) {
+      sectionsChanged.value = true
       showToast(
         "Success",
         "info",
         i18n.t('successAddedSection')
       )
     }
+    checkIntroLastStep('sectionSubmitted')
   } catch (e) {
     showToast(
       "Error",
@@ -3712,7 +3790,7 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${res.data.error}`
               showToast("Error", "error", renderSectionError.value)
             } else {
-              if (sectionData.type === 'configurable') {
+              if (sectionData.type === 'configurable' && sectionData.renderID) {
                 currentViews.value = currentViews.value.map(view => {
                   if (view.type === 'configurable' && sectionData.renderID && sectionData.renderID === view.id) {
                     return {
@@ -3835,6 +3913,7 @@ const mutateVariation = async (variationName) => {
       if (view.linked_to) {
         sections.push({
           ...{
+            id: view.id.startsWith('id-') ? undefined : view.id,
             weight: view.weight,
             linked_to: view.linked_to,
             region: view.region ? view.region : {}
@@ -3961,6 +4040,7 @@ const mutateVariation = async (variationName) => {
               JSON.stringify(displayVariations.value)
             );
             sectionsLayout.value = res.data.layout;
+            checkIntroLastStep('pageSaved');
             runIntro('pageSaved', introRerun.value);
             loading.value = false;
 
@@ -3977,6 +4057,7 @@ const mutateVariation = async (variationName) => {
                 };
               });
             } else {
+              sectionsChanged.value = false;
               showToast(
                 "Success",
                 "success",
@@ -4476,6 +4557,7 @@ const openCurrentSection = (type, global) => {
       currentSection.value = { ...type, creation: true };
     }
   }
+  setTimeout(() => {checkIntroLastStep('sectionFormOpened')}, 200)
 };
 const updateCreationView = (settings) => {
   createdView.value.settings = settings;
@@ -4615,15 +4697,21 @@ const logoutUser = () => {
   window.location.reload()
 }
 
+const checkIntroLastStep = (topic) => {
+  if (useCookie('intro-last-step').value && useCookie('introjs-dontShowAgain').value !== true && useCookie('intro-last-step').value === topic) {
+    runIntro(useCookie('intro-last-step').value, true, true)
+  }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
+  computedTitle.value = ""
   await fetchData()
-  initializeSectionsCMSEvents();
   if (admin) {
     await initiateIntroJs();
   }
 
-  if (sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
+  if ((errorResponseStatus.value === 429 && sectionsError.value !== "") || sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
     showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
   }
   if (renderSectionError.value !== "") {
@@ -4633,7 +4721,18 @@ onMounted(async () => {
     nuxtApp.$sections.projectId = useCookie(`sections-project-id`).value;
   }
   fire_js("page_payload_postprocess", document.documentElement.outerHTML);
+
+  if (useCookie('introjs-dontShowAgain').value === true) {
+    useCookie('intro-last-step').value = null
+  }
+  if (!pageNotFound.value) {
+    checkIntroLastStep('editPage')
+  }
 });
+
+onBeforeMount(() => {
+  initializeSectionsCMSEvents();
+})
 
 onBeforeUnmount(() => {
   fetchedOnServer.value = false
@@ -4694,7 +4793,6 @@ const fetchData = async () => {
   }
 
   loading.value = true;
-  await checkToken();
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
@@ -4702,6 +4800,16 @@ const fetchData = async () => {
 
   let websiteDomain = "";
   const isServer = process.server;
+
+  if (isServer) {
+    await checkToken();
+  } else {
+    const auth_code = route.query.auth_code
+    if (auth_code) {
+      await sanitizeURL()
+    }
+  }
+
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
     : window.location.protocol.replace(':', '');
@@ -4817,18 +4925,21 @@ onServerPrefetch(async () => {await fetchData()});
   min-height: 100vh;
 }
 
-.sections-config .control-button.config-buttons {
-  position: absolute;
-  z-index: 190;
-  left: 0;
-  top: 60px;
+.sections-config .config-buttons {
+  height: max-content;
 }
 
 .sections-config .control-button {
   position: fixed;
   z-index: 190;
   left: 0;
-  top: 60px;
+  top: 0;
+}
+
+.sections-config .control-button.edit-page {
+  opacity: 60%;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .section-view .controls {
@@ -4850,13 +4961,14 @@ onServerPrefetch(async () => {await fetchData()});
   right: 8px !important;
   top: 10px;
   z-index: 50 !important;
+  opacity: 60%;
 }
 
 .section-view .controls svg {
   cursor: pointer;
   width: 40px;
   height: 40px;
-  color: #31a9db;
+  color: #03b1c7;
   margin: 3px;
 }
 
@@ -4864,12 +4976,12 @@ onServerPrefetch(async () => {await fetchData()});
   cursor: pointer;
   width: 15px;
   height: 15px;
-  color: #31a9db;
+  color: #03b1c7;
   margin: 3px;
 }
 
 .bg-blue {
-  background: #31a9db;
+  background: #03b1c7;
   color: white;
   border: none;
   outline: none !important;
@@ -4882,7 +4994,6 @@ onServerPrefetch(async () => {await fetchData()});
 }
 
 .sections-config button {
-  max-height: 64px;
   width: auto;
   min-width: auto;
   border-radius: 16px;
@@ -4901,7 +5012,7 @@ button svg {
   outline: none;
   max-width: 1000px;
   display: flex;
-  background: #31a9db;
+  background: #03b1c7;
   border: none;
   color: white;
   align-items: center;
@@ -4953,6 +5064,11 @@ button svg {
 
 .section-wrapper {
   position: relative;
+}
+
+.section-wrapper .edit-mode-wrapper {
+  align-items: center;
+  margin-left: 48px;
 }
 
 .part2 .create-static-section {
@@ -5183,7 +5299,7 @@ span.handle {
 
 .modalContainer .section-item.active {
   margin: 10px 0px;
-  border: 1px solid #31a9db;
+  border: 1px solid #03b1c7;
 }
 
 .modalContainer .section-item.inactive {
@@ -5206,7 +5322,7 @@ span.handle {
 .modalContainer .section-item-box {
   display: flex;
   flex-direction: column;
-  background: #31a9db;
+  background: #03b1c7;
   color: white;
   position: relative;
 }
@@ -5269,12 +5385,12 @@ span.handle {
 .closeIcon svg {
   width: 45px;
   height: 45px;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .modalContainer
 .closeIcon svg:hover {
-  color: darken(#31a9db, 10%);
+  color: darken(#03b1c7, 10%);
 }
 
 .widthSpace {
@@ -5318,7 +5434,7 @@ span.handle {
 }
 
 .section-modal-wrapper .dot {
-  color: #31a9db;
+  color: #03b1c7;
   margin-top: 8px;
   margin-right: 10px;
 }
@@ -5339,7 +5455,7 @@ span.handle {
 }
 
 .section-modal-wrapper .closeIcon {
-  color: #31a9db;
+  color: #03b1c7;
   position: absolute;
   top: 25px;
   right: 10px;
@@ -5371,7 +5487,7 @@ span.handle {
 }
 
 .section-modal-wrapper .footer .hp-button {
-  width: 200px;
+  display: block;
 }
 
 .flexSections {
@@ -5532,7 +5648,7 @@ span.handle {
 
 .slot-name {
   align-self: center;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .custom-checkbox {
@@ -5586,11 +5702,11 @@ span.handle {
 }
 
 .custom-checkbox input:checked + .slider {
-  background-color: #31a9db;
+  background-color: #03b1c7;
 }
 
 .custom-checkbox input:focus + .slider {
-  box-shadow: 0 0 1px #31a9db;
+  box-shadow: 0 0 1px #03b1c7;
 }
 
 .custom-checkbox input:checked + .slider:before {
@@ -5609,14 +5725,14 @@ span.handle {
 }
 
 .highlited-regions {
-  border: solid 1.5px #31a9db;
+  border: solid 1.5px #03b1c7;
   margin: 2px;
 }
 
 .highlighted-regions-plus {
   width: 100%;
   min-height: 20px;
-  border: solid 1.5px #31a9db;
+  border: solid 1.5px #03b1c7;
   margin: 2px 0 2px 0;
 }
 
@@ -5757,7 +5873,7 @@ span.handle {
 }
 
 .selectedTypesTab {
-  color: #31a9db;
+  color: #03b1c7;
   text-decoration: underline;
 }
 
@@ -6082,6 +6198,9 @@ span.handle {
   max-width: 50%;
   z-index: 190;
 }
+.sections-container > .sections-aside-z {
+  z-index: 9999999;
+}
 
 .sections-aside
 .closeIcon {
@@ -6094,12 +6213,12 @@ span.handle {
 .closeIcon svg {
   width: 35px;
   height: 35px;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .sections-aside
 .closeIcon svg:hover {
-  color: darken(#31a9db, 10%);
+  color: darken(#03b1c7, 10%);
 }
 
 .sections-aside
@@ -6114,12 +6233,12 @@ span.handle {
 .anchorIcon svg {
   width: 25px;
   height: 25px;
-  color: #31a9db;
+  color: #03b1c7;
 }
 
 .sections-aside
 .anchorIcon svg:hover {
-  color: darken(#31a9db, 10%);
+  color: darken(#03b1c7, 10%);
 }
 
 .sections-container > .sections-main {
@@ -6173,7 +6292,7 @@ span.handle {
 .metadata-media .css-preset {
   cursor: pointer;
   text-decoration: underline;
-  color: #31a9db;
+  color: #03b1c7;
   font-size: 14px;
   align-content: center;
 }
@@ -6204,12 +6323,12 @@ span.handle {
 }
 .fieldsets .controls svg {
   cursor: pointer;
-  color: #31a9db;
+  color: #03b1c7;
   margin: 3px;
 }
 .sections-container .sections-aside .step-back-aside {
   cursor: pointer;
-  color: #31a9db;
+  color: #03b1c7;
   position: absolute;
 }
 .sections-container .sections-aside .step-back-aside svg {
@@ -6238,7 +6357,7 @@ section .ql-editor.ql-snow.grey-bg {
 }
 .anchor-copied-tooltip {
   position: fixed;
-  background-color: #31a9db;
+  background-color: #03b1c7;
   color: white;
   font-size: 0.75rem;
   padding: 0.5rem 0.5rem;
@@ -6251,4 +6370,64 @@ section .ql-editor.ql-snow.grey-bg {
   pointer-events: none;
   white-space: nowrap;
 }
+.section-view .controls .seo-btn {
+  padding: 0rem 0.5rem;
+  border: 2px solid #03b1c7;
+  border-radius: 4px;
+  color: #03b1c7;
+  text-align: center;
+  align-content: center;
+  cursor: pointer;
+  height: 40px;
+  font-size: 23px;
+  transition: background-color 0.3s, color 0.3s;
+  margin: 3px;
+}
+.section-view .controls .seo-btn.enabled {
+  background-color: #03b1c7;
+  color: white;
+}
+@media only screen and (max-width: 400px) {
+  .sections-aside .component-view {
+    width: 350px;
+  }
+  .sections-aside .component-view-wrapper {
+    width: 350px;
+  }
+}
+@media only screen and (max-width: 768px) {
+    .section-wrapper .edit-mode-wrapper {
+      flex-direction: column-reverse;
+    }
+    .sections-config .config-buttons {
+      flex-direction: column-reverse;
+      align-items: center;
+    }
+    .intro-top-bar {
+      flex-direction: column;
+      align-items: center;
+    }
+    .section-wrapper .edit-mode-wrapper {
+      margin-left: 0
+    }
+    .sections-container > .sections-aside {
+      min-width: fit-content;
+    }
+    .sections-aside .component-view .element-type {
+      padding-top: 30px;
+    }
+    .sections-aside .component-view-wrapper {
+      width: 410px;
+    }
+    .metadataFieldsContainerRow {
+      flex-direction: column;
+    }
+    .section-modal-content.page-settings {
+      min-width: 320px;
+      max-height: 600px;
+    }
+    .hp-button.danger {
+      height: 36px;
+    }
+  }
 </style>
