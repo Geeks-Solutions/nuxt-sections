@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- SEO Management: Overriding the meta data of the page by the one of the full articles section #178
+- SEO Management: Overriding the meta data of the page by the one of any dynamic/configurable section type #178
 
 ### Updated
 
