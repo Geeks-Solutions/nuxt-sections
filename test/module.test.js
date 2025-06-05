@@ -66,6 +66,7 @@ const showToastMock = vi.fn()
 import SectionsPage from '../src/runtime/components/Sections/index.vue';
 import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue';
 import WysiwygStatic from '../src/runtime/components/configs/views/wysiwyg_static.vue';
+import Wysiwyg from '../src/runtime/components/configs/forms/wysiwyg.vue';
 
 import { createI18n } from 'vue-i18n'
 
@@ -1641,5 +1642,72 @@ describe('addNewStaticType', () => {
 
     // Expect filtered fields only (non-empty name)
     expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
+  })
+})
+
+describe('Wysiwyg - validate default language content', () => {
+  let wrapper
+
+  const createComponent = (defaultLang = 'en', selectedLang = 'en') => {
+    wrapper = mount(Wysiwyg, {
+      props: {
+        defaultLang,
+        selectedLang,
+        quillKey: 'test-key',
+        locales: ['en', 'fr']
+      },
+      global: {
+        plugins: [i18n],
+        stubs,
+        config: {
+          globalProperties: {
+            parsePath: vi.fn().mockReturnValue('mocked/path'),
+            importJs: vi.fn()
+          }
+        }
+      },
+    })
+  }
+
+  it('should return false and set errors.quill when default language content is empty', async () => {
+    createComponent()
+
+    // Set content to empty string
+    wrapper.vm.settings[0]['en'] = ''
+    const result = wrapper.vm.validate()
+
+    expect(result).toBe(false)
+    expect(wrapper.vm.errors.quill).toBe(true)
+  })
+
+  it('should return false and set errors.quill when default language content is "<p><br></p>"', async () => {
+    createComponent()
+
+    wrapper.vm.settings[0]['en'] = '<p><br></p>'
+    const result = wrapper.vm.validate()
+
+    expect(result).toBe(false)
+    expect(wrapper.vm.errors.quill).toBe(true)
+  })
+
+  it('should return true and not set errors.quill when default language content is valid', async () => {
+    createComponent()
+
+    wrapper.vm.settings[0]['en'] = '<p>Hello World</p>'
+    const result = wrapper.vm.validate()
+
+    expect(result).toBe(true)
+    expect(wrapper.vm.errors.quill).toBe(false)
+  })
+
+  it('renders requiredField message when selectedLang === defaultLang and content is invalid', async () => {
+    createComponent('fr', 'fr')
+
+    wrapper.vm.settings[0]['fr'] = ''
+    await wrapper.vm.validate()
+    await nextTick()
+
+    expect(wrapper.find('.sections-required-field-error').exists()).toBe(true)
+    expect(wrapper.text()).toContain('requiredField')
   })
 })

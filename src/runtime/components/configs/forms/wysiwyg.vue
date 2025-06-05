@@ -11,8 +11,8 @@
         @settingsUpdate="updateContent"
         @cssClassesChanged="(v) => settings[0].classes = v"
       />
-      <span v-if="errors.quill === true && selectedLang === 'en'" class="flexSections sections-required-field-error">{{ t('requiredField') }}</span>
-      <span v-else-if="errors.quill === true && selectedLang !== 'en'" id="required-fields" class="flexSections sections-required-field-error">{{ t('checkRequiredField') }}</span>
+      <span v-if="errors.quill === true && selectedLang === defaultLang" class="flexSections sections-required-field-error">{{ t('requiredField') }}</span>
+      <span v-else-if="errors.quill === true && selectedLang !== defaultLang" id="required-fields" class="flexSections sections-required-field-error">{{ t('checkRequiredField', {lang: defaultLang}) }}</span>
     </div>
   </div>
 </template>
@@ -33,6 +33,10 @@ const props = defineProps({
     default: "quillKey"
   },
   selectedLang: {
+    type: String,
+    default: 'en'
+  },
+  defaultLang: {
     type: String,
     default: 'en'
   },
@@ -150,7 +154,7 @@ const validate = () => {
 
 
   // 3. Check if English content exists
-  if (!settings.value[0]?.en) {
+  if (!settings.value[0][props.defaultLang] || settings.value[0][props.defaultLang] === '<p><br></p>') {
     errors.value.quill = true;
     return false;
   }

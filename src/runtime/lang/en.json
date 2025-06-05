@@ -126,7 +126,7 @@
   "requiredField": "Required field",
   "projectId": "Project ID",
   "editingSection": "You cannot edit a section while already editing one",
-  "checkRequiredField": "There are required field(s) for the english version, please to check it to fill them",
+  "checkRequiredField": "There are required field(s) for the { lang } version, please to check it to fill them",
   "filterName": "Name",
   "filterApply": "Apply",
   "filterClear": "Clear",

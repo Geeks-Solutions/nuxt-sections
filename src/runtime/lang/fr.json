@@ -126,7 +126,7 @@
   "requiredField": "Champ requis",
   "projectId": "ID du projet",
   "editingSection": "Vous ne pouvez pas modifier une section lorsque vous en modifiez déjà une",
-  "checkRequiredField": "Il y a des champ(s) requis pour la version anglaise, veuillez s'il vous plait y accéder pour les remplir",
+  "checkRequiredField": "Il y a des champ(s) requis pour la version { lang }, veuillez s'il vous plait y accéder pour les remplir",
   "filterName": "Nom",
   "filterApply": "Appliquer",
   "filterClear": "Effacer",

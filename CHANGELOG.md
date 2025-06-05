@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Guide scenarios that needs to be fixed #130
 - Feedback Display issue for the library #187
 - Section creation Media fields declaration: When you create a new site and you enable the section from the inventory, the sections type fields are not picked up from the section code and added #190
+- Default language issues in Wysiwyg Form: When in Sections BO you select only French as language and then French as default language, you are not able to submit data for a section #191
 
 ### [3.0.1] - 2025-05-26
 
