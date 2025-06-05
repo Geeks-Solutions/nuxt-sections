@@ -53,7 +53,7 @@
     "intro.js": "^7.2.0",
     "vue-toastification": "^2.0.0-rc.5",
     "@marshallswain/vuedraggable": "^4.2.0",
-    "@geeks.solutions/vue-components": "geeks.solutions-vue-components-3.0.1.tgz"
+    "@geeks.solutions/vue-components": "3.0.1"
   },
   "devDependencies": {
     "@nuxt/devtools": "^2.4.0",
