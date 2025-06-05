@@ -1258,6 +1258,7 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  onBeforeMount,
   onServerPrefetch,
   parsePath,
   parseQS,
@@ -1711,6 +1712,10 @@ const initializeSectionsCMSEvents = () => {
   if (!window.SectionsCMS) {
     window.SectionsCMS = ref({})
     window.SectionsCMS.value.reRenderSection = (data) => refreshSectionView('SectionView', data)
+    if (admin) {
+      window.SectionsCMS.value.openEditMode = openEditMode
+      window.SectionsCMS.value.runIntro = (topic, rerun, lastSavedTopic) => runIntro(topic, rerun, lastSavedTopic)
+    }
   }
 }
 const initializeSections = (res) => {
@@ -4698,7 +4703,6 @@ const checkIntroLastStep = (topic) => {
 onMounted(async () => {
   computedTitle.value = ""
   await fetchData()
-  initializeSectionsCMSEvents();
   if (admin) {
     await initiateIntroJs();
   }
@@ -4721,6 +4725,10 @@ onMounted(async () => {
     checkIntroLastStep('editPage')
   }
 });
+
+onBeforeMount(() => {
+  initializeSectionsCMSEvents();
+})
 
 onBeforeUnmount(() => {
   fetchedOnServer.value = false

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Updated
 
 - Display fixes requested by julien #155
+- SectionsCMSEvents Initialization: added two events for openEditMode and runIntro functions
 
 ### Fixed
 
