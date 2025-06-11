@@ -1246,6 +1246,7 @@
 </template>
 
 <script setup>
+import {useSectionsDataStore} from "../../stores/sectionsDataStore.js";
 import {
   computed,
   dummyDataPresets,
@@ -1338,6 +1339,7 @@ const {
   }
 });
 const emit = defineEmits(['load']);
+const store = useSectionsDataStore()
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
@@ -1366,7 +1368,7 @@ const updatedVariations = ref({});
 // current visible views
 const views = ref({});
 const getSections = ref([]);
-const loading = ref(false);
+const loading = useState('loading', () =>false);
 const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
@@ -1463,7 +1465,7 @@ const supportedLanguages = ref([
   {id: 'en', label: 'English (en)', selected: false}
 ]);
 const selectedLanguages = ref([]);
-const defaultLang = ref('en');
+const defaultLang = useState('defaultLang', () => 'en');
 const selectedMediaType = ref('media');
 const resizeData = ref({
   tracking: false,
@@ -1656,7 +1658,6 @@ useHead(() => {
 
   return {
     htmlAttrs: {
-      title: computedTitle.value,
       lang: i18n.locale.value
     },
     title: computedTitle.value,
@@ -1718,8 +1719,10 @@ const initializeSectionsCMSEvents = () => {
     }
   }
 }
-const initializeSections = (res) => {
-  nuxtApp.callHook('page_pre_render', res)
+const initializeSections = (res, skipHook) => {
+  if (skipHook !== true) {
+    nuxtApp.callHook('page_pre_render', res)
+  }
   const sections = res.data.sections
   pageData.value = res.data
   allSections.value = res.data.sections
@@ -1840,11 +1843,11 @@ const initializeSections = (res) => {
   // In Nuxt 3, we use emit from defineEmits()
   // This would need to be passed through from the parent component
   // For now, I'll comment it out
-  emit("load", true)
+  emit("load", false)
 
   sectionsPageLastUpdated.value = res.data.last_updated
 }
-const sectionsPageErrorManagement = (error, server) => {
+const sectionsPageErrorManagement = (error, server, skipHook) => {
   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
   if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
     pageNotFoundManagement(error);
@@ -1855,7 +1858,7 @@ const sectionsPageErrorManagement = (error, server) => {
     initializeSections(res);
     return;
   }
-  if (error.response.status === 404 && server) {
+  if (error.response.status === 404 && server && skipHook !== true) {
     if (nuxtApp.ssrContext) {
       nuxtApp.ssrContext.event.res.statusCode = 404;
     }
@@ -4750,6 +4753,22 @@ watch(isModalOpen, (value) => {
   }
 });
 
+const serverPageData = store.getPageData
+if (serverPageData) {
+  fetchedOnServer.value = true;
+  if (serverPageData.res) {
+    locales.value.forEach(lang => {
+      pageMetadata.value[lang] = {
+        title: "",
+        description: ""
+      };
+    });
+    initializeSections(serverPageData.res, true)
+  } else if (serverPageData.error) {
+    sectionsPageErrorManagement(serverPageData.error, true, true)
+  }
+}
+
 // Fetch data (initial data loading)
 const fetchData = async () => {
   try {
@@ -4791,8 +4810,6 @@ const fetchData = async () => {
       };
     });
   }
-
-  loading.value = true;
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
@@ -4864,6 +4881,7 @@ const fetchData = async () => {
     }
   }
   if (sectionsPageData) {
+    loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
     const res = sectionsPageData.res;
@@ -4875,6 +4893,7 @@ const fetchData = async () => {
       sectionsPageErrorManagement(error)
     }
   } else if (inBrowser && fetchedOnServer.value === false) {
+    loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
     await useApiRequest({
@@ -4890,7 +4909,8 @@ const fetchData = async () => {
         sectionsPageErrorManagement(error)
       }
     });
-  } else if (!inBrowser) {
+  } else if (!inBrowser && !serverPageData) {
+    loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
     fetchedOnServer.value = true;
@@ -4911,6 +4931,15 @@ const fetchData = async () => {
         });
       } catch {}
     }
+  } else if (serverPageData) {
+    if (serverPageData.res) {
+      nuxtApp.callHook('page_pre_render', serverPageData.res)
+    } else if (serverPageData.error && serverPageData.error.response.status === 404) {
+      if (nuxtApp.ssrContext) {
+        nuxtApp.ssrContext.event.res.statusCode = 404;
+      }
+    }
+    store.setPageData(null)
   } else {
     loading.value = false;
   }

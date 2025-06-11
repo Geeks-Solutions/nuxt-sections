@@ -29,7 +29,16 @@ const pathMatch = Array.isArray(route.params.pathMatch)
   ? route.params.pathMatch.join('/')
   : route.params.pathMatch || ''
 const pageName = pathMatch || '/'
-const lang = useI18n().locale.value
+const { locale } = useI18n()
+
+const lang = computed({
+  get() {
+    return locale.value
+  },
+  set(newLang) {
+    locale.value = newLang
+  }
+})
 
 const admin = computed({
   get() {

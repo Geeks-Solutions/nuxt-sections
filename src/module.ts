@@ -5,6 +5,7 @@ import {
   addComponentsDir,
   addImportsDir,
   addPluginTemplate,
+  addRouteMiddleware,
   installModule
 } from '@nuxt/kit'
 
@@ -19,7 +20,18 @@ export default defineNuxtModule<ModuleOptions>({
   // Default configuration options of the Nuxt module
   defaults: {},
   async setup(_options, _nuxt) {
+
+    if (!_nuxt.options.modules.includes('@pinia/nuxt')) {
+      _nuxt.options.modules.push('@pinia/nuxt')
+    }
+
     const { resolve } = createResolver(import.meta.url)
+
+    addRouteMiddleware({
+      name: 'i18n-default-locale',
+      path: resolve('./runtime/middleware/i18n-default-locale'),
+      global: true // Makes it run on every route
+    })
 
     await installModule('@nuxtjs/i18n', {
       langDir: resolve('./runtime/lang'),

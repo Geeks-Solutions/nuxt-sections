@@ -1309,6 +1309,21 @@ export {
 };
 ```
 
+* `available_locales`: This hook should return the list of supported locale codes as an array of strings, it will be used to abstract the language prefix from the url used by sections API to render the page
+
+ex.:
+
+```js
+const { codes } = await import('langs');
+const available_locales = () => {
+  return codes("1")
+}
+
+export {
+  available_locales
+};
+```
+
 ### The following will require a specific component to be implemented in your project:
 
 Inside `sections/page_components/page_not_found.vue` or `sections/page_components/project_not_found.vue`
