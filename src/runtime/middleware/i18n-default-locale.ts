@@ -9,15 +9,17 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const app: any = useNuxtApp()
   const defaultLocale = useState('defaultLocale', () => app.$i18n.locale.value);
 
+  const route = to
+
+  const pathMatch = Array.isArray(route.params.pathMatch)
+    ? route.params.pathMatch.join('/')
+    : route.params.pathMatch || ''
+  const pageName = pathMatch || '/'
+
+  const abstractedDefaultLocale = abstractPathLanguage(pageName).matchedLocale
+
   if (import.meta.server) {
     const store = useSectionsDataStore()
-
-    const route = to
-
-    const pathMatch = Array.isArray(route.params.pathMatch)
-      ? route.params.pathMatch.join('/')
-      : route.params.pathMatch || ''
-    const pageName = pathMatch || '/'
 
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http';
 
@@ -28,8 +30,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     };
 
     let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`;
-
-    const abstractedDefaultLocale = abstractPathLanguage(pageName).matchedLocale
 
     let payload : any = {};
 
@@ -81,7 +81,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       } catch {}
     }
   } else {
-    app.$i18n.locale.value = defaultLocale.value
-    await app.$i18n.setLocale(defaultLocale.value)
+    if (!abstractedDefaultLocale || (abstractedDefaultLocale && !app.$i18n.availableLocales.includes(abstractedDefaultLocale)) && from.fullPath === to.fullPath) {
+      app.$i18n.locale.value = defaultLocale.value
+      await app.$i18n.setLocale(defaultLocale.value)
+    }
   }
 })
