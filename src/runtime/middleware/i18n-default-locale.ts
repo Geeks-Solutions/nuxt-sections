@@ -26,6 +26,23 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const abstractedDefaultLocale = abstractPathLanguage(pageName).matchedLocale
 
   if (import.meta.server) {
+
+    let hooksJs
+    try {
+      hooksJs = importJs(`/js/global-hooks`);
+      if (hooksJs['init_params']) {
+        const paramsUpdate = hooksJs['init_params'](app.$sections, {
+          qs: route.query,
+          headers: app.ssrContext && app.ssrContext.event.req ? app.ssrContext.event.req.headers : {},
+          reqBody: app.ssrContext && app.ssrContext.event.req ? app.ssrContext.event.req.body : {},
+          url: app.ssrContext && app.ssrContext.event.req && app.ssrContext.event.req.headers ? app.ssrContext.event.req.headers.host : window.location.host
+        });
+        if (paramsUpdate) {
+          app.$sections = paramsUpdate;
+        }
+      }
+    } catch {}
+
     const store = useSectionsDataStore()
 
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http';
@@ -55,7 +72,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       };
     }
 
-    const hooksJs = importJs(`/js/global-hooks`);
     if (hooksJs && hooksJs['page_pre_load']) {
       // Call only once and check the result
       const hookResult = hooksJs['page_pre_load'](payload);
