@@ -1314,7 +1314,11 @@ export {
 ex.:
 
 ```js
-const { codes } = await import('langs');
+let codes;
+
+import('langs').then((mod) => {
+  codes = mod.codes;
+});
 const available_locales = () => {
   return codes("1")
 }
