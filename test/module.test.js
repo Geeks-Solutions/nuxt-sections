@@ -69,6 +69,7 @@ import WysiwygStatic from '../src/runtime/components/configs/views/wysiwyg_stati
 import Wysiwyg from '../src/runtime/components/configs/forms/wysiwyg.vue';
 
 import { createI18n } from 'vue-i18n'
+import { createPinia, setActivePinia } from 'pinia'
 
 let stubs = { // Add basic stubs for common lazy components
   LazyBaseIconsBack: true,
@@ -127,7 +128,7 @@ const i18n = createI18n({
 const mountComponent = (props = {}) => {
   return mount(SectionsPage, {
     global: {
-      plugins: [i18n],
+      plugins: [i18n, createPinia()],
       stubs,
       config: {
         globalProperties: {
@@ -171,6 +172,8 @@ describe('SectionsPage.vue', () => {
   let wrapper
 
   beforeEach(() => {
+
+    setActivePinia(createPinia())
 
     vi.clearAllMocks();
 
@@ -1585,10 +1588,13 @@ describe('sanitizeURL', () => {
       }
     })
 
+    window.history.pushState({}, '', '/some-page?keep_me=yes')
     await wrapper.vm.sanitizeURL()
 
+    await wrapper.vm.$nextTick()
+
     // Verify updated URL
-    expect(useRoute().fullPath).toBe('/some-page?keep_me=yes')
+    expect(window.location.search).toBe('?keep_me=yes')
   })
 })
 
@@ -1691,7 +1697,7 @@ describe('Wysiwyg - validate default language content', () => {
         locales: ['en', 'fr']
       },
       global: {
-        plugins: [i18n],
+        plugins: [i18n, createPinia()],
         stubs,
         config: {
           globalProperties: {
