@@ -1,7 +1,14 @@
 import {
-  defineNuxtRouteMiddleware, getSectionProjectIdentity, parsePath, parseQS, sectionHeader, useApiRequest, abstractPathLanguage,
+  defineNuxtRouteMiddleware,
+  getSectionProjectIdentity,
+  parsePath,
+  parseQS,
+  sectionHeader,
+  useApiRequest,
+  abstractPathLanguage,
   useNuxtApp,
-  useState
+  useState,
+  importJs
 } from "#imports";
 import {useSectionsDataStore} from "../stores/sectionsDataStore";
 
@@ -48,6 +55,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       };
     }
 
+    const hooksJs = importJs(`/js/global-hooks`);
+    if (hooksJs && hooksJs['page_pre_load']) {
+      // Call only once and check the result
+      const hookResult = hooksJs['page_pre_load'](payload);
+
+      if (hookResult && typeof hookResult === 'object') {
+        // Ensure we only take serializable data
+        try {
+          payload = JSON.parse(JSON.stringify(hookResult));
+        } catch {}
+      }
+    }
+
     const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
     if (optionsRes.status === 200) {
       try {
@@ -58,15 +78,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           ...config,
           onSuccess: async (res) => {
             if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
+              defaultLocale.value = res.data.metadata.project_metadata.defaultLang
               let localization
               if (abstractedDefaultLocale && app.$i18n.availableLocales.includes(abstractedDefaultLocale)) {
                 localization = abstractedDefaultLocale
               } else {
                 localization = res.data.metadata.project_metadata.defaultLang
               }
-              defaultLocale.value = localization
-              app.$i18n.locale.value = defaultLocale.value
-              await app.$i18n.setLocale(defaultLocale.value)
+              app.$i18n.locale.value = localization
+              await app.$i18n.setLocale(localization)
             }
             store.setPageData({
               res
@@ -81,7 +101,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       } catch {}
     }
   } else {
-    if (!abstractedDefaultLocale || (abstractedDefaultLocale && !app.$i18n.availableLocales.includes(abstractedDefaultLocale)) && from.fullPath === to.fullPath) {
+    if (abstractedDefaultLocale && app.$i18n.availableLocales.includes(abstractedDefaultLocale)) {
+      app.$i18n.locale.value = abstractedDefaultLocale
+      await app.$i18n.setLocale(abstractedDefaultLocale)
+    } else {
       app.$i18n.locale.value = defaultLocale.value
       await app.$i18n.setLocale(defaultLocale.value)
     }
