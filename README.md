@@ -1314,13 +1314,10 @@ export {
 ex.:
 
 ```js
-let codes;
+import langCodes from 'langs'
 
-import('langs').then((mod) => {
-  codes = mod.codes;
-});
 const available_locales = () => {
-  return codes("1")
+  return langCodes.codes("1")
 }
 
 export {
