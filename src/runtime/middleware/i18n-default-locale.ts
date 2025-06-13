@@ -59,7 +59,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     let language;
     try {
-      language = app.$i18n.locale.value;
+      language = abstractedDefaultLocale ? abstractedDefaultLocale : undefined;
     } catch {}
 
     if (app.$sections.queryStringSupport === "enabled") {
@@ -84,6 +84,18 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       }
     }
 
+    const setupLocalization = async (lang: string) => {
+      defaultLocale.value = lang
+      let localization
+      if (abstractedDefaultLocale && app.$i18n.availableLocales.includes(abstractedDefaultLocale)) {
+        localization = abstractedDefaultLocale
+      } else {
+        localization = lang
+      }
+      app.$i18n.locale.value = localization
+      await app.$i18n.setLocale(localization)
+    }
+
     const optionsRes = await fetch(URL, {method: 'OPTIONS', ...config});
     if (optionsRes.status === 200) {
       try {
@@ -94,21 +106,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           ...config,
           onSuccess: async (res) => {
             if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
-              defaultLocale.value = res.data.metadata.project_metadata.defaultLang
-              let localization
-              if (abstractedDefaultLocale && app.$i18n.availableLocales.includes(abstractedDefaultLocale)) {
-                localization = abstractedDefaultLocale
-              } else {
-                localization = res.data.metadata.project_metadata.defaultLang
-              }
-              app.$i18n.locale.value = localization
-              await app.$i18n.setLocale(localization)
+              await setupLocalization(res.data.metadata.project_metadata.defaultLang)
             }
             store.setPageData({
               res
             })
           },
-          onError: (error) => {
+          onError: async (error) => {
+            if (error.response && error.response.data && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.defaultLang) {
+              await setupLocalization(error.response.data.options.project_metadata.defaultLang)
+            }
             store.setPageData({
               error
             })
