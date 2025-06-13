@@ -1,13 +1,14 @@
 <template>
   <div class="custom-clickable-tooltip">
     <div class="tooltip-wrapper">
-      <span class="tooltip-trigger" @click="toggleTooltip">
+      <span class="tooltip-trigger" @click.stop.prevent="toggleTooltip">
         <slot />
       </span>
       <div
         v-if="isVisible"
         class="tooltip"
         :class="tooltipPosition"
+        :style="color ? `background-color: ${color}` : ``"
       >
         {{ content }}
       </div>
@@ -30,6 +31,10 @@ const props = defineProps({
   position: {
     type: String,
     default: 'top',
+  },
+  color: {
+    type: String,
+    default: '',
   },
 });
 

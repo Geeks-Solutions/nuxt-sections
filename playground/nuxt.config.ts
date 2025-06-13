@@ -4,9 +4,9 @@ export default defineNuxtConfig({
     host: '0.0.0.0',
     port: 443,
   },
-  modules: ['../src/module', "@nuxtjs/i18n", "@nuxtjs/tailwindcss", "@nuxt/image"],
+  modules: ['../src/module', "@nuxtjs/i18n", "@nuxtjs/tailwindcss", "@nuxt/image", "@pinia/nuxt"],
   i18n: {
-    strategy: "prefix_and_default",
+    strategy: "no_prefix",
     detectBrowserLanguage: false,
     defaultLocale: "en",
     locales: [

@@ -159,17 +159,58 @@ export async function addNewStaticType(sectionTypeName: string): Promise<{ statu
   }
 }
 
+export const abstractPathLanguage = (finalPath: any) => {
+  let availableLocales = []
+  let matchedLocale
+  try {
+    const hooksJavascript = importJs(`/js/global-hooks`);
+    if (hooksJavascript['available_locales']) {
+      availableLocales = hooksJavascript['available_locales']();
+    }
+  } catch {
+    availableLocales = []
+  }
+
+  if (availableLocales && availableLocales.length > 0) {
+    matchedLocale = availableLocales.find((locale: any) =>
+      decodeURIComponent(finalPath) === `${locale}` || decodeURIComponent(finalPath).startsWith(`${locale}/`)
+    );
+
+    if (matchedLocale) {
+      finalPath = encodeURIComponent(decodeURIComponent(finalPath).slice(matchedLocale.length));
+      if (decodeURIComponent(finalPath).startsWith('/')) {
+        finalPath = encodeURIComponent(decodeURIComponent(finalPath).slice(1)); // remove leading slash if needed
+      }
+      if (!finalPath) {
+        finalPath = encodeURIComponent('/');
+      }
+    }
+  }
+
+  return {
+    path: finalPath,
+    matchedLocale
+  }
+}
+
 export const parsePath = (path: string): string => {
+
+  let finalPath = path
+
   let decodedPath = decodeURIComponent(path);
   if (decodedPath && decodedPath.includes('=')) {
     let parsed0 = decodedPath.substring(0, decodedPath.indexOf('='));
     let parsed1 = parsed0.substring(0, parsed0.lastIndexOf('/'));
     if (parsed1) {
-      return encodeURIComponent(parsed1);
-    } else return encodeURIComponent('/');
+      finalPath = encodeURIComponent(parsed1);
+    } else finalPath = encodeURIComponent('/');
   } else {
-    return path;
+    finalPath = path;
   }
+
+  finalPath = abstractPathLanguage(finalPath).path
+
+  return finalPath
 }
 
 export const parseQS = (path: string, routeQueries: boolean, queries: any): Record<string, any> => {
