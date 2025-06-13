@@ -1349,6 +1349,79 @@ created() {
 This will add an additional `SEO` button to your section options (edit, drag, delete), that you can use(by clicking on it) to enable/disable overwriting the metas of your page by the ones of this section, based on the return value from the `seo_management` global-hook described above.
 The sections metas complies to the sections order in the page (following their weights). And so the section with the lowest weight and having a meta (ie. `title`) will be the one overwriting the page title meta even if other sections has SEO enabled and returning a title. 
 
+### Builder Settings:
+
+The library support the ability of having custom css form data that will can be saved into the project metadata. 
+The css form data will be used to inject style variables in root css style making it possible to style different html elements in the project that are using these variables.
+
+An example of css variables that can be used is:
+
+```
+### Global:
+* --base-font-size
+* --mobile-base-font-size
+### Headings:
+* --h1-color
+* --h2-color
+* --h3-color
+* --h4-color
+### Buttons:
+* --primary-button-text-color + another field variable for the hover state --hover-primary-button-text-color
+* --primary-button-background-color +another field  variable for the hover state --hover-primary-button-background-color
+* --primary-button-border-color + another field variable for the hover state --hover-primary-button-border-color
+---secondary-button variables are also supported.
+### Links (a):
+* --link-text-color + variable for the hover state --hover-link-text-color
+* --link-background-color + variable for the hover state --hover-link-background-color
+* --link-border-color + variable for the hover state --hover-link-border-color
+### Paragraph:
+* p-color
+```
+
+* The form data has to follow and respect the below structure:
+
+ie.: 
+```json
+{
+  // Global
+  '--base-font-size': '',
+  '--mobile-base-font-size': '',
+
+  // Headings
+  '--h1-color': '',
+  '--h2-color': '',
+  '--h3-color': '',
+  '--h4-color': '',
+
+  // Primary Button
+  '--primary-button-text-color': '',
+  '--primary-button-background-color': '',
+  '--primary-button-border-color': '',
+  '--hover-primary-button-text-color': '',
+  '--hover-primary-button-background-color': '',
+  '--hover-primary-button-border-color': '',
+
+  // Secondary Button
+  '--secondary-button-text-color': '',
+  '--secondary-button-background-color': '',
+  '--secondary-button-border-color': '',
+  '--hover-secondary-button-text-color': '',
+  '--hover-secondary-button-background-color': '',
+  '--hover-secondary-button-border-color': '',
+
+  // Links
+  '--link-text-color': '',
+  '--link-background-color': '',
+  '--link-border-color': '',
+  '--hover-link-text-color': '',
+  '--hover-link-background-color': '',
+  '--hover-link-border-color': '',
+
+  // Paragraph
+  '--p-color': ''
+}
+```
+
 ## Development
 
 1. Clone this repository

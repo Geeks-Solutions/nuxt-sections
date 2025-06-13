@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Default Language management: Changes needed to make nuxt sections library able of configuring the defaultlocale of the nuxt/i18n library configuration #112
+- New tab in the settings popup to customize css settings available in the Sections css preset #180
 
 ### [3.0.2] - 2025-06-02
 
