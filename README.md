@@ -1351,75 +1351,35 @@ The sections metas complies to the sections order in the page (following their w
 
 ### Builder Settings:
 
-The library support the ability of having custom css form data that will can be saved into the project metadata. 
-The css form data will be used to inject style variables in root css style making it possible to style different html elements in the project that are using these variables.
+The library support providing the ability for the host project to define multiple forms that will be displayed dynamically in the settings popup and that will be saved into the project metadata. 
 
-An example of css variables that can be used is:
+## Files structure:
 
-```
-### Global:
-* --base-font-size
-* --mobile-base-font-size
-### Headings:
-* --h1-color
-* --h2-color
-* --h3-color
-* --h4-color
-### Buttons:
-* --primary-button-text-color + another field variable for the hover state --hover-primary-button-text-color
-* --primary-button-background-color +another field  variable for the hover state --hover-primary-button-background-color
-* --primary-button-border-color + another field variable for the hover state --hover-primary-button-border-color
----secondary-button variables are also supported.
-### Links (a):
-* --link-text-color + variable for the hover state --hover-link-text-color
-* --link-background-color + variable for the hover state --hover-link-background-color
-* --link-border-color + variable for the hover state --hover-link-border-color
-### Paragraph:
-* p-color
-```
+* The custom forms should be defined inside `sections/builder/settings` as vue components and the library will be responsible for displaying a new tab in the settings popup and its name is based on the vue component name
 
-* The form data has to follow and respect the below structure:
+## Builder Hooks:
 
-ie.: 
-```json
-{
-  // Global
-  '--base-font-size': '',
-  '--mobile-base-font-size': '',
+* The library expose 2 hooks (with no callback function) that can be implemented inside `sections/builder/settings/builder-hooks.js`:
 
-  // Headings
-  '--h1-color': '',
-  '--h2-color': '',
-  '--h3-color': '',
-  '--h4-color': '',
+ - `initialize_builder_settings`: this hook is called when the page data are received and have as arguments the builder settings data and the useHead composable that allow you to update the page head settings
+ - `reset_builder_settings`: this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings 
 
-  // Primary Button
-  '--primary-button-text-color': '',
-  '--primary-button-background-color': '',
-  '--primary-button-border-color': '',
-  '--hover-primary-button-text-color': '',
-  '--hover-primary-button-background-color': '',
-  '--hover-primary-button-border-color': '',
+i.e:
 
-  // Secondary Button
-  '--secondary-button-text-color': '',
-  '--secondary-button-background-color': '',
-  '--secondary-button-border-color': '',
-  '--hover-secondary-button-text-color': '',
-  '--hover-secondary-button-background-color': '',
-  '--hover-secondary-button-border-color': '',
-
-  // Links
-  '--link-text-color': '',
-  '--link-background-color': '',
-  '--link-border-color': '',
-  '--hover-link-text-color': '',
-  '--hover-link-background-color': '',
-  '--hover-link-border-color': '',
-
-  // Paragraph
-  '--p-color': ''
+```js
+const initialize_builder_settings = (settings, useHead) => {
+  
 }
+
+const reset_builder_settings = (settings) => {
+  
+}
+
+export {
+  initialize_builder_settings,
+  reset_builder_settings
+}
+
 ```
 
 ## Development

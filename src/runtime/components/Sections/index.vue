@@ -91,7 +91,7 @@
           <div v-for="tab in updatedPageSettingsTabs"
                :key="`page-settings-tab-${tab}`"
                class="page-settings-tab"
-               :class="{'active-tab': currentPageSettingsTab === tab}"
+               :class="{'active-tab': currentSettingsTab === tab}"
                @click="switchSettingsTab(tab)">
             <div>
               {{ $t(`sectionsSettings.${tab}`) }}
@@ -114,9 +114,9 @@
             <LazyBaseIconsClose/>
           </div>
         </div>
-        <LazyTranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1 && currentPageSettingsTab === 'page_settings'" :locales="locales" :default-lang="defaultLang"
+        <LazyTranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1 && currentSettingsTab === 'page_settings'" :locales="locales" :default-lang="defaultLang"
                                               @setFormLang="(locale) => metadataFormLang = locale"/>
-        <div v-if="currentPageSettingsTab === 'page_settings'" class="flexSections sections-w-full sections-justify-center"
+        <div v-if="currentSettingsTab === 'page_settings'" class="flexSections sections-w-full sections-justify-center"
              :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
           <div class="body metadataFieldsContainer">
             <div class="flexSections sections-flex-row sections-gap-4 metadataFieldsContainerRow">
@@ -185,7 +185,7 @@
             </div>
           </div>
         </div>
-        <div v-if="currentPageSettingsTab === 'page_settings'" class="footer">
+        <div v-if="currentSettingsTab === 'page_settings'" class="footer">
           <button class="hp-button" @click="updatePageMetaData">
             <div class="btn-icon check-icon"></div>
             <div class="btn-text">
@@ -193,8 +193,8 @@
             </div>
           </button>
         </div>
-        <div v-if="currentPageSettingsTab === 'builder_settings'">
-          <component :is="getBuilderComponentForm(currentPageSettingsTab)"
+        <div v-if="currentSettingsTab === 'builder_settings'">
+          <component :is="getBuilderComponentForm(currentSettingsTab)"
                      :builder-settings-prop="updatedBuilderSettings"
                      @settings-updated="builderSettingUpdated"></component>
           <div class="footer">
@@ -1203,108 +1203,6 @@
 
           <!-- ------------------------------------------------------------------------------------------- -->
 
-          <!-- This is the popup to update the page metadata     -->
-<!--          <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"-->
-<!--               class="sections-fixed sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 pageSettingsModalContainer"-->
-<!--               aria-labelledby="modal-title" role="dialog" aria-modal="true"-->
-<!--               :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">-->
-<!--            <div-->
-<!--              class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">-->
-<!--              <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl page-settings"-->
-<!--                   :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">-->
-<!--                <div class="section-modal-wrapper">-->
-<!--                  <div class="sections-text-center h4 sectionTypeHeader">-->
-<!--                    <div class="title">{{ $t("Metadata") }}</div>-->
-<!--                    <div class="closeIcon" @click="metadataModal = false; metadataFormLang = i18n.locale.value.toString()">-->
-<!--                      <LazyBaseIconsClose/>-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                  <LazyTranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"-->
-<!--                                        @setFormLang="(locale) => metadataFormLang = locale"/>-->
-<!--                  <div class="flexSections sections-w-full sections-justify-center"-->
-<!--                       :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">-->
-<!--                    <div class="body metadataFieldsContainer">-->
-<!--                      <div class="flexSections sections-flex-row sections-gap-4 metadataFieldsContainerRow">-->
-<!--                        <div class='sections-w-full'>-->
-<!--                          <div class="sectionsFieldsLabels">-->
-<!--                            {{ $t("projectId") }}: {{ nuxtApp.$sections.projectId }}-->
-<!--                          </div>-->
-<!--                          <div class="sectionsFieldsLabels">-->
-<!--                            {{ $t("pageUrl") }}-->
-<!--                          </div>-->
-<!--                          <div class="fieldsDescription">-->
-<!--                            {{ $t("pathFieldDesc") }}-->
-<!--                          </div>-->
-<!--                          <input-->
-<!--                            class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"-->
-<!--                            type="text"-->
-<!--                            v-model="pagePath"-->
-<!--                          />-->
-<!--                          <span class="pagePathRequiredStyle"-->
-<!--                                v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>-->
-<!--                          <div class="flexSections metadataFields">-->
-<!--                            <div class="metadataColumns">-->
-<!--                              <div class="sections-mt-2 sectionsFieldsLabels">-->
-<!--                                {{ $t("pageTitle") }}-->
-<!--                              </div>-->
-<!--                              <input-->
-<!--                                class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"-->
-<!--                                type="text"-->
-<!--                                v-model="pageMetadata[metadataFormLang].title"-->
-<!--                              />-->
-<!--                              <div class="sections-mt-2 sectionsFieldsLabels">-->
-<!--                                {{ $t("pageSeoDesc") }}-->
-<!--                              </div>-->
-<!--                              <textarea-->
-<!--                                class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none"-->
-<!--                                type="text"-->
-<!--                                v-model="pageMetadata[metadataFormLang].description"-->
-<!--                              />-->
-<!--                            </div>-->
-<!--                          </div>-->
-<!--                        </div>-->
-<!--                        <div>-->
-<!--                          <div>-->
-<!--                            <div class="sections-mt-2 sectionsFieldsLabels">-->
-<!--                              {{ $t('Image Metatag') }}-->
-<!--                            </div>-->
-<!--                            <LazyMediasUploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"-->
-<!--                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"-->
-<!--                                         :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"-->
-<!--                                         @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"-->
-<!--                                         @removeUploadedImage="removeMedia('mediaMetatag')"/>-->
-<!--                          </div>-->
-<!--                          <div>-->
-<!--                            <div class="sections-mt-2 sectionsFieldsLabels">-->
-<!--                              {{ $t('CSS') }}-->
-<!--                            </div>-->
-<!--                            <LazyMediasUploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"-->
-<!--                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"-->
-<!--                                         :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"-->
-<!--                                         @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"-->
-<!--                                         @removeUploadedImage="removeMedia('media')" />-->
-<!--                            <LazyMediasMediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"-->
-<!--                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></LazyMediasMediaComponent>-->
-<!--                          </div>-->
-<!--                        </div>-->
-<!--                      </div>-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                  <div class="footer">-->
-<!--                    <button class="hp-button" @click="updatePageMetaData">-->
-<!--                      <div class="btn-icon check-icon"></div>-->
-<!--                      <div class="btn-text">-->
-<!--                        {{ $t("Save") }}-->
-<!--                      </div>-->
-<!--                    </button>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
-
-          <!-- ------------------------------------------------------------------------------------------- -->
-
           <!-- This is popup to show the successfully created new static section message      -->
           <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
                class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
@@ -1518,19 +1416,26 @@ const jsonFilePick = ref(null)
 const resizeTarget = ref(null)
 const sectionsMainTarget = ref(null)
 const componentsSetup = ref({});
-const currentPageSettingsTab = ref("page_settings");
-const pageSettingsTabs = ref([
+const currentSettingsTab = ref("page_settings");
+const settingsTabs = ref([
   "page_settings"
 ])
 const updatedPageSettingsTabs = computed(()=> {
-  if (admin && editMode.value && getBuilderComponentForm("builder_settings")) {
+  let builderSettingsTabs
+  try {
+    const builderSettingsFiles = import.meta.glob('/sections/builder/settings/*.vue')
+    builderSettingsTabs = Object.keys(builderSettingsFiles).map((filename) => {
+      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+    })
+  } catch {}
+  if (admin && editMode.value && builderSettingsTabs && builderSettingsTabs.length > 0) {
     return [
-      ...pageSettingsTabs.value,
-      "builder_settings"
+      ...settingsTabs.value,
+      ...builderSettingsTabs
     ]
   } else {
     return [
-      ...pageSettingsTabs.value,
+      ...settingsTabs.value,
     ]
   }
 });
@@ -1579,7 +1484,6 @@ const fieldsInputs = ref([
   }
 ]);
 const metadataFormLang = ref('');
-const computedInjectedStyle = useState("computedInjectedStyle", () => '');
 const computedTitle = useState("computedTitle", () => '');
 const computedDescription = ref('');
 const computedImage = ref('');
@@ -1821,11 +1725,6 @@ useHead(() => {
       } : {},
       { hid: "og:url", property: "og:url", content: fullURL },
     ],
-    style: [
-      computedInjectedStyle.value ? {
-        innerHTML: computedInjectedStyle.value
-      } : {}
-    ],
     link: [
       projectMetadata.value['selectedCSSPreset'] && projectMetadata.value['selectedCSSPreset'].name && projectMetadata.value['selectedCSSPreset'].name !== 'Other' && projectMetadata.value['selectedCSSPreset'].name !== 'None' ? {
         rel: 'stylesheet',
@@ -1935,7 +1834,12 @@ const initializeSections = (res, skipHook) => {
   if (res.data.metadata && res.data.metadata.project_metadata && res.data.metadata.project_metadata.builder && res.data.metadata.project_metadata.builder.builder_settings) {
     originalBuilderSettings.value = res.data.metadata.project_metadata.builder.builder_settings
     updatedBuilderSettings.value = res.data.metadata.project_metadata.builder.builder_settings
-    overwriteCssStyleRoot(originalBuilderSettings.value)
+    try {
+      const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+      if (builderHooksJavascript['initialize_builder_settings']) {
+        builderHooksJavascript['initialize_builder_settings'](originalBuilderSettings.value, useHead);
+      }
+    } catch {}
   }
 
   if (!computedTitle.value) {
@@ -2140,29 +2044,12 @@ const unsavedSettings = (tab) => {
   }
 }
 const getBuilderComponentForm = (component_name) => {
-  const path = `/builder/${component_name}`;
+  const path = `/builder/settings/${component_name}`;
   return importComp(path).component;
 };
 const switchSettingsTab = (tab) => {
-  unsavedSettings(currentPageSettingsTab.value)
-  currentPageSettingsTab.value = tab
-}
-const overwriteCssStyleRoot = (settings) => {
-  const cssVars = Object.entries(settings)
-    .filter(([, value]) => value != null && value !== '') // exclude null, undefined, and empty string
-    .map(([property, value]) => `  ${property}: ${value} !important;`)
-    .join('\n')
-
-  computedInjectedStyle.value = `:root {\n${cssVars}\n}`
-}
-const applySettingsToCSS = (settings) => {
-  const root = document.documentElement
-
-  // Apply each setting as a CSS custom property
-  Object.entries(settings).forEach(([property, value]) => {
-    // Set the CSS custom property with !important to override existing values
-    root.style.setProperty(property, value, 'important')
-  })
+  unsavedSettings(currentSettingsTab.value)
+  currentSettingsTab.value = tab
 }
 const builderSettingUpdated = (settings) => {
   if (!projectMetadata.value.builder) {
@@ -2173,7 +2060,6 @@ const builderSettingUpdated = (settings) => {
     projectMetadata.value.builder.builder_settings = {}
   }
   projectMetadata.value.builder.builder_settings = settings
-  applySettingsToCSS(settings)
   const allEmpty = Object.values(settings).every(value => value.trim() === '')
   if (!allEmpty) {
     updatedBuilderSettings.value = settings
@@ -4982,11 +4868,16 @@ const restoreSectionContent = (settings) => {
     metadataModal.value = false;
     isSideBarOpen.value = false;
     isRestoreSectionOpen.value = false;
-    applySettingsToCSS(originalBuilderSettings.value)
+    try {
+      const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+      if (builderHooksJavascript['reset_builder_settings']) {
+        builderHooksJavascript['reset_builder_settings'](originalBuilderSettings.value);
+      }
+    } catch {}
     updatedBuilderSettings.value = originalBuilderSettings.value
     metadataFormLang.value = i18n.locale.value.toString();
     unsavedSettingsError.value = {}
-    currentPageSettingsTab.value = "page_settings"
+    currentSettingsTab.value = "page_settings"
 
     pageMetadata.value = originalMetaData.value
     pagePath.value = originalMetaData.value.pagePath

@@ -6,7 +6,7 @@ export default defineVitestConfig({
   test: {
     globals: true,
     environment: 'nuxt',
-    setupFiles: [],
+    setupFiles: ['./tests/setup/mocks.js'],
     server: {
       deps: {
         inline: [/vue-router/]

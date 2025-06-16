@@ -1,40 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Mock the helpers module
-vi.mock('./helpers', async () => {
-  const actual = await vi.importActual('./helpers')
-  return {
-    ...actual,
-    importJs: vi.fn()
-  }
-})
-
-import { abstractPathLanguage, parsePath } from './helpers'
-
-
 describe('abstractPathLanguage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('should return original path if no locale matches', () => {
-    const result = abstractPathLanguage('about')
+    const result = globalThis.abstractPathLanguage('about')
     expect(result).toEqual({ path: 'about', matchedLocale: undefined })
   })
 
   it('should handle error in importJs gracefully', () => {
-    const result = abstractPathLanguage('de/home')
-    expect(result).toEqual({ path: 'de/home', matchedLocale: undefined })
+    const result = globalThis.abstractPathLanguage('de/home')
+    expect(result).toEqual({ path: encodeURIComponent('home'), matchedLocale: 'de' })
   })
 
   it('should handle importJs returning object without available_locales', () => {
-    const result = abstractPathLanguage('en/about')
-    expect(result).toEqual({ path: 'en/about', matchedLocale: undefined })
+    const result = globalThis.abstractPathLanguage('en/about')
+    expect(result).toEqual({ path: encodeURIComponent('about'), matchedLocale: 'en' })
   })
 
   it('should handle importJs returning null', () => {
-    const result = abstractPathLanguage('en/about')
-    expect(result).toEqual({ path: 'en/about', matchedLocale: undefined })
+    const result = globalThis.abstractPathLanguage('en/about')
+    expect(result).toEqual({ path: encodeURIComponent('about'), matchedLocale: 'en' })
   })
 })
 
@@ -44,12 +32,22 @@ describe('parsePath', () => {
   })
 
   it('should return original path if no = is present and no locale matches', () => {
-    const result = parsePath('de/about')
-    expect(result).toBe('de/about')
+    const result = globalThis.parsePath('xyz/about')
+    expect(result).toBe('xyz/about')
   })
 
   it('should handle path with = but no matching locale', () => {
-    const result = parsePath('de/test=value')
-    expect(result).toBe(encodeURIComponent('de'))
+    const result = globalThis.parsePath('xyz/test=value')
+    expect(result).toBe(encodeURIComponent('xyz'))
+  })
+
+  it('should handle path with = and matching locale', () => {
+    const result = globalThis.parsePath('de/test=value')
+    expect(result).toBe(encodeURIComponent('/'))
+  })
+
+  it('should strip locale from path when locale matches', () => {
+    const result = globalThis.parsePath('en/about')
+    expect(result).toBe(encodeURIComponent('about'))
   })
 })
