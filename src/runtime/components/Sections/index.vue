@@ -193,9 +193,10 @@
             </div>
           </button>
         </div>
-        <div v-if="currentSettingsTab === 'builder_settings'">
+        <div v-if="currentSettingsTab !== 'page_settings'">
           <component :is="getBuilderComponentForm(currentSettingsTab)"
-                     :builder-settings-prop="updatedBuilderSettings"
+                     :builder-settings-prop="originalBuilderSettings"
+                     :sections-user-id="sectionsUserId"
                      @settings-updated="builderSettingUpdated"></component>
           <div class="footer">
             <button class="hp-button" @click="updateBuilderSettingsMetaData">
@@ -1799,10 +1800,22 @@ const initializeSections = (res, skipHook) => {
   }
 
   for (const langKey of locales.value) {
-    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title)
+    pageMetadata.value[langKey] = {
+      title: '',
+      description: ''
+    }
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title) {
+      if (!pageMetadata.value[langKey]) {
+        pageMetadata.value[langKey] = {}
+      }
       pageMetadata.value[langKey].title = res.data.metadata[langKey].title
-    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].description)
+    }
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].description) {
+      if (!pageMetadata.value[langKey]) {
+        pageMetadata.value[langKey] = {}
+      }
       pageMetadata.value[langKey].description = res.data.metadata[langKey].description
+    }
   }
 
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
@@ -1831,13 +1844,12 @@ const initializeSections = (res, skipHook) => {
     pageMetadata.value.seo = res.data.metadata.seo
   }
 
-  if (res.data.metadata && res.data.metadata.project_metadata && res.data.metadata.project_metadata.builder && res.data.metadata.project_metadata.builder.builder_settings) {
-    originalBuilderSettings.value = res.data.metadata.project_metadata.builder.builder_settings
-    updatedBuilderSettings.value = res.data.metadata.project_metadata.builder.builder_settings
+  if (res.data.metadata && res.data.metadata.project_metadata) {
+    originalBuilderSettings.value = res.data.metadata.project_metadata
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
       if (builderHooksJavascript['initialize_builder_settings']) {
-        builderHooksJavascript['initialize_builder_settings'](originalBuilderSettings.value, useHead);
+        builderHooksJavascript['initialize_builder_settings'](originalBuilderSettings.value, useHead, currentSettingsTab.value);
       }
     } catch {}
   }
@@ -2001,7 +2013,14 @@ const unsavedSettings = (tab) => {
     try {
       let originalSettings = {}
       locales.value.forEach(locale => {
-        originalSettings[locale] = originalMetaData.value[locale]
+        if (originalMetaData.value[locale]) {
+          originalSettings[locale] = originalMetaData.value[locale]
+        } else {
+          originalSettings[locale] = {
+            title: '',
+            description: ''
+          }
+        }
       })
       originalSettings.pagePath = originalMetaData.value.pagePath
       originalSettings.media = originalMetaData.value.media
@@ -2031,10 +2050,15 @@ const unsavedSettings = (tab) => {
       unsavedSettingsError.value[tab] = false
       return false
     }
-  } else if (tab === 'builder_settings') {
+  } else {
     try {
-      const allEmpty = Object.values(updatedBuilderSettings.value).every(value => value.trim() === '')
-      unsavedSettingsError.value[tab] = !isEqual(originalBuilderSettings.value, updatedBuilderSettings.value) && !allEmpty
+
+      const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+      if (builderHooksJavascript['handle_unsaved_settings']) {
+        unsavedSettingsError.value[tab] = builderHooksJavascript['handle_unsaved_settings'](isEqual, originalBuilderSettings.value, updatedBuilderSettings.value, tab);
+      } else {
+        unsavedSettingsError.value[tab] = false
+      }
 
       return unsavedSettingsError.value[tab]
     } catch {
@@ -2059,14 +2083,17 @@ const builderSettingUpdated = (settings) => {
   } else if (!projectMetadata.value.builder.builder_settings) {
     projectMetadata.value.builder.builder_settings = {}
   }
-  projectMetadata.value.builder.builder_settings = settings
-  const allEmpty = Object.values(settings).every(value => value.trim() === '')
-  if (!allEmpty) {
-    updatedBuilderSettings.value = settings
-  }
+
+  try {
+    const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+    if (builderHooksJavascript['builder_settings_payload']) {
+      projectMetadata.value = builderHooksJavascript['builder_settings_payload'](originalBuilderSettings.value, settings, currentSettingsTab.value);
+    }
+  } catch {}
+
+  updatedBuilderSettings.value = settings
 }
 const updateBuilderSettingsMetaData = () => {
-  unsavedSettingsError.value['builder_settings'] = false
   updateProjectMetadata()
 }
 const updateProjectMetadata = async () => {
@@ -2079,10 +2106,7 @@ const updateProjectMetadata = async () => {
 
   const variables = {
     metadata: {
-      ...projectMetadata.value,
-      builder: {
-        builder_settings: updatedBuilderSettings.value
-      }
+      ...projectMetadata.value
     }
   }
 
@@ -2102,13 +2126,13 @@ const updateProjectMetadata = async () => {
           return
         }
 
-        unsavedSettingsError.value['builder_settings'] = false
+        unsavedSettingsError.value[currentSettingsTab.value] = false
 
         metadataModal.value = false
         isSideBarOpen.value = false;
 
-        if (res.data.metadata && res.data.metadata.builder && res.data.metadata.builder.builder_settings) {
-          originalBuilderSettings.value = res.data.metadata.builder.builder_settings
+        if (res.data.metadata && res.data.metadata && res.data.metadata) {
+          originalBuilderSettings.value = res.data.metadata
         }
 
         showToast(
@@ -4855,7 +4879,11 @@ const stopTracking = () => {
   }
 };
 const closeMetadataModal = () => {
-  if (unsavedSettings('page_settings') || unsavedSettings('builder_settings')) {
+  const hasUnsavedSettings = updatedPageSettingsTabs.value.some(tab =>
+    unsavedSettings(tab)
+  );
+
+  if (hasUnsavedSettings) {
     isRestoreSectionOpen.value = true;
   } else {
     metadataModal.value = false;
@@ -4868,13 +4896,14 @@ const restoreSectionContent = (settings) => {
     metadataModal.value = false;
     isSideBarOpen.value = false;
     isRestoreSectionOpen.value = false;
-    try {
-      const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
-      if (builderHooksJavascript['reset_builder_settings']) {
-        builderHooksJavascript['reset_builder_settings'](originalBuilderSettings.value);
-      }
-    } catch {}
-    updatedBuilderSettings.value = originalBuilderSettings.value
+    updatedPageSettingsTabs.value.forEach(tab => {
+      try {
+        const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+        if (builderHooksJavascript['reset_builder_settings']) {
+          updatedBuilderSettings.value = builderHooksJavascript['reset_builder_settings'](originalBuilderSettings.value, tab);
+        }
+      } catch {}
+    })
     metadataFormLang.value = i18n.locale.value.toString();
     unsavedSettingsError.value = {}
     currentSettingsTab.value = "page_settings"
@@ -5006,12 +5035,6 @@ const serverPageData = store.getPageData
 if (serverPageData) {
   fetchedOnServer.value = true;
   if (serverPageData.res) {
-    locales.value.forEach(lang => {
-      pageMetadata.value[lang] = {
-        title: "",
-        description: ""
-      };
-    });
     initializeSections(serverPageData.res, true)
   } else if (serverPageData.error) {
     sectionsPageErrorManagement(serverPageData.error, true, true)
@@ -5040,13 +5063,6 @@ const fetchData = async () => {
     getAvailableSections();
     metadataFormLang.value = i18n.locale.value.toString();
   }
-
-  locales.value.forEach(lang => {
-    pageMetadata.value[lang] = {
-      title: "",
-      description: ""
-    };
-  });
 
   if (nuxtApp.$sections.projectLocales && nuxtApp.$sections.projectLocales !== '' && nuxtApp.$sections.projectLocales.includes(',')) {
     translationComponentSupport.value = true;

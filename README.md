@@ -1359,25 +1359,46 @@ The library support providing the ability for the host project to define multipl
 
 ## Builder Hooks:
 
-* The library expose 2 hooks (with no callback function) that can be implemented inside `sections/builder/settings/builder-hooks.js`:
+* The library expose: 1 hook (with no callback function) that can be implemented inside `sections/builder/settings/builder-hooks.js`:
 
- - `initialize_builder_settings`: this hook is called when the page data are received and have as arguments the builder settings data and the useHead composable that allow you to update the page head settings
- - `reset_builder_settings`: this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings 
+ - `initialize_builder_settings`: this hook is called when the page data are received and have as arguments the builder settings data, the useHead composable that allow you to update the page head settings and the current tab in use
+
+* And 3 hooks (with callbacks):
+
+ - `reset_builder_settings` (that must return an object of the original builder settings for each tab): this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings and have as arguments the original builder settings data and the current tab in use
+ - `builder_settings_payload` (that must return an object having the original builder settings and the updated ones for each tab): this hook is called when data change inside the builder tab form, it allows to correctly set the payload that will be processed by sections API to save the correct builder settings, it has as arguments the original builder settings data, the updated settings of the current builder tab and the current tab in use
+ - `handle_unsaved_settings` (that must returns a boolean): this hook is called when switching between the builder tabs and returns true to show a warning for unsaved settings
+It takes as arguments: 
+ 1. isEqual: a function used to compare original and updated settings
+ 2. Original builder settings saved for your project 
+ 3. Updated settings
+ 4. Current tab in use
 
 i.e:
 
 ```js
-const initialize_builder_settings = (settings, useHead) => {
+const initialize_builder_settings = (settings, useHead, tab) => {
   
 }
 
-const reset_builder_settings = (settings) => {
+const reset_builder_settings = (settings, tab) => {
+  
+}
+
+const handle_unsaved_settings = (isEqual, originalSettings, settings, tab) => {
+  const allEmpty = Object.values(settings).every(value => value.trim() === '')
+  return  !isEqual(originalSettings, settings) && !allEmpty
+}
+
+const builder_settings_payload = (originalBuilderSettings, settings, tab) => {
   
 }
 
 export {
   initialize_builder_settings,
-  reset_builder_settings
+  reset_builder_settings,
+  handle_unsaved_settings,
+  builder_settings_payload
 }
 
 ```
