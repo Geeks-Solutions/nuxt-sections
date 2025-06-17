@@ -1472,6 +1472,7 @@ const pagePath = useState('pagePath', () => "");
 const sectionsPageName = ref("");
 const pageMetadata = useState('pageMetadata', () => ({}));
 const projectMetadata = ref({});
+const builderSettingsPayload = ref({});
 let metadataErrors = ref({
   path: [""]
 });
@@ -2087,7 +2088,7 @@ const builderSettingUpdated = (settings) => {
   try {
     const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
     if (builderHooksJavascript['builder_settings_payload']) {
-      projectMetadata.value = builderHooksJavascript['builder_settings_payload'](originalBuilderSettings.value, settings, currentSettingsTab.value);
+      builderSettingsPayload.value = builderHooksJavascript['builder_settings_payload'](originalBuilderSettings.value, settings, currentSettingsTab.value);
     }
   } catch {}
 
@@ -2106,7 +2107,7 @@ const updateProjectMetadata = async () => {
 
   const variables = {
     metadata: {
-      ...projectMetadata.value
+      ...builderSettingsPayload.value
     }
   }
 
