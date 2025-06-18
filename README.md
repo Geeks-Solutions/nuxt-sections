@@ -1317,6 +1317,7 @@ ex.:
 import langCodes from 'langs'
 
 const available_locales = () => {
+  // langCodes.codes("1") is a function in langs library https://www.npmjs.com/package/langs that returns a list of string language codes
   return langCodes.codes("1")
 }
 

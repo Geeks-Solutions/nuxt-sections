@@ -195,6 +195,7 @@
         </div>
         <div v-if="currentSettingsTab !== 'page_settings'">
           <component :is="getBuilderComponentForm(currentSettingsTab)"
+                     :updated-builder-settings-prop="updatedBuilderSettingsPerTab"
                      :builder-settings-prop="originalBuilderSettings"
                      :sections-user-id="sectionsUserId"
                      @settings-updated="builderSettingUpdated"></component>
@@ -1498,6 +1499,7 @@ const availableLayouts = ref(['standard']);
 const selectedLayout = useState('selectedLayout', () => 'standard');
 const originalMetaData = useState('originalMetaData', () => {});
 const originalBuilderSettings = useState('originalBuilderSettings', () => {});
+const updatedBuilderSettingsPerTab = ref({})
 const updatedBuilderSettings = ref({})
 const viewsPerRegions = ref({});
 const sectionsLayout = ref('standard');
@@ -2056,7 +2058,7 @@ const unsavedSettings = (tab) => {
 
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
       if (builderHooksJavascript['handle_unsaved_settings']) {
-        unsavedSettingsError.value[tab] = builderHooksJavascript['handle_unsaved_settings'](isEqual, originalBuilderSettings.value, updatedBuilderSettings.value, tab);
+        unsavedSettingsError.value[tab] = builderHooksJavascript['handle_unsaved_settings'](isEqual, originalBuilderSettings.value, updatedBuilderSettingsPerTab.value[tab], tab);
       } else {
         unsavedSettingsError.value[tab] = false
       }
@@ -2093,6 +2095,7 @@ const builderSettingUpdated = (settings) => {
   } catch {}
 
   updatedBuilderSettings.value = settings
+  updatedBuilderSettingsPerTab.value[currentSettingsTab.value] = settings
 }
 const updateBuilderSettingsMetaData = () => {
   updateProjectMetadata()
@@ -4901,7 +4904,9 @@ const restoreSectionContent = (settings) => {
       try {
         const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
         if (builderHooksJavascript['reset_builder_settings']) {
-          updatedBuilderSettings.value = builderHooksJavascript['reset_builder_settings'](originalBuilderSettings.value, tab);
+          const settingsReset = builderHooksJavascript['reset_builder_settings'](originalBuilderSettings.value, tab);
+          updatedBuilderSettings.value = settingsReset;
+          updatedBuilderSettingsPerTab.value[tab] = settingsReset;
         }
       } catch {}
     })
@@ -6501,6 +6506,7 @@ span.handle {
   min-width: 422px;
   max-width: 50%;
   z-index: 190;
+  background: white;
 }
 .sections-container > .sections-aside-z {
   z-index: 9999999;

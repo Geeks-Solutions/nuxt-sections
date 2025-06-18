@@ -12,8 +12,7 @@
     "@nuxtjs/i18n": "^9.5.3",
     "h3-compression": "^0.3.2",
     "langs": "^2.0.0",
-    "nuxt": "^3.17.1",
-    "vue3-colorpicker": "^2.3.0"
+    "nuxt": "^3.17.1"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0"
