@@ -134,6 +134,10 @@
   "sectionsAppName": "Application name",
   "anchorCopied":"Copied to clipboard",
   "copyAnchorFailed":"Copy failed! For security reasons, this feature only works on a secure website",
+  "sectionsSettings": {
+    "page_settings":"Page settings",
+    "save_page_settings": "Save your changes or you will loose them"
+  },
   "mediaComponent": {
     "Upload":"Attach a media",
     "Change": "Modify your media",

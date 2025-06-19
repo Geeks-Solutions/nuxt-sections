@@ -25,7 +25,7 @@ export const formatTexts = (text: string, sep: string = " "): string => {
 
 export const importJs = (path: string): any => {
   // @ts-ignore
-  const jsHooks = import.meta.glob(`/sections/js/*.js`, { eager: true })
+  const jsHooks = import.meta.glob(`/sections/**/!(*.spec).js`, { eager: true })
   try {
     return jsHooks[`/sections${path}.js`]
   } catch (e) {
@@ -159,17 +159,72 @@ export async function addNewStaticType(sectionTypeName: string): Promise<{ statu
   }
 }
 
+// The abstractPathLanguage below is a custom function used to extract the locale prefix from a given path (e.g. '/en/home' → locale: 'en', path: 'home')
+// This is **not** an extract from Vue I18n's internal functions.
+// The official i18n composables like `useRoute`, `localePath`, or `getLocaleFromRoute` cannot be used here because:
+//    1. This code runs **outside of component context**, e.g. inside route middleware.
+//    2. It needs to dynamically load the list of locales from `global-hooks`, which is custom to the host project.
+//    3. i18n is not designed to support dynamic, runtime-evaluated locale lists like this when using `no_prefix` strategy.
+export const abstractPathLanguage = (finalPath: any) => {
+  let availableLocales = [];
+  let matchedLocale;
+
+  try {
+    // Load available locales dynamically from custom `global-hooks` (host project logic)
+    const hooksJavascript = importJs(`/js/global-hooks`);
+    if (hooksJavascript['available_locales']) {
+      availableLocales = hooksJavascript['available_locales']();
+    }
+  } catch {
+    availableLocales = [];
+  }
+
+  // Try to match the start of the path with any known locale
+  if (availableLocales && availableLocales.length > 0) {
+    matchedLocale = availableLocales.find((locale: any) =>
+      decodeURIComponent(finalPath) === `${locale}` || decodeURIComponent(finalPath).startsWith(`${locale}/`)
+    );
+
+    if (matchedLocale) {
+      // Strip the matched locale from the beginning of the path
+      finalPath = encodeURIComponent(decodeURIComponent(finalPath).slice(matchedLocale.length));
+
+      // Clean up extra leading slash if needed
+      if (decodeURIComponent(finalPath).startsWith('/')) {
+        finalPath = encodeURIComponent(decodeURIComponent(finalPath).slice(1));
+      }
+
+      // If nothing remains, fallback to root '/'
+      if (!finalPath) {
+        finalPath = encodeURIComponent('/');
+      }
+    }
+  }
+
+  return {
+    path: finalPath,
+    matchedLocale
+  }
+}
+
 export const parsePath = (path: string): string => {
+
+  let finalPath = path
+
   let decodedPath = decodeURIComponent(path);
   if (decodedPath && decodedPath.includes('=')) {
     let parsed0 = decodedPath.substring(0, decodedPath.indexOf('='));
     let parsed1 = parsed0.substring(0, parsed0.lastIndexOf('/'));
     if (parsed1) {
-      return encodeURIComponent(parsed1);
-    } else return encodeURIComponent('/');
+      finalPath = encodeURIComponent(parsed1);
+    } else finalPath = encodeURIComponent('/');
   } else {
-    return path;
+    finalPath = path;
   }
+
+  finalPath = abstractPathLanguage(finalPath).path
+
+  return finalPath
 }
 
 export const parseQS = (path: string, routeQueries: boolean, queries: any): Record<string, any> => {

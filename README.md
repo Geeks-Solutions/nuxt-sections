@@ -1309,6 +1309,23 @@ export {
 };
 ```
 
+* `available_locales`: This hook should return the list of supported locale codes as an array of strings, it will be used to abstract the language prefix from the url used by sections API to render the page
+
+ex.:
+
+```js
+import langCodes from 'langs'
+
+const available_locales = () => {
+  // langCodes.codes("1") is a function in langs library https://www.npmjs.com/package/langs that returns a list of string language codes
+  return langCodes.codes("1")
+}
+
+export {
+  available_locales
+};
+```
+
 ### The following will require a specific component to be implemented in your project:
 
 Inside `sections/page_components/page_not_found.vue` or `sections/page_components/project_not_found.vue`
@@ -1332,6 +1349,66 @@ created() {
 
 This will add an additional `SEO` button to your section options (edit, drag, delete), that you can use(by clicking on it) to enable/disable overwriting the metas of your page by the ones of this section, based on the return value from the `seo_management` global-hook described above.
 The sections metas complies to the sections order in the page (following their weights). And so the section with the lowest weight and having a meta (ie. `title`) will be the one overwriting the page title meta even if other sections has SEO enabled and returning a title. 
+
+### Builder Settings:
+
+The library support providing the ability for the host project to define multiple forms that will be displayed dynamically in the settings popup and that will be saved into the project metadata. 
+
+## Files structure:
+
+* The custom forms should be defined inside `sections/builder/settings` as vue components and the library will be responsible for displaying a new tab in the settings popup and its name is based on the vue component name
+
+## Builder Hooks:
+
+* The library expose: 1 hook (with no callback function) that can be implemented inside `sections/builder/settings/builder-hooks.js`:
+
+ - `initialize_builder_settings`: this hook is called when the page data are received and have as arguments the builder settings data, the useHead composable that allow you to update the page head settings and the current tab in use
+
+* And 4 hooks (with callbacks):
+ 
+ - `update_tab_title` (that must return a string of the updated tab title): this hook is called before the tabs titles are rendered, it allows you to update the tabs title
+ - `reset_builder_settings` (that must return an object of the original builder settings for each tab): this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings and have as arguments the original builder settings data and the current tab in use
+ - `builder_settings_payload` (that must return an object having the original builder settings and the updated ones for each tab): this hook is called when data change inside the builder tab form, it allows to correctly set the payload that will be processed by sections API to save the correct builder settings, it has as arguments the original builder settings data, the updated settings of the current builder tab and the current tab in use
+ - `handle_unsaved_settings` (that must returns a boolean): this hook is called when switching between the builder tabs and returns true to show a warning for unsaved settings
+It takes as arguments: 
+ 1. isEqual: a function used to compare original and updated settings
+ 2. Original builder settings saved for your project 
+ 3. Updated settings
+ 4. Current tab in use
+
+i.e:
+
+```js
+const initialize_builder_settings = (settings, useHead, tab) => {
+  
+}
+
+const reset_builder_settings = (settings, tab) => {
+  
+}
+
+const handle_unsaved_settings = (isEqual, originalSettings, settings, tab) => {
+  const allEmpty = Object.values(settings).every(value => value.trim() === '')
+  return  !isEqual(originalSettings, settings) && !allEmpty
+}
+
+const builder_settings_payload = (originalBuilderSettings, settings, tab) => {
+  
+}
+
+const update_tab_title = (tab) => {
+  return tab
+}
+
+export {
+  initialize_builder_settings,
+  reset_builder_settings,
+  handle_unsaved_settings,
+  builder_settings_payload,
+  update_tab_title
+}
+
+```
 
 ## Development
 

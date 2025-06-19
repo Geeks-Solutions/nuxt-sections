@@ -1,6 +1,6 @@
 <template>
   <div class="sections-container" :class="{'sections-container-edit-mode': admin === true}">
-    <aside v-if="admin && editMode && isSideBarOpen === true && currentSection !== null" ref="resizeTarget"
+    <aside v-if="admin && editMode && isSideBarOpen === true && (currentSection !== null || metadataModal === true)" ref="resizeTarget"
            class="sections-aside" :class="{'sections-aside-z': introSectionFormStep === true}">
       <div
         class="step-back-aside"
@@ -9,16 +9,18 @@
       >
         <LazyBaseIconsBack/>
       </div>
-      <div class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
+      <div v-if="currentSection" class="closeIcon" @click="restoreType = 'section'; isRestoreSectionOpen = true">
         <LazyBaseIconsClose/>
       </div>
-      <a class="anchorIcon"
+      <a
+        v-if="currentSection"
+        class="anchorIcon"
          :href="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `#${currentSection.linked_to}-${currentSection.id}` : `#${currentSection.name}-${currentSection.id}`">
         <LazyBaseIconsAnchor
           :title="(currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? `Anchor id: #${currentSection.linked_to}-${currentSection.id}` : `Anchor id: #${currentSection.name}-${currentSection.id}`"
           class="edit-icon"/>
       </a>
-      <div :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
+      <div v-if="currentSection" :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
         <div class="component-view">
           <!-- we can use this short hand too -->
           <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
@@ -83,9 +85,133 @@
           />
         </div>
       </div>
+
+      <div v-if="!currentSection && metadataModal === true" class="section-modal-wrapper">
+        <div class="page-settings-tabs">
+          <div v-for="tab in updatedPageSettingsTabs"
+               :key="`page-settings-tab-${tab}`"
+               class="page-settings-tab"
+               :class="{'active-tab': currentSettingsTab === tab}"
+               @click="switchSettingsTab(tab)">
+            <div>
+              {{ settingsTabTitle(tab) }}
+            </div>
+            <LazyTooltipClickableTooltip v-if="unsavedSettingsError[tab]"
+                                         :content="$t('sectionsSettings.save_page_settings')"
+                                         color="#f59e0b"
+                                         position="bottom">
+              <div class="section-info-icon">
+                <LazyBaseIconsAlert :title="$t('sectionsSettings.save_page_settings')"
+                                    color="#f59e0b"
+                                   class="info-icon-style" />
+              </div>
+            </LazyTooltipClickableTooltip>
+          </div>
+        </div>
+        <div class="sections-text-center h4 sectionTypeHeader">
+          <div class="title">{{ settingsTabTitle(currentSettingsTab) }}</div>
+          <div class="closeIcon" @click="closeMetadataModal">
+            <LazyBaseIconsClose/>
+          </div>
+        </div>
+        <LazyTranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1 && currentSettingsTab === 'page_settings'" :locales="locales" :default-lang="defaultLang"
+                                              @setFormLang="(locale) => metadataFormLang = locale"/>
+        <div v-if="currentSettingsTab === 'page_settings'" class="flexSections sections-w-full sections-justify-center"
+             :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
+          <div class="body metadataFieldsContainer">
+            <div class="flexSections sections-flex-row sections-gap-4 metadataFieldsContainerRow">
+              <div class="sections-w-full sectionsFieldsLabelsWrapper">
+                <div class="sectionsFieldsLabels">
+                  {{ $t("projectId") }}: {{ nuxtApp.$sections.projectId }}
+                </div>
+                <div class="sectionsFieldsLabels">
+                  {{ $t("pageUrl") }}
+                </div>
+                <div class="fieldsDescription">
+                  {{ $t("pathFieldDesc") }}
+                </div>
+                <input
+                  class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                  type="text"
+                  v-model="pagePath"
+                />
+                <span class="pagePathRequiredStyle"
+                      v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+                <div class="flexSections metadataFields">
+                  <div class="metadataColumns">
+                    <div class="sections-mt-2 sectionsFieldsLabels">
+                      {{ $t("pageTitle") }}
+                    </div>
+                    <input
+                      class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                      type="text"
+                      v-model="pageMetadata[metadataFormLang].title"
+                    />
+                    <div class="sections-mt-2 sectionsFieldsLabels">
+                      {{ $t("pageSeoDesc") }}
+                    </div>
+                    <textarea
+                      class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none"
+                      type="text"
+                      v-model="pageMetadata[metadataFormLang].description"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div>
+                  <div class="sections-mt-2 sectionsFieldsLabels">
+                    {{ $t('Image Metatag') }}
+                  </div>
+                  <LazyMediasUploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
+                                         :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"
+                                         @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"
+                                         @removeUploadedImage="removeMedia('mediaMetatag')"/>
+                </div>
+                <div>
+                  <div class="sections-mt-2 sectionsFieldsLabels">
+                    {{ $t('CSS') }}
+                  </div>
+                  <LazyMediasUploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
+                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
+                                         :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
+                                         @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
+                                         @removeUploadedImage="removeMedia('media')" />
+                  <LazyMediasMediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
+                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></LazyMediasMediaComponent>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="currentSettingsTab === 'page_settings'" class="footer">
+          <button class="hp-button" @click="updatePageMetaData">
+            <div class="btn-icon check-icon"></div>
+            <div class="btn-text">
+              {{ $t("Save") }}
+            </div>
+          </button>
+        </div>
+        <div v-if="currentSettingsTab !== 'page_settings'">
+          <component :is="getBuilderComponentForm(currentSettingsTab)"
+                     :updated-builder-settings-prop="updatedBuilderSettingsPerTab"
+                     :builder-settings-prop="originalBuilderSettings"
+                     :sections-user-id="sectionsUserId"
+                     @settings-updated="builderSettingUpdated"></component>
+          <div class="footer">
+            <button class="hp-button" @click="updateBuilderSettingsMetaData">
+              <div class="btn-icon check-icon"></div>
+              <div class="btn-text">
+                {{ $t("Save") }}
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
     </aside>
     <div
-      v-if="admin && editMode && isSideBarOpen && currentSection !== null"
+      v-if="admin && editMode && isSideBarOpen && (currentSection !== null || metadataModal === true)"
       class="sections-resize-handle--x"
       @mousedown="startTracking"
       data-target="aside"
@@ -216,7 +342,7 @@
                     class="hp-button "
                     :class="selectedVariation === pageName ? 'danger' : 'grey'"
                     data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-                    @click="metadataModal = true"
+                    @click="openMetaDataModal"
                   >
                     <LazyBaseIconsSettings/>
                   </button>
@@ -584,7 +710,7 @@
                 <div class="flexSections sections-flex-row">
                   <button
                     class="hp-button"
-                    @click="restoreSectionContent()"
+                    @click="restoreSectionContent(metadataModal)"
                   >
                     <div class="btn-text">
                       {{ $t("Confirm") }}
@@ -1079,108 +1205,6 @@
 
           <!-- ------------------------------------------------------------------------------------------- -->
 
-          <!-- This is the popup to update the page metadata     -->
-          <div v-if="metadataModal && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
-               class="sections-fixed sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 pageSettingsModalContainer"
-               aria-labelledby="modal-title" role="dialog" aria-modal="true"
-               :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-y-auto' : ''">
-            <div
-              class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
-              <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl page-settings"
-                   :class="nuxtApp.$sections.cname === 'active' ? 'sections-overflow-scroll' : ''">
-                <div class="section-modal-wrapper">
-                  <div class="sections-text-center h4 sectionTypeHeader">
-                    <div class="title">{{ $t("Metadata") }}</div>
-                    <div class="closeIcon" @click="metadataModal = false; metadataFormLang = i18n.locale.value.toString()">
-                      <LazyBaseIconsClose/>
-                    </div>
-                  </div>
-                  <LazyTranslationsTranslationComponent v-if="translationComponentSupport && locales.length > 1" :locales="locales" :default-lang="defaultLang"
-                                        @setFormLang="(locale) => metadataFormLang = locale"/>
-                  <div class="flexSections sections-w-full sections-justify-center"
-                       :class="nuxtApp.$sections.cname === 'active' ? 'sections-page-settings' : ''">
-                    <div class="body metadataFieldsContainer">
-                      <div class="flexSections sections-flex-row sections-gap-4 metadataFieldsContainerRow">
-                        <div class='sections-w-full'>
-                          <div class="sectionsFieldsLabels">
-                            {{ $t("projectId") }}: {{ nuxtApp.$sections.projectId }}
-                          </div>
-                          <div class="sectionsFieldsLabels">
-                            {{ $t("pageUrl") }}
-                          </div>
-                          <div class="fieldsDescription">
-                            {{ $t("pathFieldDesc") }}
-                          </div>
-                          <input
-                            class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
-                            type="text"
-                            v-model="pagePath"
-                          />
-                          <span class="pagePathRequiredStyle"
-                                v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
-                          <div class="flexSections metadataFields">
-                            <div class="metadataColumns">
-                              <div class="sections-mt-2 sectionsFieldsLabels">
-                                {{ $t("pageTitle") }}
-                              </div>
-                              <input
-                                class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
-                                type="text"
-                                v-model="pageMetadata[metadataFormLang].title"
-                              />
-                              <div class="sections-mt-2 sectionsFieldsLabels">
-                                {{ $t("pageSeoDesc") }}
-                              </div>
-                              <textarea
-                                class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none"
-                                type="text"
-                                v-model="pageMetadata[metadataFormLang].description"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <div>
-                            <div class="sections-mt-2 sectionsFieldsLabels">
-                              {{ $t('Image Metatag') }}
-                            </div>
-                            <LazyMediasUploadMedia :media-label="''" :upload-text="$t('mediaComponent.Upload')"
-                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
-                                         :media="pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? [pageMetadata['mediaMetatag']] : []"
-                                         @uploadContainerClicked="selectedMediaType = 'mediaMetatag'; $refs.sectionsMediaComponent.openModal(pageMetadata['mediaMetatag'] && Object.keys(pageMetadata['mediaMetatag']).length > 0 ? pageMetadata['mediaMetatag'].media_id : null)"
-                                         @removeUploadedImage="removeMedia('mediaMetatag')"/>
-                          </div>
-                          <div>
-                            <div class="sections-mt-2 sectionsFieldsLabels">
-                              {{ $t('CSS') }}
-                            </div>
-                            <LazyMediasUploadMedia :is-document="true" :media-label="''" :upload-text="$t('mediaComponent.Upload')"
-                                         :change-text="$t('mediaComponent.Change')" :seo-tag="$t('mediaComponent.seoTag')"
-                                         :media="pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? [pageMetadata['media']] : []"
-                                         @uploadContainerClicked="selectedMediaType = 'media'; $refs.sectionsMediaComponent.openModal(pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0 ? pageMetadata['media'].media_id : null, 'document')"
-                                         @removeUploadedImage="removeMedia('media')" />
-                            <LazyMediasMediaComponent ref="sectionsMediaComponent" :sections-user-id="sectionsUserId"
-                                            @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"></LazyMediasMediaComponent>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="footer">
-                    <button class="hp-button" @click="updatePageMetaData">
-                      <div class="btn-icon check-icon"></div>
-                      <div class="btn-text">
-                        {{ $t("Save") }}
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ------------------------------------------------------------------------------------------- -->
-
           <!-- This is popup to show the successfully created new static section message      -->
           <div v-if="staticSuccess && admin && editMode" :modal-class="'section-modal-main-wrapper'" ref="modal"
                class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
@@ -1246,6 +1270,7 @@
 </template>
 
 <script setup>
+import {useSectionsDataStore} from "../../stores/sectionsDataStore.js";
 import {
   computed,
   dummyDataPresets,
@@ -1280,7 +1305,7 @@ import {
   validateQS,
   watch
 } from '#imports';
-import {camelCase, upperFirst} from 'lodash-es';
+import {camelCase, upperFirst, isEqual} from 'lodash-es';
 
 const {
   pageName,
@@ -1338,6 +1363,7 @@ const {
   }
 });
 const emit = defineEmits(['load']);
+const store = useSectionsDataStore()
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
@@ -1366,7 +1392,7 @@ const updatedVariations = ref({});
 // current visible views
 const views = ref({});
 const getSections = ref([]);
-const loading = ref(false);
+const loading = useState('loading', () =>false);
 const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
@@ -1392,6 +1418,30 @@ const jsonFilePick = ref(null)
 const resizeTarget = ref(null)
 const sectionsMainTarget = ref(null)
 const componentsSetup = ref({});
+const currentSettingsTab = ref("page_settings");
+const settingsTabs = ref([
+  "page_settings"
+])
+const updatedPageSettingsTabs = computed(()=> {
+  let builderSettingsTabs
+  try {
+    const builderSettingsFiles = import.meta.glob('/sections/builder/settings/*.vue')
+    builderSettingsTabs = Object.keys(builderSettingsFiles).map((filename) => {
+      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+    })
+  } catch {}
+  if (admin && editMode.value && builderSettingsTabs && builderSettingsTabs.length > 0) {
+    return [
+      ...settingsTabs.value,
+      ...builderSettingsTabs
+    ]
+  } else {
+    return [
+      ...settingsTabs.value,
+    ]
+  }
+});
+const unsavedSettingsError = ref({})
 
 
 // Display variations object
@@ -1423,6 +1473,7 @@ const pagePath = useState('pagePath', () => "");
 const sectionsPageName = ref("");
 const pageMetadata = useState('pageMetadata', () => ({}));
 const projectMetadata = ref({});
+const builderSettingsPayload = ref({});
 let metadataErrors = ref({
   path: [""]
 });
@@ -1446,6 +1497,10 @@ const sectionsFormatErrors = ref({});
 const layoutSlotNames = ref([]);
 const availableLayouts = ref(['standard']);
 const selectedLayout = useState('selectedLayout', () => 'standard');
+const originalMetaData = useState('originalMetaData', () => {});
+const originalBuilderSettings = useState('originalBuilderSettings', () => {});
+const updatedBuilderSettingsPerTab = ref({})
+const updatedBuilderSettings = ref({})
 const viewsPerRegions = ref({});
 const sectionsLayout = ref('standard');
 const selectedSlotRegion = ref('');
@@ -1463,7 +1518,7 @@ const supportedLanguages = ref([
   {id: 'en', label: 'English (en)', selected: false}
 ]);
 const selectedLanguages = ref([]);
-const defaultLang = ref('en');
+const defaultLang = useState('defaultLang', () => 'en');
 const selectedMediaType = ref('media');
 const resizeData = ref({
   tracking: false,
@@ -1656,7 +1711,6 @@ useHead(() => {
 
   return {
     htmlAttrs: {
-      title: computedTitle.value,
       lang: i18n.locale.value
     },
     title: computedTitle.value,
@@ -1718,8 +1772,10 @@ const initializeSectionsCMSEvents = () => {
     }
   }
 }
-const initializeSections = (res) => {
-  nuxtApp.callHook('page_pre_render', res)
+const initializeSections = (res, skipHook) => {
+  if (skipHook !== true) {
+    nuxtApp.callHook('page_pre_render', res)
+  }
   const sections = res.data.sections
   pageData.value = res.data
   allSections.value = res.data.sections
@@ -1728,6 +1784,8 @@ const initializeSections = (res) => {
   sectionsPageName.value = res.data.page
   sectionsLayout.value = res.data.layout
   selectedLayout.value = res.data.layout
+  originalMetaData.value = res.data.metadata
+  originalMetaData.value.pagePath = res.data.path
 
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.languages) {
     projectMetadata.value.languages = res.data.metadata.project_metadata.languages
@@ -1745,10 +1803,22 @@ const initializeSections = (res) => {
   }
 
   for (const langKey of locales.value) {
-    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title)
+    pageMetadata.value[langKey] = {
+      title: '',
+      description: ''
+    }
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title) {
+      if (!pageMetadata.value[langKey]) {
+        pageMetadata.value[langKey] = {}
+      }
       pageMetadata.value[langKey].title = res.data.metadata[langKey].title
-    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].description)
+    }
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].description) {
+      if (!pageMetadata.value[langKey]) {
+        pageMetadata.value[langKey] = {}
+      }
       pageMetadata.value[langKey].description = res.data.metadata[langKey].description
+    }
   }
 
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
@@ -1775,6 +1845,16 @@ const initializeSections = (res) => {
   }
   if (res.data.metadata.seo) {
     pageMetadata.value.seo = res.data.metadata.seo
+  }
+
+  if (res.data.metadata && res.data.metadata.project_metadata) {
+    originalBuilderSettings.value = res.data.metadata.project_metadata
+    try {
+      const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+      if (builderHooksJavascript['initialize_builder_settings']) {
+        builderHooksJavascript['initialize_builder_settings'](originalBuilderSettings.value, useHead, currentSettingsTab.value);
+      }
+    } catch {}
   }
 
   if (!computedTitle.value) {
@@ -1840,11 +1920,11 @@ const initializeSections = (res) => {
   // In Nuxt 3, we use emit from defineEmits()
   // This would need to be passed through from the parent component
   // For now, I'll comment it out
-  emit("load", true)
+  emit("load", false)
 
   sectionsPageLastUpdated.value = res.data.last_updated
 }
-const sectionsPageErrorManagement = (error, server) => {
+const sectionsPageErrorManagement = (error, server, skipHook) => {
   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
   if (error.response && error.response.data && error.response.status && error.response.status === 404 && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.pagePath404 && error.response.data.options.project_metadata.pagePath404 !== '' && error.response.data.options.project_metadata.pagePath404 !== pagePath && !useCookie("sections-auth-token").value) {
     pageNotFoundManagement(error);
@@ -1855,7 +1935,7 @@ const sectionsPageErrorManagement = (error, server) => {
     initializeSections(res);
     return;
   }
-  if (error.response.status === 404 && server) {
+  if (error.response.status === 404 && server && skipHook !== true) {
     if (nuxtApp.ssrContext) {
       nuxtApp.ssrContext.event.res.statusCode = 404;
     }
@@ -1930,6 +2010,159 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
 }
 const removeMedia = (media) => {
   pageMetadata.value[media] = {}
+}
+const unsavedSettings = (tab) => {
+  if (tab === 'page_settings') {
+    try {
+      let originalSettings = {}
+      locales.value.forEach(locale => {
+        if (originalMetaData.value[locale]) {
+          originalSettings[locale] = originalMetaData.value[locale]
+        } else {
+          originalSettings[locale] = {
+            title: '',
+            description: ''
+          }
+        }
+      })
+      originalSettings.pagePath = originalMetaData.value.pagePath
+      originalSettings.media = originalMetaData.value.media
+      originalSettings.mediaMetatag = originalMetaData.value.mediaMetatag
+      if (!originalSettings.media) {
+        originalSettings.media = {}
+      }
+      if (!originalSettings.mediaMetatag) {
+        originalSettings.mediaMetatag = {}
+      }
+      let updatedSettings = {}
+      updatedSettings = {
+        ...pageMetadata.value,
+        pagePath: pagePath.value
+      }
+      if (!updatedSettings.media) {
+        updatedSettings.media = {}
+      }
+      if (!updatedSettings.mediaMetatag) {
+        updatedSettings.mediaMetatag = {}
+      }
+
+      unsavedSettingsError.value[tab] = !isEqual(originalSettings, updatedSettings)
+
+      return unsavedSettingsError.value[tab]
+    } catch {
+      unsavedSettingsError.value[tab] = false
+      return false
+    }
+  } else {
+    try {
+
+      const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+      if (builderHooksJavascript['handle_unsaved_settings']) {
+        unsavedSettingsError.value[tab] = builderHooksJavascript['handle_unsaved_settings'](isEqual, originalBuilderSettings.value, updatedBuilderSettingsPerTab.value[tab], tab);
+      } else {
+        unsavedSettingsError.value[tab] = false
+      }
+
+      return unsavedSettingsError.value[tab]
+    } catch {
+      unsavedSettingsError.value[tab] = false
+      return false
+    }
+  }
+}
+const getBuilderComponentForm = (component_name) => {
+  const path = `/builder/settings/${component_name}`;
+  return importComp(path).component;
+};
+const switchSettingsTab = (tab) => {
+  unsavedSettings(currentSettingsTab.value)
+  currentSettingsTab.value = tab
+}
+const builderSettingUpdated = (settings) => {
+  if (!projectMetadata.value.builder) {
+    projectMetadata.value.builder = {
+      builder_settings: {}
+    }
+  } else if (!projectMetadata.value.builder.builder_settings) {
+    projectMetadata.value.builder.builder_settings = {}
+  }
+
+  try {
+    const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+    if (builderHooksJavascript['builder_settings_payload']) {
+      builderSettingsPayload.value = builderHooksJavascript['builder_settings_payload'](originalBuilderSettings.value, settings, currentSettingsTab.value);
+    }
+  } catch {}
+
+  updatedBuilderSettings.value = settings
+  updatedBuilderSettingsPerTab.value[currentSettingsTab.value] = settings
+}
+const updateBuilderSettingsMetaData = () => {
+  updateProjectMetadata()
+}
+const updateProjectMetadata = async () => {
+  loading.value = true
+
+  const token = useCookie("sections-auth-token").value
+  const config = {
+    headers: sectionHeader({ token }),
+  }
+
+  const variables = {
+    metadata: {
+      ...builderSettingsPayload.value
+    }
+  }
+
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}`
+
+  try {
+    await useApiRequest({
+      url: URL,
+      method: 'PUT',
+      body: variables,
+      ...config,
+      onSuccess: (res) => {
+        loading.value = false
+
+        if (res.data && res.data.message) {
+          showToast("error", "error", res.data.message)
+          return
+        }
+
+        unsavedSettingsError.value[currentSettingsTab.value] = false
+
+        metadataModal.value = false
+        isSideBarOpen.value = false;
+
+        if (res.data.metadata && res.data.metadata && res.data.metadata) {
+          originalBuilderSettings.value = res.data.metadata
+        }
+
+        showToast(
+          "Success",
+          "success",
+          i18n.t('successSettingsChanges')
+        )
+
+      },
+      onError: (error) => {
+        loading.value = false
+        if (error.response.data.errors) {
+          metadataErrors.value = error.response.data.errors
+        } else {
+          showToast(
+            "Error saving your changes",
+            "error",
+            error.response.data.message,
+            error.response.data.options
+          )
+        }
+      }
+    });
+  } catch {
+    loading.value = false
+  }
 }
 const updatePageMetaData = async (seo) => {
   loading.value = true
@@ -2007,7 +2240,9 @@ const updatePageMetaData = async (seo) => {
   const variables = {
     page: sectionsPageName.value,
     path: updatedPagePath,
-    metadata: {...pageMetadata.value},
+    metadata: {
+      ...pageMetadata.value
+    },
     variations: [],
     layout: sectionsLayout.value,
     sections
@@ -2032,8 +2267,14 @@ const updatePageMetaData = async (seo) => {
         if (res.data.metadata.seo) {
           pageMetadata.value.seo = res.data.metadata.seo;
         }
+        originalMetaData.value = res.data.metadata
+        originalMetaData.value.pagePath = res.data.path
+
+        unsavedSettingsError.value['page_settings'] = false
+
         sectionsPageLastUpdated.value = res.data.last_updated
         metadataModal.value = false
+        isSideBarOpen.value = false;
         metadataFormLang.value = i18n.locale.value.toString()
 
         showToast(
@@ -4521,6 +4762,14 @@ const openUnAuthConfigurableSectionTypeModal = (sectionAppId, index, sectionType
   selectedAppName.value = applicationName;
   isUnAuthModalOpen.value = true;
 };
+const openMetaDataModal = () => {
+  currentSection.value = null;
+  nextTick(() => {
+    metadataModal.value = true;
+    isSideBarOpen.value = true;
+    sideBarSizeManagement();
+  })
+}
 const openCurrentSection = (type, global) => {
   if (global === true) {
     currentSection.value = {
@@ -4574,7 +4823,7 @@ const sideBarSizeManagement = () => {
             top: 0
           });
         }
-        if (sectionsMainTarget.value) {
+        if (sectionsMainTarget.value && currentSection.value) {
           const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`;
           const targetElement = sectionsMainTarget.value.querySelector(`[id="${safeViewAnchor.substring(1)}"]`);
           if (targetElement) {
@@ -4633,25 +4882,81 @@ const stopTracking = () => {
     resizeData.value.tracking = false;
   }
 };
-const restoreSectionContent = () => {
-  isSideBarOpen.value = false;
-  isCreateInstance.value = false;
-  isRestoreSectionOpen.value = false;
-  if (creationView.value === true) {
-    createdView.value = {};
-    creationView.value = false;
-    if (backToAddSectionList.value === true) {
-      backToAddSectionList.value = false;
-      currentSection.value = null;
-      isModalOpen.value = true;
-      savedView.value = {};
-      isCreateInstance.value = false;
-      isSideBarOpen.value = false;
+const settingsTabTitle = (tab) => {
+  try {
+    const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+    if (builderHooksJavascript['update_tab_title'] && builderHooksJavascript['update_tab_title'](tab)) {
+      return builderHooksJavascript['update_tab_title'](tab);
+    } else if (tab === 'page_settings') {
+      return i18n.t("Metadata")
+    } else {
+      return tab
     }
-  } else if (restoreType.value === 'section') {
-    restoreSection();
+  } catch {
+    if (tab === 'page_settings') {
+      return i18n.t("Metadata")
+    } else {
+      return tab
+    }
+  }
+}
+const closeMetadataModal = () => {
+  const hasUnsavedSettings = updatedPageSettingsTabs.value.some(tab =>
+    unsavedSettings(tab)
+  );
+
+  if (hasUnsavedSettings) {
+    isRestoreSectionOpen.value = true;
   } else {
-    restoreVariations();
+    metadataModal.value = false;
+    isSideBarOpen.value = false;
+    metadataFormLang.value = i18n.locale.value.toString();
+  }
+}
+const restoreSectionContent = (settings) => {
+  if (settings === true) {
+    metadataModal.value = false;
+    isSideBarOpen.value = false;
+    isRestoreSectionOpen.value = false;
+    updatedPageSettingsTabs.value.forEach(tab => {
+      try {
+        const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+        if (builderHooksJavascript['reset_builder_settings']) {
+          const settingsReset = builderHooksJavascript['reset_builder_settings'](originalBuilderSettings.value, tab);
+          updatedBuilderSettings.value = settingsReset;
+          updatedBuilderSettingsPerTab.value[tab] = settingsReset;
+        }
+      } catch {}
+    })
+    metadataFormLang.value = i18n.locale.value.toString();
+    unsavedSettingsError.value = {}
+    currentSettingsTab.value = "page_settings"
+
+    pageMetadata.value = originalMetaData.value
+    pagePath.value = originalMetaData.value.pagePath
+    if (pageMetadata.value.pagePath) {
+      delete pageMetadata.value.pagePath
+    }
+  } else {
+    isSideBarOpen.value = false;
+    isCreateInstance.value = false;
+    isRestoreSectionOpen.value = false;
+    if (creationView.value === true) {
+      createdView.value = {};
+      creationView.value = false;
+      if (backToAddSectionList.value === true) {
+        backToAddSectionList.value = false;
+        currentSection.value = null;
+        isModalOpen.value = true;
+        savedView.value = {};
+        isCreateInstance.value = false;
+        isSideBarOpen.value = false;
+      }
+    } else if (restoreType.value === 'section') {
+      restoreSection();
+    } else {
+      restoreVariations();
+    }
   }
 };
 const restoreSection = () => {
@@ -4750,6 +5055,16 @@ watch(isModalOpen, (value) => {
   }
 });
 
+const serverPageData = store.getPageData
+if (serverPageData) {
+  fetchedOnServer.value = true;
+  if (serverPageData.res) {
+    initializeSections(serverPageData.res, true)
+  } else if (serverPageData.error) {
+    sectionsPageErrorManagement(serverPageData.error, true, true)
+  }
+}
+
 // Fetch data (initial data loading)
 const fetchData = async () => {
   try {
@@ -4773,13 +5088,6 @@ const fetchData = async () => {
     metadataFormLang.value = i18n.locale.value.toString();
   }
 
-  locales.value.forEach(lang => {
-    pageMetadata.value[lang] = {
-      title: "",
-      description: ""
-    };
-  });
-
   if (nuxtApp.$sections.projectLocales && nuxtApp.$sections.projectLocales !== '' && nuxtApp.$sections.projectLocales.includes(',')) {
     translationComponentSupport.value = true;
     locales.value = [];
@@ -4791,8 +5099,6 @@ const fetchData = async () => {
       };
     });
   }
-
-  loading.value = true;
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
@@ -4864,6 +5170,7 @@ const fetchData = async () => {
     }
   }
   if (sectionsPageData) {
+    loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
     const res = sectionsPageData.res;
@@ -4875,6 +5182,7 @@ const fetchData = async () => {
       sectionsPageErrorManagement(error)
     }
   } else if (inBrowser && fetchedOnServer.value === false) {
+    loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
     await useApiRequest({
@@ -4890,7 +5198,8 @@ const fetchData = async () => {
         sectionsPageErrorManagement(error)
       }
     });
-  } else if (!inBrowser) {
+  } else if (!inBrowser && !serverPageData) {
+    loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
     fetchedOnServer.value = true;
@@ -4911,6 +5220,15 @@ const fetchData = async () => {
         });
       } catch {}
     }
+  } else if (serverPageData) {
+    if (serverPageData.res) {
+      nuxtApp.callHook('page_pre_render', serverPageData.res)
+    } else if (serverPageData.error && serverPageData.error.response.status === 404) {
+      if (nuxtApp.ssrContext) {
+        nuxtApp.ssrContext.event.res.statusCode = 404;
+      }
+    }
+    store.setPageData(null)
   } else {
     loading.value = false;
   }
@@ -4993,7 +5311,7 @@ onServerPrefetch(async () => {await fetchData()});
   transition: 0.2s;
 }
 
-.sections-config button {
+.sections-config button, .section-modal-wrapper .footer button {
   width: auto;
   min-width: auto;
   border-radius: 16px;
@@ -5524,7 +5842,7 @@ span.handle {
 }
 
 .metadataFieldsContainer {
-  width: 780px
+  width: 95vw;
 }
 
 .metadataFieldsContainer input {
@@ -5581,6 +5899,16 @@ span.handle {
 
 .rounded-xl {
   border-radius: 0.75rem !important;
+}
+
+.metadataFieldsContainerRow {
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+}
+
+.sectionsFieldsLabelsWrapper {
+  max-width: 240px;
 }
 
 .sectionsFieldsLabels {
@@ -6162,7 +6490,6 @@ span.handle {
 @media only screen and (max-height: 800px) {
   .sections-page-settings {
     overflow: scroll;
-    max-height: 350px;
   }
 }
 
@@ -6197,6 +6524,7 @@ span.handle {
   min-width: 422px;
   max-width: 50%;
   z-index: 190;
+  background: white;
 }
 .sections-container > .sections-aside-z {
   z-index: 9999999;
@@ -6430,4 +6758,43 @@ section .ql-editor.ql-snow.grey-bg {
       height: 36px;
     }
   }
+
+.page-settings-tabs {
+  display: flex;
+  flex-direction: column;
+  width: max-content; /* Adjust as needed */
+  border: 1px solid #03b1c7;
+  border-radius: 8px;
+  font-family: sans-serif;
+}
+
+.page-settings-tab {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #03b1c7;
+  color: #03b1c7;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.page-settings-tab:last-child {
+  border-bottom: none;
+}
+
+/* Optional: Add 'active' style with a class like 'active-tab' */
+.page-settings-tab.active-tab {
+  background-color: #03b1c7;
+  color: white;
+  font-weight: bold;
+}
+.page-settings-tab:first-child.active-tab {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+.page-settings-tab:last-child.active-tab {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
 </style>

@@ -4,7 +4,7 @@ import path from "path";
 export default {
   content: [
     path.resolve(__dirname, './components/**/*.vue'),
-    path.resolve(__dirname, './sections/**/*.vue'),
+    path.resolve(__dirname, './sections/**/**/*.vue'),
     path.resolve(__dirname, '../node_modules/@geeks.solutions/vue-components/src/runtime/components/**/*.{js,vue,ts}')
   ],
   important: true,
