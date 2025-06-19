@@ -1364,8 +1364,9 @@ The library support providing the ability for the host project to define multipl
 
  - `initialize_builder_settings`: this hook is called when the page data are received and have as arguments the builder settings data, the useHead composable that allow you to update the page head settings and the current tab in use
 
-* And 3 hooks (with callbacks):
-
+* And 4 hooks (with callbacks):
+ 
+ - `update_tab_title` (that must return a string of the updated tab title): this hook is called before the tabs titles are rendered, it allows you to update the tabs title
  - `reset_builder_settings` (that must return an object of the original builder settings for each tab): this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings and have as arguments the original builder settings data and the current tab in use
  - `builder_settings_payload` (that must return an object having the original builder settings and the updated ones for each tab): this hook is called when data change inside the builder tab form, it allows to correctly set the payload that will be processed by sections API to save the correct builder settings, it has as arguments the original builder settings data, the updated settings of the current builder tab and the current tab in use
  - `handle_unsaved_settings` (that must returns a boolean): this hook is called when switching between the builder tabs and returns true to show a warning for unsaved settings
@@ -1395,11 +1396,16 @@ const builder_settings_payload = (originalBuilderSettings, settings, tab) => {
   
 }
 
+const update_tab_title = (tab) => {
+  return tab
+}
+
 export {
   initialize_builder_settings,
   reset_builder_settings,
   handle_unsaved_settings,
-  builder_settings_payload
+  builder_settings_payload,
+  update_tab_title
 }
 
 ```

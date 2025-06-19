@@ -94,7 +94,7 @@
                :class="{'active-tab': currentSettingsTab === tab}"
                @click="switchSettingsTab(tab)">
             <div>
-              {{ $t(`sectionsSettings.${tab}`) }}
+              {{ settingsTabTitle(tab) }}
             </div>
             <LazyTooltipClickableTooltip v-if="unsavedSettingsError[tab]"
                                          :content="$t('sectionsSettings.save_page_settings')"
@@ -109,7 +109,7 @@
           </div>
         </div>
         <div class="sections-text-center h4 sectionTypeHeader">
-          <div class="title">{{ $t("Metadata") }}</div>
+          <div class="title">{{ settingsTabTitle(currentSettingsTab) }}</div>
           <div class="closeIcon" @click="closeMetadataModal">
             <LazyBaseIconsClose/>
           </div>
@@ -4882,6 +4882,24 @@ const stopTracking = () => {
     resizeData.value.tracking = false;
   }
 };
+const settingsTabTitle = (tab) => {
+  try {
+    const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
+    if (builderHooksJavascript['update_tab_title'] && builderHooksJavascript['update_tab_title'](tab)) {
+      return builderHooksJavascript['update_tab_title'](tab);
+    } else if (tab === 'page_settings') {
+      return i18n.t("Metadata")
+    } else {
+      return tab
+    }
+  } catch {
+    if (tab === 'page_settings') {
+      return i18n.t("Metadata")
+    } else {
+      return tab
+    }
+  }
+}
 const closeMetadataModal = () => {
   const hasUnsavedSettings = updatedPageSettingsTabs.value.some(tab =>
     unsavedSettings(tab)

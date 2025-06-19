@@ -136,7 +136,6 @@
   "copyAnchorFailed":"Copy failed! For security reasons, this feature only works on a secure website",
   "sectionsSettings": {
     "page_settings":"Page settings",
-    "builder_settings":"Builder settings",
     "save_page_settings": "Save your changes or you will loose them"
   },
   "mediaComponent": {

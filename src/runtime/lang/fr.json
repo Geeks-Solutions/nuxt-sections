@@ -136,7 +136,6 @@
   "copyAnchorFailed":"Échec de la copie ! Pour des raisons de sécurité, cette fonctionnalité fonctionne uniquement sur un site sécurisé",
   "sectionsSettings": {
     "page_settings":"Paramètres de la page",
-    "builder_settings":"Paramètres du générateur",
     "save_page_settings": "Enregistrez vos modifications ou vous les perdrez"
   },
   "mediaComponent": {
