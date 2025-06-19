@@ -2052,9 +2052,6 @@ const unsavedSettings = (tab) => {
         updatedSettings.mediaMetatag = {}
       }
 
-      console.log(originalSettings)
-      console.log(updatedSettings)
-
       unsavedSettingsError.value[tab] = !isEqual(originalSettings, updatedSettings)
 
       return unsavedSettingsError.value[tab]
