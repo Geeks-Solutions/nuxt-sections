@@ -1807,16 +1807,16 @@ const initializeSections = (res, skipHook) => {
       title: '',
       description: ''
     }
-    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title) {
-      if (!pageMetadata.value[langKey]) {
-        pageMetadata.value[langKey] = {}
+    if (!pageMetadata.value[langKey]) {
+      pageMetadata.value[langKey] = {
+        title: '',
+        description: ''
       }
+    }
+    if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].title) {
       pageMetadata.value[langKey].title = res.data.metadata[langKey].title
     }
     if (res.data.metadata && res.data.metadata[langKey] && res.data.metadata[langKey].description) {
-      if (!pageMetadata.value[langKey]) {
-        pageMetadata.value[langKey] = {}
-      }
       pageMetadata.value[langKey].description = res.data.metadata[langKey].description
     }
   }
@@ -1857,10 +1857,10 @@ const initializeSections = (res, skipHook) => {
     } catch {}
   }
 
-  if (!computedTitle.value) {
+  if (!computedTitle.value && pageMetadata.value[lang]) {
     computedTitle.value = pageMetadata.value[lang].title
   }
-  if (!computedDescription.value) {
+  if (!computedDescription.value && pageMetadata.value[lang]) {
     computedDescription.value = pageMetadata.value[lang].description
   }
   if (!computedImage.value && res.data.metadata.mediaMetatag) {
@@ -2024,6 +2024,12 @@ const unsavedSettings = (tab) => {
             description: ''
           }
         }
+        if (!originalSettings[metadataFormLang.value]) {
+          originalSettings[metadataFormLang.value] = {
+            title: '',
+            description: ''
+          }
+        }
       })
       originalSettings.pagePath = originalMetaData.value.pagePath
       originalSettings.media = originalMetaData.value.media
@@ -2045,6 +2051,9 @@ const unsavedSettings = (tab) => {
       if (!updatedSettings.mediaMetatag) {
         updatedSettings.mediaMetatag = {}
       }
+
+      console.log(originalSettings)
+      console.log(updatedSettings)
 
       unsavedSettingsError.value[tab] = !isEqual(originalSettings, updatedSettings)
 
@@ -4763,6 +4772,12 @@ const openUnAuthConfigurableSectionTypeModal = (sectionAppId, index, sectionType
   isUnAuthModalOpen.value = true;
 };
 const openMetaDataModal = () => {
+  if (!pageMetadata.value[metadataFormLang.value]) {
+    pageMetadata.value[metadataFormLang.value] = {
+      title: '',
+      description: ''
+    }
+  }
   currentSection.value = null;
   nextTick(() => {
     metadataModal.value = true;
