@@ -156,7 +156,7 @@ const mountComponent = (props = {}) => {
 const mockPageData = {
   "id": "67642846052f506967b3db96",
   "path": "page5",
-  "metadata": { /* ... metadata from original mock ... */ },
+  "metadata": { project_metadata: { languages: ['en'] } },
   "sections": [
     { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
     { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
@@ -717,6 +717,97 @@ describe('SectionsPage.vue', () => {
       { duration: 3000 }
     )
   })
+
+  it('Correctly initialize pageMetadata based on the enabled locales for a project', async () => {
+
+    vi.clearAllMocks()
+
+    wrapper.vm.initializeSections({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": { project_metadata: { languages: ['en'] } },
+        "sections": [
+          { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      }
+    })
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.locales).toStrictEqual(['en'])
+    expect(wrapper.vm.pageMetadata).toStrictEqual({
+      en: {
+        title: '',
+        description: ''
+      }
+    })
+
+    await vi.clearAllMocks();
+    wrapper.vm.pageMetadata = {}
+
+    wrapper.vm.initializeSections({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": { project_metadata: { languages: ['fr'] } },
+        "sections": [
+          { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      }
+    })
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.locales).toStrictEqual(['fr'])
+    expect(wrapper.vm.pageMetadata).toStrictEqual({
+      fr: {
+        title: '',
+        description: ''
+      }
+    })
+
+    await vi.clearAllMocks();
+    wrapper.vm.pageMetadata = {}
+
+    wrapper.vm.initializeSections({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": { project_metadata: { languages: ['en', 'fr'] } },
+        "sections": [
+          { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      }
+    })
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.locales).toStrictEqual(['en', 'fr'])
+    expect(wrapper.vm.pageMetadata).toStrictEqual({
+      en: {
+        title: '',
+        description: ''
+      },
+      fr: {
+        title: '',
+        description: ''
+      }
+    })
+
+  });
 
 })
 
