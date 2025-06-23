@@ -1576,7 +1576,7 @@ const currentViews = computed({
       });
     }
 
-    return views;
+    return views.filter(view => view.altered !== true);
   },
   set(newValue) {
     for (let index = 0; index < newValue.length; index++) {
@@ -4116,7 +4116,7 @@ const mutateVariation = async (variationName) => {
   views = Object.values(views);
   let formatValdiation = true;
 
-  views.map((view) => {
+  views.filter(view => view.altered !== true).map((view) => {
     if (!view.error || view.status_code === 404) {
       const refactorView = {
         id: view.id,

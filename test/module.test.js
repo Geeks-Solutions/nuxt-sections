@@ -219,12 +219,14 @@ describe('SectionsPage.vue', () => {
     expect(wrapper.vm.filteredTypes[0].name).toBe('HeroBanner')
   })
 
-  it('sorts currentViews by weight', async () => {
+  it('sorts currentViews by weight and filter out altered (read-only) sections injected from host project', async () => {
     wrapper.vm.displayVariations.home = {
       name: 'home',
       views: {
         view1: { id: 'view1', weight: 2 },
         view2: { id: 'view2', weight: 1 },
+        view3: { id: 'view3', weight: 3, altered: true },
+        view4: { id: 'view4', weight: 4 },
       },
       altered: false,
     }
@@ -236,6 +238,18 @@ describe('SectionsPage.vue', () => {
     const views = wrapper.vm.currentViews
     expect(views[0].id).toBe('view2')
     expect(views[1].id).toBe('view1')
+    expect(views.length).toBe(3)
+
+    await wrapper.vm.mutateVariation('home')
+
+    await wrapper.vm.$nextTick();
+
+    expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
+      { id: 'view1', weight: 2 },
+      { id: 'view2', weight: 1 },
+      { id: 'view4', weight: 4 }
+    ])
+
   })
 
   it('calls initializeSections and computeLayoutData in fetch()', async () => { // Changed test to it
