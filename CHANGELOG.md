@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Altered sections problem in edit mode: When you add a section to your page and you drag and drop this section below the signature, another signature shows #192
 
+### Updated
+
+- Refactoring Main Component to Improve CSS and Script Efficiency #79
+
 ### [3.0.4] - 2025-06-19
 
 ### Fixed

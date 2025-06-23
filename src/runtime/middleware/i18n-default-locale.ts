@@ -34,8 +34,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // Get locale if the path has a language prefix (e.g., /en/page)
   const abstractedDefaultLocale = abstractPathLanguage(pageName).matchedLocale;
 
+  const store = useSectionsDataStore();
+
   // Server-side logic
-  if (import.meta.server) {
+  if (import.meta.server && !store.getPageData) {
     let hooksJs;
 
     // Dynamically load global hooks (e.g., for custom section logic)
@@ -55,8 +57,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         }
       }
     } catch {}
-
-    const store = useSectionsDataStore();
 
     // Detect protocol and domain from headers
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http';
