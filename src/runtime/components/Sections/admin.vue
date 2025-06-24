@@ -1774,6 +1774,7 @@ const initializeSectionsCMSEvents = () => {
   if (!window.SectionsCMS) {
     window.SectionsCMS = ref({})
     window.SectionsCMS.value.reRenderSection = (data) => refreshSectionView('SectionView', data)
+  } else {
     if (admin) {
       window.SectionsCMS.value.openEditMode = openEditMode
       window.SectionsCMS.value.runIntro = (topic, rerun, lastSavedTopic) => runIntro(topic, rerun, lastSavedTopic)
