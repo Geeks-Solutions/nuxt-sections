@@ -821,6 +821,32 @@ describe('SectionsPage.vue', () => {
       }
     })
 
+    await vi.clearAllMocks();
+    wrapper.vm.pageMetadata = {}
+
+    wrapper.vm.initializeSections({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": { project_metadata: { languages: ['en', 'fr'] }, en: {title: 'PAGE TITLE', description: 'PAGE TITLE'} },
+        "sections": [
+          { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      }
+    })
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.computedSEO).toStrictEqual({
+      title: 'PAGE TITLE',
+      description: 'PAGE TITLE',
+      image: ''
+  })
+
   });
 
 })

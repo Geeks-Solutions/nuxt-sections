@@ -237,9 +237,11 @@ const projectMetadata = ref({});
 const sectionsError = useState('sectionsError', () => "");
 const sectionsErrorOptions = ref(null);
 const renderSectionError = useState("renderSectionError", () => "");
-const computedTitle = useState("computedTitle", () => '');
-const computedDescription = ref('');
-const computedImage = ref('');
+const computedSEO = useState("computedSEO", () => ({
+  title: '',
+  description: '',
+  image: ''
+}));
 const layoutSlotNames = ref([]);
 const selectedLayout = useState('selectedLayout', () => 'standard');
 const originalMetaData = useState('originalMetaData', () => {});
@@ -371,19 +373,19 @@ useHead(() => {
     htmlAttrs: {
       lang: i18n.locale.value
     },
-    title: computedTitle.value,
+    title: computedSEO.value.title,
     meta: [
-      computedDescription.value ? {
+      computedSEO.value.description ? {
         hid: 'description',
         name: 'description',
-        content: computedDescription.value
+        content: computedSEO.value.description
       } : {},
-      { hid: "og:title", property: "og:title", content: computedTitle.value },
-      computedDescription.value ? { hid: "og:description", property: "og:description", content: computedDescription.value } : {},
-      computedImage.value ? {
+      { hid: "og:title", property: "og:title", content: computedSEO.value.title },
+      computedSEO.value.description ? { hid: "og:description", property: "og:description", content: computedSEO.value.description } : {},
+      computedSEO.value.image ? {
         hid: "og:image",
         property: "og:image",
-        content: computedImage.value.url ? computedImage.value.url : computedImage.value
+        content: computedSEO.value.image.url ? computedSEO.value.image.url : computedSEO.value.image
       } : {},
       { hid: "og:url", property: "og:url", content: fullURL },
     ],
@@ -500,15 +502,15 @@ const initializeSections = (res, skipHook) => {
     } catch {}
   }
 
-  if (!computedTitle.value && pageMetadata.value[lang]) {
-    computedTitle.value = pageMetadata.value[lang].title
+  if (!computedSEO.value.title && pageMetadata.value[lang]) {
+    computedSEO.value.title = pageMetadata.value[lang].title
   }
-  if (!computedDescription.value && pageMetadata.value[lang]) {
-    computedDescription.value = pageMetadata.value[lang].description
+  if (!computedSEO.value.description && pageMetadata.value[lang]) {
+    computedSEO.value.description = pageMetadata.value[lang].description
   }
-  if (!computedImage.value && res.data.metadata.mediaMetatag) {
+  if (!computedSEO.value.image && res.data.metadata.mediaMetatag) {
     pageMetadata.value.mediaMetatag = res.data.metadata.mediaMetatag
-    computedImage.value = res.data.metadata.mediaMetatag
+    computedSEO.value.image = res.data.metadata.mediaMetatag
   }
 
   const views = {}
@@ -721,30 +723,39 @@ const sectionSEO = ref({
   description: "",
   image: ""
 })
-const seoManagement = (view, hooksJs) => {
+const seoManagement = (view, sectionHooksJs) => {
   try {
     if (view && pageMetadata.value.seo && pageMetadata.value.seo[view.id] === true) {
-      if (hooksJs && hooksJs['seo_management']) {
-        const seo = JSON.parse(JSON.stringify(hooksJs['seo_management'](view, i18n.locale.value)))
-        if (seo.title && !sectionSEO.value.title) {
-          sectionSEO.value.title = seo.title
-          computedTitle.value = seo.title
-        }
-        if (seo.description && !sectionSEO.value.description) {
-          sectionSEO.value.description = seo.description
-          computedDescription.value = seo.description
-        }
-        if (seo.image && !sectionSEO.value.image) {
-          sectionSEO.value.image = seo.image
-          computedImage.value = seo.image
-        }
+      if (sectionHooksJs && sectionHooksJs['seo_management']) {
+        const seo = JSON.parse(JSON.stringify(sectionHooksJs['seo_management'](view, i18n.locale.value)))
+
+        Array.from(['title', 'description', 'image']).forEach((key) => {
+          if (seo[key] && !sectionSEO.value[key]) {
+            sectionSEO.value[key] = seo[key];
+            computedSEO.value[key] = seo[key];
+          }
+        });
       }
     }
   } catch {}
 }
+const parseSectionName = (sectionName) => {
+  let parsedSectionName = ""
+  if (sectionName && sectionName.includes(":") && sectionName.includes("_-_")) {
+    parsedSectionName = `${sectionName.split(":")[1].split("_-_")[0]}`
+  } else if (sectionName && sectionName.includes(":")) {
+    parsedSectionName = `${sectionName.split(":")[1]}`
+  } else if (sectionName && sectionName.includes("_-_")) {
+    parsedSectionName = `${sectionName.split("_-_")[0]}`
+  } else {
+    parsedSectionName = `${sectionName}`
+  }
+  return parsedSectionName
+}
 const getComponent = (sectionName, sectionType, view) => {
   const hooksJs = importJs(`/js/global-hooks`)
-  seoManagement(view, hooksJs)
+  const sectionHooksJs = importJs(`/forms/${parseSectionName(sectionName)}_hooks`)
+  seoManagement(view, sectionHooksJs)
   if (hooksJs && hooksJs['section_pre_render'] && hooksJs['section_pre_render']({sectionName, sectionType})) {
     return hooksJs['section_pre_render']({sectionName, sectionType})
   } else if (nuxtApp.$sections.cname === "active") {
@@ -1041,7 +1052,7 @@ const fire_js = (event_name, event_data) => {
 
 // Lifecycle hooks
 onMounted(async () => {
-  computedTitle.value = ""
+  computedSEO.value.title = ""
   await fetchData()
 
   if ((errorResponseStatus.value === 429 && sectionsError.value !== "") || sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {

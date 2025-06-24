@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Updated
 
 - Refactoring Main Component to Improve CSS and Script Efficiency #79
+- Update seo_management hooks management to be called from a specific hooks file per section #193
 
 ### [3.0.4] - 2025-06-19
 
