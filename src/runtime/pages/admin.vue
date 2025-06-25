@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { useHead, useNuxtApp, useI18n, useRoute, navigateTo } from '#imports'
+import { useHead, useNuxtApp, useI18n, useRoute, navigateTo, getSectionProjectIdentity } from '#imports'
 
 defineOptions({
   name: 'SectionsAdmin'
@@ -25,6 +25,6 @@ if (route.params.prefix) {
 
 const baseUrl = nuxtApp.$sections.serverUrl
 const baseUrlPath = languagePrefix === 'en' ? `/admin/Login` : `/admin/${languagePrefix}/Login`
-const finalUrl = `${baseUrl.replace('/api/v1', baseUrlPath)}?sections_redirect=true&project_id=${nuxtApp.$sections.projectId}`
+const finalUrl = `${baseUrl.replace('/api/v1', baseUrlPath)}?sections_redirect=true&domain=${getSectionProjectIdentity()}`
 navigateTo(finalUrl, { external: true })
 </script>
