@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Altered sections problem in edit mode: When you add a section to your page and you drag and drop this section below the signature, another signature shows #192
+- Guides problem: When the guide not skipped there is some problems with it #195
 
 ### Updated
 

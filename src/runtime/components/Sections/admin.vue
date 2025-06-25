@@ -272,7 +272,7 @@
                       v-if="selectedLayout === 'standard'"
                       class="hp-button"
                       @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
             "
                     >
                       <div class="btn-icon plus-icon">
@@ -390,7 +390,7 @@
                          class="flexSections sections-flex-col sections-my-3 sections-gap-4">
                       <div class="flexSections sections-flex-row sections-justify-center">
                         <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun); checkIntroLastStep('availableSectionOpened')">
+                             :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun.value); checkIntroLastStep('availableSectionOpened')">
                           {{ $t("availableSections") }}
                         </div>
                         <div class="sections-text-center h2 sections-px-4">/</div>
@@ -1232,7 +1232,7 @@
                          class="flexSections sections-w-full sections-justify-center">
                     </div>
                     <div class="footer">
-                      <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun);">
+                      <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun.value);">
                         <div class="btn-icon check-icon"></div>
                         <div class="btn-text">{{ $t("Done") }}</div>
                       </button>
@@ -1549,7 +1549,7 @@ const pageData = useState('pageData', () => null);
 const canPromote = ref(false);
 const intro = ref(null);
 const currentPages = ref(null);
-const introRerun = ref(false);
+const introRerun = reactive({value: false});
 const introSectionFormStep = ref(false);
 const creationView = ref(false);
 const drag = ref(false);
@@ -3108,6 +3108,27 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
       addIntroSteps(topic, rerun)
     }
   }
+  // The below code is used to attach click event listeners to the guide close button and overlay
+  // It is used to prevent the guide from automatically proceeding into next steps of different guides
+  setTimeout(() => {
+    const skipButton = document.querySelector('a.introjs-skipbutton');
+    const introOverlay = document.querySelector('div.introjs-overlay');
+
+    function handleSkipClick() {
+      currentPages.value = 1
+      introRerun.value = false
+    }
+
+// First, remove any previously attached instance of this exact handler
+    if (skipButton) {
+      skipButton.removeEventListener('click', handleSkipClick);
+      skipButton.addEventListener('click', handleSkipClick);
+    }
+    if (introOverlay) {
+      introOverlay.removeEventListener('click', handleSkipClick);
+      introOverlay.addEventListener('click', handleSkipClick);
+    }
+  }, 200)
 }
 const addIntroSteps = (topic, rerun) => {
   if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
@@ -4987,9 +5008,6 @@ onMounted(async () => {
     await initiateIntroJs();
   }
 
-  if ((errorResponseStatus.value === 429 && sectionsError.value !== "") || sectionsError.value !== "" && !registeredPage(errorResponseStatus.value === 404 ? 'page_not_found' : 'project_not_found')) {
-    showToast("Error", "error", i18n.t('loadPageError') + sectionsError.value, sectionsErrorOptions.value);
-  }
   if (renderSectionError.value !== "") {
     showToast("Error", "error", renderSectionError.value);
   }
@@ -6455,6 +6473,7 @@ span.handle {
   justify-content: flex-start;
   align-content: stretch;
   align-items: stretch;
+  width: 100%;
 }
 
 .sections-container-edit-mode {
