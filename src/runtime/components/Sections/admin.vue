@@ -3117,6 +3117,9 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
     function handleSkipClick() {
       currentPages.value = 1
       introRerun.value = false
+      if (useCookie('intro-last-step').value && useCookie('intro-last-step').value === 'pageSaved') {
+        useCookie('intro-last-step').value = null
+      }
     }
 
 // First, remove any previously attached instance of this exact handler
