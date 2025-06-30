@@ -63,7 +63,7 @@ global.validateQS = validateQS
 
 const showToastMock = vi.fn()
 
-import SectionsPage from '../src/runtime/components/Sections/index.vue';
+import SectionsPage from '../src/runtime/components/Sections/admin.vue';
 import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue';
 import WysiwygStatic from '../src/runtime/components/configs/views/wysiwyg_static.vue';
 import Wysiwyg from '../src/runtime/components/configs/forms/wysiwyg.vue';
@@ -219,12 +219,14 @@ describe('SectionsPage.vue', () => {
     expect(wrapper.vm.filteredTypes[0].name).toBe('HeroBanner')
   })
 
-  it('sorts currentViews by weight', async () => {
+  it('sorts currentViews by weight and filter out altered (read-only) sections injected from host project', async () => {
     wrapper.vm.displayVariations.home = {
       name: 'home',
       views: {
         view1: { id: 'view1', weight: 2 },
         view2: { id: 'view2', weight: 1 },
+        view3: { id: 'view3', weight: 3, altered: true },
+        view4: { id: 'view4', weight: 4 },
       },
       altered: false,
     }
@@ -236,6 +238,18 @@ describe('SectionsPage.vue', () => {
     const views = wrapper.vm.currentViews
     expect(views[0].id).toBe('view2')
     expect(views[1].id).toBe('view1')
+    expect(views.length).toBe(3)
+
+    await wrapper.vm.mutateVariation('home')
+
+    await wrapper.vm.$nextTick();
+
+    expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
+      { id: 'view1', weight: 2 },
+      { id: 'view2', weight: 1 },
+      { id: 'view4', weight: 4 }
+    ])
+
   })
 
   it('calls initializeSections and computeLayoutData in fetch()', async () => { // Changed test to it
@@ -806,6 +820,32 @@ describe('SectionsPage.vue', () => {
         description: ''
       }
     })
+
+    await vi.clearAllMocks();
+    wrapper.vm.pageMetadata = {}
+
+    wrapper.vm.initializeSections({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": { project_metadata: { languages: ['en', 'fr'] }, en: {title: 'PAGE TITLE', description: 'PAGE TITLE'} },
+        "sections": [
+          { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      }
+    })
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.computedSEO).toStrictEqual({
+      title: 'PAGE TITLE',
+      description: 'PAGE TITLE',
+      image: ''
+  })
 
   });
 
@@ -1668,25 +1708,26 @@ describe('sanitizeURL', () => {
     wrapper = mountComponent()
   })
 
-  it('removes auth_code and project_id from query and calls router.replace', async () => {
-
-    await useRouter().push({
-      path: '/some-page',
-      query: {
-        auth_code: 'abc123',
-        project_id: 'xyz789',
-        keep_me: 'yes'
-      }
-    })
-
-    window.history.pushState({}, '', '/some-page?keep_me=yes')
-    await wrapper.vm.sanitizeURL()
-
-    await wrapper.vm.$nextTick()
-
-    // Verify updated URL
-    expect(window.location.search).toBe('?keep_me=yes')
-  })
+  // TODO: This test should be moved to index.vue component tests whenever defined
+  // it('removes auth_code and project_id from query and calls router.replace', async () => {
+  //
+  //   await useRouter().push({
+  //     path: '/some-page',
+  //     query: {
+  //       auth_code: 'abc123',
+  //       project_id: 'xyz789',
+  //       keep_me: 'yes'
+  //     }
+  //   })
+  //
+  //   window.history.pushState({}, '', '/some-page?keep_me=yes')
+  //   await wrapper.vm.sanitizeURL()
+  //
+  //   await wrapper.vm.$nextTick()
+  //
+  //   // Verify updated URL
+  //   expect(window.location.search).toBe('?keep_me=yes')
+  // })
 })
 
 describe('addNewStaticType', () => {

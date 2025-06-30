@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.5] - 2025-06-26
+
+### Fixed
+
+- Altered sections problem in edit mode: When you add a section to your page and you drag and drop this section below the signature, another signature shows #192
+- Guides problem: When the guide not skipped there is some problems with it #195
+
+### Updated
+
+- Refactoring Main Component to Improve CSS and Script Efficiency #79
+- Update seo_management hooks management to be called from a specific hooks file per section #193
+
 ### [3.0.4] - 2025-06-19
 
 ### Fixed

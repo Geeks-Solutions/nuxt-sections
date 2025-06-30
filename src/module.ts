@@ -59,6 +59,21 @@ export default defineNuxtModule<ModuleOptions>({
         path: '/health',
         file: resolve('./runtime/pages/health.vue'),
       })
+      pages.push({
+        name: 'HealthWithPrefix',
+        path: '/:prefix/health',
+        file: resolve('./runtime/pages/health.vue'),
+      })
+      pages.push({
+        name: 'SectionsAdmin',
+        path: '/admin',
+        file: resolve('./runtime/pages/admin.vue'),
+      })
+      pages.push({
+        name: 'SectionsAdminWithPrefix',
+        path: '/:prefix/admin',
+        file: resolve('./runtime/pages/admin.vue'),
+      })
     })
 
     // Register components
