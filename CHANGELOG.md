@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bug in the wysiwyg component when having multiple quill instances: html editor bugs in the wysiwyg #155
 
+### Updated
+
+- Bump vue-component version into v.3.0.3
+
 ### [3.0.5] - 2025-06-26
 
 ### Fixed
