@@ -14,7 +14,8 @@ import {
   abstractPathLanguage,       // Extracts locale info from a given path
   useNuxtApp,
   useState,
-  importJs                    // Dynamic JS module importer
+  importJs,
+  useCookie                    // Dynamic JS module importer
 } from "#imports";
 
 import { useSectionsDataStore } from "../stores/sectionsDataStore"; // Pinia store for managing page data
@@ -62,9 +63,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http';
     const websiteDomain = app.ssrContext.event.req.headers.host;
 
+    const token: any = useCookie("sections-auth-token").value;
+
     // Prepare API headers
     const config = {
-      headers: sectionHeader(({ origin: `${scheme}://${websiteDomain}` })),
+      headers: sectionHeader(({ origin: `${scheme}://${websiteDomain}`, token })),
     };
 
     // Construct the endpoint URL to load section page data

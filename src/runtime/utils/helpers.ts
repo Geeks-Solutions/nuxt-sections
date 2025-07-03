@@ -77,6 +77,9 @@ export const sectionHeader = (header: Record<string, string>): Record<string, st
   if (header.origin) {
     header['access-control-request-headers'] = header_key;
   }
+  if (header.token === undefined) {
+    delete header.token
+  }
   return header;
 }
 
@@ -498,8 +501,10 @@ export const renderPageData = async () => {
   const scheme = window.location.protocol.replace(':', '');
   websiteDomain = window.location.host;
 
+  const token: any = useCookie("sections-auth-token").value;
+
   const config = {
-    headers: sectionHeader({})
+    headers: sectionHeader({ token })
   };
 
   const pathMatch = Array.isArray(route.params.pathMatch)

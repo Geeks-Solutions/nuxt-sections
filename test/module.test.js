@@ -158,8 +158,28 @@ const mockPageData = {
   "path": "page5",
   "metadata": { project_metadata: { languages: ['en'] } },
   "sections": [
-    { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-    { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+    {
+      id: 'view-1',
+      name: 'section1',
+      weight: 1,
+      type: 'text',
+      private_data: {
+        media: {
+          media_id: "Media1"
+        }
+      },
+      linked_to: '' },
+    {
+      id: 'view-2',
+      name: 'section2',
+      weight: 2,
+      type: 'image',
+      private_data: {
+        media: {
+          media_id: "Media2"
+        }
+      },
+      linked_to: '' }
   ],
   "layout": "standard",
   "page": "page5",
@@ -245,9 +265,9 @@ describe('SectionsPage.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
-      { id: 'view1', weight: 2 },
-      { id: 'view2', weight: 1 },
-      { id: 'view4', weight: 4 }
+      { id: 'view1', private_data: {}, weight: 2 },
+      { id: 'view2', private_data: {}, weight: 1 },
+      { id: 'view4', private_data: {}, weight: 4 }
     ])
 
   })
@@ -272,8 +292,30 @@ describe('SectionsPage.vue', () => {
 
     // Expected result should be sorted by weight
     expect(result).toEqual([
-      { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-      { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+      {
+        id: 'view-1',
+        name: 'section1',
+        weight: 1,
+        type: 'text',
+        private_data: {
+          media: {
+            media_id: "Media1"
+          }
+        },
+        linked_to: ''
+      },
+      {
+        id: 'view-2',
+        name: 'section2',
+        weight: 2,
+        type: 'image',
+        private_data: {
+          media: {
+            media_id: "Media2"
+          }
+        },
+        linked_to: ''
+      }
     ]);
 
     const newViews = [
@@ -848,6 +890,95 @@ describe('SectionsPage.vue', () => {
   })
 
   });
+
+  it('When saving the page, the private_data field must be stored per sections', async () => {
+    wrapper.vm.displayVariations.home = {
+      name: 'home',
+      views: {
+        view1: {
+          id: 'view1',
+          private_data: {
+                media: {
+                  media_id: "Media1"
+                }
+              },
+          weight: 2
+        },
+        view2: {
+          id: 'view2',
+          private_data: {
+                media: {
+                  media_id: "Media2"
+                }
+              },
+          weight: 1
+        },
+        view3: {
+          id: 'view3',
+          private_data: {
+                media: {
+                  media_id: "Media3"
+                }
+              },
+          weight: 3, altered: true
+        },
+        view4: {
+          id: 'view4',
+          private_data: {
+                media: {
+                  media_id: "Media4"
+                }
+              },
+          weight: 4
+        },
+      },
+      altered: false,
+    }
+
+    wrapper.vm.selectedVariation = 'home'
+
+    await wrapper.vm.$nextTick()
+
+    const views = wrapper.vm.currentViews
+    expect(views[0].id).toBe('view2')
+    expect(views[1].id).toBe('view1')
+    expect(views.length).toBe(3)
+
+    await wrapper.vm.mutateVariation('home')
+
+    await wrapper.vm.$nextTick();
+
+    expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
+      {
+        id: 'view1',
+        private_data: {
+                media: {
+                  media_id: "Media1"
+                }
+              },
+        weight: 2
+      },
+      {
+        id: 'view2',
+        private_data: {
+                media: {
+                  media_id: "Media2"
+                }
+              },
+        weight: 1
+      },
+      {
+        id: 'view4',
+        private_data: {
+                media: {
+                  media_id: "Media4"
+                }
+              },
+        weight: 4
+      }
+    ])
+
+  })
 
 })
 

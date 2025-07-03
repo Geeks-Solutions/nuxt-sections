@@ -132,7 +132,7 @@ const weight = computed(() => (props.savedView.weight === 0 || props.savedView.w
 const globalSectionMode = computed(() => props.instance || props.linked);
 
 // Methods converted to functions
-function addStatic(settings) {
+function addStatic(settings, private_data) {
   instanceNameError.value = false;
   if (globalSectionMode.value && !instanceName.value) {
     instanceNameError.value = true;
@@ -142,6 +142,7 @@ function addStatic(settings) {
     name: props.props.name, // Access nested props
     type: "static",
     settings,
+    private_data,
     id: id.value,
     weight: weight.value,
     auto_insertion: autoInsert.value,
@@ -178,6 +179,11 @@ watch(viewSaved, async (val) => {
   setTimeout(() => {
     if (val?.dynamicFormRef && props.savedView?.settings) {
       val.dynamicFormRef.settings = props.savedView.settings
+    }
+  }, 500)
+  setTimeout(() => {
+    if (val?.dynamicFormRef && props.savedView?.private_data) {
+      val.dynamicFormRef.private_data = props.savedView.private_data
     }
   }, 500)
 })

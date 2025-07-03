@@ -146,7 +146,16 @@ function sendJsonData() {
       settings = {}; // Default to empty object if settings cannot be retrieved
   }
 
-  emit("addStatic", settings);
+  let private_data = null;
+  if (formComponent.private_data !== undefined) {
+    private_data = formComponent.private_data;
+  } else {
+      console.warn(`Dynamic form component for "${props.name}" does not have a 'private_data' property.`);
+      // Potentially try to gather data differently if 'settings' isn't exposed
+    private_data = {}; // Default to empty object if settings cannot be retrieved
+  }
+
+  emit("addStatic", settings, private_data);
 }
 
 // Lifecycle Hooks
