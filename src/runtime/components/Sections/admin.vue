@@ -1808,7 +1808,7 @@ const initializeSections = (res, skipHook) => {
       translationComponentSupport.value = false;
     }
     locales.value = [];
-    locales.value = projectMetadata.value['languages'];
+    locales.value = [...projectMetadata.value['languages']];
   }
 
   for (const langKey of locales.value) {
@@ -1857,7 +1857,7 @@ const initializeSections = (res, skipHook) => {
   }
 
   if (res.data.metadata && res.data.metadata.project_metadata) {
-    originalBuilderSettings.value = res.data.metadata.project_metadata
+    originalBuilderSettings.value = {...res.data.metadata.project_metadata}
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
       if (builderHooksJavascript['initialize_builder_settings']) {
@@ -2147,11 +2147,15 @@ const updateProjectMetadata = async () => {
 
         unsavedSettingsError.value[currentSettingsTab.value] = false
 
-        metadataModal.value = false
-        isSideBarOpen.value = false;
+        const hasUnsavedSettings = Object.values(unsavedSettingsError.value).includes(true)
+
+        if (!hasUnsavedSettings) {
+          metadataModal.value = false;
+          isSideBarOpen.value = false;
+        }
 
         if (res.data.metadata && res.data.metadata && res.data.metadata) {
-          originalBuilderSettings.value = res.data.metadata
+          originalBuilderSettings.value = {...res.data.metadata}
         }
 
         showToast(

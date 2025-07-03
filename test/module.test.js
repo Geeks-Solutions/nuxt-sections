@@ -1883,3 +1883,299 @@ describe('Wysiwyg - validate default language content', () => {
     expect(wrapper.text()).toContain('requiredField')
   })
 })
+
+// Mock dependencies
+const mockIsEqual = vi.fn()
+const mockImportJs = vi.fn()
+const mockUseCookie = vi.fn()
+const mockUseApiRequest = vi.fn()
+const mockGetSectionProjectIdentity = vi.fn()
+const mockSectionHeader = vi.fn()
+
+// Mock reactive values
+const mockLocales = { value: ['en', 'fr', 'es'] }
+const mockOriginalMetaData = { value: {} }
+const mockMetadataFormLang = { value: 'en' }
+const mockPageMetadata = { value: {} }
+const mockUnsavedSettingsError = { value: {} }
+const mockCurrentSettingsTab = { value: 'page_settings' }
+const mockProjectMetadata = { value: {} }
+const mockBuilderSettingsPayload = { value: {} }
+const mockUpdatedBuilderSettings = { value: {} }
+const mockUpdatedBuilderSettingsPerTab = { value: {} }
+const mockOriginalBuilderSettings = { value: {} }
+const mockLoading = { value: false }
+const mockMetadataModal = { value: false }
+const mockIsSideBarOpen = { value: false }
+const mockMetadataErrors = { value: {} }
+const mockNuxtApp = { $sections: { serverUrl: 'http://localhost:3000' } }
+
+describe('Settings Functions', () => {
+  let wrapper
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    wrapper = mountComponent()
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockPageData),
+      })
+    )
+
+    // Reset mock values
+    mockUnsavedSettingsError.value = {}
+    mockCurrentSettingsTab.value = 'page_settings'
+    mockLoading.value = false
+    mockMetadataModal.value = false
+    mockIsSideBarOpen.value = false
+    mockMetadataErrors.value = {}
+
+    // Setup default mocks
+    mockUseCookie.mockReturnValue({ value: 'mock-token' })
+    mockGetSectionProjectIdentity.mockReturnValue('test-project-id')
+    mockSectionHeader.mockReturnValue({ Authorization: 'Bearer mock-token' })
+    mockI18n.t.mockReturnValue('Success message')
+  })
+
+  describe('unsavedSettings', () => {
+    it('should return false for page_settings when settings are equal', () => {
+      // Setup
+      wrapper.vm.originalMetaData = {
+        en: { title: 'Test Title', description: 'Test Description' },
+        fr: { title: '', description: '' },
+        pagePath: '/original-path',
+        media: {},
+        mediaMetatag: {}
+      }
+      wrapper.vm.pageMetadata = {
+        en: { title: 'Test Title', description: 'Test Description' },
+        pagePath: '/original-path',
+        media: {},
+        mediaMetatag: {}
+      }
+      wrapper.vm.pagePath = '/original-path'
+
+      // Test
+      const result = wrapper.vm.unsavedSettings('page_settings')
+
+      // Assert
+      expect(wrapper.vm.unsavedSettingsError['page_settings']).toBe(false)
+      expect(result).toBe(false)
+    })
+
+    it('should return true for page_settings when settings are different', () => {
+      // Setup
+      wrapper.vm.originalMetaData = {
+        en: { title: 'Original Title', description: 'Original Description' },
+        pagePath: '/original-path',
+        media: {},
+        mediaMetatag: {}
+      }
+      wrapper.vm.pageMetadata = {
+        en: { title: 'Updated Title', description: 'Updated Description' },
+        media: {},
+        mediaMetatag: {}
+      }
+      wrapper.vm.pagePath = '/updated-path'
+
+      // Test
+      const result = wrapper.vm.unsavedSettings('page_settings')
+
+      // Assert
+      expect(wrapper.vm.unsavedSettingsError['page_settings']).toBe(true)
+      expect(result).toBe(true)
+    })
+
+    it('should handle missing locale data in originalMetaData', () => {
+      // Setup
+      wrapper.vm.originalMetaData = {}
+      wrapper.vm.pageMetadata = {
+        en: { title: 'Test Title', description: 'Test Description' }
+      }
+
+      // Test
+      const result = wrapper.vm.unsavedSettings('page_settings')
+
+      // Assert
+      expect(wrapper.vm.unsavedSettingsError['page_settings']).toBe(true)
+      expect(result).toBe(true)
+    })
+
+    it('should handle builder settings tab without hook', () => {
+      // Setup
+      wrapper.vm.importJs.mockReturnValue({})
+
+      // Test
+      const result = wrapper.vm.unsavedSettings('builder_tab')
+
+      // Assert
+      expect(wrapper.vm.unsavedSettingsError['builder_tab']).toBe(false)
+      expect(result).toBe(false)
+    })
+
+    it('should handle errors gracefully', () => {
+      // Setup
+      wrapper.vm.importJs.mockImplementation(() => {
+        throw new Error('Import failed')
+      })
+
+      // Test
+      const result = wrapper.vm.unsavedSettings('builder_tab')
+
+      // Assert
+      expect(wrapper.vm.unsavedSettingsError['builder_tab']).toBe(false)
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('switchSettingsTab', () => {
+    it('should call unsavedSettings for current tab and update current tab', () => {
+      // Setup
+      wrapper.vm.currentSettingsTab = 'old_tab'
+
+      // Test
+      wrapper.vm.switchSettingsTab('new_tab')
+
+      // Assert
+      expect(wrapper.vm.currentSettingsTab).toBe('new_tab')
+    })
+  })
+
+  describe('builderSettingUpdated', () => {
+    it('should initialize builder settings if not exists', () => {
+      // Setup
+      wrapper.vm.projectMetadata = {}
+      const settings = { theme: 'dark' }
+      wrapper.vm.importJs.mockReturnValue({})
+
+      // Test
+      wrapper.vm.builderSettingUpdated(settings)
+
+      // Assert
+      expect(wrapper.vm.projectMetadata.builder).toEqual({
+        builder_settings: {}
+      })
+      expect(wrapper.vm.updatedBuilderSettings).toEqual(settings)
+      expect(wrapper.vm.updatedBuilderSettingsPerTab[wrapper.vm.currentSettingsTab]).toEqual(settings)
+    })
+
+    it('should initialize builder_settings if builder exists but settings dont', () => {
+      // Setup
+      wrapper.vm.projectMetadata = { builder: {} }
+      const settings = { theme: 'light' }
+      wrapper.vm.importJs.mockReturnValue({})
+
+      // Test
+      wrapper.vm.builderSettingUpdated(settings)
+
+      // Assert
+      expect(wrapper.vm.projectMetadata.builder.builder_settings).toEqual({})
+      expect(wrapper.vm.updatedBuilderSettings).toEqual(settings)
+    })
+
+    it('should handle hook errors gracefully', () => {
+      // Setup
+      const settings = { theme: 'dark' }
+
+      // Test
+      expect(() => wrapper.vm.builderSettingUpdated(settings)).not.toThrow()
+      expect(wrapper.vm.updatedBuilderSettings).toEqual(settings)
+    })
+  })
+
+  describe('updateProjectMetadata', () => {
+    it('should successfully update project metadata', async () => {
+      // Setup
+      const mockResponse = {
+        "id": "67642846052f506967b3db96",
+        "metadata": { project_metadata: { languages: ['es', 'fr'] } },
+      }
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      wrapper.vm.builderSettingsPayload = { primary_color: '#000' }
+      wrapper.vm.currentSettingsTab = 'test_tab'
+
+      // Test
+      await wrapper.vm.updateProjectMetadata()
+
+      // Assert
+      expect(wrapper.vm.loading).toBe(false)
+      expect(wrapper.vm.unsavedSettingsError['test_tab']).toBe(false)
+      expect(wrapper.vm.originalBuilderSettings).toEqual({ project_metadata: { languages: ['es', 'fr'] } })
+    })
+
+    it('should close modals when no unsaved settings remain', async () => {
+      // Setup
+      const mockResponse = {
+        "id": "67642846052f506967b3db96",
+        "metadata": { project_metadata: { languages: ['es', 'fr'] } },
+      }
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      wrapper.vm.unsavedSettingsError = { tab1: false, tab2: false }
+      wrapper.vm.metadataModal = true
+      wrapper.vm.isSideBarOpen = true
+
+      // Test
+      await wrapper.vm.updateProjectMetadata()
+
+      // Assert
+      expect(wrapper.vm.metadataModal).toBe(false)
+      expect(wrapper.vm.isSideBarOpen).toBe(false)
+    })
+
+    it('should not close modals when unsaved settings remain', async () => {
+      // Setup
+      const mockResponse = {
+        "id": "67642846052f506967b3db96",
+        "metadata": { project_metadata: { languages: ['es', 'fr'] } },
+      }
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      wrapper.vm.unsavedSettingsError = { tab1: true, tab2: false }
+      wrapper.vm.metadataModal = true
+      wrapper.vm.isSideBarOpen = true
+
+      // Test
+      await wrapper.vm.updateProjectMetadata()
+
+      // Assert
+      expect(wrapper.vm.metadataModal).toBe(true)
+      expect(wrapper.vm.isSideBarOpen).toBe(true)
+    })
+
+    it('should make correct API call', async () => {
+      // Setup
+      wrapper.vm.builderSettingsPayload = { primary_color: '#000', secondary_color: '#FFF' }
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => {},
+      })
+
+      // Test
+      await wrapper.vm.updateProjectMetadata()
+
+      // Assert
+      expect(global.fetch.mock.calls[0][0]).toEqual('http://localhost:3000/project/test-project')
+      expect(global.fetch.mock.calls[0][1]).toEqual({
+        method: 'PUT',
+        headers: expect.anything(),
+        body: '{"metadata":{"primary_color":"#000","secondary_color":"#FFF"}}'
+      })
+    })
+  })
+})
