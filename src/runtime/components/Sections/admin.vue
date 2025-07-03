@@ -6500,7 +6500,7 @@ span.handle {
   height: 100vh; /* Ensures it stays full height */
   width: 527px;
   min-width: 422px;
-  max-width: 50%;
+  max-width: calc(100% - 375px - 3px); /* 375px being the mobile min width and 3px being the width size of the resize handle */
   z-index: 190;
   background: white;
 }
@@ -6552,6 +6552,7 @@ span.handle {
   flex: 1 1 auto;
   align-self: auto;
   overflow: auto;
+  container: sections-main / inline-size;
 }
 
 .sections-resize-handle--x {
