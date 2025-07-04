@@ -1808,7 +1808,7 @@ const initializeSections = (res, skipHook) => {
       translationComponentSupport.value = false;
     }
     locales.value = [];
-    locales.value = projectMetadata.value['languages'];
+    locales.value = [...projectMetadata.value['languages']];
   }
 
   for (const langKey of locales.value) {
@@ -1857,7 +1857,7 @@ const initializeSections = (res, skipHook) => {
   }
 
   if (res.data.metadata && res.data.metadata.project_metadata) {
-    originalBuilderSettings.value = res.data.metadata.project_metadata
+    originalBuilderSettings.value = {...res.data.metadata.project_metadata}
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
       if (builderHooksJavascript['initialize_builder_settings']) {
@@ -1886,8 +1886,6 @@ const initializeSections = (res, skipHook) => {
         section.render_data[0].settings.image = []
       }
       section.settings = section.render_data[0].settings
-      section.nameID = section.name
-      section.name = section.name.split(":")[1]
     } else if (section.settings) {
       section.settings = isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings
     }
@@ -2147,11 +2145,15 @@ const updateProjectMetadata = async () => {
 
         unsavedSettingsError.value[currentSettingsTab.value] = false
 
-        metadataModal.value = false
-        isSideBarOpen.value = false;
+        const hasUnsavedSettings = Object.values(unsavedSettingsError.value).includes(true)
+
+        if (!hasUnsavedSettings) {
+          metadataModal.value = false;
+          isSideBarOpen.value = false;
+        }
 
         if (res.data.metadata && res.data.metadata && res.data.metadata) {
-          originalBuilderSettings.value = res.data.metadata
+          originalBuilderSettings.value = {...res.data.metadata}
         }
 
         showToast(
@@ -2208,6 +2210,9 @@ const updatePageMetaData = async (seo) => {
       }
       if (view.type === 'dynamic' || view.type === 'local') {
         refactorView.options = []
+      }
+      if (view.private_data) {
+        refactorView.private_data = view.private_data
       }
       if (refactorView.id && refactorView.id.startsWith("id-")) {
         delete refactorView.id
@@ -2475,6 +2480,7 @@ const updateGlobalType = async (section) => {
           "section": {
             "name": sectionTypeName.value,
             "options": section.type === 'configurable' ? [section.settings] : section.settings,
+            "private_data": section.private_data ?? {},
             "type": section.type
           },
           "auto_insertion": section.auto_insertion
@@ -2530,6 +2536,7 @@ const addNewGlobalType = async (section) => {
           "section": {
             "name": sectionTypeName.value,
             "options": section.type === 'configurable' ? [section.settings] : section.settings,
+            "private_data": section.private_data ?? {},
             "type": section.type
           },
           "auto_insertion": section.auto_insertion
@@ -2657,7 +2664,7 @@ const openStaticSection = () => {
   staticModal.value = true
 }
 const trackSectionComp = (sectionName, sectionType) => {
-  if (!sectionInPage.value.includes(sectionName)) {
+  if (sectionName && !sectionInPage.value.includes(sectionName)) {
     sectionInPage.value.push(sectionName)
     const name = upperFirst(
       camelCase(
@@ -3336,6 +3343,7 @@ const renderConfigurableSection = async (gt, options) => {
           name: gt.section.name,
           type: 'configurable',
           settings: options[0],
+          private_data: gt.section.private_data ?? {},
           id: id.value,
           weight: weight.value,
           render_data: res.data.render_data,
@@ -3355,6 +3363,7 @@ const renderConfigurableSection = async (gt, options) => {
             name: gt.section.name,
             type: 'configurable',
             settings: options[0],
+            private_data: gt.section.private_data ?? {},
             id: id.value,
             weight: weight.value,
             render_data: e.response.data.render_data,
@@ -3722,8 +3731,11 @@ const openEditMode = async () => {
 
     loading.value = true
     const inBrowser = typeof window !== 'undefined'
+
+    const token = useCookie("sections-auth-token").value;
+
     const config = {
-      headers: sectionHeader((inBrowser) ? {} : {origin: nuxtApp.$sections.projectUrl}),
+      headers: sectionHeader((inBrowser) ? { token } : {origin: nuxtApp.$sections.projectUrl, token}),
     }
 
     const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
@@ -4107,7 +4119,8 @@ const mutateVariation = async (variationName) => {
         name: view.name,
         type: view.type,
         linkedTo: view.linkedTo,
-        region: view.region
+        region: view.region,
+        private_data: view.private_data ?? {}
       };
 
       if (view.settings && view.type === "configurable") {
@@ -4115,7 +4128,7 @@ const mutateVariation = async (variationName) => {
         const options = [];
 
         view.render_data.map((rData) => {
-          if (rData.settings.image && !Array.isArray(rData.settings.image)) {
+          if (((rData.private_data && Object.keys(rData.private_data).length > 0 && rData.private_data.image && !Array.isArray(rData.private_data.image))) || (rData.settings.image && !Array.isArray(rData.settings.image))) {
             formatValdiation = false;
             showToast(
               "",
@@ -4162,40 +4175,47 @@ const mutateVariation = async (variationName) => {
   let integrityCheck = true;
 
   if (sections.length > 0) {
+    function validateData(section, option, field) {
+      if (Object.keys(option).includes(field.name)) {
+        if (option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
+          if (Array.isArray(option[field.name])) {
+            if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0] || !option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
+              integrityCheck = false;
+              loading.value = false;
+              showToast(
+                "Error saving your changes",
+                "error",
+                `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``
+              );
+              sectionsFormatErrors[section.weight] = `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``;
+            }
+          } else if (typeof option[field.name] === 'object') {
+            if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
+              integrityCheck = false;
+              loading.value = false;
+              showToast(
+                "Error saving your changes",
+                "error",
+                `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``
+              );
+              sectionsFormatErrors[section.weight] = `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``;
+            }
+          }
+        }
+      }
+    }
     types.value.forEach(type => {
       if (type.fields && Array.isArray(type.fields) && type.fields.length > 0) {
         sections.forEach(section => {
           if (section.name === type.name) {
-            if (Array.isArray(section.options)) {
+            if (section.private_data && Object.keys(section.private_data).length > 0) {
+              type.fields.forEach(field => {
+                validateData(section, section.private_data, field)
+              });
+            } else if (Array.isArray(section.options)) {
               type.fields.forEach(field => {
                 section.options.forEach(option => {
-                  if (Object.keys(option).includes(field.name)) {
-                    if (option[field.name] && (Array.isArray(option[field.name]) || typeof option[field.name] === 'object') && (field.type === 'image' || field.type === 'media')) {
-                      if (Array.isArray(option[field.name])) {
-                        if ((field.type === 'image' || field.type === 'media') && (!option[field.name][0] || !option[field.name][0].media_id || !option[field.name][0].url) && option[field.name].length !== 0) {
-                          integrityCheck = false;
-                          loading.value = false;
-                          showToast(
-                            "Error saving your changes",
-                            "error",
-                            `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``
-                          );
-                          sectionsFormatErrors[section.weight] = `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``;
-                        }
-                      } else if (typeof option[field.name] === 'object') {
-                        if (!option[field.name].media_id || !option[field.name].url || Object.keys(option[field.name]).length === 0) {
-                          integrityCheck = false;
-                          loading.value = false;
-                          showToast(
-                            "Error saving your changes",
-                            "error",
-                            `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``
-                          );
-                          sectionsFormatErrors[section.weight] = `${i18n.t('wrongFieldName')} \`${field.name}\` ${i18n.t('formatOfSection')} \`${section.name}\``;
-                        }
-                      }
-                    }
-                  }
+                  validateData(section, option, field)
                 });
               });
             } else {
@@ -5102,8 +5122,10 @@ const fetchData = async () => {
 
   nuxtApp.$sections.projectUrl = websiteDomain;
 
+  const token = useCookie("sections-auth-token").value;
+
   const config = {
-    headers: sectionHeader(((inBrowser) ? {} : {origin: `${scheme}://${websiteDomain}`})),
+    headers: sectionHeader(((inBrowser) ? { token } : {origin: `${scheme}://${websiteDomain}`, token})),
   };
 
   let URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`;
@@ -6496,7 +6518,7 @@ span.handle {
   height: 100vh; /* Ensures it stays full height */
   width: 527px;
   min-width: 422px;
-  max-width: 50%;
+  max-width: calc(100% - 375px - 3px); /* 375px being the mobile min width and 3px being the width size of the resize handle */
   z-index: 190;
   background: white;
 }
@@ -6548,6 +6570,7 @@ span.handle {
   flex: 1 1 auto;
   align-self: auto;
   overflow: auto;
+  container: sections-main / inline-size;
 }
 
 .sections-resize-handle--x {

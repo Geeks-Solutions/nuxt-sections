@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.7] - 2025-07-03
+
+### Updated
+
+- Increased Side bar maximum witdth size: When you are in edit mode you are not able to reduce the view of the site to reach the mobile size #201
+- Saving settings tab management #209
+
+### Added
+
+- Support for sections private_data field #204
+
+### Fixed
+
+- Default language translation on server side when default lang is not set for a project: The site is not being translated on server side rendering but only on client side when no default language is selected #203
+
 ### [3.0.6] - 2025-06-30
 
 ### Fixed

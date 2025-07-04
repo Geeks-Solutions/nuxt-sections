@@ -14,7 +14,8 @@ import {
   abstractPathLanguage,       // Extracts locale info from a given path
   useNuxtApp,
   useState,
-  importJs                    // Dynamic JS module importer
+  importJs,
+  useCookie                    // Dynamic JS module importer
 } from "#imports";
 
 import { useSectionsDataStore } from "../stores/sectionsDataStore"; // Pinia store for managing page data
@@ -62,9 +63,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http';
     const websiteDomain = app.ssrContext.event.req.headers.host;
 
+    const token: any = useCookie("sections-auth-token").value;
+
     // Prepare API headers
     const config = {
-      headers: sectionHeader(({ origin: `${scheme}://${websiteDomain}` })),
+      headers: sectionHeader(({ origin: `${scheme}://${websiteDomain}`, token })),
     };
 
     // Construct the endpoint URL to load section page data
@@ -102,15 +105,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     // Setup i18n localization
     const setupLocalization = async (lang: string) => {
-      defaultLocale.value = lang;
+      if (lang) {
+        defaultLocale.value = lang;
+      }
       let localization;
       if (abstractedDefaultLocale && app.$i18n.availableLocales.includes(abstractedDefaultLocale)) {
         localization = abstractedDefaultLocale;
-      } else {
+      } else if (lang) {
         localization = lang;
       }
-      app.$i18n.locale.value = localization;
-      await app.$i18n.setLocale(localization);
+      if (localization) {
+        app.$i18n.locale.value = localization;
+        await app.$i18n.setLocale(localization);
+      }
     };
 
     // Perform preflight check using OPTIONS method
@@ -127,6 +134,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             // On success, set locale and store data
             if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
               await setupLocalization(res.data.metadata.project_metadata.defaultLang)
+            } else {
+              await setupLocalization('')
             }
             store.setPageData({
               res
@@ -136,6 +145,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             // On error, still try to set locale and store error
             if (error.response && error.response.data && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.defaultLang) {
               await setupLocalization(error.response.data.options.project_metadata.defaultLang)
+            } else {
+              await setupLocalization('')
             }
             store.setPageData({
               error
