@@ -1886,8 +1886,6 @@ const initializeSections = (res, skipHook) => {
         section.render_data[0].settings.image = []
       }
       section.settings = section.render_data[0].settings
-      section.nameID = section.name
-      section.name = section.name.split(":")[1]
     } else if (section.settings) {
       section.settings = isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings
     }
@@ -2666,7 +2664,7 @@ const openStaticSection = () => {
   staticModal.value = true
 }
 const trackSectionComp = (sectionName, sectionType) => {
-  if (!sectionInPage.value.includes(sectionName)) {
+  if (sectionName && !sectionInPage.value.includes(sectionName)) {
     sectionInPage.value.push(sectionName)
     const name = upperFirst(
       camelCase(
