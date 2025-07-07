@@ -38,7 +38,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const store = useSectionsDataStore();
 
   // Server-side logic
-  if (import.meta.server && !store.getPageData) {
+  if (import.meta.server && !store.getPageData && !to.fullPath.endsWith('/health') && !to.fullPath.endsWith('/admin')) {
     let hooksJs;
 
     // Dynamically load global hooks (e.g., for custom section logic)
