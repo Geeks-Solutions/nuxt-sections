@@ -518,10 +518,12 @@ const initializeSections = (res, skipHook) => {
     trackSectionComp(section.name, section.type)
 
     if (section.type === "configurable") {
-      if (section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
+      if (section.render_data && section.render_data[0] && section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
         section.render_data[0].settings.image = []
       }
-      section.settings = section.render_data[0].settings
+      if (section.render_data && section.render_data[0] && section.render_data[0].settings) {
+        section.settings = section.render_data[0].settings
+      }
       section.nameID = section.name
       section.name = section.name.split(":")[1]
     } else if (section.settings) {
@@ -1183,7 +1185,7 @@ const fetchData = async () => {
       } catch {}
     }
   }
-  if (sectionsPageData) {
+  if (sectionsPageData && !admin) {
     loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];

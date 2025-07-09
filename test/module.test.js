@@ -980,6 +980,80 @@ describe('SectionsPage.vue', () => {
 
   })
 
+  it('Correctly initialize Configurable sections', async () => {
+
+    vi.clearAllMocks()
+
+    wrapper.vm.initializeSections({
+      data: {
+        "id": "67642846052f506967b3db96",
+        "path": "page5",
+        "metadata": { project_metadata: { languages: ['en'] } },
+        "sections": [
+          {
+            "error": null,
+            "id": "684957c99953350007ceaedc",
+            "name": "67125916f3a99d00076d1ee8:categories_articles_-_dev",
+            "type": "configurable",
+            "settings": "",
+            "status_code": null,
+            "region": {},
+            "query_string_keys": [
+              "page_path",
+              "categories_titles"
+            ],
+            "render_data": [],
+            "linked_to": "",
+            "weight": 2,
+            "private_data": {}
+          },
+          {
+            "error": null,
+            "id": "684957c99953350007ceaedd",
+            "name": "67125916f3a99d00076d1ee8:selective_articles_-_dev",
+            "type": "configurable",
+            "settings": "",
+            "status_code": null,
+            "region": {},
+            "query_string_keys": null,
+            "render_data": [],
+            "linked_to": "",
+            "weight": 3,
+            "private_data": {}
+          },
+          {
+            "error": null,
+            "id": "685ea033a21e4d00081cc539",
+            "name": "67125916f3a99d00076d1ee8:top_articles_-_dev",
+            "type": "configurable",
+            "settings": "",
+            "status_code": null,
+            "region": {},
+            "query_string_keys": null,
+            "render_data": [],
+            "linked_to": "",
+            "weight": 5,
+            "private_data": {}
+          }
+        ],
+        "layout": "standard",
+        "page": "page5",
+        "variations": [],
+        "invalid_sections": [],
+        "last_updated": 1737103250
+      }
+    })
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.currentViews[0].name).toEqual('categories_articles_-_dev')
+    expect(wrapper.vm.currentViews[0].nameID).toEqual('67125916f3a99d00076d1ee8:categories_articles_-_dev')
+    expect(wrapper.vm.currentViews[1].name).toEqual('selective_articles_-_dev')
+    expect(wrapper.vm.currentViews[1].nameID).toEqual('67125916f3a99d00076d1ee8:selective_articles_-_dev')
+    expect(wrapper.vm.currentViews[2].name).toEqual('top_articles_-_dev')
+    expect(wrapper.vm.currentViews[2].nameID).toEqual('67125916f3a99d00076d1ee8:top_articles_-_dev')
+
+  });
+
 })
 
 const mockUseState = vi.fn()
