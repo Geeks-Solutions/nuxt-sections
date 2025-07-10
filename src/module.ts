@@ -89,7 +89,7 @@ export default defineNuxtModule<ModuleOptions>({
     // Register $sections configuration plugin
     addPluginTemplate(resolve('./runtime/plugin'))
 
-    await installModule('@geeks.solutions/vue-components')
+    // await installModule('@geeks.solutions/vue-components')
 
     // https://github.com/nuxt/nuxt/issues/27000
     _nuxt.hook('vite:extendConfig', (config: any) => {

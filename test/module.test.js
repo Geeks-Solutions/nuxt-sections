@@ -2774,3 +2774,166 @@ describe('Sidebar Resize Functionality', () => {
     })
   })
 })
+
+describe('refreshSectionView', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+
+    // Set initial states
+    wrapper.vm.allSections = [
+      { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
+      { id: 2, name: 'section2', nameID: 'section2', query_string_keys: ['param2'] },
+      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] }
+    ]
+    wrapper.vm.currentViews = [
+      { id: 1, name: 'section1', render_data: 'old-data-1' },
+      { id: 2, name: 'section2', render_data: 'old-data-2' }
+    ]
+    wrapper.vm.sectionsQueryStringLanguageSupport = ['section2']
+    wrapper.vm.sectionsQsKeys = ['param1', 'param2']
+    wrapper.vm.editMode = false
+    wrapper.vm.renderSectionError = ''
+    wrapper.vm.pagePath = '/test-path'
+
+    // Mock global fetch to return success
+    global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ render_data: 'new-data' })
+    })
+  })
+
+  it('should filter sections by ID when reRenderMultipleSections is true', async () => {
+    await vi.resetAllMocks()
+
+    const data = {
+      sections: [
+        { id: 'view-1', qs: { param: 'value1' } },
+        { id: 'view-2', qs: { param: 'value2' } }
+      ]
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+
+    // Should make API calls for both sections
+    expect(global.fetch).toHaveBeenCalledTimes(3)
+
+    // Check first call includes section1
+    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section1"')
+
+    // Check second call includes section2
+    expect(global.fetch.mock.calls[2][1].body).toContain('"name":"section2"')
+  })
+
+  it('should filter sections by name when no ID provided', async () => {
+    vi.resetAllMocks()
+
+    const data = {
+      sections: [
+        { name: 'section1', qs: { param: 'value1' } }
+      ]
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section1"')
+  })
+
+  it('should filter sections by query string keys when reRenderMultipleSections is false', async () => {
+    vi.resetAllMocks()
+
+    wrapper.vm.allSections = [
+      { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
+      { id: 2, name: 'section2', nameID: 'section2', query_string_keys: ['param2'] },
+      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] }
+    ]
+
+    const data = {
+      qs: { param1: 'value1' }
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+
+    // Should only call for section1 since it has param1 in query_string_keys
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section1"')
+  })
+
+  it('should filter sections by language support when language in query string', async () => {
+    await vi.resetAllMocks()
+
+    wrapper.vm.allSections = [
+      { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
+      { id: 2, name: 'section2', nameID: 'section2', query_string_keys: ['param2'] },
+      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] }
+    ]
+
+    const data = {
+      qs: { language: 'en' }
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+
+    // Should only call for section2 since it's in sectionsQueryStringLanguageSupport
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section2"')
+  })
+
+  it('should handle configurable sections with render_data fallback', async () => {
+    await vi.resetAllMocks()
+
+    wrapper.vm.allSections = [
+      {
+        name: 'configurable1',
+        nameID: 'configurable1',
+        type: 'configurable',
+        render_data: [{ settings: { fallback: 'value' } }]
+      }
+    ]
+
+    const data = {
+      sections: [{ name: 'configurable1' }]
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+    expect(global.fetch.mock.calls[0][1].body).toContain('"options":[{"fallback":"value"}]')
+  })
+
+  it('should filter duplicate sections except configurable ones', async () => {
+    await vi.resetAllMocks()
+
+    wrapper.vm.allSections = [
+      { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' },
+      { name: 'duplicate', nameID: 'duplicate', type: 'configurable', render_data: [{settings: {}}] },
+      { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' }
+    ]
+
+    const data = {
+      sections: [
+        { name: 'duplicate' },
+        { name: 'duplicate' },
+        { name: 'duplicate' }
+      ]
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+
+    expect(global.fetch).toHaveBeenCalledTimes(3)
+  })
+
+  it('should make correct API endpoint URL', async () => {
+    await vi.resetAllMocks()
+
+    const data = {
+      sections: [{ id: 'view-1' }]
+    }
+
+    await wrapper.vm.refreshSectionView(null, data)
+
+    expect(global.fetch.mock.calls[0][0]).toContain('/section/render')
+  })
+})

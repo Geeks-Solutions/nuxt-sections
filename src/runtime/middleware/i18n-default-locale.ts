@@ -4,19 +4,19 @@
 // - Executing optional hooks for preprocessing data
 // - Storing the loaded page data into Pinia store (`sectionsDataStore`)
 
-import {
-  defineNuxtRouteMiddleware,
-  getSectionProjectIdentity,   // Gets the current section project identity
-  parsePath,                   // Encodes a path string to be used safely in a URL
-  parseQS,                     // Constructs a query string for the request
-  sectionHeader,               // Prepares necessary headers for the request
-  useApiRequest,               // Custom API request utility
-  abstractPathLanguage,       // Extracts locale info from a given path
-  useNuxtApp,
-  useState,
-  importJs,
-  useCookie                    // Dynamic JS module importer
-} from "#imports";
+// import {
+//   defineNuxtRouteMiddleware,
+//   getSectionProjectIdentity,   // Gets the current section project identity
+//   parsePath,                   // Encodes a path string to be used safely in a URL
+//   parseQS,                     // Constructs a query string for the request
+//   sectionHeader,               // Prepares necessary headers for the request
+//   useApiRequest,               // Custom API request utility
+//   abstractPathLanguage,       // Extracts locale info from a given path
+//   useNuxtApp,
+//   useState,
+//   importJs,
+//   useCookie                    // Dynamic JS module importer
+// } from "#imports";
 
 import { useSectionsDataStore } from "../stores/sectionsDataStore"; // Pinia store for managing page data
 

@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Configurable form bug: When editing an existing blogs section the form is not showing and if you try to save the page there is an error that the nam is not found #213 
+- Configurable form bug: When editing an existing blogs section the form is not showing and if you try to save the page there is an error that the nam is not found #213
+
+### Added
+
+- languageSupport provider function that can be injected in a section view that calls this function with its name as a param, the function would add the section in a list of Sections to re-render whenever re-render call is made
 
 ### [3.0.7] - 2025-07-03
 

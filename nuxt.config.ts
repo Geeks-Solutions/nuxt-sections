@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   modules: ["@nuxt/eslint", "@nuxt/test-utils", "@nuxtjs/i18n"],
   imports: {
-    autoImport: false
+    autoImport: true
   },
   nitro: {
     compressPublicAssets: {

@@ -137,6 +137,7 @@ import {
   parsePath,
   parseQS,
   ref,
+  provide,
   sectionHeader,
   showToast,
   useApiRequest,
@@ -148,7 +149,7 @@ import {
   useRoute,
   useRouter,
   useRuntimeConfig,
-  useState
+  useState, validateQS
 } from '#imports';
 
 const {
@@ -216,6 +217,7 @@ const translationComponentSupport = ref(true);
 const sectionInPage = ref([]);
 const pageNotFound = useState('pageNotFound', () => false);
 const selectedVariation = ref(pageName);
+const editMode = ref(false);
 const sectionsQsKeys = useState('sectionsQsKeys', () => ([]));
 const loading = useState('loading', () =>false);
 const sectionsMainTarget = ref(null)
@@ -268,6 +270,8 @@ const pathMatch = Array.isArray(route.params.pathMatch)
   : route.params.pathMatch || ''
 
 const seoSectionsSupport = ref({})
+
+const sectionsQueryStringLanguageSupport = ref([])
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -897,7 +901,7 @@ const refreshSectionView = async (sectionView, data) => {
       return section
     })
   } else {
-    sectionDatas = allSections.value.filter(section => section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem)))
+    sectionDatas = allSections.value.filter(section => (section.query_string_keys && section.query_string_keys.length > 0 && Object.keys(data.qs).some(qsItem => section.query_string_keys.includes(qsItem))) || (data.qs.language && sectionsQueryStringLanguageSupport.value.includes(section.name)))
   }
 
   const config = {
@@ -916,6 +920,24 @@ const refreshSectionView = async (sectionView, data) => {
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === "enabled") {
     variables["query_string"] = parseQS(encodeURIComponent(pathMatch ? pathMatch : '/'), Object.keys(route.query).length !== 0, route.query)
+    if (sectionsQsKeys.value && sectionsQsKeys.value.length > 0) {
+      variables["query_string"] = {
+        ...variables["query_string"],
+        ...validateQS(variables["query_string"], sectionsQsKeys.value, editMode.value)
+      }
+    }
+    const hooksJs = importJs(`/js/global-hooks`);
+    if (hooksJs && hooksJs['page_pre_load']) {
+      // Call only once and check the result
+      const hookResult = hooksJs['page_pre_load'](variables);
+
+      if (hookResult && typeof hookResult === 'object') {
+        // Ensure we only take serializable data
+        try {
+          variables = JSON.parse(JSON.stringify(hookResult));
+        } catch {}
+      }
+    }
     if (data.qs) {
       variables["query_string"] = {...variables["query_string"], ...data.qs}
     }
@@ -1254,4 +1276,12 @@ const fetchData = async () => {
 };
 
 onServerPrefetch(async () => {await fetchData()});
+
+// Sections DI / providers
+provide('languageSupport', (sectionName) => {
+  if (!sectionsQueryStringLanguageSupport.value.includes(sectionName)) {
+    sectionsQueryStringLanguageSupport.value.push(sectionName)
+  }
+})
+
 </script>
