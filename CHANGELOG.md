@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Configurable form bug: When editing an existing blogs section the form is not showing and if you try to save the page there is an error that the nam is not found #213
+- Configurable form bug: When editing an existing blogs section the form is not showing and if you try to save the page there is an error that the name is not found #213
 
 ### Added
 
