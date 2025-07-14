@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.8] - 2025-07-09
+
+### Fixed
+
+- Configurable form bug: When editing an existing blogs section the form is not showing and if you try to save the page there is an error that the name is not found #213
+
+### Added
+
+- languageSupport provider function that can be injected in a section view that calls this function with its name as a param, the function would add the section in a list of Sections to re-render whenever re-render call is made
+
 ### [3.0.7] - 2025-07-03
 
 ### Updated

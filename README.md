@@ -1399,6 +1399,30 @@ export {
 
 ```
 
+## Dependency Injection / Providers
+
+The library provide to the sections the following functions:
+
+- `languageSupport` provider function that can be injected in a section view that calls this function with its name as a param, the function would add the section in a list of Sections to re-render whenever re-render call is made using the `refresh-section` event
+
+```js
+name: 'CategoriesDynamic',
+  props: {
+  section: {
+    type: Object,
+  default: () => {},
+  },
+  lang: {
+    type: String,
+  default: "en"
+  },
+},
+mounted() {
+  const languageSupport = inject('languageSupport')
+  languageSupport?.(this.section.name)
+},
+```
+
 ## Development
 
 1. Clone this repository
