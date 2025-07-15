@@ -1399,6 +1399,76 @@ export {
 
 ```
 
+## Sections Specific Theme Builder Hooks:
+
+* This feature can be enabled by injecting a function called `sectionsThemeComponents` provided by the library inside the view component of the section that you want it to support theme settings.
+If this function is injected, a brush icon will show next to the available options of this section and clicking on it will open the theme sidebar of this section.
+It takes as arguments the section name and an array list of the theme components that will show as tabs inside the theme sidebar
+`id, name and path` are required options to have this feature working properly.
+The `path` option is the vue component path in your host project
+
+```js
+const sectionsThemeComponents = inject('sectionsThemeComponents')
+sectionsThemeComponents?.(this.section.name, [
+  {
+    id: 'global',
+    name: 'Global sections theme settings',
+    path: '/theme/global_settings'
+  },
+  {
+    id: 'specific',
+    name: 'Specific section theme settings',
+    path: '/theme/Plans_settings'
+  }
+])
+```
+
+* The library expose: 1 hook (with no callback function) that can be implemented inside `sections/theme/theme-hooks.js`:
+
+- `initialize_theme_settings`: this hook is called when the page data are received and have as arguments the theme settings data, the useHead composable that allow you to update the page head settings
+
+* And 4 hooks (with callbacks):
+
+- `reset_theme_settings` (that must return an object of the original theme settings for each tab): this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings and have as arguments the original theme settings data, the data of section you are editing and the current tab in use
+- `theme_settings_payload` (that must return an object having the original theme settings and the updated ones for each tab): this hook is called when data change inside the theme component tab form, it allows to correctly set the payload that will be processed by sections API to save the correct theme settings, it has as arguments the original theme settings data, the updated settings of the current theme component tab, the current tab in use and the data of section you are editing
+- `handle_unsaved_settings` (that must returns a boolean): this hook is called when switching between the theme component tabs and returns true to show a warning for unsaved settings
+  It takes as arguments:
+1. isEqual: a function used to compare original and updated settings
+2. Original theme settings saved for your project
+3. Updated settings
+4. Current tab in use
+5. The data of section you are editing
+
+i.e:
+
+```js
+const initialize_theme_settings = (settings, useHead) => {
+  
+}
+
+const reset_theme_settings = (originalSettings, section, tab) => {
+  
+}
+
+const handle_unsaved_settings = (isEqual, originalSettings, settings, tab, section) => {
+  const allEmpty = Object.values(settings).every(value => value.trim() === '')
+  return  !isEqual(originalSettings, settings) && !allEmpty
+}
+
+const theme_settings_payload = (originalThemeSettings, settings, tab, section) => {
+  
+}
+
+export {
+  initialize_theme_settings,
+  reset_theme_settings,
+  handle_unsaved_settings,
+  theme_settings_payload,
+}
+
+```
+
+
 ## Dependency Injection / Providers
 
 The library provide to the sections the following functions:

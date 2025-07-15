@@ -75,4 +75,10 @@ const toggleTooltip = () => {
   bottom: 100%;
   right: 0;
 }
+
+/* Tooltip positions */
+.custom-clickable-tooltip .tooltip-left {
+  bottom: 0%;
+  right: 100%;
+}
 </style>
