@@ -511,7 +511,6 @@ const initializeSections = (res, skipHook) => {
   }
 
   if (res.data.metadata && res.data.metadata.sections_builder) {
-    console.log("GOT HERE", res.data.metadata.sections_builder)
     originalThemeSettings.value = {...res.data.metadata.sections_builder}
     try {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`);
