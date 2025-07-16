@@ -1157,6 +1157,11 @@
                                   @click="seoBtnClicked(view.id)">
                                   <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                                 </div>
+                                <div
+                                  v-if="sectionsThemeComponents[view.name]"
+                                  @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
+                                  <LazyBaseIconsPaintBursh />
+                                </div>
                               </div>
                               <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
                                    class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
