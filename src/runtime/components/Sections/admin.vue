@@ -212,7 +212,7 @@
         </div>
 
         <div v-if="!currentSection && sectionsThemeModal === true" class="section-modal-wrapper sections-themes">
-          <div class="sections-theme-settings-tabs">
+          <div v-if="sectionsThemeComponents[currentSectionData.section.name].length > 1" class="sections-theme-settings-tabs">
             <div v-for="tab in sectionsThemeComponents[currentSectionData.section.name]"
                  :key="`sections-theme-settings-tab-${tab}`"
                  class="sections-theme-settings-tab"
@@ -234,14 +234,14 @@
               </LazyTooltipClickableTooltip>
             </div>
           </div>
-          <a
+          <div
             v-if="!currentSection && currentSectionData.section && sectionsThemeModal === true"
             class="anchorIcon"
-            :href="(currentSectionData.section.linked_to !== '' && currentSectionData.section.linked_to !== undefined) ? `#${currentSectionData.section.linked_to}-${currentSectionData.section.id}` : `#${currentSectionData.section.name}-${currentSectionData.section.id}`">
+            @click="themeScrollToSection">
             <LazyBaseIconsAnchor
               :title="(currentSectionData.section.linked_to !== '' && currentSectionData.section.linked_to !== undefined) ? `Anchor id: #${currentSectionData.section.linked_to}-${currentSectionData.section.id}` : `Anchor id: #${currentSectionData.section.name}-${currentSectionData.section.id}`"
               class="edit-icon"/>
-          </a>
+          </div>
           <div class="sections-text-center h4 sectionTypeHeader">
             <div class="title">{{ currentThemeTab.name }}</div>
             <div class="closeIcon" @click="closeSectionThemeModal">
@@ -5246,6 +5246,18 @@ const sectionThemeUpdated = (settings) => {
 const updateSectionsThemes = () => {
   updatePageMetaData(false, themeSettingsPayload.value)
 }
+const themeScrollToSection = () => {
+  const section = currentSectionData.value.section
+
+  const id = section.linked_to !== '' && section.linked_to !== undefined
+    ? `${section.linked_to}-${section.id}`
+    : `${section.name}-${section.id}`
+
+  const target = document.getElementById(id)
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth' })
+  }
+}
 
 // Lifecycle hooks
 onMounted(async () => {
@@ -7008,6 +7020,7 @@ section .ql-editor.ql-snow.grey-bg {
   border: 1px solid #03b1c7;
   border-radius: 8px;
   font-family: sans-serif;
+  margin-bottom: 8px;
 }
 
 .page-settings-tab, .sections-theme-settings-tab {
