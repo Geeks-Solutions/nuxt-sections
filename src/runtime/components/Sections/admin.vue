@@ -280,7 +280,7 @@
               :ref="!editMode ? 'intro-edit-page' : undefined"
               @click="openEditMode()"
               v-if="admin && !isSideBarOpen"
-              class="intro-edit-page bg-blue control-button hide-mobile btn-text edit-page"
+              class="intro-edit-page sections-bg-blue control-button hide-mobile btn-text edit-page"
               :title="!editMode ? $t('Edit page') : $t('View page')"
             >
               <LazyBaseIconsEdit v-if="!editMode" />
@@ -415,7 +415,7 @@
                     <button
                       @click="logoutUser"
                       v-if="admin"
-                      class="bg-blue"
+                      class="sections-bg-blue"
                       style="background: black;
                   font-size: 13px;
                   border-radius: 5px;
@@ -552,7 +552,6 @@
                            @click="type.notCreated !== true ? openCurrentSection(type) : null">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
-                          class="bg-light-blue"
                           :title="formatName(type.name)"
                           :component-item="getComponent(type.name, type.type ? type.type : 'static')"
                           :section="componentsSetupData(type.name, type.type ? type.type : 'static')"
@@ -634,7 +633,6 @@
                            @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
-                          class="bg-light-blue"
                           :title="formatName(type.name)"
                           :component-item="getComponent(type && type.section ? type.section.name : type.name, type.type)"
                           :section="componentsSetupData(type && type.section ? type.section.name : type.name, type.type)"
@@ -5540,7 +5538,7 @@ provide('sectionsThemeComponents', (sectionName, themeComponents) => {
   margin: 3px;
 }
 
-.bg-blue {
+.sections-bg-blue {
   background: #03b1c7;
   color: white;
   border: none;
@@ -5548,7 +5546,7 @@ provide('sectionsThemeComponents', (sectionName, themeComponents) => {
   transition: 0.2s;
 }
 
-.bg-blue:hover {
+.sections-bg-blue:hover {
   background: #0881b3;
   transition: 0.2s;
 }
