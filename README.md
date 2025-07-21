@@ -1429,6 +1429,7 @@ sectionsThemeComponents?.(this.section.name, [
 
 * And 4 hooks (with callbacks):
 
+- `section_removed` (that must return an object of the updated theme settings): this hook is called when confirming removing a section from a page, it allows you to update the theme settings metadata stored for the page and have as arguments the original theme settings data and the ID of the removed section
 - `reset_theme_settings` (that must return an object of the original theme settings for each tab): this hook is called when confirming closing the settings popup, it allows you to reset any previously applied settings and have as arguments the original theme settings data, the data of section you are editing and the current tab in use
 - `theme_settings_payload` (that must return an object having the original theme settings and the updated ones for each tab): this hook is called when data change inside the theme component tab form, it allows to correctly set the payload that will be processed by sections API to save the correct theme settings, it has as arguments the original theme settings data, the updated settings of the current theme component tab, the current tab in use and the data of section you are editing
 - `handle_unsaved_settings` (that must returns a boolean): this hook is called when switching between the theme component tabs and returns true to show a warning for unsaved settings
@@ -1459,11 +1460,16 @@ const theme_settings_payload = (originalThemeSettings, settings, tab, section) =
   
 }
 
+const section_removed = (sectionTheme, sectionId) => {
+  
+}
+
 export {
   initialize_theme_settings,
   reset_theme_settings,
   handle_unsaved_settings,
   theme_settings_payload,
+  section_removed
 }
 
 ```

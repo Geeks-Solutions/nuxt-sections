@@ -4386,7 +4386,10 @@ const mutateVariation = async (variationName) => {
     let variables = {
       page: sectionsPageName.value,
       path: pagePath.value && pagePath.value !== "" ? pagePath.value.trim() : undefined,
-      metadata: pageMetadata.value,
+      metadata: {
+        ...pageMetadata.value,
+        sections_builder: originalThemeSettings.value ? originalThemeSettings.value : undefined
+      },
       variations: [],
       layout: selectedLayout.value,
       sections,
@@ -4592,6 +4595,15 @@ const deleteView = (id) => {
   // Then we remove the variation we want to delete
   delete displayVariations.value[selectedVariation.value].views[id];
   isDeleteSectionModalOpen.value = false;
+  try {
+    const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+    if (builderHooksJavascript['section_removed']) {
+      const updatedMetaData = builderHooksJavascript['section_removed'](originalThemeSettings.value, id);
+      if (updatedMetaData) {
+        originalThemeSettings.value = updatedMetaData
+      }
+    }
+  } catch {}
   showToast(
     "Deleted",
     "info",
