@@ -2090,30 +2090,17 @@ describe('Wysiwyg - validate default language content', () => {
 })
 
 // Mock dependencies
-const mockIsEqual = vi.fn()
-const mockImportJs = vi.fn()
 const mockUseCookie = vi.fn()
-const mockUseApiRequest = vi.fn()
 const mockGetSectionProjectIdentity = vi.fn()
 const mockSectionHeader = vi.fn()
 
 // Mock reactive values
-const mockLocales = { value: ['en', 'fr', 'es'] }
-const mockOriginalMetaData = { value: {} }
-const mockMetadataFormLang = { value: 'en' }
-const mockPageMetadata = { value: {} }
 const mockUnsavedSettingsError = { value: {} }
 const mockCurrentSettingsTab = { value: 'page_settings' }
-const mockProjectMetadata = { value: {} }
-const mockBuilderSettingsPayload = { value: {} }
-const mockUpdatedBuilderSettings = { value: {} }
-const mockUpdatedBuilderSettingsPerTab = { value: {} }
-const mockOriginalBuilderSettings = { value: {} }
 const mockLoading = { value: false }
 const mockMetadataModal = { value: false }
 const mockIsSideBarOpen = { value: false }
 const mockMetadataErrors = { value: {} }
-const mockNuxtApp = { $sections: { serverUrl: 'http://localhost:3000' } }
 
 describe('Settings Functions', () => {
   let wrapper
@@ -2383,6 +2370,291 @@ describe('Settings Functions', () => {
       })
     })
   })
+})
+
+const mockUnsavedThemeSettingsError = { value: {} }
+const mockCurrentThemeTab = { value: {} }
+const mockCurrentSectionData = { value: {} }
+const mockCurrentSection = { value: null }
+const mockSectionsThemeModal = { value: false }
+const mockIsRestoreSectionOpen = { value: false }
+const mockThemeSettingsPayload = { value: {} }
+const mockOriginalThemeSettings = { value: {} }
+const mockSectionsThemeComponents = { value: {} }
+
+describe('Theme Functions', () => {
+  let wrapper
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    wrapper = mountComponent()
+
+    // Reset mock values
+    mockUnsavedThemeSettingsError.value = {}
+    mockCurrentThemeTab.value = {}
+    mockCurrentSectionData.value = {}
+    mockCurrentSection.value = null
+    mockSectionsThemeModal.value = false
+    mockIsSideBarOpen.value = false
+    mockIsRestoreSectionOpen.value = false
+    mockThemeSettingsPayload.value = {}
+    mockOriginalThemeSettings.value = {}
+    mockSectionsThemeComponents.value = {}
+
+    // Setup default mocks
+    // mockImportJs.mockReturnValue({})
+    // mockImportComp.mockReturnValue({ component: 'MockComponent' })
+    // mockNextTick.mockImplementation((callback) => callback())
+    // mockSideBarSizeManagement.mockReturnValue()
+    // mockUpdatePageMetaData.mockReturnValue()
+  })
+
+  describe('openSectionThemeModal', () => {
+    it('should set current theme tab to first theme component', () => {
+      // Setup
+      const section = { id: 'section1', name: 'Test Section' }
+      const themeComponents = [
+        { id: 'theme1', name: 'Theme 1' },
+        { id: 'theme2', name: 'Theme 2' }
+      ]
+      wrapper.vm.originalThemeSettings = { color: 'blue' }
+
+      // Test
+      wrapper.vm.openSectionThemeModal(section, themeComponents)
+
+      // Assert
+      expect(wrapper.vm.currentThemeTab).toEqual(themeComponents[0])
+    })
+
+    it('should set current section data correctly', () => {
+      // Setup
+      const section = { id: 'section1', name: 'Test Section' }
+      const themeComponents = [{ id: 'theme1', name: 'Theme 1' }]
+      wrapper.vm.originalThemeSettings = { color: 'blue' }
+
+      // Test
+      wrapper.vm.openSectionThemeModal(section, themeComponents)
+
+      // Assert
+      expect(wrapper.vm.currentSectionData).toEqual({
+        section,
+        themeComponents,
+        currentTheme: {},
+        originalTheme: { color: 'blue' }
+      })
+    })
+
+    it('should handle null originalThemeSettings', () => {
+      // Setup
+      const section = { id: 'section1', name: 'Test Section' }
+      const themeComponents = [{ id: 'theme1', name: 'Theme 1' }]
+      wrapper.vm.originalThemeSettings = null
+
+      // Test
+      wrapper.vm.openSectionThemeModal(section, themeComponents)
+
+      // Assert
+      expect(wrapper.vm.currentSectionData.originalTheme).toEqual({})
+    })
+
+    it('should reset current section and open modal', async () => {
+      // Setup
+      const section = { id: 'section1', name: 'Test Section' }
+      const themeComponents = [{ id: 'theme1', name: 'Theme 1' }]
+      wrapper.vm.currentSection = 'previous-section'
+
+      // Test
+      wrapper.vm.openSectionThemeModal(section, themeComponents)
+
+      // Assert
+      expect(wrapper.vm.currentSection).toBe(null)
+
+      await nextTick()
+
+      expect(wrapper.vm.sectionsThemeModal).toBe(true)
+      expect(wrapper.vm.isSideBarOpen).toBe(true)
+    })
+  })
+
+  describe('closeSectionThemeModal', () => {
+    beforeEach(() => {
+      // Setup default current section data
+      wrapper.vm.currentSectionData = {
+        section: { name: 'test-section' }
+      }
+      wrapper.vm.sectionsThemeComponents = {
+        'test-section': [
+          { id: 'theme1' },
+          { id: 'theme2' }
+        ]
+      }
+    })
+
+    it('should close modal when no unsaved settings exist', () => {
+      // Setup
+      wrapper.vm.unsavedThemeSettings = vi.fn()
+        .mockReturnValue(false)
+      wrapper.vm.sectionsThemeModal = true
+      wrapper.vm.isSideBarOpen = true
+      wrapper.vm.currentThemeTab = { id: 'theme1' }
+      wrapper.vm.currentSectionData = { section: { name: 'test-section' } }
+
+      // Test
+      wrapper.vm.closeSectionThemeModal()
+
+      // Assert
+      expect(wrapper.vm.isRestoreSectionOpen).toBe(false)
+      expect(wrapper.vm.sectionsThemeModal).toBe(false)
+      expect(wrapper.vm.isSideBarOpen).toBe(false)
+      expect(wrapper.vm.currentThemeTab).toEqual({})
+      expect(wrapper.vm.currentSectionData).toEqual({})
+    })
+  })
+
+  describe('unsavedThemeSettings', () => {
+    beforeEach(() => {
+      wrapper.vm.currentSectionData = {
+        currentTheme: { theme1: { settings: 'current' } },
+        section: { id: 'section1' }
+      }
+      wrapper.vm.originalThemeSettings = { theme1: { settings: 'original' } }
+    })
+
+    it('should return false when hook indicates no unsaved settings', () => {
+      // Setup
+      const tab = 'theme1'
+      const mockHook = {
+        handle_unsaved_settings: vi.fn().mockReturnValue(false)
+      }
+      wrapper.vm.importJs.mockReturnValue(mockHook)
+
+      // Test
+      const result = wrapper.vm.unsavedThemeSettings(tab)
+
+      // Assert
+      expect(wrapper.vm.unsavedThemeSettingsError[tab]).toBe(false)
+      expect(result).toBe(false)
+    })
+
+    it('should return false when hook does not exist', () => {
+      // Setup
+      const tab = 'theme1'
+      wrapper.vm.importJs.mockReturnValue({})
+
+      // Test
+      const result = wrapper.vm.unsavedThemeSettings(tab)
+
+      // Assert
+      expect(wrapper.vm.unsavedThemeSettingsError[tab]).toBe(false)
+      expect(result).toBe(false)
+    })
+
+    it('should handle errors gracefully', () => {
+      // Setup
+      const tab = 'theme1'
+      wrapper.vm.importJs.mockImplementation(() => {
+        throw new Error('Import failed')
+      })
+
+      // Test
+      const result = wrapper.vm.unsavedThemeSettings(tab)
+
+      // Assert
+      expect(wrapper.vm.unsavedThemeSettingsError[tab]).toBe(false)
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('switchThemeTab', () => {
+    it('should update original theme and call unsaved settings check', async () => {
+      // Setup
+      const newTab = { id: 'theme2', name: 'New Theme' }
+      wrapper.vm.currentThemeTab = { id: 'theme1', name: 'Old Theme' }
+      wrapper.vm.originalThemeSettings = { color: 'red' }
+      wrapper.vm.currentSectionData = { originalTheme: {} }
+      wrapper.vm.unsavedThemeSettings = vi.fn()
+
+      // Test
+      wrapper.vm.switchThemeTab(newTab)
+
+      await nextTick()
+
+      // Assert
+      expect(wrapper.vm.currentSectionData.originalTheme).toEqual({ color: 'red' })
+      expect(wrapper.vm.currentThemeTab).toEqual(newTab)
+    })
+
+    it('should handle null originalThemeSettings', () => {
+      // Setup
+      const newTab = { id: 'theme2', name: 'New Theme' }
+      wrapper.vm.currentThemeTab = { id: 'theme1', name: 'Old Theme' }
+      wrapper.vm.originalThemeSettings = null
+      wrapper.vm.currentSectionData = { originalTheme: {} }
+      wrapper.vm.unsavedThemeSettings = vi.fn()
+
+      // Test
+      wrapper.vm.switchThemeTab(newTab)
+
+      // Assert
+      expect(wrapper.vm.currentSectionData.originalTheme).toEqual({})
+      expect(wrapper.vm.currentThemeTab).toEqual(newTab)
+    })
+  })
+
+  describe('sectionThemeUpdated', () => {
+    beforeEach(() => {
+      wrapper.vm.currentThemeTab = { id: 'theme1' }
+      wrapper.vm.currentSectionData = {
+        section: { id: 'section1' },
+        currentTheme: {}
+      }
+      wrapper.vm.originalThemeSettings = { existing: 'settings' }
+    })
+
+    it('should update current theme settings', () => {
+      // Setup
+      const settings = { color: 'blue', font: 'Arial' }
+      wrapper.vm.currentSectionData.currentTheme = {
+        theme1: {}
+      }
+
+      // Test
+      wrapper.vm.sectionThemeUpdated(settings)
+
+      // Assert
+      expect(wrapper.vm.currentSectionData.currentTheme['theme1']['section1']).toEqual(settings)
+    })
+
+    it('should handle hook errors gracefully', () => {
+      // Setup
+      const settings = { color: 'blue' }
+      wrapper.vm.importJs.mockImplementation(() => {
+        throw new Error('Hook failed')
+      })
+
+      // Test
+      expect(() => wrapper.vm.sectionThemeUpdated(settings)).not.toThrow()
+      expect(wrapper.vm.currentSectionData.currentTheme['theme1']['section1']).toEqual(settings)
+    })
+
+    it('should handle existing theme data', () => {
+      // Setup
+      const settings = { color: 'blue' }
+      wrapper.vm.currentSectionData.currentTheme = {
+        theme1: {
+          'other-section': { existing: 'data' }
+        }
+      }
+
+      // Test
+      wrapper.vm.sectionThemeUpdated(settings)
+
+      // Assert
+      expect(wrapper.vm.currentSectionData.currentTheme['theme1']['section1']).toEqual(settings)
+      expect(wrapper.vm.currentSectionData.currentTheme['theme1']['other-section']).toEqual({ existing: 'data' })
+    })
+  })
+
 })
 
 const SidebarComponent = {

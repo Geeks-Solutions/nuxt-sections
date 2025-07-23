@@ -30,6 +30,7 @@
               <template #item="{ element: view, index }">
                 <section
                   :key="index"
+                  :section-id="view.id"
                   :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
                   :class="{ [view.name]: true }"
                 >
@@ -74,6 +75,7 @@
                         <section
                           v-if="view.region[selectedLayout].slot === slotName"
                           :key="index"
+                          :section-id="view.id"
                           :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
                           :class="{ [view.name]: true, 'highlited-regions': highlightRegions }"
                         >
@@ -272,6 +274,8 @@ const pathMatch = Array.isArray(route.params.pathMatch)
 const seoSectionsSupport = ref({})
 
 const sectionsQueryStringLanguageSupport = ref([])
+
+const originalThemeSettings = ref({})
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -502,6 +506,16 @@ const initializeSections = (res, skipHook) => {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
       if (builderHooksJavascript['initialize_builder_settings']) {
         builderHooksJavascript['initialize_builder_settings'](originalBuilderSettings.value, useHead, currentSettingsTab.value);
+      }
+    } catch {}
+  }
+
+  if (res.data.metadata && res.data.metadata.sections_builder) {
+    originalThemeSettings.value = {...res.data.metadata.sections_builder}
+    try {
+      const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+      if (builderHooksJavascript['initialize_theme_settings']) {
+        builderHooksJavascript['initialize_theme_settings'](originalThemeSettings.value, useHead);
       }
     } catch {}
   }
@@ -1102,9 +1116,9 @@ onBeforeUnmount(() => {
 const serverPageData = store.getPageData
 if (serverPageData) {
   fetchedOnServer.value = true;
-  if (serverPageData.res) {
+  if (serverPageData.res && !admin) {
     initializeSections(serverPageData.res, true)
-  } else if (serverPageData.error) {
+  } else if (serverPageData.error && !admin) {
     sectionsPageErrorManagement(serverPageData.error, true, true)
   }
 }

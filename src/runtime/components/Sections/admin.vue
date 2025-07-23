@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="sections-container sections-container-edit-mode">
-      <aside v-if="admin && editMode && isSideBarOpen === true && (currentSection !== null || metadataModal === true)" ref="resizeTarget"
+      <aside v-if="admin && editMode && isSideBarOpen === true && (currentSection !== null || metadataModal === true || sectionsThemeModal === true)" ref="resizeTarget"
              class="sections-aside" :class="{'sections-aside-z': introSectionFormStep === true}">
         <div
           class="step-back-aside"
@@ -210,9 +210,64 @@
             </div>
           </div>
         </div>
+
+        <div v-if="!currentSection && sectionsThemeModal === true" class="section-modal-wrapper sections-themes">
+          <div v-if="sectionsThemeComponents[currentSectionData.section.name].length > 1" class="sections-theme-settings-tabs">
+            <div v-for="tab in sectionsThemeComponents[currentSectionData.section.name]"
+                 :key="`sections-theme-settings-tab-${tab}`"
+                 class="sections-theme-settings-tab"
+                 :class="{'active-tab': currentThemeTab.id === tab.id}"
+                 @click="switchThemeTab(tab)">
+              <div>
+                {{ tab.name }}
+              </div>
+              <LazyTooltipClickableTooltip
+                v-if="unsavedThemeSettingsError[tab.id]"
+                :content="$t('sectionsSettings.save_page_settings')"
+                color="#f59e0b"
+                position="left">
+                <div class="section-info-icon">
+                  <LazyBaseIconsAlert :title="$t('sectionsSettings.save_page_settings')"
+                                      color="#f59e0b"
+                                      class="info-icon-style" />
+                </div>
+              </LazyTooltipClickableTooltip>
+            </div>
+          </div>
+          <div
+            v-if="!currentSection && currentSectionData.section && sectionsThemeModal === true"
+            class="anchorIcon"
+            @click="themeScrollToSection">
+            <LazyBaseIconsAnchor
+              :title="(currentSectionData.section.linked_to !== '' && currentSectionData.section.linked_to !== undefined) ? `Anchor id: #${currentSectionData.section.linked_to}-${currentSectionData.section.id}` : `Anchor id: #${currentSectionData.section.name}-${currentSectionData.section.id}`"
+              class="edit-icon"/>
+          </div>
+          <div class="sections-text-center h4 sectionTypeHeader">
+            <div class="title">{{ currentThemeTab.name }}</div>
+            <div class="closeIcon" @click="closeSectionThemeModal">
+              <LazyBaseIconsClose/>
+            </div>
+          </div>
+          <div class="section-theme-component-wrapper">
+            <component :is="getSectionsThemeComponent(currentThemeTab.path)"
+                       :original-theme-settings-prop="currentSectionData.originalTheme"
+                       :theme-settings-prop="currentSectionData.currentTheme"
+                       :sections-user-id="sectionsUserId"
+                       :section-data="currentSectionData.section"
+                       @section-theme-updated="sectionThemeUpdated"></component>
+            <div class="footer">
+              <button class="hp-button" @click="updateSectionsThemes">
+                <div class="btn-icon check-icon"></div>
+                <div class="btn-text">
+                  {{ $t("Save") }}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       </aside>
       <div
-        v-if="admin && editMode && isSideBarOpen && (currentSection !== null || metadataModal === true)"
+        v-if="admin && editMode && isSideBarOpen && (currentSection !== null || metadataModal === true || sectionsThemeModal === true)"
         class="sections-resize-handle--x"
         @mousedown="startTracking"
         data-target="aside"
@@ -225,7 +280,7 @@
               :ref="!editMode ? 'intro-edit-page' : undefined"
               @click="openEditMode()"
               v-if="admin && !isSideBarOpen"
-              class="intro-edit-page bg-blue control-button hide-mobile btn-text edit-page"
+              class="intro-edit-page sections-bg-blue control-button hide-mobile btn-text edit-page"
               :title="!editMode ? $t('Edit page') : $t('View page')"
             >
               <LazyBaseIconsEdit v-if="!editMode" />
@@ -267,7 +322,7 @@
                       <label for="highlightRegions"></label>
                     </div>
                   </div>
-                  <div ref="intro-add-new-section" class="intro-add-new-section">
+                  <div :ref="selectedLayout === 'standard' ? 'intro-add-new-section' : ''" :class="selectedLayout === 'standard' ? 'intro-add-new-section' : ''">
                     <button
                       v-if="selectedLayout === 'standard'"
                       class="hp-button"
@@ -360,7 +415,7 @@
                     <button
                       @click="logoutUser"
                       v-if="admin"
-                      class="bg-blue"
+                      class="sections-bg-blue"
                       style="background: black;
                   font-size: 13px;
                   border-radius: 5px;
@@ -497,7 +552,6 @@
                            @click="type.notCreated !== true ? openCurrentSection(type) : null">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
-                          class="bg-light-blue"
                           :title="formatName(type.name)"
                           :component-item="getComponent(type.name, type.type ? type.type : 'static')"
                           :section="componentsSetupData(type.name, type.type ? type.type : 'static')"
@@ -579,7 +633,6 @@
                            @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
-                          class="bg-light-blue"
                           :title="formatName(type.name)"
                           :component-item="getComponent(type && type.section ? type.section.name : type.name, type.type)"
                           :section="componentsSetupData(type && type.section ? type.section.name : type.name, type.type)"
@@ -711,7 +764,7 @@
                   <div class="flexSections sections-flex-row">
                     <button
                       class="hp-button"
-                      @click="restoreSectionContent(metadataModal)"
+                      @click="restoreSectionContent(metadataModal, sectionsThemeModal)"
                     >
                       <div class="btn-text">
                         {{ $t("Confirm") }}
@@ -953,6 +1006,7 @@
                 <template #item="{ element: view, index }">
                   <section
                     :key="index"
+                    :section-id="view.id"
                     :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
                     :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
                   >
@@ -986,6 +1040,11 @@
                           v-if="seoSectionsSupport[view.name]"
                           @click="seoBtnClicked(view.id)">
                           <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
+                        </div>
+                        <div
+                          v-if="sectionsThemeComponents[view.name]"
+                          @click="toggleSectionsOptions(view.id); openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
+                          <LazyBaseIconsPaintBursh />
                         </div>
                       </div>
                       <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
@@ -1022,16 +1081,17 @@
             </div>
             <div v-else>
               <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang">
-                <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
+                <template v-for="(slotName, slotIdx) in layoutSlotNames" v-slot:[slotName]>
                   <!-- Empty div injected to verify the slots              -->
                   <div class="flexSections flex-col">
                     <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
                     <div v-if="admin && editMode && !isSideBarOpen"
+                         :ref="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''" :class="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''"
                          class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
                       <button
                         class="hp-button"
                         @click.stop.prevent="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
             "
                       >
                         <div class="btn-icon plus-icon">
@@ -1059,6 +1119,7 @@
                           <section
                             v-if="view.region[selectedLayout].slot === slotName"
                             :key="index"
+                            :section-id="view.id"
                             :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
                             :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
                           >
@@ -1093,6 +1154,11 @@
                                   v-if="seoSectionsSupport[view.name]"
                                   @click="seoBtnClicked(view.id)">
                                   <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
+                                </div>
+                                <div
+                                  v-if="sectionsThemeComponents[view.name]"
+                                  @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
+                                  <LazyBaseIconsPaintBursh />
                                 </div>
                               </div>
                               <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
@@ -1563,6 +1629,20 @@ const seoSectionsSupport = ref({})
 
 const sectionsQueryStringLanguageSupport = ref([])
 
+const unsavedThemeSettingsError = ref({})
+
+const originalThemeSettings = ref({})
+
+const themeSettingsPayload = ref({})
+
+const currentSectionData = ref({})
+
+const sectionsThemeComponents = ref({})
+
+const sectionsThemeModal = ref(false)
+
+const currentThemeTab = ref({})
+
 // Computed properties
 const activeVariation = computed(() => {
   // If variation true return its page name
@@ -1865,6 +1945,16 @@ const initializeSections = (res, skipHook) => {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`);
       if (builderHooksJavascript['initialize_builder_settings']) {
         builderHooksJavascript['initialize_builder_settings'](originalBuilderSettings.value, useHead, currentSettingsTab.value);
+      }
+    } catch {}
+  }
+
+  if (res.data.metadata && res.data.metadata.sections_builder) {
+    originalThemeSettings.value = {...res.data.metadata.sections_builder}
+    try {
+      const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+      if (builderHooksJavascript['initialize_theme_settings']) {
+        builderHooksJavascript['initialize_theme_settings'](originalThemeSettings.value, useHead);
       }
     } catch {}
   }
@@ -2188,7 +2278,7 @@ const updateProjectMetadata = async () => {
     loading.value = false
   }
 }
-const updatePageMetaData = async (seo) => {
+const updatePageMetaData = async (seo, themeData) => {
   loading.value = true
   metadataErrors.value.path[0] = ''
 
@@ -2268,7 +2358,8 @@ const updatePageMetaData = async (seo) => {
     page: sectionsPageName.value,
     path: updatedPagePath,
     metadata: {
-      ...pageMetadata.value
+      ...pageMetadata.value,
+      sections_builder: themeData ? themeData : undefined
     },
     variations: [],
     layout: sectionsLayout.value,
@@ -2297,12 +2388,28 @@ const updatePageMetaData = async (seo) => {
         originalMetaData.value = res.data.metadata
         originalMetaData.value.pagePath = res.data.path
 
-        unsavedSettingsError.value['page_settings'] = false
-
         sectionsPageLastUpdated.value = res.data.last_updated
-        metadataModal.value = false
-        isSideBarOpen.value = false;
-        metadataFormLang.value = i18n.locale.value.toString()
+
+        if (themeData) {
+          unsavedThemeSettingsError.value[currentThemeTab.value.id] = false
+
+          const hasUnsavedSettings = Object.values(unsavedThemeSettingsError.value).includes(true)
+
+          if (!hasUnsavedSettings) {
+            sectionsThemeModal.value = false;
+            isSideBarOpen.value = false;
+          }
+
+          if (res.data.metadata && res.data.metadata && res.data.metadata.sections_builder) {
+            originalThemeSettings.value = {...res.data.metadata.sections_builder}
+          }
+        } else {
+          unsavedSettingsError.value['page_settings'] = false
+
+          metadataModal.value = false
+          isSideBarOpen.value = false;
+          metadataFormLang.value = i18n.locale.value.toString()
+        }
 
         showToast(
           "Success",
@@ -2321,11 +2428,11 @@ const updatePageMetaData = async (seo) => {
             baseURL = baseURL + routerBase
           }
 
-          if (seo !== true) {
+          if (seo !== true && !themeData) {
             window.location.replace(`${baseURL}/${updatedPagePath}`)
           }
         } else {
-          if (seo !== true) {
+          if (seo !== true && !themeData) {
             window.location.reload()
           }
         }
@@ -3731,10 +3838,12 @@ const openEditMode = async () => {
   editMode.value = !editMode.value
 
   if (editMode.value === true) {
-    setTimeout(async () => {
-      checkIntroLastStep('topBar')
-      await runIntro('topBar', introRerun.value)
-    }, 500)
+    if (selectedLayout.value === 'standard') {
+      setTimeout(async () => {
+        checkIntroLastStep('topBar')
+        await runIntro('topBar', introRerun.value)
+      }, 500)
+    }
 
     loading.value = true
     const inBrowser = typeof window !== 'undefined'
@@ -3790,6 +3899,12 @@ const openEditMode = async () => {
           await computeLayoutData() // Await this call
           await getUserData() // Await this call
           verifySlots() // Assuming this is synchronous or doesn't need awaiting
+          if (selectedLayout.value !== 'standard') {
+            setTimeout(async () => {
+              checkIntroLastStep('topBar')
+              await runIntro('topBar', introRerun.value)
+            }, 500)
+          }
         },
         onError: () => {
           loading.value = false; // Ensure loading is stopped on error
@@ -4271,7 +4386,10 @@ const mutateVariation = async (variationName) => {
     let variables = {
       page: sectionsPageName.value,
       path: pagePath.value && pagePath.value !== "" ? pagePath.value.trim() : undefined,
-      metadata: pageMetadata.value,
+      metadata: {
+        ...pageMetadata.value,
+        sections_builder: originalThemeSettings.value ? originalThemeSettings.value : undefined
+      },
       variations: [],
       layout: selectedLayout.value,
       sections,
@@ -4477,6 +4595,15 @@ const deleteView = (id) => {
   // Then we remove the variation we want to delete
   delete displayVariations.value[selectedVariation.value].views[id];
   isDeleteSectionModalOpen.value = false;
+  try {
+    const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+    if (builderHooksJavascript['section_removed']) {
+      const updatedMetaData = builderHooksJavascript['section_removed'](originalThemeSettings.value, id);
+      if (updatedMetaData) {
+        originalThemeSettings.value = updatedMetaData
+      }
+    }
+  } catch {}
   showToast(
     "Deleted",
     "info",
@@ -4953,8 +5080,8 @@ const closeMetadataModal = () => {
     metadataFormLang.value = i18n.locale.value.toString();
   }
 }
-const restoreSectionContent = (settings) => {
-  if (settings === true) {
+const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) => {
+  if (metadataModalOpened === true) {
     metadataModal.value = false;
     isSideBarOpen.value = false;
     isRestoreSectionOpen.value = false;
@@ -4977,6 +5104,22 @@ const restoreSectionContent = (settings) => {
     if (pageMetadata.value.pagePath) {
       delete pageMetadata.value.pagePath
     }
+  } else if (sectionsThemeModalOpened) {
+    sectionsThemeModal.value = false;
+    isSideBarOpen.value = false;
+    isRestoreSectionOpen.value = false;
+    sectionsThemeComponents.value[currentSectionData.value.section.name].forEach(tab => {
+      try {
+        const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+        if (builderHooksJavascript['reset_theme_settings']) {
+          const settingsReset = builderHooksJavascript['reset_theme_settings'](originalThemeSettings.value, currentSectionData.value.section, tab.id);
+          currentSectionData.value.currentTheme[tab.id] = settingsReset
+        }
+      } catch {}
+    })
+    unsavedThemeSettingsError.value = {}
+    currentThemeTab.value = {}
+    currentSectionData.value = {};
   } else {
     isSideBarOpen.value = false;
     isCreateInstance.value = false;
@@ -5041,10 +5184,90 @@ const logoutUser = () => {
   useCookie('sections-auth-token').value = null
   window.location.reload()
 }
-
 const checkIntroLastStep = (topic) => {
   if (useCookie('intro-last-step').value && useCookie('introjs-dontShowAgain').value !== true && useCookie('intro-last-step').value === topic) {
     runIntro(useCookie('intro-last-step').value, true, true)
+  }
+}
+const openSectionThemeModal = (section, themeComponents) => {
+  currentThemeTab.value = themeComponents[0]
+  currentSectionData.value = {
+    section,
+    themeComponents,
+    currentTheme: {},
+    originalTheme: originalThemeSettings.value ?? {}
+  };
+  currentSection.value = null;
+  nextTick(() => {
+    sectionsThemeModal.value = true
+    isSideBarOpen.value = true
+    sideBarSizeManagement();
+  })
+}
+const closeSectionThemeModal = () => {
+  const hasUnsavedSettings = sectionsThemeComponents.value[currentSectionData.value.section.name].some(tab =>
+    unsavedThemeSettings(tab.id)
+  );
+
+  if (hasUnsavedSettings) {
+    isRestoreSectionOpen.value = true;
+  } else {
+    sectionsThemeModal.value = false
+    isSideBarOpen.value = false
+    currentThemeTab.value = {}
+    currentSectionData.value = {};
+  }
+}
+const getSectionsThemeComponent = (component_path) => {
+  const path = `${component_path}`;
+  return importComp(path).component;
+};
+const unsavedThemeSettings = (tab) => {
+  try {
+    const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+    if (builderHooksJavascript['handle_unsaved_settings']) {
+      unsavedThemeSettingsError.value[tab] = builderHooksJavascript['handle_unsaved_settings'](isEqual, originalThemeSettings.value, currentSectionData.value.currentTheme, tab, currentSectionData.value.section);
+    } else {
+      unsavedThemeSettingsError.value[tab] = false
+    }
+
+    return unsavedThemeSettingsError.value[tab]
+  } catch {
+    unsavedThemeSettingsError.value[tab] = false
+    return false
+  }
+}
+const switchThemeTab = (tab) => {
+  currentSectionData.value.originalTheme = originalThemeSettings.value ?? {}
+  unsavedThemeSettings(currentThemeTab.value.id)
+  currentThemeTab.value = tab
+}
+const sectionThemeUpdated = (settings) => {
+  try {
+    const builderHooksJavascript = importJs(`/theme/theme-hooks`);
+    if (builderHooksJavascript['theme_settings_payload']) {
+      themeSettingsPayload.value = builderHooksJavascript['theme_settings_payload'](originalThemeSettings.value, settings, currentThemeTab.value.id, currentSectionData.value.section);
+    }
+  } catch {}
+
+  if (!currentSectionData.value.currentTheme[currentThemeTab.value.id]) {
+    currentSectionData.value.currentTheme[currentThemeTab.value.id] = {}
+  }
+  currentSectionData.value.currentTheme[currentThemeTab.value.id][currentSectionData.value.section.id] = settings
+}
+const updateSectionsThemes = () => {
+  updatePageMetaData(false, themeSettingsPayload.value)
+}
+const themeScrollToSection = () => {
+  const section = currentSectionData.value.section
+
+  const id = section.linked_to !== '' && section.linked_to !== undefined
+    ? `${section.linked_to}-${section.id}`
+    : `${section.name}-${section.id}`
+
+  const target = document.getElementById(id)
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth' })
   }
 }
 
@@ -5091,6 +5314,15 @@ watch(isModalOpen, (value) => {
     body.style.overflow = "auto";
   }
 });
+
+if (serverPageData) {
+  fetchedOnServer.value = true;
+  if (serverPageData.res) {
+    initializeSections(serverPageData.res, true)
+  } else if (serverPageData.error) {
+    sectionsPageErrorManagement(serverPageData.error, true, true)
+  }
+}
 
 // Fetch data (initial data loading)
 const fetchData = async () => {
@@ -5264,6 +5496,10 @@ provide('languageSupport', (sectionName) => {
   }
 })
 
+provide('sectionsThemeComponents', (sectionName, themeComponents) => {
+  sectionsThemeComponents.value[sectionName] = themeComponents
+})
+
 </script>
 
 <style>
@@ -5326,7 +5562,7 @@ provide('languageSupport', (sectionName) => {
   margin: 3px;
 }
 
-.bg-blue {
+.sections-bg-blue {
   background: #03b1c7;
   color: white;
   border: none;
@@ -5334,7 +5570,7 @@ provide('languageSupport', (sectionName) => {
   transition: 0.2s;
 }
 
-.bg-blue:hover {
+.sections-bg-blue:hover {
   background: #0881b3;
   transition: 0.2s;
 }
@@ -6789,16 +7025,17 @@ section .ql-editor.ql-snow.grey-bg {
   }
 }
 
-.page-settings-tabs {
+.page-settings-tabs, .sections-theme-settings-tabs {
   display: flex;
   flex-direction: column;
   width: max-content; /* Adjust as needed */
   border: 1px solid #03b1c7;
   border-radius: 8px;
   font-family: sans-serif;
+  margin-bottom: 8px;
 }
 
-.page-settings-tab {
+.page-settings-tab, .sections-theme-settings-tab {
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -6809,22 +7046,25 @@ section .ql-editor.ql-snow.grey-bg {
   transition: background-color 0.3s, color 0.3s;
 }
 
-.page-settings-tab:last-child {
+.page-settings-tab:last-child, .sections-theme-settings-tab:last-child {
   border-bottom: none;
 }
 
 /* Optional: Add 'active' style with a class like 'active-tab' */
-.page-settings-tab.active-tab {
+.page-settings-tab.active-tab, .sections-theme-settings-tab.active-tab {
   background-color: #03b1c7;
   color: white;
   font-weight: bold;
 }
-.page-settings-tab:first-child.active-tab {
+.page-settings-tab:first-child.active-tab, .sections-theme-settings-tab:first-child.active-tab {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 }
-.page-settings-tab:last-child.active-tab {
+.page-settings-tab:last-child.active-tab, .sections-theme-settings-tab:last-child.active-tab {
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+.section-modal-wrapper.sections-themes .closeIcon {
+  top: 11px;
 }
 </style>
