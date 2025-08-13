@@ -1875,7 +1875,7 @@ const initializeSectionsCMSEvents = () => {
       window.SectionsCMS.value.addNewStaticType = (name, payload) => addNewStaticType(name, payload, true)
       window.SectionsCMS.value.addNewGlobalType = (instance_name, payload) => addNewGlobalType(null, instance_name, payload, true)
       window.SectionsCMS.value.updateProjectMetadata = (payload) => updateProjectMetadata(payload, true)
-      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload)
+      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload, true)
       window.SectionsCMS.value.createNewPage = (page_name, payload) => createNewPage(page_name, payload, true)
     }
   }
@@ -2232,7 +2232,9 @@ const updateBuilderSettingsMetaData = () => {
   updateProjectMetadata()
 }
 const updateProjectMetadata = async (payload, external_call) => {
-  loading.value = true
+  if (external_call !== true) {
+    loading.value = true
+  }
 
   const token = useCookie("sections-auth-token").value
   const config = {
@@ -2495,11 +2497,13 @@ const updatePageMetaData = async (seo, themeData) => {
     loading.value = false
   }
 }
-const createMedia = async (payload) => {
+const createMedia = async (payload, external_call) => {
 
   const fileData = payload['files[1][file]']
   if (!payload['files[1][file]']) return
-  loading.value = true
+  if (external_call !== true) {
+    loading.value = true
+  }
   const data = new FormData()
 
   data.append('files[1][platform_id]', '1')
@@ -2725,7 +2729,9 @@ const addNewGlobalType = async (section, instance_name, payload, external_call) 
     }
 
     const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances/${section.instance_name}`
-    loading.value = true
+    if (external_call !== true) {
+      loading.value = true
+    }
 
     try {
       const res = await useApiRequest({
@@ -2814,7 +2820,9 @@ const addNewStaticType = async (name, payload, external_call) => {
     }
 
     const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section-types/${sectionTypeName.value}`
-    loading.value = true
+    if (external_call !== true) {
+      loading.value = true
+    }
 
     let fieldsDeclaration = fieldsInputs.value
 
@@ -3171,7 +3179,9 @@ const logDrag = (evt, slotName) => {
   computeLayoutData()
 }
 const createNewPage = async (page_name, payload, external_call) => {
-  loading.value = true
+  if (external_call !== true) {
+    loading.value = true
+  }
 
   const token = useCookie('sections-auth-token').value
 
