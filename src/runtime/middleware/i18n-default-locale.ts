@@ -37,8 +37,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   const store = useSectionsDataStore();
 
+  let fetchOnServer = true
+  const hooksJs = importJs(`/js/global-hooks`)
+  try {
+    if (hooksJs && hooksJs['fetch_on_server'] && hooksJs['fetch_on_server'](useCookie)) {
+      fetchOnServer = hooksJs['fetch_on_server'](useCookie)
+    }
+  } catch {}
+
   // Server-side logic
-  if (import.meta.server && !store.getPageData && !to.fullPath.endsWith('/health') && !to.fullPath.endsWith('/admin')) {
+  if (import.meta.server && !store.getPageData && !to.fullPath.endsWith('/health') && !to.fullPath.endsWith('/admin') && fetchOnServer) {
     let hooksJs;
 
     // Dynamically load global hooks (e.g., for custom section logic)

@@ -22,6 +22,7 @@
             :nuxt-sections="true"
             :media-id-editing="mediaIdEditing"
             @getSelectedMedia="emitMedia"
+            @responseReceived="mediaResponseReceived"
           />
         </div>
       </div>
@@ -31,6 +32,7 @@
 
 <script setup>
 import { ref, useNuxtApp, useRoute, useCookie, onMounted } from '#imports'
+import {importJs} from "../../utils/helpers.js";
 
 const props = defineProps({
   sectionsUserId: {
@@ -58,9 +60,20 @@ const mediaCategory = ref('');
 
 // Initialize URIs
 onMounted(() => {
-  authorsUri.value = `${sections.serverUrl}/project/${projectId.value}/users`;
-  mediasUri.value = `${sections.serverUrl}/project/${projectId.value}/medias`;
-  mediaByIdUri.value = `${sections.serverUrl}/project/${projectId.value}/media/`;
+  let uris = {
+    authorsUri: '',
+    mediasUri: '',
+    mediaByIdUri: ''
+  }
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_url'] && hooksJs['medias_api_url'](useCookie, projectId)) {
+      uris = hooksJs['medias_api_url'](useCookie, projectId)
+    }
+  } catch {}
+  authorsUri.value = uris && uris.authorsUri ? uris.authorsUri : `${sections.serverUrl}/project/${projectId.value}/users`;
+  mediasUri.value = uris && uris.mediasUri ? uris.mediasUri : `${sections.serverUrl}/project/${projectId.value}/medias`;
+  mediaByIdUri.value = uris && uris.mediaByIdUri ? uris.mediaByIdUri : `${sections.serverUrl}/project/${projectId.value}/media/`;
 });
 
 // Methods
@@ -86,6 +99,15 @@ function handleOverlayClick(event) {
   if (event.target.classList.contains('section-module-modal-overlay')) {
     isOpen.value = false;
   }
+}
+
+async function mediaResponseReceived(method, url, payload) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_response_received']) {
+      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload)
+    }
+  } catch {}
 }
 
 // Expose methods to parent components

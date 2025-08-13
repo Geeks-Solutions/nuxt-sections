@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { getGlobalTypeData, useI18n, ref, computed, onMounted ,watch, importComp, formatName, formatTexts } from '#imports'
+import { getGlobalTypeData, useI18n, ref, computed, onMounted ,watch, importComp, formatName, formatTexts, showToast } from '#imports'
 
 const { t } = useI18n();
 
@@ -165,11 +165,11 @@ async function getGlobalType() {
     } else if (result.error) {
       // Handle error - Use Nuxt 3 compatible toast/notification
       console.error("Error loading global type:", result.error?.response?.data?.message || 'Unknown error');
-      // showToast("Error", "error", result.error.response.data.message); // Replace if using a toast system
+      showToast("Error", "error", result.error.response.data.message); // Replace if using a toast system
     }
   } catch (error) {
     console.error("Error fetching global type data:", error);
-    // showToast("Error", "error", 'An unexpected error occurred.'); // Replace if using a toast system
+    showToast("Error", "error", 'An unexpected error occurred.'); // Replace if using a toast system
   } finally {
     emit("load", false);
   }

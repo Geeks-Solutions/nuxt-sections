@@ -232,7 +232,7 @@ const displayVariations = useState('displayVariations', () => ({
   },
 }));
 const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);
-const allSections = useState('allSections', () => ({}));
+const allSections = useState('allSections', () => ([]));
 const pageId = ref("");
 const pagePath = useState('pagePath', () => "");
 const sectionsPageName = ref("");

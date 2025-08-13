@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="sections-container sections-container-edit-mode">
-      <aside v-if="admin && editMode && isSideBarOpen === true && (currentSection !== null || metadataModal === true || sectionsThemeModal === true)" ref="resizeTarget"
+      <aside v-if="(admin && editMode && isSideBarOpen === true && (currentSection !== null || metadataModal === true || sectionsThemeModal === true)) || (admin && isSideBarOpen === true && dynamicSideComponent === true)" ref="resizeTarget"
              class="sections-aside" :class="{'sections-aside-z': introSectionFormStep === true}">
         <div
           class="step-back-aside"
@@ -249,7 +249,7 @@
             </div>
           </div>
           <div class="section-theme-component-wrapper">
-            <component :is="getSectionsThemeComponent(currentThemeTab.path)"
+            <component :is="getDynamicComponent(currentThemeTab.path)"
                        :original-theme-settings-prop="currentSectionData.originalTheme"
                        :theme-settings-prop="currentSectionData.currentTheme"
                        :sections-user-id="sectionsUserId"
@@ -265,9 +265,16 @@
             </div>
           </div>
         </div>
+
+        <div v-if="!currentSection && dynamicSideComponent === true" class="section-modal-wrapper dynamic-side-component">
+          <div class="dynamic-side-component-wrapper">
+            <component :is="getDynamicComponent(dynamicSideBarComponentPath)"></component>
+          </div>
+        </div>
+
       </aside>
       <div
-        v-if="admin && editMode && isSideBarOpen && (currentSection !== null || metadataModal === true || sectionsThemeModal === true)"
+        v-if="(admin && editMode && isSideBarOpen === true && (currentSection !== null || metadataModal === true || sectionsThemeModal === true)) || (admin && isSideBarOpen === true && dynamicSideComponent === true)"
         class="sections-resize-handle--x"
         @mousedown="startTracking"
         data-target="aside"
@@ -1454,7 +1461,7 @@ const metadataModal = ref(false);
 const sectionInPage = ref([]);
 const pageNotFound = useState('pageNotFound', () => false);
 const dismissCountDown = ref(0);
-const editMode = ref(false);
+const editMode = useState('editMode', () => false);
 const selectedVariation = ref(pageName);
 const typesTab = ref('types');
 const globalTypes = ref([]);
@@ -1465,7 +1472,7 @@ const updatedVariations = ref({});
 // current visible views
 const views = ref({});
 const getSections = ref([]);
-const loading = useState('loading', () =>false);
+const loading = useState('loading', () => false);
 const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
@@ -1540,7 +1547,7 @@ const selectedSectionTypeAppId = ref("");
 const selectedSectionRequirements = ref([]);
 const sectionsPageLastUpdated = useState('sectionsPageLastUpdated', () => null);
 const requirementsInputs = ref({});
-const allSections = useState('allSections', () => ({}));
+const allSections = useState('allSections', () => ([]));
 const pageId = ref("");
 const pagePath = useState('pagePath', () => "");
 const sectionsPageName = ref("");
@@ -1565,7 +1572,7 @@ const computedSEO = useState("computedSEO", () => ({
   description: '',
   image: ''
 }));
-const sectionsUserId = ref('');
+const sectionsUserId = useState('sectionsUserId',() => '');
 const displayedErrorFormat = ref('');
 const invalidSectionsErrors = ref({});
 const sectionsFormatErrors = ref({});
@@ -1615,7 +1622,7 @@ const sectionsWebsiteDomain = ref('');
 const pageData = useState('pageData', () => null);
 const canPromote = ref(false);
 const intro = ref(null);
-const currentPages = ref(null);
+const currentPages = useState('currentPages', () => null);
 const introRerun = reactive({value: false});
 const introSectionFormStep = ref(false);
 const creationView = ref(false);
@@ -1640,6 +1647,10 @@ const currentSectionData = ref({})
 const sectionsThemeComponents = ref({})
 
 const sectionsThemeModal = ref(false)
+
+const dynamicSideComponent = ref(false)
+
+const dynamicSideBarComponentPath = ref('')
 
 const currentThemeTab = ref({})
 
@@ -1861,6 +1872,11 @@ const initializeSectionsCMSEvents = () => {
     if (admin) {
       window.SectionsCMS.value.openEditMode = openEditMode
       window.SectionsCMS.value.runIntro = (topic, rerun, lastSavedTopic) => runIntro(topic, rerun, lastSavedTopic)
+      window.SectionsCMS.value.addNewStaticType = (name, payload) => addNewStaticType(name, payload, true)
+      window.SectionsCMS.value.addNewGlobalType = (instance_name, payload) => addNewGlobalType(null, instance_name, payload, true)
+      window.SectionsCMS.value.updateProjectMetadata = (payload) => updateProjectMetadata(payload, true)
+      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload)
+      window.SectionsCMS.value.createNewPage = (page_name, payload) => createNewPage(page_name, payload, true)
     }
   }
 }
@@ -2027,6 +2043,11 @@ const initializeSections = (res, skipHook) => {
   emit("load", false)
 
   sectionsPageLastUpdated.value = res.data.last_updated
+
+  const hooksJs = importJs(`/js/global-hooks`)
+  if (hooksJs && hooksJs['section_page_initialization_completed'] && hooksJs['section_page_initialization_completed'](res, i18n, useCookie, route)) {
+    return hooksJs['section_page_initialization_completed'](res, i18n, useCookie, route)
+  }
 }
 const sectionsPageErrorManagement = (error, server, skipHook) => {
   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`;
@@ -2210,16 +2231,17 @@ const builderSettingUpdated = (settings) => {
 const updateBuilderSettingsMetaData = () => {
   updateProjectMetadata()
 }
-const updateProjectMetadata = async () => {
+const updateProjectMetadata = async (payload, external_call) => {
   loading.value = true
 
   const token = useCookie("sections-auth-token").value
   const config = {
     headers: sectionHeader({ token }),
+    external_call
   }
 
   const variables = {
-    metadata: {
+    metadata: external_call === true ? payload.metadata || {} : {
       ...builderSettingsPayload.value
     }
   }
@@ -2227,7 +2249,7 @@ const updateProjectMetadata = async () => {
   const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}`
 
   try {
-    await useApiRequest({
+    const res = await useApiRequest({
       url: URL,
       method: 'PUT',
       body: variables,
@@ -2235,47 +2257,57 @@ const updateProjectMetadata = async () => {
       onSuccess: (res) => {
         loading.value = false
 
-        if (res.data && res.data.message) {
-          showToast("error", "error", res.data.message)
-          return
+        if (external_call !== true) {
+          if (res.data && res.data.message) {
+            showToast("error", "error", res.data.message)
+            return
+          }
+
+          unsavedSettingsError.value[currentSettingsTab.value] = false
+
+          const hasUnsavedSettings = Object.values(unsavedSettingsError.value).includes(true)
+
+          if (!hasUnsavedSettings) {
+            metadataModal.value = false;
+            isSideBarOpen.value = false;
+          }
+
+          if (res.data.metadata && res.data.metadata && res.data.metadata) {
+            originalBuilderSettings.value = {...res.data.metadata}
+          }
+
+          showToast(
+            "Success",
+            "success",
+            i18n.t('successSettingsChanges')
+          )
         }
-
-        unsavedSettingsError.value[currentSettingsTab.value] = false
-
-        const hasUnsavedSettings = Object.values(unsavedSettingsError.value).includes(true)
-
-        if (!hasUnsavedSettings) {
-          metadataModal.value = false;
-          isSideBarOpen.value = false;
-        }
-
-        if (res.data.metadata && res.data.metadata && res.data.metadata) {
-          originalBuilderSettings.value = {...res.data.metadata}
-        }
-
-        showToast(
-          "Success",
-          "success",
-          i18n.t('successSettingsChanges')
-        )
 
       },
       onError: (error) => {
         loading.value = false
-        if (error.response.data.errors) {
-          metadataErrors.value = error.response.data.errors
-        } else {
-          showToast(
-            "Error saving your changes",
-            "error",
-            error.response.data.message,
-            error.response.data.options
-          )
+        if (external_call !== true) {
+          if (error.response.data.errors) {
+            metadataErrors.value = error.response.data.errors
+          } else {
+            showToast(
+              "Error saving your changes",
+              "error",
+              error.response.data.message,
+              error.response.data.options
+            )
+          }
         }
       }
     });
-  } catch {
+    if (external_call === true) {
+      return res
+    }
+  } catch (e) {
     loading.value = false
+    if (external_call === true) {
+      return e
+    }
   }
 }
 const updatePageMetaData = async (seo, themeData) => {
@@ -2417,6 +2449,14 @@ const updatePageMetaData = async (seo, themeData) => {
           i18n.t('successSettingsChanges')
         )
 
+        let reloadPage = true
+        try {
+          const hooksJs = importJs(`/js/global-hooks`)
+          if (hooksJs && hooksJs['reload_page_on_path_update'] && hooksJs['reload_page_on_path_update'](useCookie)) {
+            reloadPage = hooksJs['reload_page_on_path_update'](useCookie)
+          }
+        } catch {}
+
         if (updatedPagePath !== sectionsPageName.value) {
           let baseURL = window.location.origin
           let routerBase = router.options.base
@@ -2428,11 +2468,11 @@ const updatePageMetaData = async (seo, themeData) => {
             baseURL = baseURL + routerBase
           }
 
-          if (seo !== true && !themeData) {
+          if (seo !== true && !themeData && reloadPage) {
             window.location.replace(`${baseURL}/${updatedPagePath}`)
           }
         } else {
-          if (seo !== true && !themeData) {
+          if (seo !== true && !themeData && reloadPage) {
             window.location.reload()
           }
         }
@@ -2452,6 +2492,42 @@ const updatePageMetaData = async (seo, themeData) => {
       }
     });
   } catch {
+    loading.value = false
+  }
+}
+const createMedia = async (payload) => {
+
+  const fileData = payload['files[1][file]']
+  if (!payload['files[1][file]']) return
+  loading.value = true
+  const data = new FormData()
+
+  data.append('files[1][platform_id]', '1')
+  data.append('files[1][file]', fileData)
+  data.append('type', fileData.type.includes('image') ? 'image' : 'document')
+  data.append('title', payload['title'] || '')
+  data.append('private_status', payload['private_status'] || 'public')
+  data.append('locked_status', payload['locked_status'] || 'unlocked')
+
+  const token = useCookie("sections-auth-token").value
+
+  try {
+    const res = await $fetch(`${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/media/`, {
+      method: 'POST',
+      headers: sectionHeader({ token: token }),
+      body: data,
+      // Add error handling to $fetch
+      onRequestError({ request, error }) {
+        throw error
+      },
+      onResponseError({ response, error }) {
+        throw error
+      }
+    })
+    return res
+  } catch (e) {
+    return e
+  } finally {
     loading.value = false
   }
 }
@@ -2483,7 +2559,7 @@ const getUserData = async () => {
         loading.value = false
         // In Nuxt 3, we use emit from defineEmits()
         emit("load", false)
-        useCookie('sections-auth-token').value = null
+        clearCookies()
         showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
       }
     });
@@ -2626,24 +2702,33 @@ const updateGlobalType = async (section) => {
     showToast("Error", "error", i18n.t('enterSectionTypeName'))
   }
 }
-const addNewGlobalType = async (section) => {
-  if (section.type === 'configurable') {
-    sectionTypeName.value = section.nameID
-  } else if (section && section.name) {
-    sectionTypeName.value = section.name
+const addNewGlobalType = async (section, instance_name, payload, external_call) => {
+  if (external_call === true) {
+    if (payload.section) {
+      sectionTypeName.value = payload.section.name
+      section = payload.section
+      section.instance_name = instance_name
+    }
+  } else {
+    if (section.type === 'configurable') {
+      sectionTypeName.value = section.nameID
+    } else if (section && section.name) {
+      sectionTypeName.value = section.name
+    }
   }
 
   if (sectionTypeName.value !== "") {
     const token = useCookie("sections-auth-token").value
     const config = {
       headers: sectionHeader({token}),
+      external_call
     }
 
     const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/global-instances/${section.instance_name}`
     loading.value = true
 
     try {
-      await useApiRequest({
+      const res = await useApiRequest({
         url: URL,
         method: 'POST',
         body: {
@@ -2657,55 +2742,66 @@ const addNewGlobalType = async (section) => {
         },
         ...config,
         onSuccess: async () => {
-          globalTypes.value = []
-          await getGlobalSectionTypes() // assuming this function is defined elsewhere
-          staticSuccess.value = true
-          sectionTypeName.value = ""
-          fieldsInputs.value = [
-            {
-              type: "image",
-              name: ""
+          if (external_call !== true) {
+            globalTypes.value = []
+            await getGlobalSectionTypes() // assuming this function is defined elsewhere
+            staticSuccess.value = true
+            sectionTypeName.value = ""
+            fieldsInputs.value = [
+              {
+                type: "image",
+                name: ""
+              }
+            ]
+
+            if (canPromote.value === true) {
+              section.linkedTo = section.instance_name
+              section.linked_to = section.instance_name
+              section.instance = true
+
+              section.region = displayVariations.value[selectedVariation.value].views[section.id].region
+              displayVariations.value[selectedVariation.value].views[section.id] = section
+              displayVariations.value[selectedVariation.value].altered = true
+
+              await computeLayoutData()
+
+              showToast(
+                "Success",
+                "info",
+                i18n.t('successAddedSection')
+              )
             }
-          ]
 
-          if (canPromote.value === true) {
-            section.linkedTo = section.instance_name
-            section.linked_to = section.instance_name
-            section.instance = true
-
-            section.region = displayVariations.value[selectedVariation.value].views[section.id].region
-            displayVariations.value[selectedVariation.value].views[section.id] = section
-            displayVariations.value[selectedVariation.value].altered = true
-
-            await computeLayoutData()
-
-            showToast(
-              "Success",
-              "info",
-              i18n.t('successAddedSection')
-            )
+            currentSection.value = null
+            isCreateInstance.value = false
+            isSideBarOpen.value = false
+            typesTab.value = 'globalTypes'
+          } else {
+            loading.value = false
           }
-
-          currentSection.value = null
-          isCreateInstance.value = false
-          isSideBarOpen.value = false
-          typesTab.value = 'globalTypes'
-          // loading.value = false; // Should be set here or after getGlobalSectionTypes if it's async
         },
         onError: (error) => {
           loading.value = false
-          showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+          if (external_call !== true) {
+            showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+          }
         }
       });
-    } catch {
+      if (external_call === true) {
+        return res
+      }
+    } catch (e) {
       loading.value = false;
+      if (external_call === true) {
+        return e
+      }
     }
   } else {
     loading.value = false
     showToast("Error", "error", i18n.t('enterSectionTypeName'))
   }
 }
-const addNewStaticType = async (name) => {
+const addNewStaticType = async (name, payload, external_call) => {
   if (name) {
     sectionTypeName.value = name
   }
@@ -2714,6 +2810,7 @@ const addNewStaticType = async (name) => {
     const token = useCookie("sections-auth-token").value
     const config = {
       headers: sectionHeader({token}),
+      external_call
     }
 
     const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/section-types/${sectionTypeName.value}`
@@ -2721,7 +2818,7 @@ const addNewStaticType = async (name) => {
 
     let fieldsDeclaration = fieldsInputs.value
 
-    if (name) {
+    if (name && external_call !== true) {
 
       const formComp = await importComp(`/forms/${sectionTypeName.value}`).setup?.then(d => d.default)
 
@@ -2734,10 +2831,10 @@ const addNewStaticType = async (name) => {
       }
     }
 
-    fieldsDeclaration = fieldsDeclaration.filter(field => field.name.trim() !== '')
+    fieldsDeclaration = external_call === true && payload.fields ? payload.fields : fieldsDeclaration.filter(field => field.name.trim() !== '')
 
     try {
-      await useApiRequest({
+      const res = await useApiRequest({
         url: URL,
         method: 'POST',
         body: {
@@ -2745,29 +2842,40 @@ const addNewStaticType = async (name) => {
         },
         ...config,
         onSuccess: async () => {
-          types.value = []
-          globalTypes.value = []
-          await getSectionTypes() // assuming this function is defined elsewhere
-          staticSuccess.value = true
-          sectionTypeName.value = ""
-          fieldsInputs.value = [
-            {
-              type: "image",
-              name: ""
-            }
-          ]
-          // loading.value = false; // Set after getSectionTypes if it's async
+          if (external_call !== true) {
+            types.value = []
+            globalTypes.value = []
+            await getSectionTypes() // assuming this function is defined elsewhere
+            staticSuccess.value = true
+            sectionTypeName.value = ""
+            fieldsInputs.value = [
+              {
+                type: "image",
+                name: ""
+              }
+            ]
+          } else {
+            loading.value = false
+          }
         },
         onError: async (error) => { // Make onError async if getSectionTypes is called
           loading.value = false
-          types.value = []
-          globalTypes.value = []
-          await getSectionTypes() // Call even on error? Review this logic.
-          showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+          if (external_call !== true) {
+            types.value = []
+            globalTypes.value = []
+            await getSectionTypes() // Call even on error? Review this logic.
+            showToast("Error", "error", i18n.t('createSectionTypeError') + error.response.data.message, error.response.data.options)
+          }
         }
       });
-    } catch {
+      if (external_call === true) {
+        return res
+      }
+    } catch(e) {
       loading.value = false;
+      if (external_call === true) {
+        return e
+      }
     }
   } else {
     loading.value = false
@@ -3062,59 +3170,73 @@ const logDrag = (evt, slotName) => {
   }
   computeLayoutData()
 }
-const createNewPage = async () => {
+const createNewPage = async (page_name, payload, external_call) => {
   loading.value = true
 
   const token = useCookie('sections-auth-token').value
 
   const header = { token }
   const config = {
-    headers: sectionHeader(header)
+    headers: sectionHeader(header),
+    external_call
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(external_call === true ? page_name : pageName))}`
 
   try {
-    await useApiRequest({
+    const res = await useApiRequest({
       url: URL,
       method: 'PUT',
-      body: { // No need to stringify, useApiRequest handles it
+      body: external_call === true ? payload || {
+        variations: [],
+        sections: []
+      } : { // No need to stringify, useApiRequest handles it
         variations: [],
         sections: []
       },
       ...config,
       onSuccess: (res) => {
         loading.value = false
-        pageNotFound.value = false
-        sectionsMainErrors.value = []
-        sectionsPageLastUpdated.value = res.data.last_updated
-        pageId.value = res.data.id
-        sectionsPageName.value = res.data.page
-        pagePath.value = res.data.path
-        allSections.value = []
-        runIntro('editPage')
-        showToast(
-          "Success",
-          "success",
-          i18n.t('createPageSuccess')
-        )
+        if (external_call !== true) {
+          pageNotFound.value = false
+          sectionsMainErrors.value = []
+          sectionsPageLastUpdated.value = res.data.last_updated
+          pageId.value = res.data.id
+          sectionsPageName.value = res.data.page
+          pagePath.value = res.data.path
+          allSections.value = []
+          runIntro('editPage')
+          showToast(
+            "Success",
+            "success",
+            i18n.t('createPageSuccess')
+          )
+        }
       },
       onError: (err) => {
         loading.value = false
-        let errorMsg = err.response.data.message
-        if (err.response.data.errors && err.response.data.errors.path) {
-          errorMsg = `${i18n.t('pageUrl')} ${err.response.data.errors.path[0]}`
+        if (external_call !== true) {
+          let errorMsg = err.response.data.message
+          if (err.response.data.errors && err.response.data.errors.path) {
+            errorMsg = `${i18n.t('pageUrl')} ${err.response.data.errors.path[0]}`
+          }
+          showToast(
+            "Error creating page",
+            "error",
+            i18n.t('createPageError') + pageName + "\n" + errorMsg,
+            err.response.data.options
+          )
         }
-        showToast(
-          "Error creating page",
-          "error",
-          i18n.t('createPageError') + pageName + "\n" + errorMsg,
-          err.response.data.options
-        )
       }
     });
-  } catch {
+    if (external_call === true) {
+      return res
+    }
+  } catch (e) {
     loading.value = false;
+    if (external_call === true) {
+      return e
+    }
   }
 }
 const getAvailableSections = () => {
@@ -3149,7 +3271,7 @@ const initiateIntroJs = async () => {
         onError: (error) => {
           loading.value = false
           emit("load", false)
-          useCookie('sections-auth-token').value = null
+          clearCookies()
           showToast("Error", "error", i18n.t('tokenInvalidReconnect'))
         }
       });
@@ -5180,8 +5302,19 @@ const fire_js = (event_name, event_data) => {
     window.dispatchEvent(event);
   }
 };
-const logoutUser = () => {
+const clearCookies = () => {
   useCookie('sections-auth-token').value = null
+  useCookie('sections-project-id').value = null
+
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['clear_cookies'] && hooksJs['clear_cookies'](useCookie)) {
+      return hooksJs['clear_cookies'](useCookie)
+    }
+  } catch {}
+}
+const logoutUser = () => {
+  clearCookies()
   window.location.reload()
 }
 const checkIntroLastStep = (topic) => {
@@ -5218,7 +5351,7 @@ const closeSectionThemeModal = () => {
     currentSectionData.value = {};
   }
 }
-const getSectionsThemeComponent = (component_path) => {
+const getDynamicComponent = (component_path) => {
   const path = `${component_path}`;
   return importComp(path).component;
 };
@@ -5421,6 +5554,12 @@ const fetchData = async () => {
       } catch {}
     }
   }
+
+  let refetchClientSide = false
+  if (hooksJs && hooksJs['refetch_client_side'] && hooksJs['refetch_client_side'](useCookie)) {
+    refetchClientSide = hooksJs['refetch_client_side'](useCookie)
+  }
+
   if (sectionsPageData) {
     loading.value = true;
     sectionsError.value = "";
@@ -5433,7 +5572,7 @@ const fetchData = async () => {
     } else if (error) {
       sectionsPageErrorManagement(error)
     }
-  } else if (inBrowser && fetchedOnServer.value === false) {
+  } else if ((inBrowser && fetchedOnServer.value === false) || (inBrowser && refetchClientSide)) {
     loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
@@ -5499,6 +5638,26 @@ provide('languageSupport', (sectionName) => {
 provide('sectionsThemeComponents', (sectionName, themeComponents) => {
   sectionsThemeComponents.value[sectionName] = themeComponents
 })
+
+if (!useNuxtApp().$sideBarComponent) {
+  useNuxtApp().provide('sideBarComponent', {
+    show: () => {
+      currentSection.value = null;
+      nextTick(() => {
+        dynamicSideComponent.value = true;
+        isSideBarOpen.value = true;
+        sideBarSizeManagement();
+      })
+    },
+    hide: () => {
+      dynamicSideComponent.value = false;
+      isSideBarOpen.value = false;
+    },
+    setPath: (path) => {
+      dynamicSideBarComponentPath.value = path
+    }
+  })
+}
 
 </script>
 
@@ -7066,5 +7225,20 @@ section .ql-editor.ql-snow.grey-bg {
 }
 .section-modal-wrapper.sections-themes .closeIcon {
   top: 11px;
+}
+.dynamic-side-component, .dynamic-side-component-wrapper {
+  height: 100%;
+}
+@media screen and (max-width: 768px) {
+  .sections-container .component-view {
+    margin: 0;
+    width: 100%;
+  }
+  .sections-container>aside.sections-aside {
+    min-width: 100%;
+  }
+  aside.sections-aside .component-view-wrapper {
+    width: auto;
+  }
 }
 </style>
