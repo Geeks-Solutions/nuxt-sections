@@ -185,4 +185,15 @@ defineExpose({
 .section-module-modal::-webkit-scrollbar-track {
   background-color: transparent;
 }
+@media screen and (max-width: 768px) {
+  .section-module-modal-overlay .section-module-modal {
+    padding: 0;
+  }
+  .section-module-modal-overlay .section-module-modal-close-icon {
+    right: 30px;
+  }
+  .section-module-modal-overlay .section-module-modal-content {
+    margin: 0;
+  }
+}
 </style>

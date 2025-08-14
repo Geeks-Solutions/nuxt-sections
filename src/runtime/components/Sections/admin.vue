@@ -442,33 +442,33 @@
 
             <!-- This is the 'add' section types popup that has a list of all section types added to the project and clicking on one of them opens the form of it to create and add it to the page -->
             <div v-if="isModalOpen && admin && editMode" ref="modal"
-                 class="sections-fixed section-modal-content sections-z-200 bg-grey sections-bg-opacity-25 sections-inset-0 modalContainer"
+                 class="sections-fixed section-modal-content sections-z-200 bg-grey sections-bg-opacity-25 sections-inset-0 modalContainer prime"
                  aria-labelledby="modal-title" role="dialog" aria-modal="true">
               <div
-                class="flexSections sections-items-center sections-justify-center sections-px-4 sections-pb-20 sections-text-center">
+                class="flexSections sections-items-center sections-justify-center sections-px-4 sections-pb-20 sections-text-center inner-modal-conatiner">
                 <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl">
                   <div class="flexSections sections-flex-row relativeSections sections-justify-center">
                     <div v-if="!currentSection && isCreateInstance === false"
                          class="flexSections sections-flex-col sections-my-3 sections-gap-4">
-                      <div class="flexSections sections-flex-row sections-justify-center">
+                      <div class="flexSections sections-flex-row sections-justify-center section-types-tabs">
                         <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
                              :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun.value); checkIntroLastStep('availableSectionOpened')">
                           {{ $t("availableSections") }}
                         </div>
-                        <div class="sections-text-center h2 sections-px-4">/</div>
+                        <div class="sections-text-center h2 sections-px-4 mobileHidden">/</div>
                         <div class="sections-text-center h2 sections-cursor-pointer"
                              :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''"
                              @click="typesTab = 'globalTypes'">
                           {{ $t("AddGlobal") }}
                         </div>
-                        <div class="sections-text-center h2 sections-px-4">/</div>
+                        <div class="sections-text-center h2 sections-px-4 mobileHidden">/</div>
                         <div ref="intro-inventory" class="intro-inventory sections-text-center h2 sections-cursor-pointer"
                              :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
                              @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened'); checkIntroLastStep('inventoryOpened')">
                           {{ $t("typeInventory") }}
                         </div>
                       </div>
-                      <div class="flexSections sections-items-center sections-flex-row sections-gap-4">
+                      <div class="flexSections sections-items-center sections-flex-row sections-gap-4 section-types-filter">
                         <div>{{ $t('filterBy') }}</div>
                         <input
                           class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none sectionsFilterName"
@@ -7249,6 +7249,38 @@ section .ql-editor.ql-snow.grey-bg {
   }
   aside.sections-aside .component-view-wrapper {
     width: auto;
+  }
+  .section-types-tabs, .type-items.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+  }
+  .section-types-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .section-modal-content {
+    padding: 10px;
+    width: 100%;
+  }
+  .modalContainer .closeIcon, .modalContainer .closeIcon svg {
+    height: 25px;
+    width: 25px;
+    right: 0;
+  }
+  .selectSectionType {
+    width: 100%;
+    padding-top: 15px;
+  }
+  .translationWrapper {
+    margin: 10px 0 0 0 !important;
+  }
+  main.sections-main .input.wyzywig-wrapper {
+    margin: 0 !important;
+  }
+  .modalContainer.prime, .inner-modal-conatiner {
+    padding: 0;
   }
 }
 </style>

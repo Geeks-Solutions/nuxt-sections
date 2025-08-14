@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for Dynamic Side Bar Component
 - Support different new global hooks for APIs management
 
+### Fixed
+
+- Mobile friendly adjustment #226
+
 ### [3.0.9] - 2025-07-15
 
 ### Added
