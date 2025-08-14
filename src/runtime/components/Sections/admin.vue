@@ -1442,7 +1442,7 @@ const {
     type: Object
   }
 });
-const emit = defineEmits(['load']);
+const emit = defineEmits(['load', 'user-logged-out']);
 const store = useSectionsDataStore()
 const nuxtApp = useNuxtApp();
 const route = useRoute();
@@ -5325,6 +5325,24 @@ const clearCookies = () => {
 }
 const logoutUser = () => {
   clearCookies()
+  emit("user-logged-out", [
+    projectMetadata.value['selectedCSSPreset'] && projectMetadata.value['selectedCSSPreset'].name && projectMetadata.value['selectedCSSPreset'].name !== 'Other' && projectMetadata.value['selectedCSSPreset'].name !== 'None' ? {
+      rel: 'stylesheet',
+      href: projectMetadata.value['selectedCSSPreset'].url
+    } : projectMetadata.value['selectedCSSPreset'] && projectMetadata.value['selectedCSSPreset'].name && projectMetadata.value['selectedCSSPreset'].name !== 'None' && projectMetadata.value['media'] && projectMetadata.value['media'].url ? {
+      rel: 'stylesheet',
+      href: projectMetadata.value['media'].url
+    } : {},
+    pageMetadata.value['media'] && pageMetadata.value['media'].url ? {
+      rel: 'stylesheet',
+      href: pageMetadata.value['media'].url
+    } : {},
+    projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url ? {
+      rel: 'icon',
+      type: 'image/png',
+      href: projectMetadata.value['favicon'].url
+    } : {},
+  ])
   window.location.reload()
 }
 const checkIntroLastStep = (topic) => {

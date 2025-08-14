@@ -12,6 +12,7 @@
     :views-bg-color="viewsBgColor"
     :_sections-options="_sectionsOptions"
     :sections-page-data="sectionsPageData"
+    @user-logged-out="userLoggedOut"
   ></SectionsAdmin>
   <div v-else class="sections-container">
     <main ref="sectionsMainTarget" class="sections-main">
@@ -1087,6 +1088,12 @@ const fire_js = (event_name, event_data) => {
     window.dispatchEvent(event);
   }
 };
+
+const userLoggedOut = (links) => {
+  useHead({
+    link: links
+  })
+}
 
 // Lifecycle hooks
 onMounted(async () => {

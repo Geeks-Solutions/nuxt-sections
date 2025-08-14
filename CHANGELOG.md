@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Mobile friendly adjustment #226
+- Theme removed when user logout: When you logout the vue of the site is without theming #219
 
 ### [3.0.9] - 2025-07-15
 
