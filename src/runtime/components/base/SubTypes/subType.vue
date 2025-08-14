@@ -212,7 +212,7 @@ defineExpose({
 @media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
-    height: 450px;
+    height: 400px;
   }
 }
 </style>

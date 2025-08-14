@@ -347,7 +347,7 @@
                     <button
                       class="hp-button"
                       @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false), (sectionsFilterName = ''), (sectionsFilterAppName = '')
             "
                     >
                       <div class="btn-icon plus-icon">
@@ -603,7 +603,7 @@
                       <button
                         class="hp-button"
                         @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false)
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false), (sectionsFilterName = ''), (sectionsFilterAppName = '')
             "
                       >
                         <div class="btn-icon plus-icon">
@@ -3271,6 +3271,9 @@ const initiateIntroJs = async () => {
         method: 'GET',
         headers: sectionHeader({ token }),
         onSuccess: async (response) => { // Make onSuccess async
+          if (response.data.package_name) {
+            useCookie('package_name').value = response.data.package_name
+          }
           currentPages.value = response.data.current_pages
           if (currentPages.value !== null && currentPages.value === 0) {
             if (pageNotFound.value) {
@@ -5315,6 +5318,7 @@ const fire_js = (event_name, event_data) => {
 const clearCookies = () => {
   useCookie('sections-auth-token').value = null
   useCookie('sections-project-id').value = null
+  useCookie('package_name').value = null
 
   try {
     const hooksJs = importJs(`/js/global-hooks`)
@@ -7272,6 +7276,7 @@ section .ql-editor.ql-snow.grey-bg {
     display: flex;
     flex-direction: column;
     justify-content: start;
+    gap: 10px;
   }
   .section-types-filter {
     display: flex;
@@ -7299,6 +7304,9 @@ section .ql-editor.ql-snow.grey-bg {
   }
   .modalContainer.prime, .inner-modal-conatiner {
     padding: 0;
+  }
+  .intro-available-sections {
+    margin-top: 20px;
   }
 }
 </style>
