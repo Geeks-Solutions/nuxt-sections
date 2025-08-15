@@ -1840,6 +1840,7 @@ useHead(() => {
         href: projectMetadata.value['media'].url
       } : {},
       pageMetadata.value['media'] && pageMetadata.value['media'].url ? {
+        id: 'page-selected-css',
         rel: 'stylesheet',
         href: pageMetadata.value['media'].url
       } : {},
@@ -2135,6 +2136,12 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
 }
 const removeMedia = (media) => {
   pageMetadata.value[media] = {}
+  if (media === 'media') {
+    const cssLink = document.getElementById('page-selected-css');
+    if (cssLink) {
+      cssLink.remove()
+    }
+  }
 }
 const unsavedSettings = (tab) => {
   if (tab === 'page_settings') {
@@ -5338,6 +5345,7 @@ const logoutUser = () => {
       href: projectMetadata.value['media'].url
     } : {},
     pageMetadata.value['media'] && pageMetadata.value['media'].url ? {
+      id: 'page-selected-css',
       rel: 'stylesheet',
       href: pageMetadata.value['media'].url
     } : {},
