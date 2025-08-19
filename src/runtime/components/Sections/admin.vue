@@ -2526,14 +2526,7 @@ const createMedia = async (payload, external_call) => {
     const res = await $fetch(`${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/media/`, {
       method: 'POST',
       headers: sectionHeader({ token: token }),
-      body: data,
-      // Add error handling to $fetch
-      onRequestError({ request, error }) {
-        throw error
-      },
-      onResponseError({ response, error }) {
-        throw error
-      }
+      body: data
     })
     return res
   } catch (e) {
