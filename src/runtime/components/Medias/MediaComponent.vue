@@ -21,8 +21,8 @@
             :with-select-media-button="true"
             :nuxt-sections="true"
             :media-id-editing="mediaIdEditing"
+            :response-received="mediaResponseReceived"
             @getSelectedMedia="emitMedia"
-            @responseReceived="mediaResponseReceived"
           />
         </div>
       </div>
