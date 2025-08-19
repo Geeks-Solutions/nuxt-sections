@@ -3963,6 +3963,17 @@ const buildComp = (staticTypes, views, compType, path) => {
   return staticTypes
 }
 const openEditMode = async () => {
+
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['pre_open_edit_mode'] && hooksJs['pre_open_edit_mode'](useCookie)) {
+      const disableEditMode = hooksJs['pre_open_edit_mode'](useCookie)
+      if (disableEditMode === true) {
+        return
+      }
+    }
+  } catch {}
+
   await getSectionTypes(true)
   if (!originalVariations.value[selectedVariation.value]) {
     originalVariations.value = JSON.parse(
