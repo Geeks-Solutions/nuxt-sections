@@ -101,11 +101,11 @@ function handleOverlayClick(event) {
   }
 }
 
-async function mediaResponseReceived(method, url, payload) {
+async function mediaResponseReceived(method, url, payload, response) {
   try {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['medias_api_response_received']) {
-      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload)
+      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload, response)
     }
   } catch {}
 }
