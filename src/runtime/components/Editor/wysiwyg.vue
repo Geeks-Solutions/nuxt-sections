@@ -5,9 +5,12 @@
       :auth-token="authToken"
       :project-id-prop="sectionsConfig.projectId"
       :sections-user-id="null"
-      :server-url="sectionsConfig.serverUrl"
+      :server-url="alterMediasServerUrl()"
       :selected-media-id="route.query.id"
       :media-translation-prefix="'mediaComponent.'"
+      :alter-error-received="alterErrorReceived"
+      :response-received="mediaResponseReceived"
+      :request-pre-sent="mediaRequestReceived"
       @wysiwygMedia="(media) => emit('wysiwygMedia', media)"
       @settingsUpdate="(content) => emit('settingsUpdate', content)"
     />
@@ -28,7 +31,7 @@
 </template>
 
 <script setup>
-import { useI18n, ref, useNuxtApp, useRoute, useCookie ,watch } from '#imports'
+import {useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs} from '#imports'
 
 // --- Composables ---
 const nuxtApp = useNuxtApp()
@@ -63,6 +66,47 @@ const emit = defineEmits(['wysiwygMedia', 'settingsUpdate', 'cssClassesChanged']
 
 // --- Refs ---
 const cssClasses = ref(props.cssClassesProp);
+
+function alterMediasServerUrl() {
+  let updatedServerUrl
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_server_url'] && hooksJs['medias_server_url'](useCookie, sectionsConfig.projectId)) {
+      updatedServerUrl = hooksJs['medias_server_url'](useCookie, sectionsConfig.projectId)
+    }
+  } catch {}
+
+  if (updatedServerUrl) {
+    return updatedServerUrl
+  } else return sectionsConfig.serverUrl
+}
+
+function alterErrorReceived(error) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_error_received']) {
+      return hooksJs['medias_api_error_received'](useCookie, error)
+    }
+  } catch {}
+}
+
+async function mediaResponseReceived(method, url, payload, response) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_response_received']) {
+      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload, response)
+    }
+  } catch {}
+}
+
+async function mediaRequestReceived(method, url, payload) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_request_received']) {
+      return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
+    }
+  } catch {}
+}
 
 // --- Watchers ---
 watch(() => props.cssClassesProp, (newValue) => {

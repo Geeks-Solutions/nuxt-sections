@@ -21,6 +21,7 @@
             :with-select-media-button="true"
             :nuxt-sections="true"
             :media-id-editing="mediaIdEditing"
+            :alter-error-received="alterErrorReceived"
             :response-received="mediaResponseReceived"
             :request-pre-sent="mediaRequestReceived"
             @getSelectedMedia="emitMedia"
@@ -100,6 +101,15 @@ function handleOverlayClick(event) {
   if (event.target.classList.contains('section-module-modal-overlay')) {
     isOpen.value = false;
   }
+}
+
+function alterErrorReceived(error) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_error_received']) {
+      return hooksJs['medias_api_error_received'](useCookie, error)
+    }
+  } catch {}
 }
 
 async function mediaResponseReceived(method, url, payload, response) {
