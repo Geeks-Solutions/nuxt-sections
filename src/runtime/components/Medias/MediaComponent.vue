@@ -22,6 +22,7 @@
             :nuxt-sections="true"
             :media-id-editing="mediaIdEditing"
             :response-received="mediaResponseReceived"
+            :request-pre-sent="mediaRequestReceived"
             @getSelectedMedia="emitMedia"
           />
         </div>
@@ -106,6 +107,15 @@ async function mediaResponseReceived(method, url, payload, response) {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['medias_api_response_received']) {
       return await hooksJs['medias_api_response_received'](useCookie, method, url, payload, response)
+    }
+  } catch {}
+}
+
+async function mediaRequestReceived(method, url, payload) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_request_received']) {
+      return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
     }
   } catch {}
 }

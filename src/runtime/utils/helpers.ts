@@ -656,10 +656,16 @@ export const useApiRequest = async <T = any>({
     }
 
     let updatedURL = url
+    let updatedBody = body
     try {
       const hooksJs = importJs(`/js/global-hooks`)
       if (hooksJs && hooksJs['api_pre_request']) {
-        updatedURL = await hooksJs['api_pre_request']($nuxt, method, url, body, options)
+        const preRequest = await hooksJs['api_pre_request']($nuxt, method, url, body, options)
+        updatedURL = preRequest.url
+        updatedBody = preRequest.body
+        if (updatedBody) {
+          options.body = updatedBody
+        }
       }
     } catch {}
 
