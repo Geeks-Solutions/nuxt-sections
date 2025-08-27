@@ -71,8 +71,8 @@ function alterMediasServerUrl() {
   let updatedServerUrl
   try {
     const hooksJs = importJs(`/js/global-hooks`)
-    if (hooksJs && hooksJs['medias_server_url'] && hooksJs['medias_server_url'](useCookie, sectionsConfig.projectId)) {
-      updatedServerUrl = hooksJs['medias_server_url'](useCookie, sectionsConfig.projectId)
+    if (hooksJs && hooksJs['medias_api_url'] && hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)) {
+      updatedServerUrl = hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)
     }
   } catch {}
 

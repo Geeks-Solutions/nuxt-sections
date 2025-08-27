@@ -1315,6 +1315,131 @@ export {
 };
 ```
 
+* `section_page_initialization_completed`: Runs after a page has been initialized. It provides access to useful context (such as routing, localization, or cookies) and allows you to execute custom logic at that point.
+
+```js
+const section_page_initialization_completed = (res, i18n, useCookie, route) => {
+  // run custom logic after initialization
+}
+````
+
+* `reload_page_on_path_update`: Determines whether the page should reload when the path changes.
+
+```js
+const reload_page_on_path_update = (useCookie) => {
+  return true // reload the page on path update
+}
+```
+
+* `clear_cookies`: Called when the library is about to clear its cookies. This hook can be used to also clear custom cookies.
+
+```js
+const clear_cookies = (useCookie) => {
+  // clear custom cookies here
+}
+```
+
+* `refetch_client_side`: Controls whether client-side refetching should happen. Disabled by default.
+
+```js
+const refetch_client_side = (useCookie) => {
+  return false // do not refetch client-side
+}
+```
+
+* `fetch_on_server`: Controls whether server-side fetching should happen. Enabled by default.
+
+```js
+const fetch_on_server = (useCookie) => {
+  return true // allow server-side fetching
+}
+```
+
+* `api_pre_request`: Runs before an API request is sent. It allows modifying the request, such as updating the URL or body.
+
+```js
+const api_pre_request = async ($nuxt, method, url, body, options) => {
+  return { url, body } // optionally update request before sending
+}
+```
+
+* `api_post_request`: Runs after an API request succeeds. It allows you to inspect or modify the response before it is returned.
+
+```js
+const api_post_request = async ($nuxt, method, url, body, options, res, onSuccess) => {
+  return res // optionally modify response
+}
+```
+
+* `api_request_error`: Triggered when an API request fails. It allows you to customize how errors are handled.
+
+```js
+const api_request_error = ($nuxt, method, url, body, error, options) => {
+  return error // handle errors here
+}
+```
+
+* `medias_api_url`: Allows overriding the API endpoints used for media-related requests.
+
+  * If `stringUrl` is `true`, the return value must be a string.
+  * Otherwise, the return value should be an object of media endpoints.
+
+```js
+const medias_api_url = (useCookie, projectId, stringUrl) => {
+  return stringUrl ? '/custom-media-url' : { mediasUri: '/custom/media/endpoint' }
+}
+```
+
+* `medias_api_error_received`: Runs when a media API request results in an error. It allows custom error handling.
+
+```js
+const medias_api_error_received = (useCookie, error) => {
+  return 'Custom error message'
+}
+```
+
+* `medias_api_request_received`: Runs when a media API request is received. It can be used to decide whether the request should proceed.
+
+```js
+const medias_api_request_received = (useCookie, method, url, payload) => {
+  return { proceed: true }
+}
+```
+
+* `medias_api_response_received`: Runs after receiving a response from a media API request. It allows modification of the response before it is used.
+
+```js
+const medias_api_response_received = async (useCookie, method, url, payload, response) => {
+  return response // optionally update response
+}
+```
+
+* `pre_open_edit_mode`: Determines whether the edit mode should open. If the hook returns `true`, edit mode will **not** open. By default, edit mode opens.
+
+```js
+const pre_open_edit_mode = (useCookie) => {
+  return false // allow edit mode to open
+}
+```
+
+```js
+export {
+  section_page_initialization_completed,
+  reload_page_on_path_update,
+  clear_cookies,
+  refetch_client_side,
+  fetch_on_server,
+  api_pre_request,
+  api_post_request,
+  api_request_error,
+  medias_api_url,
+  medias_api_error_received,
+  medias_api_request_received,
+  medias_api_response_received,
+  pre_open_edit_mode
+};
+```
+
 ### The following will require a specific component to be implemented in your project:
 
 Inside `sections/page_components/page_not_found.vue` or `sections/page_components/project_not_found.vue`
