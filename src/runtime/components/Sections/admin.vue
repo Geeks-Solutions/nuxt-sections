@@ -1366,6 +1366,7 @@ import {
   reactive,
   ref,
   provide,
+  useScript,
   sectionHeader,
   showToast,
   useApiRequest,
@@ -5682,6 +5683,55 @@ provide('languageSupport', (sectionName) => {
 provide('sectionsThemeComponents', (sectionName, themeComponents) => {
   sectionsThemeComponents.value[sectionName] = themeComponents
 })
+
+const scriptLinksArray = ref([])
+const scriptPromises = Object.create(null)
+
+function loadScriptWithUniqueness(src, uniqueness = true) {
+
+  function cleanUrl(src) {
+    try {
+      const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+      const url = new URL(src, base)
+      url.search = ''
+      url.hash = ''
+      return url.toString()
+    } catch {
+      // fallback if URL constructor fails
+      return src.split('#')[0].split('?')[0]
+    }
+  }
+
+  if (typeof window === 'undefined') return Promise.resolve() // SSR no-op
+
+  const cleaned = cleanUrl(src)
+  const key = uniqueness ? cleaned : src // uniqueness ignores query/hash by design
+
+  if (uniqueness) {
+    // if already loading/loaded, return same promise (prevents race)
+    if (scriptPromises[key]) return scriptPromises[key]
+
+    // track cleaned link once
+    if (!scriptLinksArray.value.includes(cleaned)) {
+      scriptLinksArray.value.push(cleaned)
+    }
+
+    const { load } = useScript(src)
+    scriptPromises[key] = load()
+      .catch(err => {
+        // allow retry on failure
+        delete scriptPromises[key]
+      })
+    return scriptPromises[key]
+  }
+
+  // uniqueness = false -> don't check array or cache; still store cleaned (duplicates allowed)
+  scriptLinksArray.value.push(cleaned)
+  const { load } = useScript(src)
+  return load()
+}
+
+provide('loadScript', loadScriptWithUniqueness)
 
 if (!useNuxtApp().$sideBarComponent) {
   useNuxtApp().provide('sideBarComponent', {

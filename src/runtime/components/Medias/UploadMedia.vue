@@ -13,7 +13,7 @@
                           alt="empty"
                           class="section-module-upload-media-image"/>
               <div v-if="media.length > 0 && media[0].url !== ''">
-                <div v-if="isDocument">
+                <div v-if="isMediaDocument">
                   <div class="section-module-upload-media-document">
                     <div class="section-module-upload-media-document-inner">
                       <LazyBaseIconsMediaDocument />
@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import { useI18n } from '#imports'
+import {computed, useI18n} from '#imports'
 
 defineOptions({
   name: 'UploadMedia'
@@ -80,6 +80,10 @@ const props = defineProps({
     default: () => []
   }
 });
+
+const isMediaDocument = computed(() => {
+  return props.media?.[0]?.metadata?.type === 'lottie' || props.isDocument
+})
 
 defineEmits(['uploadContainerClicked', 'removeUploadedImage']);
 

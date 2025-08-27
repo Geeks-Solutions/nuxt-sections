@@ -1499,6 +1499,10 @@ mounted() {
 },
 ```
 
+- `loadScript` provider function that is used to inject javascript libraries, it takes as params the url of the script and a boolean uniqueness that is used to make sure the script requested is unique and it is not already injected in the DOM.
+If the boolean uniqueness is set to true, the function will clean the script url from any query string and check if it is unique and not already added in the DOM
+
+
 ## Development
 
 1. Clone this repository
