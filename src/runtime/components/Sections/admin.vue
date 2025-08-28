@@ -1382,6 +1382,7 @@ import {
   validateQS,
   watch
 } from '#imports';
+import { createMedia } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
 
 const {
@@ -2502,37 +2503,6 @@ const updatePageMetaData = async (seo, themeData) => {
       }
     });
   } catch {
-    loading.value = false
-  }
-}
-const createMedia = async (payload, external_call) => {
-
-  const fileData = payload['files[1][file]']
-  if (!payload['files[1][file]']) return
-  if (external_call !== true) {
-    loading.value = true
-  }
-  const data = new FormData()
-
-  data.append('files[1][platform_id]', '1')
-  data.append('files[1][file]', fileData)
-  data.append('type', fileData.type.includes('image') ? 'image' : 'document')
-  data.append('title', payload['title'] || '')
-  data.append('private_status', payload['private_status'] || 'public')
-  data.append('locked_status', payload['locked_status'] || 'unlocked')
-
-  const token = useCookie("sections-auth-token").value
-
-  try {
-    const res = await $fetch(`${nuxtApp.$sections.serverUrl}/project/${nuxtApp.$sections.projectId}/media/`, {
-      method: 'POST',
-      headers: sectionHeader({ token: token }),
-      body: data
-    })
-    return res
-  } catch (e) {
-    return e
-  } finally {
     loading.value = false
   }
 }
