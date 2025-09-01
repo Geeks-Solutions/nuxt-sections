@@ -13,16 +13,17 @@
                           alt="empty"
                           class="section-module-upload-media-image"/>
               <div v-if="media.length > 0 && media[0].url !== ''">
-                <div v-if="isDocument">
+                <div v-if="isMediaDocument && media[0].metadata?.type !== 'lottie'">
                   <div class="section-module-upload-media-document">
                     <div class="section-module-upload-media-document-inner">
                       <LazyBaseIconsMediaDocument />
                     </div>
                   </div>
                 </div>
-                <img
+                <LazyGUniversalViewer
                   v-else-if="media.length > 0 && media[0].url !== ''"
                   :src="media[0].url"
+                  :type="media[0].metadata?.type || 'image'"
                   :alt="media[0].seo_tag"
                   class="section-module-upload-media-image"
                 />
@@ -48,7 +49,7 @@
 </template>
 
 <script setup>
-import { useI18n } from '#imports'
+import {computed, useI18n} from '#imports'
 
 defineOptions({
   name: 'UploadMedia'
@@ -80,6 +81,10 @@ const props = defineProps({
     default: () => []
   }
 });
+
+const isMediaDocument = computed(() => {
+  return props.media?.[0]?.metadata?.type === 'lottie' || props.isDocument
+})
 
 defineEmits(['uploadContainerClicked', 'removeUploadedImage']);
 

@@ -318,13 +318,25 @@ export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, 
   };
 
   try {
-    result.res = {
-      data: await (await fetch(URL, {method: "GET", ...config})).json()
+    const res: any = await useApiRequest({
+      url: URL,
+      method: 'GET',
+      ...config
+    });
+    if (res?.data?.message) {
+      result.error = {
+        response: res
+      };
+      return result;
+    } else {
+      result.res = {
+        data: res?.data
+      }
+      return result;
     }
-    return result;
   } catch (error: any) {
-    result.error = error;
-    return result;
+      result.error = error;
+      return result;
   }
 }
 
@@ -458,9 +470,11 @@ export const populateWithDummyValues = (obj: any, presets: Record<string, any[]>
   return obj; // For non-object, non-array values, return as is
 }
 
-export const getSectionProjectIdentity = () => {
+export const getSectionProjectIdentity = (id?: any) => {
   const nuxtApp : any = useNuxtApp()
-  if (nuxtApp.$sections.cname === "active") {
+  if (id === true) {
+    return nuxtApp.$sections.projectId
+  } else if (nuxtApp.$sections.cname === "active") {
     // In Nuxt 3, process.client replaces typeof window !== 'undefined'
     if (process.client) {
       // Used for local development with cname active
@@ -615,6 +629,7 @@ export const useApiRequest = async <T = any>({
                                                headers = {},
                                                ...fetchOptions
                                              }: ApiRequestOptions): Promise<{ data: T; status: number } | undefined> => {
+  const $nuxt : any = useNuxtApp();
   try {
     // Create a Headers object from provided headers or create a new one
     const requestHeaders = new Headers(headers);
@@ -640,8 +655,22 @@ export const useApiRequest = async <T = any>({
         : body;
     }
 
+    let updatedURL = url
+    let updatedBody = body
+    try {
+      const hooksJs = importJs(`/js/global-hooks`)
+      if (hooksJs && hooksJs['api_pre_request']) {
+        const preRequest = await hooksJs['api_pre_request']($nuxt, method, url, body, options)
+        updatedURL = preRequest.url
+        updatedBody = preRequest.body
+        if (updatedBody) {
+          options.body = updatedBody
+        }
+      }
+    } catch {}
+
     // Make the request
-    const response = await fetch(url, options);
+    const response = await fetch(updatedURL || url, options);
 
     // Handle response
     if (!response.ok) {
@@ -664,13 +693,26 @@ export const useApiRequest = async <T = any>({
         data: await response.json() as T,
         status: response.status
       }
+      let updatedRes = res
+      try {
+        const hooksJs = importJs(`/js/global-hooks`)
+        if (hooksJs && hooksJs['api_post_request']) {
+          updatedRes = await hooksJs['api_post_request']($nuxt, method, url, body, options, res, onSuccess)
+        }
+      } catch {}
       // Call success callback if provided
       if (onSuccess && typeof onSuccess === 'function') {
-        onSuccess(res);
+        onSuccess(updatedRes || res);
       }
       return res;
     }
   } catch (error: any) {
+    try {
+      const hooksJs = importJs(`/js/global-hooks`)
+      if (hooksJs && hooksJs['api_request_error']) {
+        return hooksJs['api_request_error']($nuxt, method, url, body, error, fetchOptions)
+      }
+    } catch {}
     throw error;
   }
 };

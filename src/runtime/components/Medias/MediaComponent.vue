@@ -21,6 +21,9 @@
             :with-select-media-button="true"
             :nuxt-sections="true"
             :media-id-editing="mediaIdEditing"
+            :alter-error-received="alterErrorReceived"
+            :response-received="mediaResponseReceived"
+            :request-pre-sent="mediaRequestReceived"
             @getSelectedMedia="emitMedia"
           />
         </div>
@@ -31,6 +34,7 @@
 
 <script setup>
 import { ref, useNuxtApp, useRoute, useCookie, onMounted } from '#imports'
+import {importJs} from "../../utils/helpers.js";
 
 const props = defineProps({
   sectionsUserId: {
@@ -58,9 +62,20 @@ const mediaCategory = ref('');
 
 // Initialize URIs
 onMounted(() => {
-  authorsUri.value = `${sections.serverUrl}/project/${projectId.value}/users`;
-  mediasUri.value = `${sections.serverUrl}/project/${projectId.value}/medias`;
-  mediaByIdUri.value = `${sections.serverUrl}/project/${projectId.value}/media/`;
+  let uris = {
+    authorsUri: '',
+    mediasUri: '',
+    mediaByIdUri: ''
+  }
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_url'] && hooksJs['medias_api_url'](useCookie, projectId)) {
+      uris = hooksJs['medias_api_url'](useCookie, projectId)
+    }
+  } catch {}
+  authorsUri.value = uris && uris.authorsUri ? uris.authorsUri : `${sections.serverUrl}/project/${projectId.value}/users`;
+  mediasUri.value = uris && uris.mediasUri ? uris.mediasUri : `${sections.serverUrl}/project/${projectId.value}/medias`;
+  mediaByIdUri.value = uris && uris.mediaByIdUri ? uris.mediaByIdUri : `${sections.serverUrl}/project/${projectId.value}/media/`;
 });
 
 // Methods
@@ -86,6 +101,33 @@ function handleOverlayClick(event) {
   if (event.target.classList.contains('section-module-modal-overlay')) {
     isOpen.value = false;
   }
+}
+
+function alterErrorReceived(error) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_error_received']) {
+      return hooksJs['medias_api_error_received'](useCookie, error)
+    }
+  } catch {}
+}
+
+async function mediaResponseReceived(method, url, payload, response) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_response_received']) {
+      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload, response)
+    }
+  } catch {}
+}
+
+async function mediaRequestReceived(method, url, payload) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['medias_api_request_received']) {
+      return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
+    }
+  } catch {}
 }
 
 // Expose methods to parent components
@@ -162,5 +204,16 @@ defineExpose({
 
 .section-module-modal::-webkit-scrollbar-track {
   background-color: transparent;
+}
+@media screen and (max-width: 768px) {
+  .section-module-modal-overlay .section-module-modal {
+    padding: 0;
+  }
+  .section-module-modal-overlay .section-module-modal-close-icon {
+    right: 30px;
+  }
+  .section-module-modal-overlay .section-module-modal-content {
+    margin: 0;
+  }
 }
 </style>

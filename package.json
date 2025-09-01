@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "3.0.9",
+  "version": "3.0.10",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -53,7 +53,7 @@
     "intro.js": "^7.2.0",
     "vue-toastification": "^2.0.0-rc.5",
     "@marshallswain/vuedraggable": "^4.2.0",
-    "@geeks.solutions/vue-components": "3.0.3"
+    "@geeks.solutions/vue-components": "3.0.4"
   },
   "devDependencies": {
     "@nuxt/devtools": "^2.4.0",
