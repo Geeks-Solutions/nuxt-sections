@@ -1137,7 +1137,7 @@
                           <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                         </div>
                         <div
-                          v-if="sectionsThemeComponents[view.name]"
+                          v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
                           @click="toggleSectionsOptions(view.id); openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
                           <LazyBaseIconsPaintBursh />
                         </div>
@@ -1251,7 +1251,7 @@
                                   <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                                 </div>
                                 <div
-                                  v-if="sectionsThemeComponents[view.name]"
+                                  v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
                                   @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
                                   <LazyBaseIconsPaintBursh />
                                 </div>
@@ -4702,6 +4702,43 @@ const mutateVariation = async (variationName) => {
               JSON.stringify(displayVariations.value)
             );
             sectionsLayout.value = res.data.layout;
+
+            const updatedViews = {}
+            let views = displayVariations.value[variationName].views;
+            views = Object.values(views);
+            allSections.value.map((section) => {
+              const foundView = views.find(view => view.weight === section.weight)
+              if (foundView) {
+                updatedViews[section.id] = {
+                  ...foundView,
+                  id: section.id
+                }
+              } else {
+                if (section.type === "configurable") {
+                  if (section.render_data && section.render_data[0] && section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
+                    section.render_data[0].settings.image = []
+                  }
+                  if (section.render_data && section.render_data[0] && section.render_data[0].settings) {
+                    section.settings = section.render_data[0].settings
+                  }
+                  section.nameID = section.name
+                  section.name = section.name.split(":")[1]
+                } else if (section.settings) {
+                  section.settings = isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings
+                }
+
+                if (section.query_string_keys && section.query_string_keys.length > 0) {
+                  sectionsQsKeys.value.push(...section.query_string_keys)
+                }
+                updatedViews[section.id] = section
+              }
+            })
+
+            displayVariations.value[activeVariation.value.pageName] = {
+              name: activeVariation.value.pageName,
+              views: {...updatedViews},
+            }
+
             checkIntroLastStep('pageSaved');
             runIntro('pageSaved', introRerun.value);
             loading.value = false;
