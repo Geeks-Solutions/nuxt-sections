@@ -351,8 +351,8 @@
                         >
                           <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
                         </button>
-                        <div class="flexSections sections-flex-row sections-gap-4 layout-region-wrapper">
-                          <div v-if="layoutMode === true" class="layoutSelect-container">
+                        <div v-if="layoutMode === true" class="flexSections sections-flex-row sections-gap-4 layout-region-wrapper">
+                          <div class="layoutSelect-container">
                             <div class="layoutSelect-select-wrapper">
                               <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
                                       @change="computeLayoutData">
@@ -366,7 +366,7 @@
                               </div>
                             </div>
                           </div>
-                          <div v-if="layoutMode === true" class="custom-checkbox">
+                          <div class="custom-checkbox">
                             <span class="mainmsg">{{ $t('highlightRegions') }}</span>
                             <label class="switch">
                               <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
@@ -396,13 +396,13 @@
                     </button>
                   </div>
 
-                  <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
+                  <button ref="intro-save-changes" class="intro-save-changes hp-button" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="saveVariation">
                     <div class="save-icon">
                       <LazyBaseIconsFloppy :title="$t('Save')" />
                     </div>
                   </button>
 
-                  <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+                  <button class="hp-button grey" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="restoreType = 'page'; isRestoreSectionOpen = true">
                     <div class="save-icon">
                       <LazyBaseIconsRestore :title="$t('Restore')" />
                     </div>
@@ -1037,7 +1037,7 @@
                       v-model="createPageName"
                     />
                     <span class="pagePathRequiredStyle"
-                          v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+                          v-show="createPageNameError !== ''">{{ createPageNameError }}</span>
                     <div class="sectionsFieldsLabels sections-pt-3">
                       {{ $t("pageUrl") }}
                     </div>
@@ -1047,7 +1047,7 @@
                       v-model="createPagePath"
                     />
                     <span class="pagePathRequiredStyle"
-                          v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+                          v-show="createPagePathError !== ''">{{ createPagePathError }}</span>
 
                     <div class="flexSections sections-flex-row sections-justify-end">
                       <button class="hp-button" @click="createNewPage(null, null, null, true)">
@@ -1588,6 +1588,8 @@ const savedView = ref({});
 const myPages = useState('myPages', () => ([]));
 const createPageName = ref("")
 const createPagePath = ref("")
+const createPageNameError = ref("")
+const createPagePathError = ref("")
 
 const menuManager = { current: ref(null) }
 provide("menuManager", menuManager)
@@ -1601,6 +1603,7 @@ const currentSettingsTab = ref("page_settings");
 const settingsTabs = ref([
   "page_settings"
 ])
+
 const updatedPageSettingsTabs = computed(()=> {
   let builderSettingsTabs
   try {
@@ -1631,13 +1634,24 @@ const displayVariations = useState('displayVariations', () => ({
     altered: false,
   },
 }));
-// const displayVariations = ref({
-//   [pageName]: {
-//     name: pageName,
-//     views: {},
-//     altered: false,
-//   },
-// });
+
+const pageHasNoChanges = computed(() => {
+  return isEqual(Object.values(displayVariations.value[selectedVariation.value].views).map(view => {
+    return {
+      ...view,
+      fields: undefined,
+      multiple: undefined,
+      instance: undefined,
+    }
+  }), Object.values(originalVariations.value[selectedVariation.value].views).map(view => {
+    return {
+      ...view,
+      fields: undefined,
+      multiple: undefined,
+      instance: undefined,
+    }
+  }))
+})
 
 const selectedSectionTypeName = ref("");
 const selectedAppName = ref("");
@@ -3255,12 +3269,24 @@ const logDrag = (evt, slotName) => {
 }
 const createNewPage = async (page_name, payload, external_call, custom) => {
 
+  createPagePathError.value = ""
+  createPageNameError.value = ""
+  if (custom && (!createPagePath.value.trim() || !createPageName.value.trim())) {
+    if (!createPagePath.value.trim()) {
+      createPagePathError.value = i18n.t('requiredField')
+    }
+    if (!createPageName.value.trim()) {
+      createPageNameError.value = i18n.t('requiredField')
+    }
+    return
+  }
+
   if (custom && myPages.value) {
     if (myPages.value.map(mp => mp.page).includes(createPageName.value.trim())) {
       showToast(
         "Error creating page",
         "error",
-        i18n.t('createPageError') + createPageName.value + "\n" + i18n.t('pageNameExist')
+        i18n.t('createPageError') + createPageName.value + "\n:" + i18n.t('pageNameExist')
       )
       return
     }
@@ -3316,12 +3342,17 @@ const createNewPage = async (page_name, payload, external_call, custom) => {
       onSuccess: (res) => {
         loading.value = false
         if (custom) {
+          showToast(
+            "Success",
+            "success",
+            i18n.t('createPageSuccess')
+          )
           myPages.value.push({
             id: createPageName.value,
             page: createPageName.value,
             path: createPagePath.value,
           })
-          window.location.replace(`${window.location.origin}/${createPagePath.value}`)
+          window.location.replace(`${window.location.origin}/${updatedPagePath}`)
         } else if (external_call !== true) {
           pageNotFound.value = false
           sectionsMainErrors.value = []
@@ -6050,6 +6081,11 @@ button .save-icon svg {
   justify-content: center;
 }
 
+.hp-button.pageHasNoChanges {
+  opacity: 50%;
+  cursor: default;
+}
+
 .hp-button.globalTour {
   margin-left: 0;
 }
@@ -6613,6 +6649,7 @@ span.handle {
 
 .pagePathRequiredStyle {
   color: red;
+  text-align: start;
 }
 
 .fieldsDescription {
