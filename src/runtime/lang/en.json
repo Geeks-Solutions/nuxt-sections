@@ -250,9 +250,9 @@
   "intro": {
     "createPage": "Create a new page in your project, the page will carry the URL in the address bar",
     "editPage": "Edit your page to add sections to it",
-    "topBarButtons": "You are now in edit mode, you can select your page layout and add sections to it",
-    "addNewSection": "Choose a section to add to your page",
-    "availableSections": "Here are all the section types you enabled in your project",
+    "topBarButtons": "You are in edit mode, you can add content to your page",
+    "addNewSection": "Choose a content to add to your page",
+    "availableSections": "Select the content you’d like to add to your page, and repeat the process as many times as you need to build your page",
     "inventory": "The inventory lists all the sections types that you can enable on your project. enabled sections types become available for you to add on your pages.",
     "simpleCTA": "Create this Section type to use it in your page, you can always delete it later",
     "simpleCTAInstalled": "Now head back to the Available sections to add the new section type to your page",

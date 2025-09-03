@@ -277,7 +277,7 @@
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
                 v-if="admin && editMode && !isSideBarOpen"
               >
-                <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center top-bar-wrapper">
+                <div class="flexSections sections-flex-row sections-justify-center top-bar-wrapper">
                   <LazyBaseHelperComponentsBurgerMenu>
                     <template #trigger>
                       <button
@@ -381,57 +381,59 @@
 
                   <div class="sections-config-separator"></div>
 
-                  <div :ref="selectedLayout === 'standard' ? 'intro-add-new-section' : ''" :class="selectedLayout === 'standard' ? 'intro-add-new-section' : ''">
-                    <button
-                      v-if="selectedLayout === 'standard'"
-                      class="hp-button"
-                      @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
+                  <div ref="intro-top-bar" class="intro-top-bar flexSections top-bar-page-content-wrapper">
+                    <div :ref="selectedLayout === 'standard' ? 'intro-add-new-section' : ''" :class="selectedLayout === 'standard' ? 'intro-add-new-section' : ''">
+                      <button
+                        v-if="selectedLayout === 'standard'"
+                        class="hp-button"
+                        @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun.value))
             "
-                    >
-                      <div class="btn-icon plus-icon">
-                        <LazyBaseIconsPlus/>
+                      >
+                        <div class="btn-icon plus-icon">
+                          <LazyBaseIconsPlus/>
+                        </div>
+                        <div class="btn-text">{{ $t("Add") }}</div>
+                      </button>
+                    </div>
+
+                    <button ref="intro-save-changes" class="intro-save-changes hp-button" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="saveVariation">
+                      <div class="save-icon">
+                        <LazyBaseIconsFloppy :title="$t('Save')" />
                       </div>
-                      <div class="btn-text">{{ $t("Add") }}</div>
                     </button>
-                  </div>
 
-                  <button ref="intro-save-changes" class="intro-save-changes hp-button" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="saveVariation">
-                    <div class="save-icon">
-                      <LazyBaseIconsFloppy :title="$t('Save')" />
-                    </div>
-                  </button>
+                    <button class="hp-button grey" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+                      <div class="save-icon">
+                        <LazyBaseIconsRestore :title="$t('Restore')" />
+                      </div>
+                    </button>
 
-                  <button class="hp-button grey" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="restoreType = 'page'; isRestoreSectionOpen = true">
-                    <div class="save-icon">
-                      <LazyBaseIconsRestore :title="$t('Restore')" />
-                    </div>
-                  </button>
-
-                  <LazyBaseHelperComponentsBurgerMenu>
-                    <template #content>
-                      <div class="flexSections">
-                        <button
-                          class="hp-button sections-no-wrap"
-                          @click="
+                    <LazyBaseHelperComponentsBurgerMenu>
+                      <template #content>
+                        <div class="flexSections">
+                          <button
+                            class="hp-button sections-no-wrap"
+                            @click="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false), (sectionsFilterName = ''), (sectionsFilterAppName = '')
             "
-                        >
-                          <div class="btn-icon plus-icon">
-                            <LazyBaseIconsPlus/>
-                          </div>
-                          <div class="btn-text">{{ $t("createGlobal") }}</div>
-                        </button>
-                        <button
-                          ref="intro-find-more-blobal"
-                          class="intro-find-more-blobal hp-button globalTour"
-                          @click="runIntro('globalTour', true)"
-                        >
-                          <div class="btn-text intro">?</div>
-                        </button>
-                      </div>
-                    </template>
-                  </LazyBaseHelperComponentsBurgerMenu>
+                          >
+                            <div class="btn-icon plus-icon">
+                              <LazyBaseIconsPlus/>
+                            </div>
+                            <div class="btn-text">{{ $t("createGlobal") }}</div>
+                          </button>
+                          <button
+                            ref="intro-find-more-blobal"
+                            class="intro-find-more-blobal hp-button globalTour"
+                            @click="runIntro('globalTour', true)"
+                          >
+                            <div class="btn-text intro">?</div>
+                          </button>
+                        </div>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
+                  </div>
 
                   <div class="sections-config-separator"></div>
 
@@ -551,7 +553,7 @@
 
                   <div
                     v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true"
-                    class="sections-m-1 sections-p-1 type-items content-wrapper">
+                    ref="intro-available-sections" class="intro-available-sections sections-m-1 sections-p-1 type-items content-wrapper">
 
                     <div
                       v-for="(type, index) in  [...showMyGlobal ? filteredGlobalTypes.filter(gt => gt.id !== undefined) : [], ...filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'), ...filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')]"
@@ -1019,7 +1021,7 @@
                   <div class="closeIcon regular" @click="isCreatePageModalOpen = false">
                     <LazyBaseIconsClose/>
                   </div>
-                  <div class="sections-text-center h4 sections-pb-3">
+                  <div class="sections-text-center sections-popup-title sections-pb-3">
                     {{ $t("Create New Page") }}
                   </div>
                   <div class="flexSections sections-flex-col">
@@ -1186,7 +1188,7 @@
                       <button
                         class="hp-button"
                         @click.stop.prevent="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal'))
             "
                       >
                         <div class="btn-icon plus-icon">
@@ -1393,7 +1395,7 @@
                          class="flexSections sections-w-full sections-justify-center">
                     </div>
                     <div class="footer">
-                      <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun.value);">
+                      <button class="hp-button" @click="staticSuccess = false;">
                         <div class="btn-icon check-icon"></div>
                         <div class="btn-text">{{ $t("Done") }}</div>
                       </button>
@@ -3441,10 +3443,6 @@ const initiateIntroJs = async () => {
   } catch {} // Outer catch remains for potential errors before API call
 }
 const runIntro = async (topic, rerun, lastSavedTopic) => {
-  if (topic === 'sectionFormOpened') {
-    introSectionFormStep.value = true
-  }
-
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
     useCookie('intro-last-step').value = null
@@ -3458,11 +3456,7 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
 
   if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
     if (topic && lastSavedTopic !== true) {
-      if (topic === 'sectionCreationConfirmed') {
-        useCookie('intro-last-step').value = 'availableSectionOpened'
-      } else {
-        useCookie('intro-last-step').value = topic
-      }
+      useCookie('intro-last-step').value = topic
     }
     if (intro.value) {
       intro.value.exit(true)
@@ -3496,19 +3490,7 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
       }
     }
 
-    if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
-      addIntroSteps(topic, rerun)
-    } else if (
-      topic === 'inventoryOpened' &&
-      document.querySelector('.intro-simple-CTA-section-inventory')
-    ) {
-      addIntroSteps(topic, rerun)
-    } else if (
-      topic === 'availableSectionOpened' &&
-      document.querySelector('.intro-simple-CTA-section-available')
-    ) {
-      addIntroSteps(topic, rerun)
-    }
+    addIntroSteps(topic, rerun)
   }
   // The below code is used to attach click event listeners to the guide close button and overlay
   // It is used to prevent the guide from automatically proceeding into next steps of different guides
@@ -3519,7 +3501,7 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
     function handleSkipClick() {
       currentPages.value = 1
       introRerun.value = false
-      if (useCookie('intro-last-step').value && useCookie('intro-last-step').value === 'pageSaved') {
+      if (useCookie('intro-last-step').value && useCookie('intro-last-step').value === 'addNewSectionModal') {
         useCookie('intro-last-step').value = null
       }
     }
@@ -3543,22 +3525,9 @@ const addIntroSteps = (topic, rerun) => {
     intro.value.refresh(true)
     intro.value.start()
 
-    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed' || topic === 'availableSectionOpened') {
+    if (topic === 'addNewSectionModal') {
       window.runIntro = runIntro
       window.introRerun = introRerun.value
-      window.setTypesTab = (value) => {
-        typesTab.value = value
-      }
-
-      window.simpleCTAType = filteredTypes.value.filter(
-        type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
-      ).find(type => type.name === 'SimpleCTA')
-      window.openCurrentSection = openCurrentSection
-      window.closeIntro = () => {
-        intro.value.exit(true)
-      }
-    } else if (topic === 'inventoryOpened') {
-      window.addNewStaticType = addNewStaticType
       window.closeIntro = () => {
         intro.value.exit(true)
       }
@@ -3566,11 +3535,6 @@ const addIntroSteps = (topic, rerun) => {
   }
 }
 const introSteps = (topic) => {
-
-  const simpleCTAIndex = filteredTypes.value.filter(
-    type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled'
-  ).findIndex(type => type.name === 'SimpleCTA')
-
   switch (topic) {
     case 'createPage':
       return [
@@ -3602,58 +3566,6 @@ const introSteps = (topic) => {
         {
           element: document.querySelector('.intro-available-sections'),
           intro: i18n.t('intro.availableSections')
-        },
-        {
-          element: document.querySelector('.intro-inventory'),
-          intro: simpleCTAIndex === -1 ?
-            i18n.t('intro.inventoryDesc') :
-            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened', introRerun);">${i18n.t('intro.checkIt')}</span>`
-        }
-      ]
-    case 'inventoryOpened':
-      return [
-        {
-          element: document.querySelector('.intro-simple-CTA-section-inventory'),
-          intro: `${i18n.t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${i18n.t('intro.createSection')}</span>`
-        }
-      ]
-    case 'sectionCreationConfirmed':
-      return [
-        {
-          element: document.querySelector('.intro-available-sections'),
-          intro: `${i18n.t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened', introRerun);">${i18n.t('intro.openAvailableSections')}</span>`
-        }
-      ]
-    case 'availableSectionOpened':
-      return [
-        {
-          element: document.querySelector('.intro-simple-CTA-section-available'),
-          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); setTimeout(() => {runIntro('sectionFormOpened', introRerun)}, 200);">${i18n.t('intro.here')}</span>`
-        }
-      ]
-    case 'sectionFormOpened':
-      return [
-        {
-          element: document.querySelector('.intro-simple-CTA-section-form'),
-          intro: i18n.t('intro.simpleCTAForm')
-        }
-      ]
-    case 'sectionSubmitted':
-      return [
-        {
-          element: document.querySelector('.intro-save-changes'),
-          intro: i18n.t('intro.saveChanges')
-        }
-      ]
-    case 'pageSaved':
-      return [
-        {
-          element: document.querySelector('.intro-relaunch'),
-          intro: i18n.t('intro.relaunch')
-        },
-        {
-          element: document.querySelector('.intro-find-more-blobal'),
-          intro: i18n.t('intro.findMoreGlobal')
         }
       ]
     case 'globalTour':
@@ -4308,10 +4220,6 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
 
     displayVariations.value[selectedVariation.value].views[section.id] = section
 
-    if (section.name === 'SimpleCTA') {
-      runIntro('sectionSubmitted', introRerun.value)
-    }
-
     if (selectedVariation.value === pageName) {
       // We check if there are variations that contains a section linked to the one we just edited
       // If there are, we edit them too so they stay in sync
@@ -4345,7 +4253,6 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
         i18n.t('successAddedSection')
       )
     }
-    checkIntroLastStep('sectionSubmitted')
   } catch (e) {
     showToast(
       "Error",
@@ -4770,8 +4677,6 @@ const mutateVariation = async (variationName) => {
               views: {...updatedViews},
             }
 
-            checkIntroLastStep('pageSaved');
-            runIntro('pageSaved', introRerun.value);
             loading.value = false;
 
             if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
@@ -5326,7 +5231,6 @@ const openCurrentSection = async (type, global, createSection) => {
       currentSection.value = { ...type, creation: true };
     }
   }
-  setTimeout(() => {checkIntroLastStep('sectionFormOpened')}, 200)
 };
 const updateCreationView = (settings) => {
   createdView.value.settings = settings;
@@ -7618,6 +7522,10 @@ section .ql-editor.ql-snow.grey-bg {
   align-items: center;
 }
 
+.sections-popup-title {
+  font-size: 24px;
+}
+
 @media screen and (max-width: 768px) {
   .sections-container .component-view {
     margin: 0;
@@ -7667,6 +7575,10 @@ section .ql-editor.ql-snow.grey-bg {
   }
   .top-bar-wrapper {
     padding-left: 50px;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .top-bar-page-content-wrapper {
     flex-direction: row;
     flex-wrap: wrap;
   }

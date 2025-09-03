@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Updated
 
 - Top bar display enhancement: Top bar of the edit mode, add a page (display enhancement) #229
+- Guide enhancement #230
 
 
 ### [3.0.10] - 2025-08-27
