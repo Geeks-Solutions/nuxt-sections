@@ -88,27 +88,6 @@
         </div>
 
         <div v-if="!currentSection && metadataModal === true" class="section-modal-wrapper">
-          <div class="page-settings-tabs">
-            <div v-for="tab in updatedPageSettingsTabs"
-                 :key="`page-settings-tab-${tab}`"
-                 class="page-settings-tab"
-                 :class="{'active-tab': currentSettingsTab === tab}"
-                 @click="switchSettingsTab(tab)">
-              <div>
-                {{ settingsTabTitle(tab) }}
-              </div>
-              <LazyTooltipClickableTooltip v-if="unsavedSettingsError[tab]"
-                                           :content="$t('sectionsSettings.save_page_settings')"
-                                           color="#f59e0b"
-                                           position="bottom">
-                <div class="section-info-icon">
-                  <LazyBaseIconsAlert :title="$t('sectionsSettings.save_page_settings')"
-                                      color="#f59e0b"
-                                      class="info-icon-style" />
-                </div>
-              </LazyTooltipClickableTooltip>
-            </div>
-          </div>
           <div class="sections-text-center h4 sectionTypeHeader">
             <div class="title">{{ settingsTabTitle(currentSettingsTab) }}</div>
             <div class="closeIcon" @click="closeMetadataModal">
@@ -293,42 +272,115 @@
               <LazyBaseIconsEdit v-if="!editMode" />
               <LazyBaseIconsEye v-else />
             </button>
-            <div class="bg-light-grey-hp hide-mobile section-wrapper">
+            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper">
               <div
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
                 v-if="admin && editMode && !isSideBarOpen"
               >
-                <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center hide-mobile">
+                <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center top-bar-wrapper">
+                  <LazyBaseHelperComponentsBurgerMenu>
+                    <template #trigger>
+                      <button
+                        class="hp-button"
+                        type="button"
+                      >
+                        <div class="btn-text">{{ $t("myPages") }}</div>
+                      </button>
+                    </template>
+                    <template #content>
+                      <button
+                        v-for="page in myPages"
+                        :key="`sections-page-${page.path}`"
+                        class="hp-button"
+                        type="button"
+                        @click="openMyPage(page)"
+                      >
+                        <div class="btn-text sections-no-wrap">{{ page.page }} ( {{ page.path }} )</div>
+                      </button>
+                    </template>
+                  </LazyBaseHelperComponentsBurgerMenu>
+
                   <button
                     class="hp-button"
-                    @click="layoutMode = !layoutMode"
+                    type="button"
+                    @click="isCreatePageModalOpen = true"
                   >
-                    <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                    <div class="plus-icon">
+                      <LazyBaseIconsPlus/>
+                    </div>
                   </button>
-                  <div class="flexSections">
-                    <div v-if="layoutMode === true" class="layoutSelect-container">
-                      <div class="layoutSelect-select-wrapper">
-                        <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                                @change="computeLayoutData">
-                          <option disabled value="">-- Select layout --</option>
-                          <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-                        </select>
-                        <div class="layoutSelect-arrow-icon">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M10 12L5 7h10l-5 5z"/>
-                          </svg>
+
+                  <LazyBaseHelperComponentsBurgerMenu>
+                    <template #content>
+                      <button
+                        class="hp-button"
+                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                        data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
+                        @click="initImportSections"
+                      >
+                        <LazyBaseIconsExport/>
+                      </button>
+                      <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
+                      <button
+                        class="hp-button"
+                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                        data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
+                        @click="exportSections"
+                      >
+                        <LazyBaseIconsImport/>
+                      </button>
+                      <a id="downloadAnchorElem" style="display:none"></a>
+                      <button
+                        class="hp-button"
+                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                        data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+                        @click="switchSettingsTab('page_settings'); openMetaDataModal()"
+                      >
+                        <LazyBaseIconsSettings/>
+                      </button>
+                      <button
+                        class="hp-button danger"
+                        data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+                        @click="isDeletePageModalOpen = true">
+                        <LazyBaseIconsTrash class="trash-icon-style"/>
+                      </button>
+                      <div class="flexSections sections-flex-col">
+                        <button
+                          class="hp-button sections-no-wrap layout-btn"
+                          @click="layoutMode = !layoutMode"
+                        >
+                          <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                        </button>
+                        <div class="flexSections sections-flex-row sections-gap-4 layout-region-wrapper">
+                          <div v-if="layoutMode === true" class="layoutSelect-container">
+                            <div class="layoutSelect-select-wrapper">
+                              <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                                      @change="computeLayoutData">
+                                <option disabled value="">-- Select layout --</option>
+                                <option v-for="layout in availableLayouts" :key="`layout-${layout}`" :value="layout">{{ layout }}</option>
+                              </select>
+                              <div class="layoutSelect-arrow-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                  <path d="M10 12L5 7h10l-5 5z"/>
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                          <div v-if="layoutMode === true" class="custom-checkbox">
+                            <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                            <label class="switch">
+                              <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                              <span class="slider round"></span>
+                            </label>
+                            <label for="highlightRegions"></label>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div v-if="layoutMode === true" class="custom-checkbox">
-                      <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                      <label class="switch">
-                        <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                        <span class="slider round"></span>
-                      </label>
-                      <label for="highlightRegions"></label>
-                    </div>
-                  </div>
+                    </template>
+                  </LazyBaseHelperComponentsBurgerMenu>
+
+                  <div class="sections-config-separator"></div>
+
                   <div :ref="selectedLayout === 'standard' ? 'intro-add-new-section' : ''" :class="selectedLayout === 'standard' ? 'intro-add-new-section' : ''">
                     <button
                       v-if="selectedLayout === 'standard'"
@@ -343,94 +395,90 @@
                       <div class="btn-text">{{ $t("Add") }}</div>
                     </button>
                   </div>
-                  <div class="flexSections">
-                    <button
-                      class="hp-button"
-                      @click="
+
+                  <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
+                    <div class="save-icon">
+                      <LazyBaseIconsFloppy :title="$t('Save')" />
+                    </div>
+                  </button>
+
+                  <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+                    <div class="save-icon">
+                      <LazyBaseIconsRestore :title="$t('Restore')" />
+                    </div>
+                  </button>
+
+                  <LazyBaseHelperComponentsBurgerMenu>
+                    <template #content>
+                      <div class="flexSections">
+                        <button
+                          class="hp-button sections-no-wrap"
+                          @click="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false), (sectionsFilterName = ''), (sectionsFilterAppName = '')
             "
-                    >
-                      <div class="btn-icon plus-icon">
-                        <LazyBaseIconsPlus/>
+                        >
+                          <div class="btn-icon plus-icon">
+                            <LazyBaseIconsPlus/>
+                          </div>
+                          <div class="btn-text">{{ $t("createGlobal") }}</div>
+                        </button>
+                        <button
+                          ref="intro-find-more-blobal"
+                          class="intro-find-more-blobal hp-button globalTour"
+                          @click="runIntro('globalTour', true)"
+                        >
+                          <div class="btn-text intro">?</div>
+                        </button>
                       </div>
-                      <div class="btn-text">{{ $t("createGlobal") }}</div>
-                    </button>
-                    <button
-                      ref="intro-find-more-blobal"
-                      class="intro-find-more-blobal hp-button globalTour"
-                      @click="runIntro('globalTour', true)"
-                    >
-                      <div class="btn-text intro">?</div>
-                    </button>
-                  </div>
-                  <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
-                    <div class="btn-icon check-icon">
-                      <LazyBaseIconsSave/>
-                    </div>
-                    <div class="btn-text">{{ $t("Save") }}</div>
+                    </template>
+                  </LazyBaseHelperComponentsBurgerMenu>
+
+                  <div class="sections-config-separator"></div>
+
+                  <component :is="getDynamicComponent(sectionsOptionsComponentPath)" />
+                  <div v-show="sectionsOptionsComponentPath !== ''" class="sections-config-separator"></div>
+
+                  <button
+                    ref="intro-relaunch"
+                    class="intro-relaunch hp-button"
+                    @click="runIntro('topBar', true)"
+                  >
+                    <div class="btn-text intro">?</div>
                   </button>
-                  <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
-                    <div class="btn-icon back-icon">
-                      <LazyBaseIconsBack/>
-                    </div>
-                    <div class="btn-text">{{ $t("Restore") }}</div>
-                  </button>
-                </div>
-                <div class="flexSections config-buttons">
-                  <div class="flexSections">
-                    <button
-                      class="hp-button "
-                      :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                      data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
-                      @click="exportSections"
-                    >
-                      <LazyBaseIconsImport/>
-                    </button>
-                    <a id="downloadAnchorElem" style="display:none"></a>
-                    <button
-                      class="hp-button "
-                      :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                      data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
-                      @click="initImportSections"
-                    >
-                      <LazyBaseIconsExport/>
-                    </button>
-                    <button
-                      class="hp-button danger"
-                      data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
-                      @click="isDeletePageModalOpen = true">
-                      <LazyBaseIconsTrash class="trash-icon-style"/>
-                    </button>
-                    <button
-                      class="hp-button "
-                      :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                      data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-                      @click="openMetaDataModal"
-                    >
-                      <LazyBaseIconsSettings/>
-                    </button>
-                  </div>
-                  <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
-                  <div class="flexSections">
-                    <button
-                      ref="intro-relaunch"
-                      class="intro-relaunch hp-button"
-                      @click="runIntro('topBar', true)"
-                    >
-                      <div class="btn-text intro">?</div>
-                    </button>
-                    <button
-                      @click="logoutUser"
-                      v-if="admin"
-                      class="sections-bg-blue"
-                      style="background: black;
-                  font-size: 13px;
-                  border-radius: 5px;
-                  padding: 3px 6px;"
-                    >
-                      {{ $t("Logout") }}
-                    </button>
-                  </div>
+
+                  <LazyBaseHelperComponentsBurgerMenu class="settings">
+                    <template #trigger>
+                      <button
+                        class="hp-button"
+                        type="button"
+                      >
+                        <div class="save-icon">
+                          <LazyBaseIconsSettings />
+                        </div>
+                      </button>
+                    </template>
+                    <template #content>
+                      <button
+                        v-for="tab in updatedPageSettingsTabs.filter(tab => tab !== 'page_settings').reverse()"
+                        :key="`page-settings-tab-${tab}`"
+                        class="hp-button "
+                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                        data-toggle="tooltip" data-placement="top" :title="settingsTabTitle(tab)"
+                        @click="switchSettingsTab(tab); openMetaDataModal()"
+                      >
+                        <LazyBaseIconsSettings/>
+                        <span class="sections-pl-2 sections-no-wrap">{{ settingsTabTitle(tab) }}</span>
+                      </button>
+                      <button
+                        v-if="admin"
+                        class="sections-bg-blue sections-logout-btn"
+                        @click="logoutUser"
+                      >
+                        {{ $t("Logout") }}
+                      </button>
+                    </template>
+                  </LazyBaseHelperComponentsBurgerMenu>
+
                 </div>
               </div>
               <div v-if="admin && editMode && !isSideBarOpen && sectionsChanged" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
@@ -450,24 +498,6 @@
                   <div class="flexSections sections-flex-row relativeSections sections-justify-center">
                     <div v-if="!currentSection && isCreateInstance === false"
                          class="flexSections sections-flex-col sections-my-3 sections-gap-4">
-                      <div class="flexSections sections-flex-row sections-justify-center section-types-tabs">
-                        <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun.value); checkIntroLastStep('availableSectionOpened')">
-                          {{ $t("availableSections") }}
-                        </div>
-                        <div class="sections-text-center h2 sections-px-4 mobileHidden">/</div>
-                        <div class="sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''"
-                             @click="typesTab = 'globalTypes'">
-                          {{ $t("AddGlobal") }}
-                        </div>
-                        <div class="sections-text-center h2 sections-px-4 mobileHidden">/</div>
-                        <div ref="intro-inventory" class="intro-inventory sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                             @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened'); checkIntroLastStep('inventoryOpened')">
-                          {{ $t("typeInventory") }}
-                        </div>
-                      </div>
                       <div class="flexSections sections-items-center sections-flex-row sections-gap-4 section-types-filter">
                         <div>{{ $t('filterBy') }}</div>
                         <input
@@ -497,8 +527,7 @@
                         </div>
                       </div>
                     </div>
-                    <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center"
-                         v-else-if="!currentSection && isCreateInstance === true">
+                    <div v-else-if="!currentSection && isCreateInstance === true" class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center">
                       <div class="sections-text-center h2 sections-cursor-pointer selectSectionType">
                         {{ $t("selectSectionType") }}
                       </div>
@@ -515,34 +544,30 @@
                     <LazyBaseIconsBack/>
                   </div>
 
+                  <div v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true && filteredGlobalTypes.filter(gt => gt.id !== undefined)?.length > 0" class="flexSections sections-flex-row my-global-content" @click="showMyGlobal = !showMyGlobal">
+                    <span>{{ $t('myGlobal') }}</span>
+                    <span class="sections-pl-2">{{ showMyGlobal ? 'v' : '>' }}</span>
+                  </div>
+
                   <div
                     v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true"
                     class="sections-m-1 sections-p-1 type-items content-wrapper">
+
                     <div
-                      class="section-item section-item-box"
-                      v-for="(type, index) in typesTab === 'types' ? filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
+                      v-for="(type, index) in  [...showMyGlobal ? filteredGlobalTypes.filter(gt => gt.id !== undefined) : [], ...filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'), ...filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')]"
                       :key="type.name"
                       :ref="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
+                      class="section-item section-item-box"
                       :class="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
                     >
                       <div
-                        v-if="type.type === 'local' || componentsSetupData(type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.name, type.type).render_data"
+                        v-if="type.type === 'local' || componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.section?.name || type.name, type.type).render_data"
                         :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
                         {{ formatTexts(formatName(type.name), " ") }}
                       </div>
-                      <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
+                      <div v-if="(type.access === 'private' && type.notCreated !== true) || (type.notCreated !== true && type.section)" class="section-delete">
                         <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                           <LazyBaseIconsTrash class="trash-icon-style"/>
-                        </div>
-                      </div>
-                      <div v-else-if="type.notCreated === true" class="section-creation">
-                        <div class="section-creation-icon">
-                          <span class="toggleLabel">{{ $t('create') }}</span>
-                          <label id="toggle-label" class="switch">
-                            <input :checked="type.notCreated !== true" type="checkbox"
-                                   @change="addNewStaticType(type.name)">
-                            <span class="slider round"></span>
-                          </label>
                         </div>
                       </div>
                       <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
@@ -554,15 +579,15 @@
                         </LazyTooltipClickableTooltip>
                       </div>
                       <div v-else class="section-top-separator"></div>
-                      <div class="section-item"
-                           :class="[{active: type.notCreated !== true},{inactive: type.notCreated === true}]"
-                           @click="type.notCreated !== true ? openCurrentSection(type) : null">
+                      <div
+                        class="section-item active"
+                        @click="type.notCreated !== true ? openCurrentSection(type) : openCurrentSection(type, false, true) ">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
                           :title="formatName(type.name)"
-                          :component-item="getComponent(type.name, type.type ? type.type : 'static')"
-                          :section="componentsSetupData(type.name, type.type ? type.type : 'static')"
-                          :active="type.notCreated !== true"
+                          :component-item="getComponent(type.section?.name || type.name, type.type ? type.type : 'static')"
+                          :section="componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static')"
+                          :active="true"
                         />
                       </div>
                       <div
@@ -730,13 +755,13 @@
                   class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
                   <div class="sections-text-center h4 sections-my-3  sections-pb-3">
                     {{
-                      typesTab === 'types' ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName
+                      !showMyGlobal ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName
                     }}
                   </div>
                   <div class="flexSections sections-flex-row">
                     <button
                       class="hp-button"
-                      @click="typesTab === 'types' ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
+                      @click="!showMyGlobal ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
                     >
                       <div class="btn-text">
                         {{ $t("Confirm") }}
@@ -968,6 +993,69 @@
                         class="hp-button"
                         @click="isUnAuthModalOpen = false;"
                       >
+                        <div class="btn-text">
+                          {{ $t("Cancel") }}
+                        </div>
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ------------------------------------------------------------------------------------------- -->
+
+
+            <!-- This is the popup that opens when clicking on the plus icon located near the my pages button -->
+            <div v-if="isCreatePageModalOpen && admin && editMode"
+                 class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer createPageContainer"
+                 aria-labelledby="modal-title" role="dialog" aria-modal="true">
+              <div
+                class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+                <div
+                  class="sections-bg-white relativeSections sections-shadow rounded-xl sections-p-4">
+
+                  <div class="closeIcon regular" @click="isCreatePageModalOpen = false">
+                    <LazyBaseIconsClose/>
+                  </div>
+                  <div class="sections-text-center h4 sections-pb-3">
+                    {{ $t("Create New Page") }}
+                  </div>
+                  <div class="flexSections sections-flex-col">
+
+                    <div class="fieldsDescription">
+                      {{ $t("namePathFieldDesc") }}
+                    </div>
+
+                    <div class="sectionsFieldsLabels">
+                      {{ $t("pageName") }}
+                    </div>
+                    <input
+                      class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                      type="text"
+                      v-model="createPageName"
+                    />
+                    <span class="pagePathRequiredStyle"
+                          v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+                    <div class="sectionsFieldsLabels sections-pt-3">
+                      {{ $t("pageUrl") }}
+                    </div>
+                    <input
+                      class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                      type="text"
+                      v-model="createPagePath"
+                    />
+                    <span class="pagePathRequiredStyle"
+                          v-show="metadataErrors.path[0] !== ''">{{ metadataErrors.path[0] }}</span>
+
+                    <div class="flexSections sections-flex-row sections-justify-end">
+                      <button class="hp-button" @click="createNewPage(null, null, null, true)">
+                        <div class="btn-text">
+                          {{ $t("create") }}
+                        </div>
+                      </button>
+                      <button class="hp-button" @click="isCreatePageModalOpen = false">
                         <div class="btn-text">
                           {{ $t("Cancel") }}
                         </div>
@@ -1354,6 +1442,7 @@ import {
   getSectionProjectIdentity,
   importComp,
   importJs,
+  getSectionsPages,
   navigateTo,
   nextTick,
   onBeforeUnmount,
@@ -1491,9 +1580,17 @@ const deletedSectionName = ref(null);
 const isErrorsFormatModalOpen = ref(false);
 const isAuthModalOpen = ref(false);
 const isUnAuthModalOpen = ref(false);
+const isCreatePageModalOpen = ref(false);
+const showMyGlobal = ref(false);
 const synched = ref(false);
 const createdView = ref({});
 const savedView = ref({});
+const myPages = useState('myPages', () => ([]));
+const createPageName = ref("")
+const createPagePath = ref("")
+
+const menuManager = { current: ref(null) }
+provide("menuManager", menuManager)
 
 const sectionsMediaComponent = ref(null)
 const jsonFilePick = ref(null)
@@ -1653,6 +1750,8 @@ const sectionsThemeModal = ref(false)
 const dynamicSideComponent = ref(false)
 
 const dynamicSideBarComponentPath = ref('')
+
+const sectionsOptionsComponentPath = ref('')
 
 const currentThemeTab = ref({})
 
@@ -2752,7 +2851,7 @@ const addNewGlobalType = async (section, instance_name, payload, external_call) 
             currentSection.value = null
             isCreateInstance.value = false
             isSideBarOpen.value = false
-            typesTab.value = 'globalTypes'
+            showMyGlobal.value = true
           } else {
             loading.value = false
           }
@@ -2778,7 +2877,7 @@ const addNewGlobalType = async (section, instance_name, payload, external_call) 
     showToast("Error", "error", i18n.t('enterSectionTypeName'))
   }
 }
-const addNewStaticType = async (name, payload, external_call) => {
+const addNewStaticType = async (name, payload, external_call, createSection) => {
   if (name) {
     sectionTypeName.value = name
   }
@@ -2824,7 +2923,9 @@ const addNewStaticType = async (name, payload, external_call) => {
           if (external_call !== true) {
             types.value = []
             globalTypes.value = []
-            await getSectionTypes() // assuming this function is defined elsewhere
+            if (createSection !== true) {
+              await getSectionTypes()
+            }
             staticSuccess.value = true
             sectionTypeName.value = ""
             fieldsInputs.value = [
@@ -2847,6 +2948,9 @@ const addNewStaticType = async (name, payload, external_call) => {
           }
         }
       });
+      if (createSection === true) {
+        await getSectionTypes()
+      }
       if (external_call === true) {
         return res
       }
@@ -3149,7 +3253,19 @@ const logDrag = (evt, slotName) => {
   }
   computeLayoutData()
 }
-const createNewPage = async (page_name, payload, external_call) => {
+const createNewPage = async (page_name, payload, external_call, custom) => {
+
+  if (custom && myPages.value) {
+    if (myPages.value.map(mp => mp.page).includes(createPageName.value.trim())) {
+      showToast(
+        "Error creating page",
+        "error",
+        i18n.t('createPageError') + createPageName.value + "\n" + i18n.t('pageNameExist')
+      )
+      return
+    }
+  }
+
   if (external_call !== true) {
     loading.value = true
   }
@@ -3162,7 +3278,27 @@ const createNewPage = async (page_name, payload, external_call) => {
     external_call
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(external_call === true ? page_name : pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(external_call === true ? page_name : custom ? createPageName.value : pageName))}`
+
+  let updatedPagePath = createPagePath.value && createPagePath.value !== "" ? createPagePath.value.trim() : ""
+
+  if (custom && updatedPagePath !== '/') {
+    // Split the URL into individual path segments
+    const pathSegments = updatedPagePath.split('/')
+
+    // Filter out empty segments and remove duplicates
+    const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1])
+
+    // Reconstruct the URL with the unique path segments
+    updatedPagePath = updatedPagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/')
+
+    if (updatedPagePath[0] && updatedPagePath[0] === '/') {
+      updatedPagePath = updatedPagePath.replace(/^\/+/, '')
+    }
+    while (updatedPagePath.endsWith('//')) {
+      updatedPagePath = updatedPagePath.slice(0, -1)
+    }
+  }
 
   try {
     const res = await useApiRequest({
@@ -3173,12 +3309,20 @@ const createNewPage = async (page_name, payload, external_call) => {
         sections: []
       } : { // No need to stringify, useApiRequest handles it
         variations: [],
-        sections: []
+        sections: [],
+        path : custom ? updatedPagePath : undefined
       },
       ...config,
       onSuccess: (res) => {
         loading.value = false
-        if (external_call !== true) {
+        if (custom) {
+          myPages.value.push({
+            id: createPageName.value,
+            page: createPageName.value,
+            path: createPagePath.value,
+          })
+          window.location.replace(`${window.location.origin}/${createPagePath.value}`)
+        } else if (external_call !== true) {
           pageNotFound.value = false
           sectionsMainErrors.value = []
           sectionsPageLastUpdated.value = res.data.last_updated
@@ -3934,6 +4078,14 @@ const buildComp = (staticTypes, views, compType, path) => {
   return staticTypes
 }
 const openEditMode = async () => {
+
+  try {
+    const token = useCookie("sections-auth-token").value
+    const res = await getSectionsPages(sectionHeader({token}))
+    if (res && res.value) {
+      myPages.value = res.value
+    }
+  } catch {}
 
   try {
     const hooksJs = importJs(`/js/global-hooks`)
@@ -5054,7 +5206,12 @@ const openMetaDataModal = () => {
     sideBarSizeManagement();
   })
 }
-const openCurrentSection = (type, global) => {
+const openCurrentSection = async (type, global, createSection) => {
+
+  if (createSection) {
+    await addNewStaticType(type.name, null, null, createSection)
+  }
+
   if (global === true) {
     currentSection.value = {
       ...types.value.find(t => t.name === type.name),
@@ -5076,12 +5233,23 @@ const openCurrentSection = (type, global) => {
   } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
     showToast("Authorisation warning", "warning", i18n.t("authorizeFirst"));
   } else {
-    if (type.type === 'static' || type.type === 'configurable') {
+    if ((type.type === 'static' || type.type === 'configurable') || createSection) {
       isModalOpen.value = false;
       isSideBarOpen.value = true;
 
       nextTick(() => {
-        currentSection.value = { ...type, creation: true, id: 'creation-view' };
+        try {
+          if (createSection && Array.isArray(filteredTypes.value) && filteredTypes.value.length > 0) {
+            const foundType = filteredTypes.value.find(t => t.name === type.name)
+            if (foundType) {
+              currentSection.value = { ...foundType, creation: true, id: 'creation-view' };
+            }
+          } else {
+            currentSection.value = { ...type, creation: true, id: 'creation-view' };
+          }
+        } catch {
+          currentSection.value = { ...type, creation: true, id: 'creation-view' };
+        }
         createdView.value = currentSection.value;
         creationView.value = true;
         sideBarSizeManagement();
@@ -5419,6 +5587,10 @@ const themeScrollToSection = () => {
   }
 }
 
+const openMyPage = (page) => {
+  router.push(page.path)
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   computedSEO.value.title = ""
@@ -5723,6 +5895,14 @@ if (!useNuxtApp().$sideBarComponent) {
   })
 }
 
+if (!useNuxtApp().$sectionsOptionsComponent) {
+  useNuxtApp().provide('sectionsOptionsComponent', {
+    setPath: (path) => {
+      sectionsOptionsComponentPath.value = path
+    }
+  })
+}
+
 </script>
 
 <style>
@@ -5808,9 +5988,18 @@ if (!useNuxtApp().$sideBarComponent) {
   margin: 10px;
 }
 
+.sections-config .config-wrapper button {
+  height: 36px;
+}
+
 button svg {
   width: 20px;
   height: 20px;
+}
+
+button .save-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 .hp-button {
@@ -5867,6 +6056,19 @@ button svg {
   transition: 0.1s;
 }
 
+.hp-button:hover .hp-button-label {
+  max-width: 200px;
+  margin-left: 8px;
+}
+
+.hp-button-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-left: 0;
+  transition: max-width 0.4s ease, margin-left 0.4s ease;
+}
+
 .section-wrapper {
   position: relative;
 }
@@ -5916,6 +6118,10 @@ button svg {
 
 .btn-text {
   font-size: 16px;
+}
+
+.sections-no-wrap {
+  white-space: nowrap;
 }
 
 .btn-text.intro {
@@ -6410,6 +6616,23 @@ span.handle {
   margin-bottom: 5px;
 }
 
+.sections-config-separator {
+  align-content: center;
+  border-right: 1px solid #03b1c7;
+  margin: 16px 10px;
+}
+
+.sections-config button.layout-btn {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.layout-region-wrapper {
+  background: white;
+  border-radius: 16px;
+  padding: 10px;
+}
+
 .layoutSelect-container {
   display: flex;
   align-items: center;
@@ -6424,13 +6647,12 @@ span.handle {
 
 .layoutSelect-select-wrapper {
   position: relative;
-  margin-left: 10px;
 }
 
 .layoutSelect-select {
   appearance: none;
-  width: 100%;
-  background-color: transparent;
+  width: auto;
+  background-color: white;
   border: 1px solid #cbd5e0;
   color: #4a5568;
   padding: 0.5rem 0.75rem;
@@ -6754,6 +6976,10 @@ span.handle {
   justify-content: center;
 }
 
+.sections-justify-end {
+  justify-content: flex-end;
+}
+
 .sections-items-center {
   align-items: center;
 }
@@ -7032,6 +7258,12 @@ span.handle {
   color: #03b1c7;
 }
 
+.closeIcon.regular svg {
+  width: 35px;
+  height: 35px;
+  color: #03b1c7;
+}
+
 .sections-aside
 .closeIcon svg:hover {
   color: darken(#03b1c7, 10%);
@@ -7293,6 +7525,25 @@ section .ql-editor.ql-snow.grey-bg {
 .dynamic-side-component, .dynamic-side-component-wrapper {
   height: 100%;
 }
+
+.my-global-content {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #03B1C7;
+  margin-left: 10px;
+  width: max-content;
+}
+
+.sections-logout-btn {
+  background: black;
+  font-size: 13px;
+  border-radius: 5px;
+  padding: 3px 6px;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
+}
+
 @media screen and (max-width: 768px) {
   .sections-container .component-view {
     margin: 0;
@@ -7339,6 +7590,14 @@ section .ql-editor.ql-snow.grey-bg {
   }
   .intro-available-sections {
     margin-top: 20px;
+  }
+  .top-bar-wrapper {
+    padding-left: 50px;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .layout-region-wrapper {
+    flex-wrap: wrap;
   }
 }
 </style>
