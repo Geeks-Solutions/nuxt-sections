@@ -1298,7 +1298,7 @@
                         <!-- </transition-group> -->
                       </draggable>
                     </div>
-                    <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :class="`creation-view-${selectedLayout}-${slotName}`">
+                    <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" :class="`creation-view-${selectedLayout}-${slotName}`">
                       <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
                     </section>
                   </div>
@@ -1306,7 +1306,7 @@
               </component>
             </div>
 
-            <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" class="creation-view-standard">
+            <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
               <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
             </section>
 
@@ -1926,9 +1926,13 @@ const filteredGlobalTypes = computed(() => {
   });
 
   // check if odd → push empty object
-  if (filtered.length % 2 !== 0) {
+  if (filtered.filter(gt => gt.id !== undefined).length % 2 !== 0) {
     filtered.push({
-      id: "addition-empty"
+      id: "addition-empty",
+      name: "addition-empty",
+      type: "static",
+      application: "addition-empty",
+      notCreated: true
     })
   }
 
@@ -6570,7 +6574,7 @@ span.handle {
 @media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
-    height: 350px;
+    height: 450px;
   }
 }
 
