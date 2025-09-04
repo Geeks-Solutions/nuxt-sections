@@ -1,5 +1,5 @@
 <template>
-  <div class="nuxtSections-burger-menu">
+  <div ref="menuRef" class="nuxtSections-burger-menu">
     <div class="cursor-pointer select-none" @click="toggle">
       <slot name="trigger">
         <button class="hp-button" type="button">
@@ -19,11 +19,12 @@
 </template>
 
 <script setup>
-import { ref, inject, watch } from "#imports"
+import { ref, inject, watch, onMounted, onBeforeUnmount } from "#imports"
 
 const menuManager = inject("menuManager") // shared state
 const id = Symbol("menuId")               // unique id for this instance
 const isOpen = ref(false)
+const menuRef = ref(null)
 
 function toggle() {
   if (isOpen.value) {
@@ -36,6 +37,22 @@ function toggle() {
 
 watch(() => menuManager?.current?.value, (val) => {
   isOpen.value = val === id
+})
+
+// Close on outside click
+function handleClickOutside(event) {
+  if (isOpen.value && menuRef.value && !menuRef.value.contains(event.target)) {
+    isOpen.value = false
+    menuManager.current.value = null
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside)
 })
 </script>
 
@@ -70,6 +87,8 @@ watch(() => menuManager?.current?.value, (val) => {
   min-width: 120px;
   position: absolute;
   z-index: 100;
+  background: white;
+  border-radius: 16px;
 }
 
 .nuxtSections-burger-menu.settings .nuxtSections-menu-content {
@@ -81,6 +100,10 @@ watch(() => menuManager?.current?.value, (val) => {
   .nuxtSections-menu-content {
     right: 0;
     justify-items: flex-end;
+  }
+  .pages-list .nuxtSections-menu-content {
+    right: unset !important;
+    justify-items: start !important;
   }
 }
 

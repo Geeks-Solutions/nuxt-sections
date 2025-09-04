@@ -278,106 +278,113 @@
                 v-if="admin && editMode && !isSideBarOpen"
               >
                 <div class="flexSections sections-flex-row sections-justify-center top-bar-wrapper">
-                  <LazyBaseHelperComponentsBurgerMenu>
-                    <template #trigger>
-                      <button
-                        class="hp-button"
-                        type="button"
-                      >
-                        <div class="btn-text">{{ $t("myPages") }}</div>
-                      </button>
-                    </template>
-                    <template #content>
-                      <button
-                        v-for="page in myPages"
-                        :key="`sections-page-${page.path}`"
-                        class="hp-button"
-                        type="button"
-                        @click="openMyPage(page)"
-                      >
-                        <div class="btn-text sections-no-wrap">{{ page.page }} ( {{ page.path }} )</div>
-                      </button>
-                    </template>
-                  </LazyBaseHelperComponentsBurgerMenu>
 
-                  <button
-                    class="hp-button"
-                    type="button"
-                    @click="isCreatePageModalOpen = true"
-                  >
-                    <div class="plus-icon">
-                      <LazyBaseIconsPlus/>
-                    </div>
-                  </button>
-
-                  <LazyBaseHelperComponentsBurgerMenu>
-                    <template #content>
-                      <button
-                        class="hp-button"
-                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                        data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
-                        @click="initImportSections"
-                      >
-                        <LazyBaseIconsExport/>
-                      </button>
-                      <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
-                      <button
-                        class="hp-button"
-                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                        data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
-                        @click="exportSections"
-                      >
-                        <LazyBaseIconsImport/>
-                      </button>
-                      <a id="downloadAnchorElem" style="display:none"></a>
-                      <button
-                        class="hp-button"
-                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                        data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-                        @click="switchSettingsTab('page_settings'); openMetaDataModal()"
-                      >
-                        <LazyBaseIconsSettings/>
-                      </button>
-                      <button
-                        class="hp-button danger"
-                        data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
-                        @click="isDeletePageModalOpen = true">
-                        <LazyBaseIconsTrash class="trash-icon-style"/>
-                      </button>
-                      <div class="flexSections sections-flex-col">
+                  <div class="flexSections top-bar-page-content-wrapper">
+                    <LazyBaseHelperComponentsBurgerMenu class="pages-list">
+                      <template #trigger>
                         <button
-                          class="hp-button sections-no-wrap layout-btn"
-                          @click="layoutMode = !layoutMode"
+                          class="hp-button"
+                          type="button"
                         >
-                          <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                          <div class="btn-text">{{ $t("myPages") }}</div>
                         </button>
-                        <div v-if="layoutMode === true" class="flexSections sections-flex-row sections-gap-4 layout-region-wrapper">
-                          <div class="layoutSelect-container">
-                            <div class="layoutSelect-select-wrapper">
-                              <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                                      @change="computeLayoutData">
-                                <option disabled value="">-- Select layout --</option>
-                                <option v-for="layout in availableLayouts" :key="`layout-${layout}`" :value="layout">{{ layout }}</option>
-                              </select>
-                              <div class="layoutSelect-arrow-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                  <path d="M10 12L5 7h10l-5 5z"/>
-                                </svg>
+                      </template>
+                      <template #content>
+                        <button
+                          v-for="page in myPages"
+                          :key="`sections-page-${page.path}`"
+                          class="hp-button"
+                          type="button"
+                          @click="openMyPage(page)"
+                        >
+                          <div class="btn-text sections-no-wrap">{{ page.page }}</div>
+                        </button>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
+
+                    <button
+                      class="hp-button"
+                      type="button"
+                      @click="isCreatePageModalOpen = true"
+                    >
+                      <div class="plus-icon">
+                        <LazyBaseIconsPlus/>
+                      </div>
+                    </button>
+
+                    <LazyBaseHelperComponentsBurgerMenu>
+                      <template #content>
+                        <button
+                          class="hp-button"
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
+                          @click="initImportSections"
+                        >
+                          <LazyBaseIconsExport/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('importSectionsLabel') }}</span>
+                        </button>
+                        <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
+                        <button
+                          class="hp-button"
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
+                          @click="exportSections"
+                        >
+                          <LazyBaseIconsImport/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('exportSectionsLabel') }}</span>
+                        </button>
+                        <a id="downloadAnchorElem" style="display:none"></a>
+                        <button
+                          class="hp-button"
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+                          @click="switchSettingsTab('page_settings'); openMetaDataModal()"
+                        >
+                          <LazyBaseIconsSettings/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('settingsSectionsLabel') }}</span>
+                        </button>
+                        <button
+                          class="hp-button danger"
+                          data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+                          @click="isDeletePageModalOpen = true">
+                          <LazyBaseIconsTrash class="trash-icon-style"/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('deletePage') }}</span>
+                        </button>
+                        <div class="flexSections sections-flex-col">
+                          <button
+                            class="hp-button sections-no-wrap layout-btn"
+                            @click="layoutMode = !layoutMode"
+                          >
+                            <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                          </button>
+                          <div v-if="layoutMode === true" class="flexSections sections-flex-row sections-gap-4 layout-region-wrapper">
+                            <div class="layoutSelect-container">
+                              <div class="layoutSelect-select-wrapper">
+                                <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                                        @change="computeLayoutData">
+                                  <option disabled value="">-- Select layout --</option>
+                                  <option v-for="layout in availableLayouts" :key="`layout-${layout}`" :value="layout">{{ layout }}</option>
+                                </select>
+                                <div class="layoutSelect-arrow-icon">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M10 12L5 7h10l-5 5z"/>
+                                  </svg>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div class="custom-checkbox">
-                            <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                            <label class="switch">
-                              <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                              <span class="slider round"></span>
-                            </label>
-                            <label for="highlightRegions"></label>
+                            <div class="custom-checkbox">
+                              <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                              <label class="switch">
+                                <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                                <span class="slider round"></span>
+                              </label>
+                              <label for="highlightRegions"></label>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </template>
-                  </LazyBaseHelperComponentsBurgerMenu>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
+                  </div>
 
                   <div class="sections-config-separator"></div>
 
@@ -438,48 +445,51 @@
                   <div class="sections-config-separator"></div>
 
                   <component :is="getDynamicComponent(sectionsOptionsComponentPath)" />
+
                   <div v-show="sectionsOptionsComponentPath !== ''" class="sections-config-separator"></div>
 
-                  <button
-                    ref="intro-relaunch"
-                    class="intro-relaunch hp-button"
-                    @click="runIntro('topBar', true)"
-                  >
-                    <div class="btn-text intro">?</div>
-                  </button>
+                  <div class="flexSections top-bar-page-content-wrapper">
+                    <button
+                      ref="intro-relaunch"
+                      class="intro-relaunch hp-button"
+                      @click="runIntro('topBar', true)"
+                    >
+                      <div class="btn-text intro">?</div>
+                    </button>
 
-                  <LazyBaseHelperComponentsBurgerMenu class="settings">
-                    <template #trigger>
-                      <button
-                        class="hp-button"
-                        type="button"
-                      >
-                        <div class="save-icon">
-                          <LazyBaseIconsSettings />
-                        </div>
-                      </button>
-                    </template>
-                    <template #content>
-                      <button
-                        v-for="tab in updatedPageSettingsTabs.filter(tab => tab !== 'page_settings').reverse()"
-                        :key="`page-settings-tab-${tab}`"
-                        class="hp-button "
-                        :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                        data-toggle="tooltip" data-placement="top" :title="settingsTabTitle(tab)"
-                        @click="switchSettingsTab(tab); openMetaDataModal()"
-                      >
-                        <LazyBaseIconsSettings/>
-                        <span class="sections-pl-2 sections-no-wrap">{{ settingsTabTitle(tab) }}</span>
-                      </button>
-                      <button
-                        v-if="admin"
-                        class="sections-bg-blue sections-logout-btn"
-                        @click="logoutUser"
-                      >
-                        {{ $t("Logout") }}
-                      </button>
-                    </template>
-                  </LazyBaseHelperComponentsBurgerMenu>
+                    <LazyBaseHelperComponentsBurgerMenu class="settings">
+                      <template #trigger>
+                        <button
+                          class="hp-button"
+                          type="button"
+                        >
+                          <div class="save-icon">
+                            <LazyBaseIconsSettings />
+                          </div>
+                        </button>
+                      </template>
+                      <template #content>
+                        <button
+                          v-for="tab in updatedPageSettingsTabs.filter(tab => tab !== 'page_settings').reverse()"
+                          :key="`page-settings-tab-${tab}`"
+                          class="hp-button "
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="settingsTabTitle(tab)"
+                          @click="switchSettingsTab(tab); openMetaDataModal()"
+                        >
+                          <LazyBaseIconsSettings/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ settingsTabTitle(tab) }}</span>
+                        </button>
+                        <button
+                          v-if="admin"
+                          class="sections-bg-blue sections-logout-btn"
+                          @click="logoutUser"
+                        >
+                          {{ $t("Logout") }}
+                        </button>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
+                  </div>
 
                 </div>
               </div>
@@ -558,9 +568,8 @@
                     <div
                       v-for="(type, index) in  [...showMyGlobal ? filteredGlobalTypes.filter(gt => gt.id !== undefined) : [], ...filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'), ...filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')]"
                       :key="type.name"
-                      :ref="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
                       class="section-item section-item-box"
-                      :class="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
+                      :class="[type.id === 'addition-empty' ? 'addition-empty' : '', showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length ? 'global' : '']"
                     >
                       <div
                         v-if="type.type === 'local' || componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.section?.name || type.name, type.type).render_data"
@@ -583,7 +592,7 @@
                       <div v-else class="section-top-separator"></div>
                       <div
                         class="section-item active"
-                        @click="type.notCreated !== true ? openCurrentSection(type) : openCurrentSection(type, false, true) ">
+                        @click="showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length ? type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true) : type.notCreated !== true ? openCurrentSection(type) : openCurrentSection(type, false, true) ">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
                           :title="formatName(type.name)"
@@ -1895,20 +1904,35 @@ const filteredTypes = computed(() => {
 });
 
 const filteredGlobalTypes = computed(() => {
+  // run setup
   globalTypes.value.forEach((type) => {
-    getComponentSetup(type && type.section ? type.section.name : type.name, type.type ? type.type : 'static')
+    getComponentSetup(
+      type?.section ? type.section.name : type.name,
+      type?.type ?? 'static'
+    )
   })
-  return globalTypes.value.filter(item => {
+
+  // filter logic
+  const filtered = globalTypes.value.filter(item => {
     const nameMatch = sectionsFilterName.value
       ? item.name.toLowerCase().includes(sectionsFilterName.value.toLowerCase())
       : true;
 
     const appNameMatch = sectionsFilterAppName.value
-      ? item.application && item.application.toLowerCase().includes(sectionsFilterAppName.value.toLowerCase())
+      ? item.application?.toLowerCase().includes(sectionsFilterAppName.value.toLowerCase())
       : true;
 
     return nameMatch && appNameMatch;
   });
+
+  // check if odd → push empty object
+  if (filtered.length % 2 !== 0) {
+    filtered.push({
+      id: "addition-empty"
+    })
+  }
+
+  return filtered;
 });
 
 const getCreationComponent = computed(() => {
@@ -6315,6 +6339,18 @@ span.handle {
   position: relative;
 }
 
+.modalContainer .section-item-box.global {
+  box-shadow: 0 0 0 20px lightgrey;
+}
+
+.section-item.section-item-box.addition-empty {
+  background: lightgrey;
+}
+
+.section-item.section-item-box.addition-empty * {
+  visibility: hidden;
+}
+
 .modalContainer .type-items {
   display: grid;
   grid-template-columns: repeat(2, 330px);
@@ -6602,7 +6638,6 @@ span.handle {
 
 .sections-config button.layout-btn {
   margin-top: 0;
-  margin-bottom: 0;
 }
 
 .layout-region-wrapper {
@@ -7574,7 +7609,6 @@ section .ql-editor.ql-snow.grey-bg {
     margin-top: 20px;
   }
   .top-bar-wrapper {
-    padding-left: 50px;
     flex-direction: row;
     flex-wrap: wrap;
   }
@@ -7584,6 +7618,9 @@ section .ql-editor.ql-snow.grey-bg {
   }
   .layout-region-wrapper {
     flex-wrap: wrap;
+  }
+  .sections-config-separator {
+    display: none;
   }
 }
 </style>
