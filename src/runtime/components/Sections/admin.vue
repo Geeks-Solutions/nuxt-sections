@@ -4072,9 +4072,10 @@ const openEditMode = async () => {
   if (editMode.value === true) {
     if (selectedLayout.value === 'standard') {
       setTimeout(async () => {
+        await nextTick()
         checkIntroLastStep('topBar')
         await runIntro('topBar', introRerun.value)
-      }, 500)
+      }, 900)
     }
 
     loading.value = true
@@ -4128,7 +4129,9 @@ const openEditMode = async () => {
           }
           initializeSections(res)
           await computeLayoutData() // Await this call
+          loading.value = true
           await getUserData() // Await this call
+          loading.value = true
           try {
             const token = useCookie("sections-auth-token").value
             const res = await getMySectionsPages(sectionHeader({token}))
@@ -4140,9 +4143,10 @@ const openEditMode = async () => {
           verifySlots() // Assuming this is synchronous or doesn't need awaiting
           if (selectedLayout.value !== 'standard') {
             setTimeout(async () => {
+              await nextTick()
               checkIntroLastStep('topBar')
               await runIntro('topBar', introRerun.value)
-            }, 500)
+            }, 900)
           }
         },
         onError: () => {
