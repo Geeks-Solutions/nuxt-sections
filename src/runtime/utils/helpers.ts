@@ -717,17 +717,16 @@ export const useApiRequest = async <T = any>({
   }
 };
 
-export const getSectionsPages = async (sectionHeader: any) => {
+export const getMySectionsPages = async (sectionHeader: any) => {
   const app : any = useNuxtApp();
   try {
-    const pagesResponse = await useFetch(
-      `${app.$sections.serverUrl}/project/${app.$sections.projectId}/pages`,
-      {
-        method: 'GET',
-        headers: sectionHeader
-      }
-    )
-    if (pagesResponse && pagesResponse.data && pagesResponse.status.value && pagesResponse.status.value === "success") {
+    const pagesResponse: any = await useApiRequest({
+      url: `${app.$sections.serverUrl}/project/${app.$sections.projectId}/pages`,
+      method: 'GET',
+      headers: sectionHeader
+    });
+
+    if (pagesResponse && pagesResponse.data && pagesResponse.status && pagesResponse.status === 200) {
       return pagesResponse.data
     } else return []
   } catch {

@@ -1453,7 +1453,6 @@ import {
   getSectionProjectIdentity,
   importComp,
   importJs,
-  getSectionsPages,
   navigateTo,
   nextTick,
   onBeforeUnmount,
@@ -1484,6 +1483,7 @@ import {
 } from '#imports';
 import { createMedia } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
+import {getMySectionsPages} from "../../utils/helpers.js";
 
 const {
   pageName,
@@ -4051,14 +4051,6 @@ const buildComp = (staticTypes, views, compType, path) => {
 const openEditMode = async () => {
 
   try {
-    const token = useCookie("sections-auth-token").value
-    const res = await getSectionsPages(sectionHeader({token}))
-    if (res && res.value) {
-      myPages.value = res.value
-    }
-  } catch {}
-
-  try {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['pre_open_edit_mode'] && hooksJs['pre_open_edit_mode'](useCookie)) {
       const disableEditMode = hooksJs['pre_open_edit_mode'](useCookie)
@@ -4127,7 +4119,6 @@ const openEditMode = async () => {
         body: payload,
         ...config,
         onSuccess: async (res) => { // Make onSuccess async
-          loading.value = false
           if (res.data.last_updated > sectionsPageLastUpdated.value) {
             showToast(
               "Warning",
@@ -4138,6 +4129,14 @@ const openEditMode = async () => {
           initializeSections(res)
           await computeLayoutData() // Await this call
           await getUserData() // Await this call
+          try {
+            const token = useCookie("sections-auth-token").value
+            const res = await getMySectionsPages(sectionHeader({token}))
+            if (res) {
+              myPages.value = res
+            }
+          } catch {}
+          loading.value = false
           verifySlots() // Assuming this is synchronous or doesn't need awaiting
           if (selectedLayout.value !== 'standard') {
             setTimeout(async () => {
