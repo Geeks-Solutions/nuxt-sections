@@ -1,4 +1,5 @@
-import {sectionHeader, useCookie, useNuxtApp} from "#imports";
+import {sectionHeader, useCookie, useNuxtApp, getSectionProjectIdentity} from "#imports";
+import {useFetch} from "#app";
 
 export const createMedia = async (payload, external_call) => {
   const nuxtApp = useNuxtApp();
@@ -26,4 +27,34 @@ export const createMedia = async (payload, external_call) => {
   } catch (e) {
     return e
   }
+}
+/**
+ * @returns {Promise<any>}
+ */
+export const getUser = async () => {
+  const nuxtApp = useNuxtApp()
+
+  return useFetch(
+    `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/user`,
+    {
+      method: 'GET',
+      headers: sectionHeader({
+        token: useCookie('sections-auth-token').value,
+      })
+    }
+  )
+}
+/**
+ * @returns {Promise<any>}
+ */
+export const requestVerification = async () => {
+  const nuxtApp = useNuxtApp()
+
+  return useFetch(
+    `${nuxtApp.$sections.serverUrl}/request_verification?token=${useCookie('sections-auth-token').value}`,
+    {
+      method: 'POST',
+      headers: sectionHeader({})
+    }
+  )
 }

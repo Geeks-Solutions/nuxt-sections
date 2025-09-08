@@ -1481,7 +1481,7 @@ import {
   validateQS,
   watch
 } from '#imports';
-import { createMedia } from "../../utils/SectionsCMSBridge/functions.js"
+import { createMedia, getUser, requestVerification } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
 import {getMySectionsPages} from "../../utils/helpers.js";
 
@@ -2021,8 +2021,10 @@ const initializeSectionsCMSEvents = () => {
       window.SectionsCMS.value.addNewStaticType = (name, payload) => addNewStaticType(name, payload, true)
       window.SectionsCMS.value.addNewGlobalType = (instance_name, payload) => addNewGlobalType(null, instance_name, payload, true)
       window.SectionsCMS.value.updateProjectMetadata = (payload) => updateProjectMetadata(payload, true)
-      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload, true)
       window.SectionsCMS.value.createNewPage = (page_name, payload) => createNewPage(page_name, payload, true)
+      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload, true)
+      window.SectionsCMS.value.getUser = (payload) => getUser(payload, true)
+      window.SectionsCMS.value.requestVerification = (payload) => requestVerification(payload, true)
     }
   }
 }
