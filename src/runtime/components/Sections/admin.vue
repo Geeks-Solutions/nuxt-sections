@@ -88,27 +88,6 @@
         </div>
 
         <div v-if="!currentSection && metadataModal === true" class="section-modal-wrapper">
-          <div class="page-settings-tabs">
-            <div v-for="tab in updatedPageSettingsTabs"
-                 :key="`page-settings-tab-${tab}`"
-                 class="page-settings-tab"
-                 :class="{'active-tab': currentSettingsTab === tab}"
-                 @click="switchSettingsTab(tab)">
-              <div>
-                {{ settingsTabTitle(tab) }}
-              </div>
-              <LazyTooltipClickableTooltip v-if="unsavedSettingsError[tab]"
-                                           :content="$t('sectionsSettings.save_page_settings')"
-                                           color="#f59e0b"
-                                           position="bottom">
-                <div class="section-info-icon">
-                  <LazyBaseIconsAlert :title="$t('sectionsSettings.save_page_settings')"
-                                      color="#f59e0b"
-                                      class="info-icon-style" />
-                </div>
-              </LazyTooltipClickableTooltip>
-            </div>
-          </div>
           <div class="sections-text-center h4 sectionTypeHeader">
             <div class="title">{{ settingsTabTitle(currentSettingsTab) }}</div>
             <div class="closeIcon" @click="closeMetadataModal">
@@ -293,125 +272,183 @@
               <LazyBaseIconsEdit v-if="!editMode" />
               <LazyBaseIconsEye v-else />
             </button>
-            <div class="bg-light-grey-hp hide-mobile section-wrapper">
+            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper">
               <div
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
                 v-if="admin && editMode && !isSideBarOpen"
               >
-                <div ref="intro-top-bar" class="intro-top-bar flexSections sections-flex-row sections-justify-center hide-mobile">
-                  <button
-                    class="hp-button"
-                    @click="layoutMode = !layoutMode"
-                  >
-                    <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
-                  </button>
-                  <div class="flexSections">
-                    <div v-if="layoutMode === true" class="layoutSelect-container">
-                      <div class="layoutSelect-select-wrapper">
-                        <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
-                                @change="computeLayoutData">
-                          <option disabled value="">-- Select layout --</option>
-                          <option v-for="layout in availableLayouts" :value="layout">{{ layout }}</option>
-                        </select>
-                        <div class="layoutSelect-arrow-icon">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M10 12L5 7h10l-5 5z"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                    <div v-if="layoutMode === true" class="custom-checkbox">
-                      <span class="mainmsg">{{ $t('highlightRegions') }}</span>
-                      <label class="switch">
-                        <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
-                        <span class="slider round"></span>
-                      </label>
-                      <label for="highlightRegions"></label>
-                    </div>
-                  </div>
-                  <div :ref="selectedLayout === 'standard' ? 'intro-add-new-section' : ''" :class="selectedLayout === 'standard' ? 'intro-add-new-section' : ''">
+                <div class="flexSections sections-flex-row sections-justify-center top-bar-wrapper">
+
+                  <div class="flexSections top-bar-page-content-wrapper">
+                    <LazyBaseHelperComponentsBurgerMenu class="pages-list">
+                      <template #trigger>
+                        <button
+                          class="hp-button"
+                          type="button"
+                        >
+                          <div class="btn-text">{{ $t("myPages") }}</div>
+                        </button>
+                      </template>
+                      <template #content>
+                        <button
+                          v-for="page in myPages"
+                          :key="`sections-page-${page.path}`"
+                          class="hp-button"
+                          type="button"
+                          @click="openMyPage(page)"
+                        >
+                          <div class="btn-text sections-no-wrap">{{ page.page }}</div>
+                        </button>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
+
                     <button
-                      v-if="selectedLayout === 'standard'"
                       class="hp-button"
-                      @click="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
-            "
+                      type="button"
+                      @click="isCreatePageModalOpen = true"
                     >
-                      <div class="btn-icon plus-icon">
+                      <div class="plus-icon">
                         <LazyBaseIconsPlus/>
                       </div>
-                      <div class="btn-text">{{ $t("Add") }}</div>
                     </button>
+
+                    <LazyBaseHelperComponentsBurgerMenu>
+                      <template #content>
+                        <button
+                          class="hp-button"
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
+                          @click="initImportSections"
+                        >
+                          <LazyBaseIconsExport/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('importSectionsLabel') }}</span>
+                        </button>
+                        <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
+                        <button
+                          class="hp-button"
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
+                          @click="exportSections"
+                        >
+                          <LazyBaseIconsImport/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('exportSectionsLabel') }}</span>
+                        </button>
+                        <a id="downloadAnchorElem" style="display:none"></a>
+                        <button
+                          class="hp-button"
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
+                          @click="switchSettingsTab('page_settings'); openMetaDataModal()"
+                        >
+                          <LazyBaseIconsSettings/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('settingsSectionsLabel') }}</span>
+                        </button>
+                        <button
+                          class="hp-button danger"
+                          data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
+                          @click="isDeletePageModalOpen = true">
+                          <LazyBaseIconsTrash class="trash-icon-style"/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ $t('deletePage') }}</span>
+                        </button>
+                        <div class="flexSections sections-flex-col">
+                          <button
+                            class="hp-button sections-no-wrap layout-btn"
+                            @click="layoutMode = !layoutMode"
+                          >
+                            <div class="btn-text">{{ layoutMode === true ? $t("hideLayout") : $t("editLayout") }}</div>
+                          </button>
+                          <div v-if="layoutMode === true" class="flexSections sections-flex-row sections-gap-4 layout-region-wrapper">
+                            <div class="layoutSelect-container">
+                              <div class="layoutSelect-select-wrapper">
+                                <select v-model="selectedLayout" id="select" name="select" class="layoutSelect-select"
+                                        @change="computeLayoutData">
+                                  <option disabled value="">-- Select layout --</option>
+                                  <option v-for="layout in availableLayouts" :key="`layout-${layout}`" :value="layout">{{ layout }}</option>
+                                </select>
+                                <div class="layoutSelect-arrow-icon">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M10 12L5 7h10l-5 5z"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="custom-checkbox">
+                              <span class="mainmsg">{{ $t('highlightRegions') }}</span>
+                              <label class="switch">
+                                <input type="checkbox" id="highlightRegions" v-model="highlightRegions">
+                                <span class="slider round"></span>
+                              </label>
+                              <label for="highlightRegions"></label>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
                   </div>
-                  <div class="flexSections">
-                    <button
-                      class="hp-button"
-                      @click="
+
+                  <div class="sections-config-separator"></div>
+
+                  <div ref="intro-top-bar" class="intro-top-bar flexSections top-bar-page-content-wrapper">
+                    <div :ref="selectedLayout === 'standard' ? 'intro-add-new-section' : ''" :class="selectedLayout === 'standard' ? 'intro-add-new-section' : ''">
+                      <button
+                        v-if="selectedLayout === 'standard'"
+                        class="hp-button"
+                        @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun.value))
+            "
+                      >
+                        <div class="btn-icon plus-icon">
+                          <LazyBaseIconsPlus/>
+                        </div>
+                        <div class="btn-text">{{ $t("Add") }}</div>
+                      </button>
+                    </div>
+
+                    <button ref="intro-save-changes" class="intro-save-changes hp-button" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="saveVariation">
+                      <div class="save-icon">
+                        <LazyBaseIconsFloppy :title="$t('Save')" />
+                      </div>
+                    </button>
+
+                    <button class="hp-button grey" :class="{'pageHasNoChanges': pageHasNoChanges}" :disabled="pageHasNoChanges" @click="restoreType = 'page'; isRestoreSectionOpen = true">
+                      <div class="save-icon">
+                        <LazyBaseIconsRestore :title="$t('Restore')" />
+                      </div>
+                    </button>
+
+                    <LazyBaseHelperComponentsBurgerMenu>
+                      <template #content>
+                        <div class="flexSections">
+                          <button
+                            class="hp-button sections-no-wrap"
+                            @click="
               (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false), (sectionsFilterName = ''), (sectionsFilterAppName = '')
             "
-                    >
-                      <div class="btn-icon plus-icon">
-                        <LazyBaseIconsPlus/>
-                      </div>
-                      <div class="btn-text">{{ $t("createGlobal") }}</div>
-                    </button>
-                    <button
-                      ref="intro-find-more-blobal"
-                      class="intro-find-more-blobal hp-button globalTour"
-                      @click="runIntro('globalTour', true)"
-                    >
-                      <div class="btn-text intro">?</div>
-                    </button>
+                          >
+                            <div class="btn-icon plus-icon">
+                              <LazyBaseIconsPlus/>
+                            </div>
+                            <div class="btn-text">{{ $t("createGlobal") }}</div>
+                          </button>
+                          <button
+                            ref="intro-find-more-blobal"
+                            class="intro-find-more-blobal hp-button globalTour"
+                            @click="runIntro('globalTour', true)"
+                          >
+                            <div class="btn-text intro">?</div>
+                          </button>
+                        </div>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
                   </div>
-                  <button ref="intro-save-changes" class="intro-save-changes hp-button" @click="saveVariation">
-                    <div class="btn-icon check-icon">
-                      <LazyBaseIconsSave/>
-                    </div>
-                    <div class="btn-text">{{ $t("Save") }}</div>
-                  </button>
-                  <button class="hp-button grey" @click="restoreType = 'page'; isRestoreSectionOpen = true">
-                    <div class="btn-icon back-icon">
-                      <LazyBaseIconsBack/>
-                    </div>
-                    <div class="btn-text">{{ $t("Restore") }}</div>
-                  </button>
-                </div>
-                <div class="flexSections config-buttons">
-                  <div class="flexSections">
-                    <button
-                      class="hp-button "
-                      :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                      data-toggle="tooltip" data-placement="top" :title="$t('exportSectionsLabel')"
-                      @click="exportSections"
-                    >
-                      <LazyBaseIconsImport/>
-                    </button>
-                    <a id="downloadAnchorElem" style="display:none"></a>
-                    <button
-                      class="hp-button "
-                      :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                      data-toggle="tooltip" data-placement="top" :title="$t('importSectionsLabel')"
-                      @click="initImportSections"
-                    >
-                      <LazyBaseIconsExport/>
-                    </button>
-                    <button
-                      class="hp-button danger"
-                      data-toggle="tooltip" data-placement="top" :title="$t('deletePage')"
-                      @click="isDeletePageModalOpen = true">
-                      <LazyBaseIconsTrash class="trash-icon-style"/>
-                    </button>
-                    <button
-                      class="hp-button "
-                      :class="selectedVariation === pageName ? 'danger' : 'grey'"
-                      data-toggle="tooltip" data-placement="top" :title="$t('settingsSectionsLabel')"
-                      @click="openMetaDataModal"
-                    >
-                      <LazyBaseIconsSettings/>
-                    </button>
-                  </div>
-                  <input ref="jsonFilePick" type="file" @change="e => importSections(e)" style="display:none"/>
-                  <div class="flexSections">
+
+                  <div class="sections-config-separator"></div>
+
+                  <component :is="getDynamicComponent(sectionsOptionsComponentPath)" />
+
+                  <div v-show="sectionsOptionsComponentPath !== ''" class="sections-config-separator"></div>
+
+                  <div class="flexSections top-bar-page-content-wrapper">
                     <button
                       ref="intro-relaunch"
                       class="intro-relaunch hp-button"
@@ -419,18 +456,41 @@
                     >
                       <div class="btn-text intro">?</div>
                     </button>
-                    <button
-                      @click="logoutUser"
-                      v-if="admin"
-                      class="sections-bg-blue"
-                      style="background: black;
-                  font-size: 13px;
-                  border-radius: 5px;
-                  padding: 3px 6px;"
-                    >
-                      {{ $t("Logout") }}
-                    </button>
+
+                    <LazyBaseHelperComponentsBurgerMenu class="settings">
+                      <template #trigger>
+                        <button
+                          class="hp-button"
+                          type="button"
+                        >
+                          <div class="save-icon">
+                            <LazyBaseIconsSettings />
+                          </div>
+                        </button>
+                      </template>
+                      <template #content>
+                        <button
+                          v-for="tab in updatedPageSettingsTabs.filter(tab => tab !== 'page_settings').reverse()"
+                          :key="`page-settings-tab-${tab}`"
+                          class="hp-button "
+                          :class="selectedVariation === pageName ? 'danger' : 'grey'"
+                          data-toggle="tooltip" data-placement="top" :title="settingsTabTitle(tab)"
+                          @click="switchSettingsTab(tab); openMetaDataModal()"
+                        >
+                          <LazyBaseIconsSettings/>
+                          <span class="sections-pl-2 sections-no-wrap">{{ settingsTabTitle(tab) }}</span>
+                        </button>
+                        <button
+                          v-if="admin"
+                          class="sections-bg-blue sections-logout-btn"
+                          @click="logoutUser"
+                        >
+                          {{ $t("Logout") }}
+                        </button>
+                      </template>
+                    </LazyBaseHelperComponentsBurgerMenu>
                   </div>
+
                 </div>
               </div>
               <div v-if="admin && editMode && !isSideBarOpen && sectionsChanged" class="sections-p-3 sections-text-center mainmsg sections-pt-3">
@@ -450,24 +510,6 @@
                   <div class="flexSections sections-flex-row relativeSections sections-justify-center">
                     <div v-if="!currentSection && isCreateInstance === false"
                          class="flexSections sections-flex-col sections-my-3 sections-gap-4">
-                      <div class="flexSections sections-flex-row sections-justify-center section-types-tabs">
-                        <div ref="intro-available-sections" class="intro-available-sections sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'types' ? 'selectedTypesTab' : ''" @click="typesTab = 'types'; runIntro('availableSectionOpened', introRerun.value); checkIntroLastStep('availableSectionOpened')">
-                          {{ $t("availableSections") }}
-                        </div>
-                        <div class="sections-text-center h2 sections-px-4 mobileHidden">/</div>
-                        <div class="sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'globalTypes' ? 'selectedTypesTab' : ''"
-                             @click="typesTab = 'globalTypes'">
-                          {{ $t("AddGlobal") }}
-                        </div>
-                        <div class="sections-text-center h2 sections-px-4 mobileHidden">/</div>
-                        <div ref="intro-inventory" class="intro-inventory sections-text-center h2 sections-cursor-pointer"
-                             :class="typesTab === 'inventoryTypes' ? 'selectedTypesTab' : ''"
-                             @click="typesTab = 'inventoryTypes'; sectionsFilterAppName = ''; runIntro('inventoryOpened'); checkIntroLastStep('inventoryOpened')">
-                          {{ $t("typeInventory") }}
-                        </div>
-                      </div>
                       <div class="flexSections sections-items-center sections-flex-row sections-gap-4 section-types-filter">
                         <div>{{ $t('filterBy') }}</div>
                         <input
@@ -497,8 +539,7 @@
                         </div>
                       </div>
                     </div>
-                    <div class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center"
-                         v-else-if="!currentSection && isCreateInstance === true">
+                    <div v-else-if="!currentSection && isCreateInstance === true" class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center">
                       <div class="sections-text-center h2 sections-cursor-pointer selectSectionType">
                         {{ $t("selectSectionType") }}
                       </div>
@@ -515,34 +556,29 @@
                     <LazyBaseIconsBack/>
                   </div>
 
+                  <div v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true && filteredGlobalTypes.filter(gt => gt.id !== undefined)?.length > 0" class="flexSections sections-flex-row my-global-content" @click="showMyGlobal = !showMyGlobal">
+                    <span>{{ $t('myGlobal') }}</span>
+                    <span class="sections-pl-2">{{ showMyGlobal ? 'v' : '>' }}</span>
+                  </div>
+
                   <div
                     v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true"
-                    class="sections-m-1 sections-p-1 type-items content-wrapper">
+                    ref="intro-available-sections" class="intro-available-sections sections-m-1 sections-p-1 type-items content-wrapper">
+
                     <div
-                      class="section-item section-item-box"
-                      v-for="(type, index) in typesTab === 'types' ? filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled') : filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')"
+                      v-for="(type, index) in  [...showMyGlobal ? filteredGlobalTypes.filter(gt => gt.id !== undefined) : [], ...filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'), ...filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')]"
                       :key="type.name"
-                      :ref="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
-                      :class="type.name === 'SimpleCTA' ? type.notCreated !== true ? 'intro-simple-CTA-section-available' : 'intro-simple-CTA-section-inventory' : undefined"
+                      class="section-item section-item-box"
+                      :class="[type.id === 'addition-empty' ? 'addition-empty' : '', showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length ? 'global' : '']"
                     >
                       <div
-                        v-if="type.type === 'local' || componentsSetupData(type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.name, type.type).render_data"
+                        v-if="type.type === 'local' || componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.section?.name || type.name, type.type).render_data"
                         :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
                         {{ formatTexts(formatName(type.name), " ") }}
                       </div>
-                      <div v-if="type.access === 'private' && type.notCreated !== true" class="section-delete">
+                      <div v-if="(type.access === 'private' && type.notCreated !== true) || (type.notCreated !== true && type.section)" class="section-delete">
                         <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
                           <LazyBaseIconsTrash class="trash-icon-style"/>
-                        </div>
-                      </div>
-                      <div v-else-if="type.notCreated === true" class="section-creation">
-                        <div class="section-creation-icon">
-                          <span class="toggleLabel">{{ $t('create') }}</span>
-                          <label id="toggle-label" class="switch">
-                            <input :checked="type.notCreated !== true" type="checkbox"
-                                   @change="addNewStaticType(type.name)">
-                            <span class="slider round"></span>
-                          </label>
                         </div>
                       </div>
                       <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
@@ -554,15 +590,15 @@
                         </LazyTooltipClickableTooltip>
                       </div>
                       <div v-else class="section-top-separator"></div>
-                      <div class="section-item"
-                           :class="[{active: type.notCreated !== true},{inactive: type.notCreated === true}]"
-                           @click="type.notCreated !== true ? openCurrentSection(type) : null">
+                      <div
+                        class="section-item active"
+                        @click="showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length ? type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true) : type.notCreated !== true ? openCurrentSection(type) : openCurrentSection(type, false, true) ">
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
                           :title="formatName(type.name)"
-                          :component-item="getComponent(type.name, type.type ? type.type : 'static')"
-                          :section="componentsSetupData(type.name, type.type ? type.type : 'static')"
-                          :active="type.notCreated !== true"
+                          :component-item="getComponent(type.section?.name || type.name, type.type ? type.type : 'static')"
+                          :section="componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static')"
+                          :active="true"
                         />
                       </div>
                       <div
@@ -730,13 +766,13 @@
                   class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
                   <div class="sections-text-center h4 sections-my-3  sections-pb-3">
                     {{
-                      typesTab === 'types' ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName
+                      !showMyGlobal ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName
                     }}
                   </div>
                   <div class="flexSections sections-flex-row">
                     <button
                       class="hp-button"
-                      @click="typesTab === 'types' ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
+                      @click="!showMyGlobal ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
                     >
                       <div class="btn-text">
                         {{ $t("Confirm") }}
@@ -981,6 +1017,69 @@
 
             <!-- ------------------------------------------------------------------------------------------- -->
 
+
+            <!-- This is the popup that opens when clicking on the plus icon located near the my pages button -->
+            <div v-if="isCreatePageModalOpen && admin && editMode"
+                 class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer createPageContainer"
+                 aria-labelledby="modal-title" role="dialog" aria-modal="true">
+              <div
+                class="flexSections fullHeightSections sections-items-center sections-justify-center sections-pt-4 sections-px-4 sections-pb-20 sections-text-center">
+                <div
+                  class="sections-bg-white relativeSections sections-shadow rounded-xl sections-p-4">
+
+                  <div class="closeIcon regular" @click="isCreatePageModalOpen = false">
+                    <LazyBaseIconsClose/>
+                  </div>
+                  <div class="sections-text-center sections-popup-title sections-pb-3">
+                    {{ $t("Create New Page") }}
+                  </div>
+                  <div class="flexSections sections-flex-col">
+
+                    <div class="fieldsDescription">
+                      {{ $t("namePathFieldDesc") }}
+                    </div>
+
+                    <div class="sectionsFieldsLabels">
+                      {{ $t("pageName") }}
+                    </div>
+                    <input
+                      class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                      type="text"
+                      v-model="createPageName"
+                    />
+                    <span class="pagePathRequiredStyle"
+                          v-show="createPageNameError !== ''">{{ createPageNameError }}</span>
+                    <div class="sectionsFieldsLabels sections-pt-3">
+                      {{ $t("pageUrl") }}
+                    </div>
+                    <input
+                      class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
+                      type="text"
+                      v-model="createPagePath"
+                    />
+                    <span class="pagePathRequiredStyle"
+                          v-show="createPagePathError !== ''">{{ createPagePathError }}</span>
+
+                    <div class="flexSections sections-flex-row sections-justify-end">
+                      <button class="hp-button" @click="createNewPage(null, null, null, true)">
+                        <div class="btn-text">
+                          {{ $t("create") }}
+                        </div>
+                      </button>
+                      <button class="hp-button" @click="isCreatePageModalOpen = false">
+                        <div class="btn-text">
+                          {{ $t("Cancel") }}
+                        </div>
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ------------------------------------------------------------------------------------------- -->
+
             <!-- Views rendered in homepage: This section is for Admin users and it is where the saved sections views are implemented, they can be dragged to change their order, can be edited/deleted and has the options to copy its anchor id  -->
             <div v-if="errorInViews === true  && admin" class="error-section-loaded">
               {{ $t('sectionsNotLoadedCorrectly') }}
@@ -1049,7 +1148,7 @@
                           <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                         </div>
                         <div
-                          v-if="sectionsThemeComponents[view.name]"
+                          v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
                           @click="toggleSectionsOptions(view.id); openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
                           <LazyBaseIconsPaintBursh />
                         </div>
@@ -1098,7 +1197,7 @@
                       <button
                         class="hp-button"
                         @click.stop.prevent="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal')), (checkIntroLastStep('availableSectionOpened'))
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal'))
             "
                       >
                         <div class="btn-icon plus-icon">
@@ -1163,7 +1262,7 @@
                                   <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
                                 </div>
                                 <div
-                                  v-if="sectionsThemeComponents[view.name]"
+                                  v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
                                   @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
                                   <LazyBaseIconsPaintBursh />
                                 </div>
@@ -1199,7 +1298,7 @@
                         <!-- </transition-group> -->
                       </draggable>
                     </div>
-                    <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :class="`creation-view-${selectedLayout}-${slotName}`">
+                    <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" :class="`creation-view-${selectedLayout}-${slotName}`">
                       <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
                     </section>
                   </div>
@@ -1207,7 +1306,7 @@
               </component>
             </div>
 
-            <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" class="creation-view-standard">
+            <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
               <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
             </section>
 
@@ -1305,7 +1404,7 @@
                          class="flexSections sections-w-full sections-justify-center">
                     </div>
                     <div class="footer">
-                      <button class="hp-button" @click="staticSuccess = false; runIntro('sectionCreationConfirmed', introRerun.value);">
+                      <button class="hp-button" @click="staticSuccess = false;">
                         <div class="btn-icon check-icon"></div>
                         <div class="btn-text">{{ $t("Done") }}</div>
                       </button>
@@ -1382,8 +1481,9 @@ import {
   validateQS,
   watch
 } from '#imports';
-import { createMedia } from "../../utils/SectionsCMSBridge/functions.js"
+import { createMedia, getUser, requestVerification } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
+import {getMySectionsPages} from "../../utils/helpers.js";
 
 const {
   pageName,
@@ -1491,9 +1591,19 @@ const deletedSectionName = ref(null);
 const isErrorsFormatModalOpen = ref(false);
 const isAuthModalOpen = ref(false);
 const isUnAuthModalOpen = ref(false);
+const isCreatePageModalOpen = ref(false);
+const showMyGlobal = ref(false);
 const synched = ref(false);
 const createdView = ref({});
 const savedView = ref({});
+const myPages = useState('myPages', () => ([]));
+const createPageName = ref("")
+const createPagePath = ref("")
+const createPageNameError = ref("")
+const createPagePathError = ref("")
+
+const menuManager = { current: ref(null) }
+provide("menuManager", menuManager)
 
 const sectionsMediaComponent = ref(null)
 const jsonFilePick = ref(null)
@@ -1504,6 +1614,7 @@ const currentSettingsTab = ref("page_settings");
 const settingsTabs = ref([
   "page_settings"
 ])
+
 const updatedPageSettingsTabs = computed(()=> {
   let builderSettingsTabs
   try {
@@ -1534,13 +1645,24 @@ const displayVariations = useState('displayVariations', () => ({
     altered: false,
   },
 }));
-// const displayVariations = ref({
-//   [pageName]: {
-//     name: pageName,
-//     views: {},
-//     altered: false,
-//   },
-// });
+
+const pageHasNoChanges = computed(() => {
+  return isEqual(Object.values(displayVariations.value[selectedVariation.value].views).map(view => {
+    return {
+      ...view,
+      fields: undefined,
+      multiple: undefined,
+      instance: undefined,
+    }
+  }), Object.values(originalVariations.value[selectedVariation.value].views).map(view => {
+    return {
+      ...view,
+      fields: undefined,
+      multiple: undefined,
+      instance: undefined,
+    }
+  }))
+})
 
 const selectedSectionTypeName = ref("");
 const selectedAppName = ref("");
@@ -1653,6 +1775,8 @@ const sectionsThemeModal = ref(false)
 const dynamicSideComponent = ref(false)
 
 const dynamicSideBarComponentPath = ref('')
+
+const sectionsOptionsComponentPath = ref('')
 
 const currentThemeTab = ref({})
 
@@ -1780,20 +1904,39 @@ const filteredTypes = computed(() => {
 });
 
 const filteredGlobalTypes = computed(() => {
+  // run setup
   globalTypes.value.forEach((type) => {
-    getComponentSetup(type && type.section ? type.section.name : type.name, type.type ? type.type : 'static')
+    getComponentSetup(
+      type?.section ? type.section.name : type.name,
+      type?.type ?? 'static'
+    )
   })
-  return globalTypes.value.filter(item => {
+
+  // filter logic
+  const filtered = globalTypes.value.filter(item => {
     const nameMatch = sectionsFilterName.value
       ? item.name.toLowerCase().includes(sectionsFilterName.value.toLowerCase())
       : true;
 
     const appNameMatch = sectionsFilterAppName.value
-      ? item.application && item.application.toLowerCase().includes(sectionsFilterAppName.value.toLowerCase())
+      ? item.application?.toLowerCase().includes(sectionsFilterAppName.value.toLowerCase())
       : true;
 
     return nameMatch && appNameMatch;
   });
+
+  // check if odd → push empty object
+  if (filtered.filter(gt => gt.id !== undefined).length % 2 !== 0) {
+    filtered.push({
+      id: "addition-empty",
+      name: "addition-empty",
+      type: "static",
+      application: "addition-empty",
+      notCreated: true
+    })
+  }
+
+  return filtered;
 });
 
 const getCreationComponent = computed(() => {
@@ -1878,8 +2021,10 @@ const initializeSectionsCMSEvents = () => {
       window.SectionsCMS.value.addNewStaticType = (name, payload) => addNewStaticType(name, payload, true)
       window.SectionsCMS.value.addNewGlobalType = (instance_name, payload) => addNewGlobalType(null, instance_name, payload, true)
       window.SectionsCMS.value.updateProjectMetadata = (payload) => updateProjectMetadata(payload, true)
-      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload, true)
       window.SectionsCMS.value.createNewPage = (page_name, payload) => createNewPage(page_name, payload, true)
+      window.SectionsCMS.value.createMedia = (payload) => createMedia(payload, true)
+      window.SectionsCMS.value.getUser = (payload) => getUser(payload, true)
+      window.SectionsCMS.value.requestVerification = (payload) => requestVerification(payload, true)
     }
   }
 }
@@ -2752,7 +2897,7 @@ const addNewGlobalType = async (section, instance_name, payload, external_call) 
             currentSection.value = null
             isCreateInstance.value = false
             isSideBarOpen.value = false
-            typesTab.value = 'globalTypes'
+            showMyGlobal.value = true
           } else {
             loading.value = false
           }
@@ -2778,7 +2923,7 @@ const addNewGlobalType = async (section, instance_name, payload, external_call) 
     showToast("Error", "error", i18n.t('enterSectionTypeName'))
   }
 }
-const addNewStaticType = async (name, payload, external_call) => {
+const addNewStaticType = async (name, payload, external_call, createSection) => {
   if (name) {
     sectionTypeName.value = name
   }
@@ -2824,7 +2969,9 @@ const addNewStaticType = async (name, payload, external_call) => {
           if (external_call !== true) {
             types.value = []
             globalTypes.value = []
-            await getSectionTypes() // assuming this function is defined elsewhere
+            if (createSection !== true) {
+              await getSectionTypes()
+            }
             staticSuccess.value = true
             sectionTypeName.value = ""
             fieldsInputs.value = [
@@ -2847,6 +2994,9 @@ const addNewStaticType = async (name, payload, external_call) => {
           }
         }
       });
+      if (createSection === true) {
+        await getSectionTypes()
+      }
       if (external_call === true) {
         return res
       }
@@ -3149,7 +3299,31 @@ const logDrag = (evt, slotName) => {
   }
   computeLayoutData()
 }
-const createNewPage = async (page_name, payload, external_call) => {
+const createNewPage = async (page_name, payload, external_call, custom) => {
+
+  createPagePathError.value = ""
+  createPageNameError.value = ""
+  if (custom && (!createPagePath.value.trim() || !createPageName.value.trim())) {
+    if (!createPagePath.value.trim()) {
+      createPagePathError.value = i18n.t('requiredField')
+    }
+    if (!createPageName.value.trim()) {
+      createPageNameError.value = i18n.t('requiredField')
+    }
+    return
+  }
+
+  if (custom && myPages.value) {
+    if (myPages.value.map(mp => mp.page).includes(createPageName.value.trim())) {
+      showToast(
+        "Error creating page",
+        "error",
+        i18n.t('createPageError') + createPageName.value + "\n:" + i18n.t('pageNameExist')
+      )
+      return
+    }
+  }
+
   if (external_call !== true) {
     loading.value = true
   }
@@ -3162,7 +3336,27 @@ const createNewPage = async (page_name, payload, external_call) => {
     external_call
   }
 
-  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(external_call === true ? page_name : pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(external_call === true ? page_name : custom ? createPageName.value : pageName))}`
+
+  let updatedPagePath = createPagePath.value && createPagePath.value !== "" ? createPagePath.value.trim() : ""
+
+  if (custom && updatedPagePath !== '/') {
+    // Split the URL into individual path segments
+    const pathSegments = updatedPagePath.split('/')
+
+    // Filter out empty segments and remove duplicates
+    const uniquePathSegments = pathSegments.filter((segment, index) => segment !== '' && segment !== pathSegments[index - 1])
+
+    // Reconstruct the URL with the unique path segments
+    updatedPagePath = updatedPagePath.endsWith('/') ? '/' + uniquePathSegments.join('/') + '/' : '/' + uniquePathSegments.join('/')
+
+    if (updatedPagePath[0] && updatedPagePath[0] === '/') {
+      updatedPagePath = updatedPagePath.replace(/^\/+/, '')
+    }
+    while (updatedPagePath.endsWith('//')) {
+      updatedPagePath = updatedPagePath.slice(0, -1)
+    }
+  }
 
   try {
     const res = await useApiRequest({
@@ -3173,12 +3367,25 @@ const createNewPage = async (page_name, payload, external_call) => {
         sections: []
       } : { // No need to stringify, useApiRequest handles it
         variations: [],
-        sections: []
+        sections: [],
+        path : custom ? updatedPagePath : undefined
       },
       ...config,
       onSuccess: (res) => {
         loading.value = false
-        if (external_call !== true) {
+        if (custom) {
+          showToast(
+            "Success",
+            "success",
+            i18n.t('createPageSuccess')
+          )
+          myPages.value.push({
+            id: createPageName.value,
+            page: createPageName.value,
+            path: createPagePath.value,
+          })
+          window.location.replace(`${window.location.origin}/${updatedPagePath}`)
+        } else if (external_call !== true) {
           pageNotFound.value = false
           sectionsMainErrors.value = []
           sectionsPageLastUpdated.value = res.data.last_updated
@@ -3266,10 +3473,6 @@ const initiateIntroJs = async () => {
   } catch {} // Outer catch remains for potential errors before API call
 }
 const runIntro = async (topic, rerun, lastSavedTopic) => {
-  if (topic === 'sectionFormOpened') {
-    introSectionFormStep.value = true
-  }
-
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
     useCookie('intro-last-step').value = null
@@ -3283,11 +3486,7 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
 
   if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
     if (topic && lastSavedTopic !== true) {
-      if (topic === 'sectionCreationConfirmed') {
-        useCookie('intro-last-step').value = 'availableSectionOpened'
-      } else {
-        useCookie('intro-last-step').value = topic
-      }
+      useCookie('intro-last-step').value = topic
     }
     if (intro.value) {
       intro.value.exit(true)
@@ -3321,19 +3520,7 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
       }
     }
 
-    if (topic !== 'inventoryOpened' && topic !== 'availableSectionOpened') {
-      addIntroSteps(topic, rerun)
-    } else if (
-      topic === 'inventoryOpened' &&
-      document.querySelector('.intro-simple-CTA-section-inventory')
-    ) {
-      addIntroSteps(topic, rerun)
-    } else if (
-      topic === 'availableSectionOpened' &&
-      document.querySelector('.intro-simple-CTA-section-available')
-    ) {
-      addIntroSteps(topic, rerun)
-    }
+    addIntroSteps(topic, rerun)
   }
   // The below code is used to attach click event listeners to the guide close button and overlay
   // It is used to prevent the guide from automatically proceeding into next steps of different guides
@@ -3344,7 +3531,7 @@ const runIntro = async (topic, rerun, lastSavedTopic) => {
     function handleSkipClick() {
       currentPages.value = 1
       introRerun.value = false
-      if (useCookie('intro-last-step').value && useCookie('intro-last-step').value === 'pageSaved') {
+      if (useCookie('intro-last-step').value && useCookie('intro-last-step').value === 'addNewSectionModal') {
         useCookie('intro-last-step').value = null
       }
     }
@@ -3368,22 +3555,9 @@ const addIntroSteps = (topic, rerun) => {
     intro.value.refresh(true)
     intro.value.start()
 
-    if (topic === 'addNewSectionModal' || topic === 'sectionCreationConfirmed' || topic === 'availableSectionOpened') {
+    if (topic === 'addNewSectionModal') {
       window.runIntro = runIntro
       window.introRerun = introRerun.value
-      window.setTypesTab = (value) => {
-        typesTab.value = value
-      }
-
-      window.simpleCTAType = filteredTypes.value.filter(
-        type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'
-      ).find(type => type.name === 'SimpleCTA')
-      window.openCurrentSection = openCurrentSection
-      window.closeIntro = () => {
-        intro.value.exit(true)
-      }
-    } else if (topic === 'inventoryOpened') {
-      window.addNewStaticType = addNewStaticType
       window.closeIntro = () => {
         intro.value.exit(true)
       }
@@ -3391,11 +3565,6 @@ const addIntroSteps = (topic, rerun) => {
   }
 }
 const introSteps = (topic) => {
-
-  const simpleCTAIndex = filteredTypes.value.filter(
-    type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled'
-  ).findIndex(type => type.name === 'SimpleCTA')
-
   switch (topic) {
     case 'createPage':
       return [
@@ -3427,58 +3596,6 @@ const introSteps = (topic) => {
         {
           element: document.querySelector('.intro-available-sections'),
           intro: i18n.t('intro.availableSections')
-        },
-        {
-          element: document.querySelector('.intro-inventory'),
-          intro: simpleCTAIndex === -1 ?
-            i18n.t('intro.inventoryDesc') :
-            `${i18n.t('intro.inventory')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('inventoryTypes'); runIntro('inventoryOpened', introRerun);">${i18n.t('intro.checkIt')}</span>`
-        }
-      ]
-    case 'inventoryOpened':
-      return [
-        {
-          element: document.querySelector('.intro-simple-CTA-section-inventory'),
-          intro: `${i18n.t('intro.simpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="addNewStaticType('SimpleCTA'); closeIntro();">${i18n.t('intro.createSection')}</span>`
-        }
-      ]
-    case 'sectionCreationConfirmed':
-      return [
-        {
-          element: document.querySelector('.intro-available-sections'),
-          intro: `${i18n.t('intro.simpleCTAInstalled')} <span class="sections-cursor-pointer underline text-Blue" onclick="setTypesTab('types'); runIntro('availableSectionOpened', introRerun);">${i18n.t('intro.openAvailableSections')}</span>`
-        }
-      ]
-    case 'availableSectionOpened':
-      return [
-        {
-          element: document.querySelector('.intro-simple-CTA-section-available'),
-          intro: `${i18n.t('intro.clickSimpleCTA')} <span class="sections-cursor-pointer underline text-Blue" onclick="openCurrentSection(simpleCTAType); setTimeout(() => {runIntro('sectionFormOpened', introRerun)}, 200);">${i18n.t('intro.here')}</span>`
-        }
-      ]
-    case 'sectionFormOpened':
-      return [
-        {
-          element: document.querySelector('.intro-simple-CTA-section-form'),
-          intro: i18n.t('intro.simpleCTAForm')
-        }
-      ]
-    case 'sectionSubmitted':
-      return [
-        {
-          element: document.querySelector('.intro-save-changes'),
-          intro: i18n.t('intro.saveChanges')
-        }
-      ]
-    case 'pageSaved':
-      return [
-        {
-          element: document.querySelector('.intro-relaunch'),
-          intro: i18n.t('intro.relaunch')
-        },
-        {
-          element: document.querySelector('.intro-find-more-blobal'),
-          intro: i18n.t('intro.findMoreGlobal')
         }
       ]
     case 'globalTour':
@@ -3957,9 +4074,10 @@ const openEditMode = async () => {
   if (editMode.value === true) {
     if (selectedLayout.value === 'standard') {
       setTimeout(async () => {
+        await nextTick()
         checkIntroLastStep('topBar')
         await runIntro('topBar', introRerun.value)
-      }, 500)
+      }, 900)
     }
 
     loading.value = true
@@ -4004,7 +4122,6 @@ const openEditMode = async () => {
         body: payload,
         ...config,
         onSuccess: async (res) => { // Make onSuccess async
-          loading.value = false
           if (res.data.last_updated > sectionsPageLastUpdated.value) {
             showToast(
               "Warning",
@@ -4014,13 +4131,24 @@ const openEditMode = async () => {
           }
           initializeSections(res)
           await computeLayoutData() // Await this call
+          loading.value = true
           await getUserData() // Await this call
+          loading.value = true
+          try {
+            const token = useCookie("sections-auth-token").value
+            const res = await getMySectionsPages(sectionHeader({token}))
+            if (res) {
+              myPages.value = res
+            }
+          } catch {}
+          loading.value = false
           verifySlots() // Assuming this is synchronous or doesn't need awaiting
           if (selectedLayout.value !== 'standard') {
             setTimeout(async () => {
+              await nextTick()
               checkIntroLastStep('topBar')
               await runIntro('topBar', introRerun.value)
-            }, 500)
+            }, 900)
           }
         },
         onError: () => {
@@ -4125,10 +4253,6 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
 
     displayVariations.value[selectedVariation.value].views[section.id] = section
 
-    if (section.name === 'SimpleCTA') {
-      runIntro('sectionSubmitted', introRerun.value)
-    }
-
     if (selectedVariation.value === pageName) {
       // We check if there are variations that contains a section linked to the one we just edited
       // If there are, we edit them too so they stay in sync
@@ -4162,7 +4286,6 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
         i18n.t('successAddedSection')
       )
     }
-    checkIntroLastStep('sectionSubmitted')
   } catch (e) {
     showToast(
       "Error",
@@ -4550,8 +4673,43 @@ const mutateVariation = async (variationName) => {
               JSON.stringify(displayVariations.value)
             );
             sectionsLayout.value = res.data.layout;
-            checkIntroLastStep('pageSaved');
-            runIntro('pageSaved', introRerun.value);
+
+            const updatedViews = {}
+            let views = displayVariations.value[variationName].views;
+            views = Object.values(views);
+            allSections.value.map((section) => {
+              const foundView = views.find(view => view.weight === section.weight)
+              if (foundView) {
+                updatedViews[section.id] = {
+                  ...foundView,
+                  id: section.id
+                }
+              } else {
+                if (section.type === "configurable") {
+                  if (section.render_data && section.render_data[0] && section.render_data[0].settings && section.render_data[0].settings.image && !Array.isArray(section.render_data[0].settings.image)) {
+                    section.render_data[0].settings.image = []
+                  }
+                  if (section.render_data && section.render_data[0] && section.render_data[0].settings) {
+                    section.settings = section.render_data[0].settings
+                  }
+                  section.nameID = section.name
+                  section.name = section.name.split(":")[1]
+                } else if (section.settings) {
+                  section.settings = isJsonString(section.settings) ? JSON.parse(section.settings) : section.settings
+                }
+
+                if (section.query_string_keys && section.query_string_keys.length > 0) {
+                  sectionsQsKeys.value.push(...section.query_string_keys)
+                }
+                updatedViews[section.id] = section
+              }
+            })
+
+            displayVariations.value[activeVariation.value.pageName] = {
+              name: activeVariation.value.pageName,
+              views: {...updatedViews},
+            }
+
             loading.value = false;
 
             if (res.data.invalid_sections && res.data.invalid_sections.length > 0) {
@@ -5054,7 +5212,12 @@ const openMetaDataModal = () => {
     sideBarSizeManagement();
   })
 }
-const openCurrentSection = (type, global) => {
+const openCurrentSection = async (type, global, createSection) => {
+
+  if (createSection) {
+    await addNewStaticType(type.name, null, null, createSection)
+  }
+
   if (global === true) {
     currentSection.value = {
       ...types.value.find(t => t.name === type.name),
@@ -5076,12 +5239,23 @@ const openCurrentSection = (type, global) => {
   } else if (type.app_status === 'disbaled' || type.app_status === 'disabled') {
     showToast("Authorisation warning", "warning", i18n.t("authorizeFirst"));
   } else {
-    if (type.type === 'static' || type.type === 'configurable') {
+    if ((type.type === 'static' || type.type === 'configurable') || createSection) {
       isModalOpen.value = false;
       isSideBarOpen.value = true;
 
       nextTick(() => {
-        currentSection.value = { ...type, creation: true, id: 'creation-view' };
+        try {
+          if (createSection && Array.isArray(filteredTypes.value) && filteredTypes.value.length > 0) {
+            const foundType = filteredTypes.value.find(t => t.name === type.name)
+            if (foundType) {
+              currentSection.value = { ...foundType, creation: true, id: 'creation-view' };
+            }
+          } else {
+            currentSection.value = { ...type, creation: true, id: 'creation-view' };
+          }
+        } catch {
+          currentSection.value = { ...type, creation: true, id: 'creation-view' };
+        }
         createdView.value = currentSection.value;
         creationView.value = true;
         sideBarSizeManagement();
@@ -5090,7 +5264,6 @@ const openCurrentSection = (type, global) => {
       currentSection.value = { ...type, creation: true };
     }
   }
-  setTimeout(() => {checkIntroLastStep('sectionFormOpened')}, 200)
 };
 const updateCreationView = (settings) => {
   createdView.value.settings = settings;
@@ -5419,6 +5592,10 @@ const themeScrollToSection = () => {
   }
 }
 
+const openMyPage = (page) => {
+  router.push(page.path)
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   computedSEO.value.title = ""
@@ -5723,6 +5900,14 @@ if (!useNuxtApp().$sideBarComponent) {
   })
 }
 
+if (!useNuxtApp().$sectionsOptionsComponent) {
+  useNuxtApp().provide('sectionsOptionsComponent', {
+    setPath: (path) => {
+      sectionsOptionsComponentPath.value = path
+    }
+  })
+}
+
 </script>
 
 <style>
@@ -5808,9 +5993,18 @@ if (!useNuxtApp().$sideBarComponent) {
   margin: 10px;
 }
 
+.sections-config .config-wrapper button {
+  height: 36px;
+}
+
 button svg {
   width: 20px;
   height: 20px;
+}
+
+button .save-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 .hp-button {
@@ -5822,6 +6016,11 @@ button svg {
   color: white;
   align-items: center;
   justify-content: center;
+}
+
+.hp-button.pageHasNoChanges {
+  opacity: 50%;
+  cursor: default;
 }
 
 .hp-button.globalTour {
@@ -5865,6 +6064,19 @@ button svg {
 .hp-button.grey:hover {
   background: rgb(143, 142, 142);
   transition: 0.1s;
+}
+
+.hp-button:hover .hp-button-label {
+  max-width: 200px;
+  margin-left: 8px;
+}
+
+.hp-button-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-left: 0;
+  transition: max-width 0.4s ease, margin-left 0.4s ease;
 }
 
 .section-wrapper {
@@ -5916,6 +6128,10 @@ button svg {
 
 .btn-text {
   font-size: 16px;
+}
+
+.sections-no-wrap {
+  white-space: nowrap;
 }
 
 .btn-text.intro {
@@ -6130,6 +6346,18 @@ span.handle {
   background: #03b1c7;
   color: white;
   position: relative;
+}
+
+.modalContainer .section-item-box.global {
+  box-shadow: 0 0 0 20px lightgrey;
+}
+
+.section-item.section-item-box.addition-empty {
+  background: lightgrey;
+}
+
+.section-item.section-item-box.addition-empty * {
+  visibility: hidden;
 }
 
 .modalContainer .type-items {
@@ -6351,7 +6579,7 @@ span.handle {
 @media only screen and (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
-    height: 350px;
+    height: 450px;
   }
 }
 
@@ -6370,6 +6598,7 @@ span.handle {
 
 .pagePathRequiredStyle {
   color: red;
+  text-align: start;
 }
 
 .fieldsDescription {
@@ -6410,6 +6639,22 @@ span.handle {
   margin-bottom: 5px;
 }
 
+.sections-config-separator {
+  align-content: center;
+  border-right: 1px solid #03b1c7;
+  margin: 16px 10px;
+}
+
+.sections-config button.layout-btn {
+  margin-top: 0;
+}
+
+.layout-region-wrapper {
+  background: white;
+  border-radius: 16px;
+  padding: 10px;
+}
+
 .layoutSelect-container {
   display: flex;
   align-items: center;
@@ -6424,13 +6669,12 @@ span.handle {
 
 .layoutSelect-select-wrapper {
   position: relative;
-  margin-left: 10px;
 }
 
 .layoutSelect-select {
   appearance: none;
-  width: 100%;
-  background-color: transparent;
+  width: auto;
+  background-color: white;
   border: 1px solid #cbd5e0;
   color: #4a5568;
   padding: 0.5rem 0.75rem;
@@ -6754,6 +6998,10 @@ span.handle {
   justify-content: center;
 }
 
+.sections-justify-end {
+  justify-content: flex-end;
+}
+
 .sections-items-center {
   align-items: center;
 }
@@ -7032,6 +7280,12 @@ span.handle {
   color: #03b1c7;
 }
 
+.closeIcon.regular svg {
+  width: 35px;
+  height: 35px;
+  color: #03b1c7;
+}
+
 .sections-aside
 .closeIcon svg:hover {
   color: darken(#03b1c7, 10%);
@@ -7293,6 +7547,29 @@ section .ql-editor.ql-snow.grey-bg {
 .dynamic-side-component, .dynamic-side-component-wrapper {
   height: 100%;
 }
+
+.my-global-content {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #03B1C7;
+  margin-left: 10px;
+  width: max-content;
+}
+
+.sections-logout-btn {
+  background: black;
+  font-size: 13px;
+  border-radius: 5px;
+  padding: 3px 6px;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
+}
+
+.sections-popup-title {
+  font-size: 24px;
+}
+
 @media screen and (max-width: 768px) {
   .sections-container .component-view {
     margin: 0;
@@ -7339,6 +7616,20 @@ section .ql-editor.ql-snow.grey-bg {
   }
   .intro-available-sections {
     margin-top: 20px;
+  }
+  .top-bar-wrapper {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .top-bar-page-content-wrapper {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .layout-region-wrapper {
+    flex-wrap: wrap;
+  }
+  .sections-config-separator {
+    display: none;
   }
 }
 </style>

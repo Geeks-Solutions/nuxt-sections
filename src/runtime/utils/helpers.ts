@@ -1,4 +1,4 @@
-import {useCookie, useNuxtApp, useRequestHeaders, useRoute} from "#app";
+import {useCookie, useNuxtApp, useRequestHeaders, useRoute, useFetch} from "#app";
 import {defineAsyncComponent} from "vue";
 
 export function formatName(name: string): string {
@@ -716,3 +716,20 @@ export const useApiRequest = async <T = any>({
     throw error;
   }
 };
+
+export const getMySectionsPages = async (sectionHeader: any) => {
+  const app : any = useNuxtApp();
+  try {
+    const pagesResponse: any = await useApiRequest({
+      url: `${app.$sections.serverUrl}/project/${app.$sections.projectId}/pages`,
+      method: 'GET',
+      headers: sectionHeader
+    });
+
+    if (pagesResponse && pagesResponse.data && pagesResponse.status && pagesResponse.status === 200) {
+      return pagesResponse.data
+    } else return []
+  } catch {
+    return []
+  }
+}
