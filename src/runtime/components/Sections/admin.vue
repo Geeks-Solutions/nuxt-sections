@@ -1647,21 +1647,23 @@ const displayVariations = useState('displayVariations', () => ({
 }));
 
 const pageHasNoChanges = computed(() => {
-  return isEqual(Object.values(displayVariations.value[selectedVariation.value].views).map(view => {
-    return {
-      ...view,
-      fields: undefined,
-      multiple: undefined,
-      instance: undefined,
-    }
-  }), Object.values(originalVariations.value[selectedVariation.value].views).map(view => {
-    return {
-      ...view,
-      fields: undefined,
-      multiple: undefined,
-      instance: undefined,
-    }
-  }))
+  if (displayVariations.value[selectedVariation.value]?.views && originalVariations.value[selectedVariation.value]?.views) {
+    return isEqual(Object.values(displayVariations.value[selectedVariation.value].views).map(view => {
+      return {
+        ...view,
+        fields: undefined,
+        multiple: undefined,
+        instance: undefined,
+      }
+    }), Object.values(originalVariations.value[selectedVariation.value].views).map(view => {
+      return {
+        ...view,
+        fields: undefined,
+        multiple: undefined,
+        instance: undefined,
+      }
+    }))
+  } else return true
 })
 
 const selectedSectionTypeName = ref("");
@@ -2181,6 +2183,11 @@ const initializeSections = (res, skipHook) => {
   displayVariations.value[activeVariation.value.pageName] = {
     name: activeVariation.value.pageName,
     views: {...views},
+  }
+  if (!originalVariations.value[activeVariation.value.pageName]) {
+    originalVariations.value = JSON.parse(
+      JSON.stringify(displayVariations.value)
+    )
   }
   selectedVariation.value = activeVariation.value.pageName
   loading.value = false
@@ -4668,10 +4675,6 @@ const mutateVariation = async (variationName) => {
             }
             allSections.value = res.data.sections;
             sectionsPageLastUpdated.value = res.data.last_updated;
-            displayVariations.value[variationName].altered = false;
-            originalVariations.value = JSON.parse(
-              JSON.stringify(displayVariations.value)
-            );
             sectionsLayout.value = res.data.layout;
 
             const updatedViews = {}
@@ -4705,10 +4708,15 @@ const mutateVariation = async (variationName) => {
               }
             })
 
+            originalVariations.value[activeVariation.value.pageName] = {
+              name: activeVariation.value.pageName,
+              views: {...updatedViews},
+            }
             displayVariations.value[activeVariation.value.pageName] = {
               name: activeVariation.value.pageName,
               views: {...updatedViews},
             }
+            displayVariations.value[variationName].altered = false;
 
             loading.value = false;
 
@@ -4869,6 +4877,9 @@ const deleteView = (id) => {
   }
   // Then we remove the variation we want to delete
   delete displayVariations.value[selectedVariation.value].views[id];
+  // Below 2 lines are added to refresh the section views and have the list reactive to the deletion update
+  displayVariations.value[selectedVariation.value].views = { ...displayVariations.value[selectedVariation.value].views };
+  displayVariations.value[selectedVariation.value].altered = true;
   isDeleteSectionModalOpen.value = false;
   try {
     const builderHooksJavascript = importJs(`/theme/theme-hooks`);
