@@ -1054,6 +1054,13 @@ describe('SectionsPage.vue', () => {
 
   });
 
+  it('Correctly initialize Original Variations', async () => {
+    expect(wrapper.vm.originalVariations[wrapper.vm.activeVariation.pageName].views).toEqual({
+      'view-1': { id: 'view-1', name: 'section1', weight: 1, type: 'text', private_data: { media: { media_id: 'Media1'} }, linked_to: '' },
+      'view-2': { id: 'view-2', name: 'section2', weight: 2, type: 'image', private_data: { media: { media_id: 'Media2'} }, linked_to: '' }
+    })
+  });
+
 })
 
 const mockUseState = vi.fn()

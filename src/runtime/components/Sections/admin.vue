@@ -1566,8 +1566,8 @@ const dismissCountDown = ref(0);
 const editMode = useState('editMode', () => false);
 const selectedVariation = ref(pageName);
 const typesTab = ref('types');
-const globalTypes = ref([]);
-const types = ref([]);
+const globalTypes = useState('globalTypes', () => ([]));
+const types = useState('types', () => ([]));
 const sectionsQsKeys = useState('sectionsQsKeys', () => ([]));
 const originalVariations = ref({});
 const updatedVariations = ref({});
@@ -1647,21 +1647,25 @@ const displayVariations = useState('displayVariations', () => ({
 }));
 
 const pageHasNoChanges = computed(() => {
-  return isEqual(Object.values(displayVariations.value[selectedVariation.value].views).map(view => {
-    return {
-      ...view,
-      fields: undefined,
-      multiple: undefined,
-      instance: undefined,
-    }
-  }), Object.values(originalVariations.value[selectedVariation.value].views).map(view => {
-    return {
-      ...view,
-      fields: undefined,
-      multiple: undefined,
-      instance: undefined,
-    }
-  }))
+  if (displayVariations.value[selectedVariation.value]?.views && originalVariations.value[selectedVariation.value]?.views) {
+    return isEqual(Object.values(displayVariations.value[selectedVariation.value].views).map(view => {
+      return {
+        ...view,
+        fields: undefined,
+        multiple: undefined,
+        instance: undefined,
+        region: view.region || undefined
+      }
+    }), Object.values(originalVariations.value[selectedVariation.value].views).map(view => {
+      return {
+        ...view,
+        fields: undefined,
+        multiple: undefined,
+        instance: undefined,
+        region: view.region || undefined
+      }
+    })) && selectedLayout.value === sectionsLayout.value
+  } else return true
 })
 
 const selectedSectionTypeName = ref("");
@@ -1776,7 +1780,7 @@ const dynamicSideComponent = ref(false)
 
 const dynamicSideBarComponentPath = ref('')
 
-const sectionsOptionsComponentPath = ref('')
+const sectionsOptionsComponentPath = useState('sectionsOptionsComponentPath', () =>(''))
 
 const currentThemeTab = ref({})
 
@@ -2181,6 +2185,11 @@ const initializeSections = (res, skipHook) => {
   displayVariations.value[activeVariation.value.pageName] = {
     name: activeVariation.value.pageName,
     views: {...views},
+  }
+  if (!originalVariations.value[activeVariation.value.pageName]) {
+    originalVariations.value = JSON.parse(
+      JSON.stringify(displayVariations.value)
+    )
   }
   selectedVariation.value = activeVariation.value.pageName
   loading.value = false
@@ -4485,7 +4494,7 @@ const refreshSectionView = async (sectionView, data) => {
 const mutateVariation = async (variationName) => {
   const invalidSectionsErrors = reactive({});
   const sectionsFormatErrors = reactive({});
-  const sections = [];
+  let sections = [];
   const qsKeys = [];
   let views = displayVariations.value[variationName].views;
   views = Object.values(views);
@@ -4614,6 +4623,22 @@ const mutateVariation = async (variationName) => {
     });
   }
 
+  // This function is used to make sure the sections has no duplicate weights and correctly sorted to preserve order
+  function sanitizeWeights(sectionsData) {
+    // Sort by weight first, to preserve order
+    sectionsData.sort((a, b) => a.weight - b.weight);
+
+    // Reassign weights sequentially
+    sectionsData.forEach((section, index) => {
+      section.weight = index + 1;
+    });
+
+    return sectionsData;
+  }
+  if (selectedLayout.value === 'standard') {
+    sections = sanitizeWeights(sections)
+  }
+
   if (integrityCheck === true && errorInLayout.value !== true) {
     const token = useCookie("sections-auth-token").value;
     const header = {
@@ -4660,7 +4685,7 @@ const mutateVariation = async (variationName) => {
           method: 'PUT',
           body: variables,
           ...config,
-          onSuccess: (res) => {
+          onSuccess: async (res) => {
             if (res.data && res.data.error) {
               showToast("error", "error", res.data.error);
               loading.value = false; // Stop loading on handled error
@@ -4668,15 +4693,15 @@ const mutateVariation = async (variationName) => {
             }
             allSections.value = res.data.sections;
             sectionsPageLastUpdated.value = res.data.last_updated;
-            displayVariations.value[variationName].altered = false;
-            originalVariations.value = JSON.parse(
-              JSON.stringify(displayVariations.value)
-            );
             sectionsLayout.value = res.data.layout;
 
             const updatedViews = {}
             let views = displayVariations.value[variationName].views;
-            views = Object.values(views);
+            if (selectedLayout.value === 'standard') {
+              views = sanitizeWeights(Object.values(views));
+            } else {
+              views = Object.values(views);
+            }
             allSections.value.map((section) => {
               const foundView = views.find(view => view.weight === section.weight)
               if (foundView) {
@@ -4705,10 +4730,17 @@ const mutateVariation = async (variationName) => {
               }
             })
 
+            originalVariations.value[activeVariation.value.pageName] = {
+              name: activeVariation.value.pageName,
+              views: {...JSON.parse(JSON.stringify(updatedViews))},
+            }
             displayVariations.value[activeVariation.value.pageName] = {
               name: activeVariation.value.pageName,
               views: {...updatedViews},
             }
+            displayVariations.value[variationName].altered = false;
+
+            await computeLayoutData()
 
             loading.value = false;
 
@@ -4869,6 +4901,9 @@ const deleteView = (id) => {
   }
   // Then we remove the variation we want to delete
   delete displayVariations.value[selectedVariation.value].views[id];
+  // Below 2 lines are added to refresh the section views and have the list reactive to the deletion update
+  displayVariations.value[selectedVariation.value].views = { ...displayVariations.value[selectedVariation.value].views };
+  displayVariations.value[selectedVariation.value].altered = true;
   isDeleteSectionModalOpen.value = false;
   try {
     const builderHooksJavascript = importJs(`/theme/theme-hooks`);
