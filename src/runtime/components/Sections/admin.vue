@@ -3516,6 +3516,9 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
     await nuxtApp.callHook('start-guide', topic, action)
     return
   }
+  if (guideConfig.value.autoStart === false && action !== 'global-content-guide-btn' && action !== 'relaunch-guide-btn') {
+    return
+  }
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
     useCookie('intro-last-step').value = null
