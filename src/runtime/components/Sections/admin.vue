@@ -3518,6 +3518,8 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
   }
   if (guideConfig.value.autoStart === false && action !== 'global-content-guide-btn' && action !== 'relaunch-guide-btn') {
     return
+  } else if (guideConfig.value.autoStart === false && (action === 'global-content-guide-btn' || action === 'relaunch-guide-btn')) {
+    guideConfig.value.autoStart = true
   }
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
