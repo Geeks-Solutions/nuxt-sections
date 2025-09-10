@@ -431,9 +431,10 @@
                             <div class="btn-text">{{ $t("createGlobal") }}</div>
                           </button>
                           <button
+                            v-if="!guideConfig.disabled"
                             ref="intro-find-more-blobal"
                             class="intro-find-more-blobal hp-button globalTour"
-                            @click="runIntro('globalTour', true)"
+                            @click="runIntro('globalTour', true, null, 'global-content-guide-btn')"
                           >
                             <div class="btn-text intro">?</div>
                           </button>
@@ -450,9 +451,10 @@
 
                   <div class="flexSections top-bar-page-content-wrapper">
                     <button
+                      v-if="!guideConfig.disabled"
                       ref="intro-relaunch"
                       class="intro-relaunch hp-button"
-                      @click="runIntro('topBar', true)"
+                      @click="runIntro('topBar', true, null, 'relaunch-guide-btn')"
                     >
                       <div class="btn-text intro">?</div>
                     </button>
@@ -577,7 +579,7 @@
                         {{ formatTexts(formatName(type.name), " ") }}
                       </div>
                       <div v-if="(type.access === 'private' && type.notCreated !== true) || (type.notCreated !== true && type.section)" class="section-delete">
-                        <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
+                        <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index, showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length)">
                           <LazyBaseIconsTrash class="trash-icon-style"/>
                         </div>
                       </div>
@@ -766,13 +768,13 @@
                   class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
                   <div class="sections-text-center h4 sections-my-3  sections-pb-3">
                     {{
-                      !showMyGlobal ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName
+                      showMyGlobal && deletingGlobalInstance ? $t("delete-global-section-type") + selectedSectionTypeName : $t("delete-section-type") + selectedSectionTypeName
                     }}
                   </div>
                   <div class="flexSections sections-flex-row">
                     <button
                       class="hp-button"
-                      @click="!showMyGlobal ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
+                      @click="showMyGlobal && deletingGlobalInstance ? deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
                     >
                       <div class="btn-text">
                         {{ $t("Confirm") }}
@@ -1582,6 +1584,7 @@ const isSideBarOpen = ref(false);
 const sectionsChanged = ref(false);
 const backToAddSectionList = ref(false);
 const isDeleteModalOpen = ref(false);
+const deletingGlobalInstance = ref(false);
 const isRestoreSectionOpen = ref(false);
 const restoreType = ref('section');
 const isDeletePageModalOpen = ref(false);
@@ -1783,6 +1786,30 @@ const dynamicSideBarComponentPath = ref('')
 const sectionsOptionsComponentPath = useState('sectionsOptionsComponentPath', () =>(''))
 
 const currentThemeTab = ref({})
+
+const guideConfig = useState('guideConfig', () => {
+  const defaultConfig = {
+    disabled: false,
+    autoStart: true,
+    override: false
+  }
+  try {
+    const hooksJs = importJs('/js/global-hooks') // assuming this is sync
+    if (hooksJs?.guide_config) {
+      const config = hooksJs.guide_config()
+      if (config && typeof config === 'object') {
+        return {
+          ...defaultConfig,
+          ...config
+        }
+      } else return defaultConfig
+    } else {
+      return defaultConfig
+    }
+  } catch {
+    return defaultConfig
+  }
+})
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -3463,7 +3490,7 @@ const initiateIntroJs = async () => {
           }
           currentPages.value = response.data.current_pages
           if (currentPages.value !== null && currentPages.value === 0) {
-            if (pageNotFound.value) {
+            if (pageNotFound.value && guideConfig.value.autoStart === true) {
               await runIntro('createPage') // Await intro run
             }
           }
@@ -3481,7 +3508,19 @@ const initiateIntroJs = async () => {
     }
   } catch {} // Outer catch remains for potential errors before API call
 }
-const runIntro = async (topic, rerun, lastSavedTopic) => {
+const runIntro = async (topic, rerun, lastSavedTopic, action) => {
+  if (guideConfig.value.disabled === true) {
+    return
+  }
+  if (guideConfig.value.override === true) {
+    await nuxtApp.callHook('start-guide', topic, action)
+    return
+  }
+  if (guideConfig.value.autoStart === false && action !== 'global-content-guide-btn' && action !== 'relaunch-guide-btn') {
+    return
+  } else if (guideConfig.value.autoStart === false && (action === 'global-content-guide-btn' || action === 'relaunch-guide-btn')) {
+    guideConfig.value.autoStart = true
+  }
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
     useCookie('intro-last-step').value = null
@@ -5213,7 +5252,8 @@ const unAuthorizeSectionType = async (sectionAppId, index) => {
     emit("load", false);
   }
 };
-const openDeleteSectionTypeModal = (sectionTypeName, index) => {
+const openDeleteSectionTypeModal = (sectionTypeName, index, global) => {
+  deletingGlobalInstance.value = global
   selectedSectionTypeName.value = sectionTypeName;
   selectedSectionTypeIndex.value = index;
   isDeleteModalOpen.value = true;
