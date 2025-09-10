@@ -1422,6 +1422,61 @@ const pre_open_edit_mode = (useCookie) => {
 }
 ```
 
+* `guide_config`: Configure the library's guide, it supports 3 options (disabled, autoStart, override)
+
+```js
+const guide_config = () => {
+  return {
+    disabled: false,
+    autoStart: false,
+    override: false
+  }
+}
+```
+
+- When override is true, the library guide will not start, and you can implement your own guide by listening to the start-guide hook emitted from the library
+Example: (Use topic and action to know what option/btn click you want to trigger your guide for)
+
+```js
+useNuxtApp().hook('start-guide', async (topic, action) => {
+  try {
+    const introJsModule = await import('intro.js/minified/intro.min.js') // This library is supported out of the box by nuxt-sections
+    await import('intro.js/minified/introjs.min.css')
+    const intro = introJsModule.default()
+
+    intro.setOption("dontShowAgain", true)
+    intro.setOption("nextLabel", 'nextLabel')
+    intro.setOption("prevLabel", 'prevLabel')
+    intro.setOption("doneLabel", 'doneLabel')
+    intro.setOption("dontShowAgainLabel", 'dontShowAgainLabel')
+
+    if (topic === 'topBar' && action === 'relaunch-guide-btn') {
+      intro.setOptions({
+        steps: [
+          {
+            element: document.querySelector('.custom-feature'),
+            intro: 'This is guide override test for custom feature'
+          }
+        ]
+      })
+      intro.refresh(true)
+      intro.start()
+    } else if (topic === 'globalTour') {
+      intro.setOptions({
+        steps: [
+          {
+            element: document.querySelector('.custom-feature-global'),
+            intro: 'This is guide override test for global content'
+          }
+        ]
+      })
+      intro.refresh(true)
+      intro.start()
+    }
+  } catch {}
+})
+```
+
 ```js
 export {
   section_page_initialization_completed,
@@ -1436,7 +1491,8 @@ export {
   medias_api_error_received,
   medias_api_request_received,
   medias_api_response_received,
-  pre_open_edit_mode
+  pre_open_edit_mode,
+  guide_config
 };
 ```
 

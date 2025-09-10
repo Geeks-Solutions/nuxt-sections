@@ -8,7 +8,7 @@
   "createGlobal": "Create global content",
   "availableSections": "Available contents",
   "typeInventory": "Inventory ",
-  "selectSectionType": "Select a content type to create a global content of it",
+  "selectSectionType": "Select a content type to create a global version for it",
   "editLayout": "Edit layout",
   "hideLayout": "Hide layout options",
   "highlightRegions": "Highlight",

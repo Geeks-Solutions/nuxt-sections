@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Broken pages navigation when using My pages list
 
+### Added
+
+- Introduced guide configuration: disabled, override, autoStart
+
 ### [3.0.11] - 2025-09-01
 
 ### Updated
