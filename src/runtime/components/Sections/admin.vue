@@ -577,7 +577,7 @@
                         {{ formatTexts(formatName(type.name), " ") }}
                       </div>
                       <div v-if="(type.access === 'private' && type.notCreated !== true) || (type.notCreated !== true && type.section)" class="section-delete">
-                        <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
+                        <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index, showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length)">
                           <LazyBaseIconsTrash class="trash-icon-style"/>
                         </div>
                       </div>
@@ -766,13 +766,13 @@
                   class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl sections-overflow-scroll">
                   <div class="sections-text-center h4 sections-my-3  sections-pb-3">
                     {{
-                      !showMyGlobal ? $t("delete-section-type") + selectedSectionTypeName : $t("delete-global-section-type") + selectedSectionTypeName
+                      showMyGlobal && deletingGlobalInstance ? $t("delete-global-section-type") + selectedSectionTypeName : $t("delete-section-type") + selectedSectionTypeName
                     }}
                   </div>
                   <div class="flexSections sections-flex-row">
                     <button
                       class="hp-button"
-                      @click="!showMyGlobal ? deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
+                      @click="showMyGlobal && deletingGlobalInstance ? deleteGlobalSectionType(selectedSectionTypeName, selectedSectionTypeIndex) : deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex)"
                     >
                       <div class="btn-text">
                         {{ $t("Confirm") }}
@@ -1582,6 +1582,7 @@ const isSideBarOpen = ref(false);
 const sectionsChanged = ref(false);
 const backToAddSectionList = ref(false);
 const isDeleteModalOpen = ref(false);
+const deletingGlobalInstance = ref(false);
 const isRestoreSectionOpen = ref(false);
 const restoreType = ref('section');
 const isDeletePageModalOpen = ref(false);
@@ -5213,7 +5214,8 @@ const unAuthorizeSectionType = async (sectionAppId, index) => {
     emit("load", false);
   }
 };
-const openDeleteSectionTypeModal = (sectionTypeName, index) => {
+const openDeleteSectionTypeModal = (sectionTypeName, index, global) => {
+  deletingGlobalInstance.value = global
   selectedSectionTypeName.value = sectionTypeName;
   selectedSectionTypeIndex.value = index;
   isDeleteModalOpen.value = true;
