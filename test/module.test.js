@@ -265,9 +265,9 @@ describe('SectionsPage.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
-      { id: 'view1', private_data: {}, weight: 2 },
       { id: 'view2', private_data: {}, weight: 1 },
-      { id: 'view4', private_data: {}, weight: 4 }
+      { id: 'view1', private_data: {}, weight: 2 },
+      { id: 'view4', private_data: {}, weight: 3 }
     ])
 
   })
@@ -417,7 +417,7 @@ describe('SectionsPage.vue', () => {
     // Assert that sectionOptions for 'view-2' is toggled
     expect(wrapper.vm.sectionOptions['view-2']).toBe(true);
     // Assert that sectionOptions for 'view-1' remains unchanged
-    expect(wrapper.vm.sectionOptions['view-1']).toBe(true);
+    expect(wrapper.vm.sectionOptions['view-1']).toBe(false);
   });
 
   it('renders controls div only for the view with sectionOptions set to true', async () => {
@@ -605,11 +605,6 @@ describe('SectionsPage.vue', () => {
 
     wrapper.vm.globalTypes = []
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    })
-
     wrapper.vm.types = [
       {
         name: 'Section1',
@@ -622,7 +617,10 @@ describe('SectionsPage.vue', () => {
     ]
 
     await wrapper.vm.$nextTick()
-
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
     await wrapper.vm.getGlobalSectionTypes(false);
 
     await wrapper.vm.$nextTick()
@@ -950,6 +948,15 @@ describe('SectionsPage.vue', () => {
 
     expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
       {
+        id: 'view2',
+        private_data: {
+          media: {
+            media_id: "Media2"
+          }
+        },
+        weight: 1
+      },
+      {
         id: 'view1',
         private_data: {
                 media: {
@@ -959,24 +966,110 @@ describe('SectionsPage.vue', () => {
         weight: 2
       },
       {
-        id: 'view2',
-        private_data: {
-                media: {
-                  media_id: "Media2"
-                }
-              },
-        weight: 1
-      },
-      {
         id: 'view4',
         private_data: {
                 media: {
                   media_id: "Media4"
                 }
               },
-        weight: 4
+        weight: 3
       }
     ])
+
+  })
+
+  it('When saving the page meta, the section theme settings of the page must be preserved', async () => {
+    wrapper.vm.displayVariations.home = {
+      name: 'home',
+      views: {
+        view1: {
+          id: 'view1',
+          private_data: {
+                media: {
+                  media_id: "Media1"
+                }
+              },
+          weight: 2
+        },
+        view2: {
+          id: 'view2',
+          private_data: {
+                media: {
+                  media_id: "Media2"
+                }
+              },
+          weight: 1
+        },
+        view3: {
+          id: 'view3',
+          private_data: {
+                media: {
+                  media_id: "Media3"
+                }
+              },
+          weight: 3, altered: true
+        },
+        view4: {
+          id: 'view4',
+          private_data: {
+                media: {
+                  media_id: "Media4"
+                }
+              },
+          weight: 4
+        },
+      },
+      altered: false,
+    }
+
+    wrapper.vm.originalThemeSettings = {
+      global: {
+        'view-1': {
+          "--section-background-color": "rgb(103, 59, 183)"
+        }
+      },
+      specific: {
+        'view-2': {
+          "--section-background-color": "rgb(66, 165, 246)"
+        }
+      }
+    }
+
+    wrapper.vm.selectedVariation = 'home'
+
+    await wrapper.vm.$nextTick()
+
+    const views = wrapper.vm.currentViews
+    expect(views[0].id).toBe('view2')
+    expect(views[1].id).toBe('view1')
+    expect(views.length).toBe(3)
+
+    await wrapper.vm.updatePageMetaData()
+
+    await wrapper.vm.$nextTick();
+
+    expect(JSON.parse(global.fetch.mock.calls[2][1].body).metadata).toStrictEqual({
+      en: {
+        description: "",
+        title: "",
+      },
+      fr: {
+        description: "",
+        title: "",
+      },
+      sections_builder: {
+        global: {
+          "view-1": {
+            "--section-background-color": "rgb(103, 59, 183)",
+          },
+        },
+        specific: {
+          "view-2": {
+            "--section-background-color": "rgb(66, 165, 246)",
+          },
+        },
+      },
+    })
 
   })
 
