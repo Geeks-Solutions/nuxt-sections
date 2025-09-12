@@ -2583,7 +2583,7 @@ const updatePageMetaData = async (seo, themeData) => {
     path: updatedPagePath,
     metadata: {
       ...pageMetadata.value,
-      sections_builder: themeData ? themeData : undefined
+      sections_builder: themeData ? themeData : originalThemeSettings.value
     },
     variations: [],
     layout: sectionsLayout.value,
@@ -4922,6 +4922,11 @@ const restoreVariations = () => {
   );
 };
 const toggleSectionsOptions = (viewId) => {
+  for (const key in sectionOptions.value) {
+    if (key !== viewId) {
+      sectionOptions.value[key] = false
+    }
+  }
   sectionOptions.value[viewId] = !sectionOptions.value[viewId];
 };
 const deleteView = (id) => {
