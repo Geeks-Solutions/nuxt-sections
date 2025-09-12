@@ -2189,7 +2189,8 @@ const initializeSections = (res, skipHook) => {
     if (section.id) {
       views[section.id] = section
     } else {
-      views["test"] = section
+      section.id = `test-${section.weight}`
+      views[section.id] = section
     }
 
     sectionOptions[section.id] = false
@@ -5698,6 +5699,16 @@ onMounted(async () => {
   if (!pageNotFound.value) {
     checkIntroLastStep('editPage')
   }
+
+  try {
+    const hooksJs = importJs('/js/global-hooks') // assuming this is sync
+    if (hooksJs?.library_sections_theme_components) {
+      const config = hooksJs.library_sections_theme_components(i18n.t)
+      if (config && typeof config === 'object' && config.sectionName && config.themeComponents) {
+        sectionsThemeComponents.value[config.sectionName] = config.themeComponents
+      }
+    }
+  } catch {}
 });
 
 onBeforeMount(() => {
