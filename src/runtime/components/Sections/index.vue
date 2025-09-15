@@ -1240,7 +1240,7 @@ const fetchData = async () => {
     } else if (error) {
       sectionsPageErrorManagement(error)
     }
-  } else if (inBrowser && fetchedOnServer.value === false) {
+  } else if (inBrowser && fetchedOnServer.value === false && !admin) {
     loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
