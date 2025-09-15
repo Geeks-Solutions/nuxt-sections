@@ -4675,9 +4675,7 @@ const mutateVariation = async (variationName) => {
 
     return sectionsData;
   }
-  if (selectedLayout.value === 'standard') {
-    sections = sanitizeWeights(sections)
-  }
+  sections = sanitizeWeights(sections)
 
   if (integrityCheck === true && errorInLayout.value !== true) {
     const token = useCookie("sections-auth-token").value;
