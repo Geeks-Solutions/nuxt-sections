@@ -45,6 +45,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
   } catch {}
 
+  let updateLocalizationOnCSR = true
+  try {
+    if (hooksJs && hooksJs['localize_on_csr']) {
+      updateLocalizationOnCSR = hooksJs['localize_on_csr'](useCookie)
+    }
+  } catch {}
+
   // Server-side logic
   if (import.meta.server && !store.getPageData && !to.fullPath.endsWith('/health') && !to.fullPath.endsWith('/admin') && fetchOnServer) {
     let hooksJs;
@@ -169,8 +176,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       app.$i18n.locale.value = abstractedDefaultLocale;
       await app.$i18n.setLocale(abstractedDefaultLocale);
     } else {
-      app.$i18n.locale.value = defaultLocale.value;
-      await app.$i18n.setLocale(defaultLocale.value);
+      if (updateLocalizationOnCSR) {
+        app.$i18n.locale.value = defaultLocale.value;
+        await app.$i18n.setLocale(defaultLocale.value);
+      }
     }
   }
 })

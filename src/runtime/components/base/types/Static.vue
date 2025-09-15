@@ -189,16 +189,17 @@ async function getGlobalType() {
 
 watch(viewSaved, async (val) => {
   await nextTick()
-  setTimeout(() => {
+  setTimeout(async () => {
     if (val?.dynamicFormRef && props.savedView?.settings) {
+      await nextTick()
       val.dynamicFormRef.settings = props.savedView.settings
     }
-  }, 500)
+  }, 600)
   setTimeout(() => {
     if (val?.dynamicFormRef && props.savedView?.private_data) {
       val.dynamicFormRef.private_data = props.savedView.private_data
     }
-  }, 500)
+  }, 600)
 })
 
 // Lifecycle Hooks

@@ -1188,7 +1188,7 @@
               </draggable>
             </div>
             <div v-else>
-              <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang">
+              <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang" :admin="admin" :edit-mode="editMode" :is-side-bar-open="isSideBarOpen" @open-theme-modal="(section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])">
                 <template v-for="(slotName, slotIdx) in layoutSlotNames" v-slot:[slotName]>
                   <!-- Empty div injected to verify the slots              -->
                   <div class="flexSections flex-col">
@@ -5701,9 +5701,13 @@ onMounted(async () => {
   try {
     const hooksJs = importJs('/js/global-hooks') // assuming this is sync
     if (hooksJs?.library_sections_theme_components) {
-      const config = hooksJs.library_sections_theme_components(i18n.t)
-      if (config && typeof config === 'object' && config.sectionName && config.themeComponents) {
-        sectionsThemeComponents.value[config.sectionName] = config.themeComponents
+      const arrayConfig = hooksJs.library_sections_theme_components(i18n.t)
+      if (Array.isArray(arrayConfig)) {
+        arrayConfig.forEach(config => {
+          if (config && typeof config === 'object' && config.sectionName && config.themeComponents) {
+            sectionsThemeComponents.value[config.sectionName] = config.themeComponents
+          }
+        })
       }
     }
   } catch {}
