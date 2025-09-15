@@ -55,7 +55,19 @@
 </template>
 
 <script setup>
-import { getGlobalTypeData, useI18n, ref, computed, onMounted ,watch, importComp, formatName, formatTexts, showToast } from '#imports'
+import {
+  getGlobalTypeData,
+  useI18n,
+  ref,
+  computed,
+  onMounted,
+  watch,
+  importComp,
+  formatName,
+  formatTexts,
+  showToast,
+  nextTick
+} from '#imports'
 
 const { t } = useI18n();
 
@@ -176,6 +188,7 @@ async function getGlobalType() {
 }
 
 watch(viewSaved, async (val) => {
+  await nextTick()
   setTimeout(() => {
     if (val?.dynamicFormRef && props.savedView?.settings) {
       val.dynamicFormRef.settings = props.savedView.settings
