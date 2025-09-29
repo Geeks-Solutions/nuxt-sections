@@ -1500,7 +1500,7 @@ import {
 } from '#imports';
 import { createMedia, getUser, requestVerification } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
-import {getMySectionsPages} from "../../utils/helpers.js";
+import {getMySectionsPages, loadScript} from "../../utils/helpers.js";
 
 const {
   pageName,
@@ -5952,48 +5952,14 @@ provide('sectionsThemeComponents', (sectionName, themeComponents) => {
 const scriptLinksArray = ref([])
 const scriptPromises = Object.create(null)
 
-function loadScriptWithUniqueness(src, uniqueness = true) {
-
-  function cleanUrl(src) {
-    try {
-      const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
-      const url = new URL(src, base)
-      url.search = ''
-      url.hash = ''
-      return url.toString()
-    } catch {
-      // fallback if URL constructor fails
-      return src.split('#')[0].split('?')[0]
-    }
-  }
-
-  if (typeof window === 'undefined') return Promise.resolve() // SSR no-op
-
-  const cleaned = cleanUrl(src)
-  const key = uniqueness ? cleaned : src // uniqueness ignores query/hash by design
-
-  if (uniqueness) {
-    // if already loading/loaded, return same promise (prevents race)
-    if (scriptPromises[key]) return scriptPromises[key]
-
-    // track cleaned link once
-    if (!scriptLinksArray.value.includes(cleaned)) {
-      scriptLinksArray.value.push(cleaned)
-    }
-
-    const { load } = useScript(src)
-    scriptPromises[key] = load()
-      .catch(err => {
-        // allow retry on failure
-        delete scriptPromises[key]
-      })
-    return scriptPromises[key]
-  }
-
-  // uniqueness = false -> don't check array or cache; still store cleaned (duplicates allowed)
-  scriptLinksArray.value.push(cleaned)
-  const { load } = useScript(src)
-  return load()
+async function loadScriptWithUniqueness(src, uniqueness = true) {
+  await loadScript(
+    src,
+    uniqueness,
+    scriptLinksArray,
+    scriptPromises,
+    useScript
+  )
 }
 
 provide('loadScript', loadScriptWithUniqueness)
