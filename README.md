@@ -1477,6 +1477,29 @@ useNuxtApp().hook('start-guide', async (topic, action) => {
 })
 ```
 
+* `library_sections_theme_components`: Configure the library public section to support custom section theme forms. For now only one public section is available that is the `wysiwyg`
+It takes one argument that can be used for i18n translations
+
+```js
+const library_sections_theme_components = (t) => {
+  return {
+    sectionName: 'wysiwyg',
+    themeComponents: [
+      {
+        id: 'global',
+        name: t('sectionsBuilder.globalSettings'),
+        path: '/theme/global_settings'
+      },
+      {
+        id: 'specific',
+        name: t('sectionsBuilder.specificSettings'),
+        path: '/theme/Wysiwyg_settings'
+      }
+    ]
+  }
+}
+```
+
 ```js
 export {
   section_page_initialization_completed,
@@ -1492,7 +1515,8 @@ export {
   medias_api_request_received,
   medias_api_response_received,
   pre_open_edit_mode,
-  guide_config
+  guide_config,
+  library_sections_theme_components
 };
 ```
 

@@ -1188,14 +1188,14 @@
               </draggable>
             </div>
             <div v-else>
-              <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang">
+              <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang" :admin="admin" :edit-mode="editMode" :is-side-bar-open="isSideBarOpen" @open-theme-modal="(section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])">
                 <template v-for="(slotName, slotIdx) in layoutSlotNames" v-slot:[slotName]>
                   <!-- Empty div injected to verify the slots              -->
                   <div class="flexSections flex-col">
                     <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
                     <div v-if="admin && editMode && !isSideBarOpen"
                          :ref="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''" :class="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''"
-                         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile">
+                         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile section-view sections-items-center">
                       <button
                         class="hp-button"
                         @click.stop.prevent="
@@ -1209,6 +1209,21 @@
                       </button>
                       <div class="slot-name">
                         {{ $t(slotName.toUpperCase()) }}
+                      </div>
+                      <div class="relativeSections">
+                        <div
+                          class="controls region region-control flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
+                          v-if="admin && editMode && regionsOptions[slotName] && regionsOptions[slotName] === true && sectionsThemeComponents[slotName]"
+                        >
+                          <div
+                            @click="toggleRegionsOptions(slotName); openSectionThemeModal({id: slotName, name: slotName}, sectionsThemeComponents[slotName])">
+                            <LazyBaseIconsPaintBursh />
+                          </div>
+                        </div>
+                        <div v-if="admin && editMode && !isSideBarOpen && sectionsThemeComponents[slotName]" :title="'line-1'" @click="toggleRegionsOptions(slotName)"
+                             class="controls region regionOptionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer z-50" :class="{'flexSections': !isSideBarOpen}">
+                          <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
+                        </div>
                       </div>
                     </div>
                     <div class="views">
@@ -1485,7 +1500,7 @@ import {
 } from '#imports';
 import { createMedia, getUser, requestVerification } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
-import {getMySectionsPages} from "../../utils/helpers.js";
+import {getMySectionsPages, loadScript} from "../../utils/helpers.js";
 
 const {
   pageName,
@@ -1746,6 +1761,7 @@ const errorResponseStatus = useState('errorResponseStatus', () => (0));
 const errorRegisteredPage = useState('errorRegisteredPage', () => (''));
 const errorResponseData = useState('errorResponseData', () => null);
 const sectionOptions = ref({});
+const regionsOptions = ref({});
 const sectionsFilterName = ref('');
 const sectionsFilterAppName = ref('');
 const appNames = ref([]);
@@ -2189,7 +2205,8 @@ const initializeSections = (res, skipHook) => {
     if (section.id) {
       views[section.id] = section
     } else {
-      views["test"] = section
+      section.id = `test-${section.weight}`
+      views[section.id] = section
     }
 
     sectionOptions[section.id] = false
@@ -2583,7 +2600,7 @@ const updatePageMetaData = async (seo, themeData) => {
     path: updatedPagePath,
     metadata: {
       ...pageMetadata.value,
-      sections_builder: themeData ? themeData : undefined
+      sections_builder: themeData ? themeData : originalThemeSettings.value
     },
     variations: [],
     layout: sectionsLayout.value,
@@ -3245,6 +3262,7 @@ const computeLayoutData = async () => {
     })
 
     layoutSlotNames.value.forEach(slotName => {
+      regionsOptions.value[slotName] = false
       viewsPerRegions.value[slotName] = []
       views.forEach(view => {
         if (view.region[selectedLayout.value].slot === slotName) {
@@ -4674,9 +4692,7 @@ const mutateVariation = async (variationName) => {
 
     return sectionsData;
   }
-  if (selectedLayout.value === 'standard') {
-    sections = sanitizeWeights(sections)
-  }
+  sections = sanitizeWeights(sections)
 
   if (integrityCheck === true && errorInLayout.value !== true) {
     const token = useCookie("sections-auth-token").value;
@@ -4922,7 +4938,20 @@ const restoreVariations = () => {
   );
 };
 const toggleSectionsOptions = (viewId) => {
+  for (const key in sectionOptions.value) {
+    if (key !== viewId) {
+      sectionOptions.value[key] = false
+    }
+  }
   sectionOptions.value[viewId] = !sectionOptions.value[viewId];
+};
+const toggleRegionsOptions = (regionId) => {
+  for (const key in regionsOptions.value) {
+    if (key !== regionId) {
+      regionsOptions.value[key] = false
+    }
+  }
+  regionsOptions.value[regionId] = !regionsOptions.value[regionId];
 };
 const deleteView = (id) => {
   if (selectedVariation.value === pageName) {
@@ -5693,6 +5722,20 @@ onMounted(async () => {
   if (!pageNotFound.value) {
     checkIntroLastStep('editPage')
   }
+
+  try {
+    const hooksJs = importJs('/js/global-hooks') // assuming this is sync
+    if (hooksJs?.library_sections_theme_components) {
+      const arrayConfig = hooksJs.library_sections_theme_components(i18n.t)
+      if (Array.isArray(arrayConfig)) {
+        arrayConfig.forEach(config => {
+          if (config && typeof config === 'object' && config.sectionName && config.themeComponents) {
+            sectionsThemeComponents.value[config.sectionName] = config.themeComponents
+          }
+        })
+      }
+    }
+  } catch {}
 });
 
 onBeforeMount(() => {
@@ -5909,48 +5952,14 @@ provide('sectionsThemeComponents', (sectionName, themeComponents) => {
 const scriptLinksArray = ref([])
 const scriptPromises = Object.create(null)
 
-function loadScriptWithUniqueness(src, uniqueness = true) {
-
-  function cleanUrl(src) {
-    try {
-      const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
-      const url = new URL(src, base)
-      url.search = ''
-      url.hash = ''
-      return url.toString()
-    } catch {
-      // fallback if URL constructor fails
-      return src.split('#')[0].split('?')[0]
-    }
-  }
-
-  if (typeof window === 'undefined') return Promise.resolve() // SSR no-op
-
-  const cleaned = cleanUrl(src)
-  const key = uniqueness ? cleaned : src // uniqueness ignores query/hash by design
-
-  if (uniqueness) {
-    // if already loading/loaded, return same promise (prevents race)
-    if (scriptPromises[key]) return scriptPromises[key]
-
-    // track cleaned link once
-    if (!scriptLinksArray.value.includes(cleaned)) {
-      scriptLinksArray.value.push(cleaned)
-    }
-
-    const { load } = useScript(src)
-    scriptPromises[key] = load()
-      .catch(err => {
-        // allow retry on failure
-        delete scriptPromises[key]
-      })
-    return scriptPromises[key]
-  }
-
-  // uniqueness = false -> don't check array or cache; still store cleaned (duplicates allowed)
-  scriptLinksArray.value.push(cleaned)
-  const { load } = useScript(src)
-  return load()
+async function loadScriptWithUniqueness(src, uniqueness = true) {
+  await loadScript(
+    src,
+    uniqueness,
+    scriptLinksArray,
+    scriptPromises,
+    useScript
+  )
 }
 
 provide('loadScript', loadScriptWithUniqueness)
@@ -6027,6 +6036,18 @@ if (!useNuxtApp().$sectionsOptionsComponent) {
   top: 10px;
   z-index: 50 !important;
   opacity: 60%;
+}
+
+.section-view .controls.regionOptionsSettings {
+  background: #f5f5f5;
+  margin-left: 8px !important;
+  position: static !important;
+  opacity: 60%;
+}
+
+.section-view .controls.region-control {
+  position: absolute !important;
+  right: 35px !important;
 }
 
 .section-view .controls svg {

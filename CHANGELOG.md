@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.13] - 2025-09-29
+
+### Fixed
+
+- Removed theme settings when updating page metadata: Saving the page settings, remove the theme selected when it is selected from the global or specific theme of a section #237
+
+### Updated
+
+- Public sections support for section theme components: #239
+
 ### [3.0.12] - 2025-09-09
 
 ### Fixed

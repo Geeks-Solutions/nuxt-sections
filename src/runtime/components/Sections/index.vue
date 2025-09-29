@@ -152,8 +152,9 @@ import {
   useRoute,
   useRouter,
   useRuntimeConfig,
-  useState, validateQS
+  useState, validateQS, useScript
 } from '#imports';
+import {loadScript} from "../../utils/helpers.js";
 
 const {
   pageName,
@@ -1240,7 +1241,7 @@ const fetchData = async () => {
     } else if (error) {
       sectionsPageErrorManagement(error)
     }
-  } else if (inBrowser && fetchedOnServer.value === false) {
+  } else if (inBrowser && fetchedOnServer.value === false && !admin) {
     loading.value = true;
     sectionsError.value = "";
     sectionsMainErrors.value = [];
@@ -1304,5 +1305,22 @@ provide('languageSupport', (sectionName) => {
     sectionsQueryStringLanguageSupport.value.push(sectionName)
   }
 })
+
+const scriptLinksArray = ref([])
+const scriptPromises = Object.create(null)
+
+async function loadScriptWithUniqueness(src, uniqueness = true) {
+  await loadScript(
+    src,
+    uniqueness,
+    scriptLinksArray,
+    scriptPromises,
+    useScript
+  )
+}
+
+if (!admin) {
+  provide('loadScript', loadScriptWithUniqueness)
+}
 
 </script>
