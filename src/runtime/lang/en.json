@@ -285,5 +285,8 @@
   },
   "mediaTooLarge": "The size of your media exceeds the authorized limit. Please refer to your package details to check the maximum supported size.",
   "seoDisable": "Disable",
-  "seoEnable": "Enable"
+  "seoEnable": "Enable",
+  "sections": {
+    "insertLine": "Insert line"
+  }
 }

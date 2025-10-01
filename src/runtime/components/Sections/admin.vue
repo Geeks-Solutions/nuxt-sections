@@ -272,10 +272,9 @@
               <LazyBaseIconsEdit v-if="!editMode" />
               <LazyBaseIconsEye v-else />
             </button>
-            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper">
+            <div v-if="admin && editMode && !isSideBarOpen" class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper">
               <div
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
-                v-if="admin && editMode && !isSideBarOpen"
               >
                 <div class="flexSections sections-flex-row sections-justify-center top-bar-wrapper">
 
@@ -1101,227 +1100,433 @@
                 </div>
               </div>
             </div>
-            <div v-else-if="selectedLayout === 'standard'" class="views">
-              <draggable
-                v-model="alteredViews"
-                group="people"
-                @start="drag = true"
-                @end="drag = false"
-                handle=".handle"
-                item-key="id"
-              >
-                <!-- <transition-group> -->
-                <template #item="{ element: view, index }">
-                  <section
-                    :key="index"
-                    :section-id="view.id"
-                    :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-                    :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
-                  >
-                    <div class="section-view relativeSections">
-                      <div
-                        class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
-                        v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
-                      >
-                        <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
-                             @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                          <LazyBaseIconsAlert/>
-                        </div>
-                        <div
-                          @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"
-                          v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                          <LazyBaseIconsEdit :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
-                                             class="edit-icon"/>
-                        </div>
-                        <LazyBaseIconsDrag class="drag-icon handle"/>
-                        <div
-                          @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                          <LazyBaseIconsTrash class="trash-icon"/>
-                        </div>
-                        <div
-                          @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                          <LazyBaseIconsAnchor
-                            :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
-                            class="edit-icon"/>
-                        </div>
-                        <div
-                          v-if="seoSectionsSupport[view.name]"
-                          @click="seoBtnClicked(view.id)">
-                          <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
-                        </div>
-                        <div
-                          v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
-                          @click="toggleSectionsOptions(view.id); openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
-                          <LazyBaseIconsPaintBursh />
-                        </div>
-                      </div>
-                      <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
-                           class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                        <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
-                      </div>
-                      <div class="view-component"
-                           :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
-                           :style="{ background: viewsBgColor }">
-                        <div
-                          v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"
-                          class="error-section-loaded">
-                          {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}
-                        </div>
-                        <div v-else-if="admin && editMode && (view.error && view.status_code !== 404)"
-                             class="error-section-loaded error-section-empty">
-                        </div>
-                        <component
-                          v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                          :is="getComponent(view.name, view.type, view)"
-                          :section="view"
-                          :lang="lang"
-                          :locales="locales"
-                          :default-lang="defaultLang"
-                          @seo-support="seoSectionsSupport[view.name] = true;"
-                          @refresh-section="(data) => refreshSectionView(view, data)"
-                        />
-                      </div>
-                    </div>
-                  </section>
-                </template>
-                <!-- </transition-group> -->
-              </draggable>
-            </div>
             <div v-else>
-              <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang" :admin="admin" :edit-mode="editMode" :is-side-bar-open="isSideBarOpen" @open-theme-modal="(section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])">
-                <template v-for="(slotName, slotIdx) in layoutSlotNames" v-slot:[slotName]>
-                  <!-- Empty div injected to verify the slots              -->
-                  <div class="flexSections flex-col">
-                    <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
-                    <div v-if="admin && editMode && !isSideBarOpen"
-                         :ref="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''" :class="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''"
-                         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile section-view sections-items-center">
-                      <button
-                        class="hp-button"
-                        @click.stop.prevent="
-              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal'))
-            "
-                      >
-                        <div class="btn-icon plus-icon">
-                          <LazyBaseIconsPlus/>
-                        </div>
-                        <div class="btn-text">{{ $t("Add") }}</div>
-                      </button>
-                      <div class="slot-name">
-                        {{ $t(slotName.toUpperCase()) }}
-                      </div>
-                      <div class="relativeSections">
-                        <div
-                          class="controls region region-control flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-                          v-if="admin && editMode && regionsOptions[slotName] && regionsOptions[slotName] === true && sectionsThemeComponents[slotName]"
-                        >
-                          <div
-                            @click="toggleRegionsOptions(slotName); openSectionThemeModal({id: slotName, name: slotName}, sectionsThemeComponents[slotName])">
-                            <LazyBaseIconsPaintBursh />
-                          </div>
-                        </div>
-                        <div v-if="admin && editMode && !isSideBarOpen && sectionsThemeComponents[slotName]" :title="'line-1'" @click="toggleRegionsOptions(slotName)"
-                             class="controls region regionOptionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer z-50" :class="{'flexSections': !isSideBarOpen}">
-                          <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="views">
-                      <draggable
-                        v-model="alteredViewsPerRegions[slotName]"
-                        group="people"
-                        @start="drag = true; highlightRegions = true;"
-                        @end="drag = false; highlightRegions = false;"
-                        @change="(evt) => logDrag(evt, slotName)"
-                        handle=".handle"
-                        item-key="id"
-                        :class="{ 'highlighted-regions-plus': alteredViewsPerRegions[slotName].length === 0 && highlightRegions, }"
-                      >
-                        <!-- <transition-group> -->
-                        <template #item="{ element: view, index }">
-                          <section
-                            v-if="view.region[selectedLayout].slot === slotName"
-                            :key="index"
-                            :section-id="view.id"
-                            :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"
-                            :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"
-                          >
-                            <div class="section-view relativeSections">
-                              <div
-                                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
-                                v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"
-                              >
-                                <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
-                                     @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">
-                                  <LazyBaseIconsAlert/>
-                                </div>
-                                <div
-                                  @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"
-                                  v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">
-                                  <LazyBaseIconsEdit
-                                    :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"
-                                    class="edit-icon"/>
-                                </div>
-                                <LazyBaseIconsDrag class="drag-icon handle"/>
-                                <div
-                                  @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">
-                                  <LazyBaseIconsTrash class="trash-icon"/>
-                                </div>
-                                <div
-                                  @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">
-                                  <LazyBaseIconsAnchor
-                                    :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
-                                    class="edit-icon"/>
-                                </div>
-                                <div
-                                  v-if="seoSectionsSupport[view.name]"
-                                  @click="seoBtnClicked(view.id)">
-                                  <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>
-                                </div>
-                                <div
-                                  v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
-                                  @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">
-                                  <LazyBaseIconsPaintBursh />
-                                </div>
-                              </div>
-                              <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"
-                                   class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">
-                                <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>
-                              </div>
-                              <div class="view-component"
-                                   :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
-                                   :style="{ background: viewsBgColor }">
-                                <div
-                                  v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"
-                                  class="error-section-loaded">
-                                  {{
-                                    $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error
-                                  }}
-                                </div>
-                                <component
-                                  v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
-                                  :is="getComponent(view.name, view.type, view)"
-                                  :section="view"
-                                  :lang="lang"
-                                  :locales="locales"
-                                  :default-lang="defaultLang"
-                                  @seo-support="seoSectionsSupport[view.name] = true;"
-                                  @refresh-section="(data) => refreshSectionView(view, data)"
-                                />
-                              </div>
-                            </div>
-                          </section>
-                        </template>
-                        <!-- </transition-group> -->
-                      </draggable>
-                    </div>
-                    <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" :class="`creation-view-${selectedLayout}-${slotName}`">
-                      <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
-                    </section>
-                  </div>
-                </template>
-              </component>
+              <LayoutElementsMainBuilder
+                :page-data="pageData"
+                :get-component="getComponent"
+                :admin="admin"
+                :edit-mode="editMode"
+                :invalid-sections-errors="invalidSectionsErrors"
+                :views-bg-color="viewsBgColor"
+                :lang="lang"
+                :locales="locales"
+                :default-lang="defaultLang"
+                :seo-sections-support="seoSectionsSupport"
+                @seo-support="(view) => seoSectionsSupport[view.name] = true"
+                @refresh-section="({ view, data }) => refreshSectionView(view, data)"
+                @update:page-data="handlePageUpdate"
+              />
+<!--              <div class="sections-dynamic-layout views">-->
+<!--                &lt;!&ndash; Draggable Rows &ndash;&gt;-->
+<!--                <draggable-->
+<!--                  v-model="localGrid"-->
+<!--                  :group="{ name: 'rows', pull: false, put: false }"-->
+<!--                  @start="drag = true; highlightRegions = true;"-->
+<!--                  @end="drag = false; highlightRegions = false;"-->
+<!--                  @change="handleRowDrag"-->
+<!--                  handle=".sections-row-handle"-->
+<!--                  item-key="id"-->
+<!--                  :animation="200"-->
+<!--                  class="rows-container"-->
+<!--                >-->
+<!--                  <template #item="{ element: row, index: rowIndex }">-->
+<!--                    <div-->
+<!--                      :key="row.id"-->
+<!--                      class="sections-layout-row relativeSections"-->
+<!--                      :class="{ 'highlighted-row': highlightRegions }"-->
+<!--                      :data-row-id="row.row"-->
+<!--                    >-->
+<!--                      &lt;!&ndash; Row Handle for dragging entire rows &ndash;&gt;-->
+<!--                      <div v-if="editMode && !isSideBarOpen" class="sections-row-handle" :class="{'permit-edit': !isSideBarOpen}">-->
+<!--                        <svg width="20" height="20" viewBox="0 0 20 20">-->
+<!--                          <circle cx="5" cy="5" r="2" fill="#666"/>-->
+<!--                          <circle cx="15" cy="5" r="2" fill="#666"/>-->
+<!--                          <circle cx="5" cy="10" r="2" fill="#666"/>-->
+<!--                          <circle cx="15" cy="10" r="2" fill="#666"/>-->
+<!--                          <circle cx="5" cy="15" r="2" fill="#666"/>-->
+<!--                          <circle cx="15" cy="15" r="2" fill="#666"/>-->
+<!--                        </svg>-->
+<!--                        <span>Line {{ rowIndex + 1 }}</span>-->
+<!--                      </div>-->
+
+<!--                      <div v-if="editMode && !isSideBarOpen">-->
+<!--                        <button-->
+<!--                          class="hp-button layout-floating-add-line"-->
+<!--                          @click="-->
+<!--              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = false), (isSideBarOpen = false), (runIntro('addNewSectionModal', introRerun.value))-->
+<!--            "-->
+<!--                        >-->
+<!--                          <div class="btn-icon plus-icon">-->
+<!--                            <LazyBaseIconsPlus/>-->
+<!--                          </div>-->
+<!--                          <div class="btn-text">{{ $t("sections.insertLine") }}</div>-->
+<!--                        </button>-->
+<!--                      </div>-->
+
+<!--                      &lt;!&ndash; Columns within Row &ndash;&gt;-->
+<!--                      <section :zone-id="row.id" class="sections-row-columns" :class="{'permit-edit': !isSideBarOpen && editMode}">-->
+<!--                        <section-->
+<!--                          v-for="(colSections, colIndex) in row.cols"-->
+<!--                          :key="`${row.row}-col-${colIndex}`"-->
+<!--                          class="sections-layout-column"-->
+<!--                          :style="{ width: `${100 / row.cols.length}%` }"-->
+<!--                          :region-id="`${row.row}-col-${colIndex}`"-->
+<!--                        >-->
+<!--                          <div :id="`sections-slot-region-${row.id}-${colIndex}`"></div>-->
+<!--&lt;!&ndash;                          <div v-if="admin && editMode && !isSideBarOpen"&ndash;&gt;-->
+<!--&lt;!&ndash;                               :ref="selectedLayout !== 'standard' && colIndex === 0 ? 'intro-add-new-section' : ''" :class="selectedLayout !== 'standard' && colIndex === 0 ? 'intro-add-new-section' : ''"&ndash;&gt;-->
+<!--&lt;!&ndash;                               class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile section-view sections-items-center">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <button&ndash;&gt;-->
+<!--&lt;!&ndash;                              class="hp-button"&ndash;&gt;-->
+<!--&lt;!&ndash;                              @click.stop.prevent="&ndash;&gt;-->
+<!--&lt;!&ndash;              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = `${row.id}-${colIndex}`), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal'))&ndash;&gt;-->
+<!--&lt;!&ndash;            "&ndash;&gt;-->
+<!--&lt;!&ndash;                            >&ndash;&gt;-->
+<!--&lt;!&ndash;                              <div class="btn-icon plus-icon">&ndash;&gt;-->
+<!--&lt;!&ndash;                                <LazyBaseIconsPlus/>&ndash;&gt;-->
+<!--&lt;!&ndash;                              </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                              <div class="btn-text">{{ $t("Add") }}</div>&ndash;&gt;-->
+<!--&lt;!&ndash;                            </button>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <div class="slot-name">&ndash;&gt;-->
+<!--&lt;!&ndash;                              {{ $t(`${row.id}-${colIndex}`.toUpperCase()) }}&ndash;&gt;-->
+<!--&lt;!&ndash;                            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <div class="relativeSections">&ndash;&gt;-->
+<!--&lt;!&ndash;                              <div&ndash;&gt;-->
+<!--&lt;!&ndash;                                class="controls region region-control flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"&ndash;&gt;-->
+<!--&lt;!&ndash;                                v-if="admin && editMode && regionsOptions[`${row.id}-${colIndex}`] && regionsOptions[`${row.id}-${colIndex}`] === true && sectionsThemeComponents[`${row.id}-${colIndex}`]"&ndash;&gt;-->
+<!--&lt;!&ndash;                              >&ndash;&gt;-->
+<!--&lt;!&ndash;                                <div&ndash;&gt;-->
+<!--&lt;!&ndash;                                  @click="toggleRegionsOptions(`${row.id}-${colIndex}`); openSectionThemeModal({id: `${row.id}-${colIndex}`, name: `${row.id}-${colIndex}`}, sectionsThemeComponents[`${row.id}-${colIndex}`])">&ndash;&gt;-->
+<!--&lt;!&ndash;                                  <LazyBaseIconsPaintBursh />&ndash;&gt;-->
+<!--&lt;!&ndash;                                </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                              </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                              <div v-if="admin && editMode && !isSideBarOpen && sectionsThemeComponents[`${row.id}-${colIndex}`]" :title="'line-1'" @click="toggleRegionsOptions(`${row.id}-${colIndex}`)"&ndash;&gt;-->
+<!--&lt;!&ndash;                                   class="controls region regionOptionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer z-50" :class="{'flexSections': !isSideBarOpen}">&ndash;&gt;-->
+<!--&lt;!&ndash;                                <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                              </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                          </div>&ndash;&gt;-->
+<!--                          <draggable-->
+<!--                            v-model="row.cols[colIndex]"-->
+<!--                            :group="{ name: 'sections', pull: true, put: true }"-->
+<!--                            @start="drag = true; highlightRegions = true;"-->
+<!--                            @end="drag = false; highlightRegions = false;"-->
+<!--                            @change="(evt) => handleSectionDrag(evt, row.row, colIndex)"-->
+<!--                            handle=".handle"-->
+<!--                            item-key="id"-->
+<!--                            :class="{-->
+<!--                                'empty-column': colSections.length === 0 && highlightRegions,-->
+<!--                                'highlighted-column': highlightRegions-->
+<!--                              }"-->
+<!--                          >-->
+<!--                            &lt;!&ndash; <transition-group> &ndash;&gt;-->
+<!--                            <template #item="{ element: view, index }">-->
+<!--                              <section-->
+<!--                                :key="index"-->
+<!--                                :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"-->
+<!--                                :section-id="view.id"-->
+<!--                                :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"-->
+<!--                              >-->
+<!--                                <div class="section-view relativeSections">-->
+<!--                                  <div-->
+<!--                                    v-if="admin && editMode && view.altered !== true"-->
+<!--                                    class="section-controls controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"-->
+<!--                                    :class="{'permit-edit': !isSideBarOpen}"-->
+<!--                                  >-->
+<!--                                    <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"-->
+<!--                                         @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">-->
+<!--                                      <LazyBaseIconsAlert/>-->
+<!--                                    </div>-->
+<!--                                    <div-->
+<!--                                      @click="toggleSectionsOptions(view.id); edit(view, view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = `${row.id}-${colIndex}`"-->
+<!--                                      v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">-->
+<!--                                      <LazyBaseIconsEdit-->
+<!--                                        :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"-->
+<!--                                        class="edit-icon"/>-->
+<!--                                    </div>-->
+<!--                                    <LazyBaseIconsDrag class="drag-icon handle"/>-->
+<!--                                    <div-->
+<!--                                      @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">-->
+<!--                                      <LazyBaseIconsTrash class="trash-icon"/>-->
+<!--                                    </div>-->
+<!--                                    <div-->
+<!--                                      @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">-->
+<!--                                      <LazyBaseIconsAnchor-->
+<!--                                        :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"-->
+<!--                                        class="edit-icon"/>-->
+<!--                                    </div>-->
+<!--                                    <div-->
+<!--                                      v-if="seoSectionsSupport[view.name]"-->
+<!--                                      @click="seoBtnClicked(view.id)">-->
+<!--                                      <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>-->
+<!--                                    </div>-->
+<!--                                    <div-->
+<!--                                      v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"-->
+<!--                                      @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">-->
+<!--                                      <LazyBaseIconsPaintBursh />-->
+<!--                                    </div>-->
+<!--                                  </div>-->
+<!--&lt;!&ndash;                                  <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"&ndash;&gt;-->
+<!--&lt;!&ndash;                                       class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">&ndash;&gt;-->
+<!--&lt;!&ndash;                                    <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                                  </div>&ndash;&gt;-->
+<!--                                  <div class="view-component"-->
+<!--                                       :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"-->
+<!--                                       :style="{ background: viewsBgColor }">-->
+<!--                                    <div-->
+<!--                                      v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"-->
+<!--                                      class="error-section-loaded">-->
+<!--                                      {{-->
+<!--                                        $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error-->
+<!--                                      }}-->
+<!--                                    </div>-->
+<!--                                    <component-->
+<!--                                      v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"-->
+<!--                                      :is="getComponent(view.name, view.type, view)"-->
+<!--                                      :section="view"-->
+<!--                                      :lang="lang"-->
+<!--                                      :locales="locales"-->
+<!--                                      :default-lang="defaultLang"-->
+<!--                                      @seo-support="seoSectionsSupport[view.name] = true;"-->
+<!--                                      @refresh-section="(data) => refreshSectionView(view, data)"-->
+<!--                                    />-->
+<!--                                  </div>-->
+<!--                                </div>-->
+<!--                              </section>-->
+<!--                            </template>-->
+<!--                            &lt;!&ndash; </transition-group> &ndash;&gt;-->
+<!--                          </draggable>-->
+<!--                        </section>-->
+<!--                        <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === `${row.id}-${colIndex}`" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" :class="`creation-view-${selectedLayout}-${`${row.id}-${colIndex}`}`">-->
+<!--                          <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />-->
+<!--                        </section>-->
+<!--                      </section>-->
+<!--                    </div>-->
+<!--                  </template>-->
+<!--                </draggable>-->
+<!--              </div>-->
             </div>
+<!--            <div v-else-if="selectedLayout === 'standard'" class="views">-->
+<!--              <draggable-->
+<!--                v-model="alteredViews"-->
+<!--                group="people"-->
+<!--                @start="drag = true"-->
+<!--                @end="drag = false"-->
+<!--                handle=".handle"-->
+<!--                item-key="id"-->
+<!--              >-->
+<!--                &lt;!&ndash; <transition-group> &ndash;&gt;-->
+<!--                <template #item="{ element: view, index }">-->
+<!--                  <section-->
+<!--                    :key="index"-->
+<!--                    :section-id="view.id"-->
+<!--                    :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"-->
+<!--                    :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"-->
+<!--                  >-->
+<!--                    <div class="section-view relativeSections">-->
+<!--                      <div-->
+<!--                        class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"-->
+<!--                        v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"-->
+<!--                      >-->
+<!--                        <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"-->
+<!--                             @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">-->
+<!--                          <LazyBaseIconsAlert/>-->
+<!--                        </div>-->
+<!--                        <div-->
+<!--                          @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"-->
+<!--                          v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">-->
+<!--                          <LazyBaseIconsEdit :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"-->
+<!--                                             class="edit-icon"/>-->
+<!--                        </div>-->
+<!--                        <LazyBaseIconsDrag class="drag-icon handle"/>-->
+<!--                        <div-->
+<!--                          @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">-->
+<!--                          <LazyBaseIconsTrash class="trash-icon"/>-->
+<!--                        </div>-->
+<!--                        <div-->
+<!--                          @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">-->
+<!--                          <LazyBaseIconsAnchor-->
+<!--                            :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"-->
+<!--                            class="edit-icon"/>-->
+<!--                        </div>-->
+<!--                        <div-->
+<!--                          v-if="seoSectionsSupport[view.name]"-->
+<!--                          @click="seoBtnClicked(view.id)">-->
+<!--                          <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>-->
+<!--                        </div>-->
+<!--                        <div-->
+<!--                          v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"-->
+<!--                          @click="toggleSectionsOptions(view.id); openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">-->
+<!--                          <LazyBaseIconsPaintBursh />-->
+<!--                        </div>-->
+<!--                      </div>-->
+<!--                      <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"-->
+<!--                           class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">-->
+<!--                        <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>-->
+<!--                      </div>-->
+<!--                      <div class="view-component"-->
+<!--                           :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"-->
+<!--                           :style="{ background: viewsBgColor }">-->
+<!--                        <div-->
+<!--                          v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"-->
+<!--                          class="error-section-loaded">-->
+<!--                          {{ $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error }}-->
+<!--                        </div>-->
+<!--                        <div v-else-if="admin && editMode && (view.error && view.status_code !== 404)"-->
+<!--                             class="error-section-loaded error-section-empty">-->
+<!--                        </div>-->
+<!--                        <component-->
+<!--                          v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"-->
+<!--                          :is="getComponent(view.name, view.type, view)"-->
+<!--                          :section="view"-->
+<!--                          :lang="lang"-->
+<!--                          :locales="locales"-->
+<!--                          :default-lang="defaultLang"-->
+<!--                          @seo-support="seoSectionsSupport[view.name] = true;"-->
+<!--                          @refresh-section="(data) => refreshSectionView(view, data)"-->
+<!--                        />-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                  </section>-->
+<!--                </template>-->
+<!--                &lt;!&ndash; </transition-group> &ndash;&gt;-->
+<!--              </draggable>-->
+<!--            </div>-->
+<!--            <div v-else>-->
+<!--              <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang" :admin="admin" :edit-mode="editMode" :is-side-bar-open="isSideBarOpen" @open-theme-modal="(section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])">-->
+<!--                <template v-for="(slotName, slotIdx) in layoutSlotNames" v-slot:[slotName]>-->
+<!--                  &lt;!&ndash; Empty div injected to verify the slots              &ndash;&gt;-->
+<!--                  <div class="flexSections flex-col">-->
+<!--                    <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>-->
+<!--                    <div v-if="admin && editMode && !isSideBarOpen"-->
+<!--                         :ref="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''" :class="selectedLayout !== 'standard' && slotIdx === 0 ? 'intro-add-new-section' : ''"-->
+<!--                         class="bg-light-grey-hp p-3 flexSections flex-row justify-center part3 hide-mobile section-view sections-items-center">-->
+<!--                      <button-->
+<!--                        class="hp-button"-->
+<!--                        @click.stop.prevent="-->
+<!--              (currentSection = null), (isModalOpen = true), (savedView = {}), (selectedSlotRegion = slotName), (runIntro('addNewSectionModal', introRerun.value)), (checkIntroLastStep('addNewSectionModal'))-->
+<!--            "-->
+<!--                      >-->
+<!--                        <div class="btn-icon plus-icon">-->
+<!--                          <LazyBaseIconsPlus/>-->
+<!--                        </div>-->
+<!--                        <div class="btn-text">{{ $t("Add") }}</div>-->
+<!--                      </button>-->
+<!--                      <div class="slot-name">-->
+<!--                        {{ $t(slotName.toUpperCase()) }}-->
+<!--                      </div>-->
+<!--                      <div class="relativeSections">-->
+<!--                        <div-->
+<!--                          class="controls region region-control flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"-->
+<!--                          v-if="admin && editMode && regionsOptions[slotName] && regionsOptions[slotName] === true && sectionsThemeComponents[slotName]"-->
+<!--                        >-->
+<!--                          <div-->
+<!--                            @click="toggleRegionsOptions(slotName); openSectionThemeModal({id: slotName, name: slotName}, sectionsThemeComponents[slotName])">-->
+<!--                            <LazyBaseIconsPaintBursh />-->
+<!--                          </div>-->
+<!--                        </div>-->
+<!--                        <div v-if="admin && editMode && !isSideBarOpen && sectionsThemeComponents[slotName]" :title="'line-1'" @click="toggleRegionsOptions(slotName)"-->
+<!--                             class="controls region regionOptionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer z-50" :class="{'flexSections': !isSideBarOpen}">-->
+<!--                          <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>-->
+<!--                        </div>-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                    <div class="views">-->
+<!--                      <draggable-->
+<!--                        v-model="alteredViewsPerRegions[slotName]"-->
+<!--                        group="people"-->
+<!--                        @start="drag = true; highlightRegions = true;"-->
+<!--                        @end="drag = false; highlightRegions = false;"-->
+<!--                        @change="(evt) => logDrag(evt, slotName)"-->
+<!--                        handle=".handle"-->
+<!--                        item-key="id"-->
+<!--                        :class="{ 'highlighted-regions-plus': alteredViewsPerRegions[slotName].length === 0 && highlightRegions, }"-->
+<!--                      >-->
+<!--                        &lt;!&ndash; <transition-group> &ndash;&gt;-->
+<!--                        <template #item="{ element: view, index }">-->
+<!--                          <section-->
+<!--                            v-if="view.region[selectedLayout].slot === slotName"-->
+<!--                            :key="index"-->
+<!--                            :section-id="view.id"-->
+<!--                            :id="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to}-${view.id}` : `${view.name}-${view.id}`"-->
+<!--                            :class="{ [view.name]: true, 'view-in-edit-mode': editMode, 'highlited-regions': highlightRegions }"-->
+<!--                          >-->
+<!--                            <div class="section-view relativeSections">-->
+<!--                              <div-->
+<!--                                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"-->
+<!--                                v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"-->
+<!--                              >-->
+<!--                                <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"-->
+<!--                                     @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">-->
+<!--                                  <LazyBaseIconsAlert/>-->
+<!--                                </div>-->
+<!--                                <div-->
+<!--                                  @click="toggleSectionsOptions(view.id); edit(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`); selectedSlotRegion = slotName"-->
+<!--                                  v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">-->
+<!--                                  <LazyBaseIconsEdit-->
+<!--                                    :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"-->
+<!--                                    class="edit-icon"/>-->
+<!--                                </div>-->
+<!--                                <LazyBaseIconsDrag class="drag-icon handle"/>-->
+<!--                                <div-->
+<!--                                  @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">-->
+<!--                                  <LazyBaseIconsTrash class="trash-icon"/>-->
+<!--                                </div>-->
+<!--                                <div-->
+<!--                                  @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">-->
+<!--                                  <LazyBaseIconsAnchor-->
+<!--                                    :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"-->
+<!--                                    class="edit-icon"/>-->
+<!--                                </div>-->
+<!--                                <div-->
+<!--                                  v-if="seoSectionsSupport[view.name]"-->
+<!--                                  @click="seoBtnClicked(view.id)">-->
+<!--                                  <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>-->
+<!--                                </div>-->
+<!--                                <div-->
+<!--                                  v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"-->
+<!--                                  @click="toggleSectionsOptions(view.id); openSectionThemeModal(viewsPerRegions[view.region[selectedLayout].slot].find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">-->
+<!--                                  <LazyBaseIconsPaintBursh />-->
+<!--                                </div>-->
+<!--                              </div>-->
+<!--                              <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"-->
+<!--                                   class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">-->
+<!--                                <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>-->
+<!--                              </div>-->
+<!--                              <div class="view-component"-->
+<!--                                   :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"-->
+<!--                                   :style="{ background: viewsBgColor }">-->
+<!--                                <div-->
+<!--                                  v-if="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[`${view.name}-${view.weight}`].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight"-->
+<!--                                  class="error-section-loaded">-->
+<!--                                  {{-->
+<!--                                    $t('invalidSectionsError') + invalidSectionsErrors[`${view.name}-${view.weight}`].error-->
+<!--                                  }}-->
+<!--                                </div>-->
+<!--                                <component-->
+<!--                                  v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"-->
+<!--                                  :is="getComponent(view.name, view.type, view)"-->
+<!--                                  :section="view"-->
+<!--                                  :lang="lang"-->
+<!--                                  :locales="locales"-->
+<!--                                  :default-lang="defaultLang"-->
+<!--                                  @seo-support="seoSectionsSupport[view.name] = true;"-->
+<!--                                  @refresh-section="(data) => refreshSectionView(view, data)"-->
+<!--                                />-->
+<!--                              </div>-->
+<!--                            </div>-->
+<!--                          </section>-->
+<!--                        </template>-->
+<!--                        &lt;!&ndash; </transition-group> &ndash;&gt;-->
+<!--                      </draggable>-->
+<!--                    </div>-->
+<!--                    <section v-if="creationView === true && admin && editMode && selectedLayout !== 'standard' && selectedSlotRegion === slotName" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" :class="`creation-view-${selectedLayout}-${slotName}`">-->
+<!--                      <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />-->
+<!--                    </section>-->
+<!--                  </div>-->
+<!--                </template>-->
+<!--              </component>-->
+<!--            </div>-->
 
             <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
               <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
@@ -1826,6 +2031,212 @@ const guideConfig = useState('guideConfig', () => {
     return defaultConfig
   }
 })
+
+
+
+// ## Dynamic Layout Integration Started //
+
+const metadataLayoutStructure = {
+  "metadata": {
+    "layoutRows": [
+      {
+        "row": 0,
+        "cols": 2,
+        "weight": 0
+      },
+      {
+        "row": 1,
+        "cols": 3,
+        "weight": 1
+      },
+      {
+        "row": 2,
+        "cols": 1,
+        "weight": 2
+      }
+    ]
+  }
+}
+
+const sectionRegionStructure = {
+  "region": {
+    "path": "",
+    "row": 1,      // corresponds to metadata.layoutRows[x].row = 1
+    "col": 0,      // index in the cols array
+    "weight": 0    // position within that column
+  }
+}
+
+const rowId = computed(() => {
+  return `row-${Date.now()}`;
+});
+
+// Get initial grid from composable
+const sectionsGrid = computed(() => {
+  const layoutRows = pageData.value?.metadata?.layoutRows || [];
+  const sections = pageData.value?.sections || [];
+
+  // Initialize grid based on layoutRows
+  const grid = layoutRows
+    .sort((a, b) => a.weight - b.weight)
+    .map(rowConfig => ({
+      id: rowConfig.row,
+      row: rowConfig.row,
+      columns: rowConfig.cols,
+      colWidths: 100 / rowConfig.cols,
+      weight: rowConfig.weight,
+      cols: Array.from({ length: rowConfig.cols }, () => [])
+    }));
+
+  // Place sections into grid
+  sections.forEach(section => {
+    const { row, col, weight } = section.region;
+
+    // Find the row in grid
+    const gridRow = grid.find(r => r.row === row);
+
+    if (gridRow && col < gridRow.columns) {
+      gridRow.cols[col].push({
+        ...section,
+        _weight: weight || 0
+      });
+    }
+  });
+
+  // Sort sections within each column by weight
+  grid.forEach(row => {
+    row.cols.forEach(colSections => {
+      colSections.sort((a, b) => a._weight - b._weight);
+    });
+  });
+
+  return grid;
+})
+
+// Local mutable copy for draggable
+const localGrid = ref([]);
+
+// Sync with computed grid
+watch(sectionsGrid, (newGrid) => {
+  localGrid.value = JSON.parse(JSON.stringify(newGrid));
+}, { immediate: true, deep: true });
+
+// Handle row reordering
+function handleRowDrag(evt) {
+  if (evt.moved) {
+    const { oldIndex, newIndex } = evt.moved;
+
+    // Update weights based on new order
+    localGrid.value.forEach((row, index) => {
+      row.weight = index;
+    });
+
+    // Update metadata in pageData
+    // updateLayoutRowsMetadata();
+
+    // emit('row-reordered', {
+    //   oldIndex,
+    //   newIndex,
+    //   rows: localGrid.value
+    // });
+  }
+}
+
+// Handle section dragging between columns/rows
+function handleSectionDrag(evt, rowId, colIndex) {
+  if (evt.added) {
+    // Section added to this column
+    const section = evt.added.element;
+    const newWeight = evt.added.newIndex;
+
+    // updateSectionRegion(section.id, rowId, colIndex, newWeight);
+
+    // emit('section-moved', {
+    //   sectionId: section.id,
+    //   newRow: rowId,
+    //   newCol: colIndex,
+    //   newWeight
+    // });
+  } else if (evt.moved) {
+    // Section moved within same column
+    const section = evt.moved.element;
+    const newWeight = evt.moved.newIndex;
+
+    // updateSectionRegion(section.id, rowId, colIndex, newWeight);
+
+    // emit('section-moved', {
+    //   sectionId: section.id,
+    //   newRow: rowId,
+    //   newCol: colIndex,
+    //   newWeight
+    // });
+  } else if (evt.removed) {
+    // Section removed from this column (handled by the "added" event in target column)
+  }
+
+  // Recalculate weights for all sections in affected columns
+  recalculateWeights(rowId, colIndex);
+}
+
+// Update section region in pageData
+// function updateSectionRegion(sectionId, row, col, weight) {
+//   const section = props.pageData.sections.find(s => s.id === sectionId);
+//   if (section) {
+//     section.region = {
+//       row,
+//       col,
+//       weight
+//     };
+//   }
+// }
+
+// Recalculate weights for sections in a column
+function recalculateWeights(rowId, colIndex) {
+  const row = localGrid.value.find(r => r.row === rowId);
+  if (!row) return;
+
+  const colSections = row.cols[colIndex];
+  colSections.forEach((section, index) => {
+    section._weight = index;
+    // updateSectionRegion(section.id, rowId, colIndex, index);
+  });
+}
+
+// Update layoutRows metadata based on current grid
+function updateLayoutRowsMetadata() {
+  const updatedLayoutRows = localGrid.value.map((row, index) => ({
+    row: row.row,
+    cols: row.columns,
+    weight: index
+  }));
+
+  const updatedPageData = {
+    ...props.pageData,
+    metadata: {
+      ...props.pageData.metadata,
+      layoutRows: updatedLayoutRows
+    }
+  };
+
+  emit('update:pageData', updatedPageData);
+}
+
+async function handleSectionMoved({ sectionId, newRow, newCol, newWeight }) {
+  console.log('Section moved:', { sectionId, newRow, newCol, newWeight });
+
+}
+
+async function handleRowReordered({ oldIndex, newIndex, rows }) {
+  console.log('Row reordered:', { oldIndex, newIndex });
+
+}
+
+function handlePageDataUpdate(updatedPageData) {
+  pageData.value = updatedPageData;
+}
+
+
+
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -4855,6 +5266,7 @@ const saveVariation = () => {
   });
 };
 const edit = (view, viewAnchor) => {
+  console.log('viewsPerRegions', viewsPerRegions.value)
   if (isSideBarOpen.value !== true) {
     canPromote.value = true;
     types.value.map((type) => {
@@ -5700,6 +6112,11 @@ const openMyPage = (page) => {
   router.push(page.path)
 }
 
+const handlePageUpdate = (updatedData) => {
+  // pageData.value = updatedData
+  console.log('updatedData', updatedData)
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   computedSEO.value.title = ""
@@ -6019,7 +6436,6 @@ if (!useNuxtApp().$sectionsOptionsComponent) {
 .section-view .controls {
   background: #f5f5f5;
   position: absolute !important;
-  right: 45px !important;
   top: 10px;
   z-index: 50 !important;
   --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -6052,8 +6468,8 @@ if (!useNuxtApp().$sectionsOptionsComponent) {
 
 .section-view .controls svg {
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 23px;
+  height: 23px;
   color: #03b1c7;
   margin: 3px;
 }
@@ -7727,5 +8143,140 @@ section .ql-editor.ql-snow.grey-bg {
   .sections-config-separator {
     display: none;
   }
+}
+
+
+
+
+
+.sections-dynamic-layout {
+  width: 100%;
+}
+
+.rows-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.sections-layout-row {
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.sections-row-handle {
+  display: flex;
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  cursor: move;
+  user-select: none;
+  z-index: 50;
+}
+
+.sections-row-handle span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.sections-layout-row .sections-row-handle {
+  opacity: 0;
+}
+
+/* Show the handle when row is hovered */
+.sections-layout-row:hover .sections-row-handle.permit-edit {
+  opacity: 0.6;
+}
+
+.sections-layout-row:hover .sections-row-columns.permit-edit {
+  outline: 2px solid #03B1C7;
+  margin: 0.25rem;
+}
+
+.hp-button.layout-floating-add-line {
+  opacity: 0;
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  z-index: 50;
+  transform: translateX(-50%);
+}
+
+.sections-layout-row:hover .layout-floating-add-line {
+  opacity: 1;
+}
+
+section[section-id] .section-controls {
+  opacity: 0;
+}
+
+section[section-id]:hover .section-controls.permit-edit {
+  opacity: 0.6;
+}
+
+.sections-row-columns {
+  display: flex;
+  width: 100%;
+  gap: 0;
+}
+
+.sections-layout-column {
+  min-height: 60px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.empty-column {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.375rem;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.empty-column::before {
+  content: '';
+  color: #9ca3af;
+  font-size: 0.875rem;
+  position: absolute;
+}
+
+.section-handle {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  cursor: move;
+  padding: 0.25rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.section-wrapper:hover .section-handle {
+  opacity: 1;
+}
+
+/* Non-edit mode: clean layout */
+.sections-dynamic-layout:not(:has(.sections-row-handle)) .sections-layout-row {
+  margin-bottom: 0;
+}
+
+.sections-dynamic-layout:not(:has(.sections-row-handle)) .sections-row-columns {
+  gap: 0;
+}
+
+.sections-dynamic-layout:not(:has(.sections-row-handle)) .sections-layout-column {
+  padding: 0;
 }
 </style>
