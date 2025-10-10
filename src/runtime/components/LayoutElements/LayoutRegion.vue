@@ -7,87 +7,65 @@
     <LayoutElementsRegionHandle
       :type="isFirst ? 'first-region' : 'region'"
       :path="path"
+      :region-count="regionCount"
       class="region-handle"
       @add-layout="$emit('add-layout', $event)"
       @add-content="$emit('add-content', $event)"
+      @add-line-below="$emit('add-line-below', $event)"
+      @add-content-or-nested-layout="$emit('add-content-or-nested-layout', $event)"
       @delete="$emit('delete-region', path)"
     />
 
-    <!-- Sections in this region -->
+    <!-- Sections and nested lines in this region -->
     <div class="region-content">
-      <draggable
-        :list="sortedSections"
-        :group="{ name: 'sections', pull: true, put: true }"
-        item-key="id"
-        class="sections-container-inner"
-        :animation="200"
-        handle=".section-drag-handle"
-        @end="onSectionDragEnd"
-      >
-        <template #item="{ element: section }">
-          <LayoutElementsSectionWrapper
-            :section="section"
-            :path="path"
-            :get-component="getComponent"
-            :admin="admin"
-            :edit-mode="editMode"
-            :invalid-sections-errors="invalidSectionsErrors"
-            :views-bg-color="viewsBgColor"
-            :lang="lang"
-            :locales="locales"
-            :default-lang="defaultLang"
-            :seo-sections-support="seoSectionsSupport"
-            @seo-support="(view) => emit('seo-support', view)"
-            @refresh-section="(data) => emit('refresh-section', data)"
-            @add-layout="$emit('add-layout', $event)"
-            @add-content="$emit('add-content', $event)"
-          />
-        </template>
-      </draggable>
-
-      <!-- Nested regions (if any) -->
-      <div v-if="region.nested && region.nested.length > 0" class="nested-regions">
-        <div
-          v-for="(nestedLine, nestedIndex) in region.nested"
-          :key="nestedLine.id"
-          class="nested-line"
-        >
-          <draggable
-            :list="nestedLine.regions"
-            :group="{ name: 'regions', pull: true, put: true }"
-            item-key="id"
-            class="nested-regions-container"
-            :animation="200"
-            handle=".drag-handle"
-            @end="(evt) => onNestedRegionDragEnd(evt, nestedIndex)"
-          >
-            <template #item="{ element: nestedRegion, index: nestedRegionIndex }">
-              <LayoutElementsLayoutRegion
-                :region="nestedRegion"
-                :path="`${path}/${nestedIndex}/${nestedRegionIndex}`"
-                :is-first="nestedRegionIndex === 0"
-                :region-count="nestedLine.regions.length"
-                :sections="getSectionsForNestedRegion(`${path}/${nestedIndex}/${nestedRegionIndex}`)"
-                :get-component="getComponent"
-                :admin="admin"
-                :edit-mode="editMode"
-                :invalid-sections-errors="invalidSectionsErrors"
-                :views-bg-color="viewsBgColor"
-                :lang="lang"
-                :locales="locales"
-                :default-lang="defaultLang"
-                :seo-sections-support="seoSectionsSupport"
-                @seo-support="(view) => emit('seo-support', view)"
-                @refresh-section="(data) => emit('refresh-section', data)"
-                @add-layout="$emit('add-layout', $event)"
-                @add-content="$emit('add-content', $event)"
-                @delete-region="$emit('delete-region', $event)"
-                @drag-section="$emit('drag-section', $event)"
-              />
-            </template>
-          </draggable>
+      <template v-for="(section, sectionIdx) in sortedSections" :key="section.id">
+        <LayoutElementsSectionWrapper
+          :section="section"
+          :path="path"
+          :get-component="getComponent"
+          :admin="admin"
+          :edit-mode="editMode"
+          :invalid-sections-errors="invalidSectionsErrors"
+          :views-bg-color="viewsBgColor"
+          :lang="lang"
+          :locales="locales"
+          :default-lang="defaultLang"
+          :seo-sections-support="seoSectionsSupport"
+          @seo-support="(view) => emit('seo-support', view)"
+          @refresh-section="(data) => emit('refresh-section', data)"
+          @add-layout="$emit('add-layout', $event)"
+          @add-content="$emit('add-content', $event)"
+        />
+        <!-- Render nested line after this section if it exists -->
+        <div v-if="nestedLines[sectionIdx]" class="nested-line">
+          <div class="nested-line-inner">
+            <LayoutElementsLayoutRegion
+              v-for="(nestedRegion, nestedIndex) in nestedLines[sectionIdx]"
+              :key="nestedRegion.id"
+              :region="nestedRegion"
+              :path="nestedRegion.path"
+              :is-first="nestedIndex === 0"
+              :region-count="nestedLines[sectionIdx].length"
+              :sections="nestedRegion.sections"
+              :get-component="getComponent"
+              :admin="admin"
+              :edit-mode="editMode"
+              :invalid-sections-errors="invalidSectionsErrors"
+              :views-bg-color="viewsBgColor"
+              :lang="lang"
+              :locales="locales"
+              :default-lang="defaultLang"
+              :seo-sections-support="seoSectionsSupport"
+              @seo-support="(view) => emit('seo-support', view)"
+              @refresh-section="(data) => emit('refresh-section', data)"
+              @add-layout="$emit('add-layout', $event)"
+              @add-content="$emit('add-content', $event)"
+              @delete-region="$emit('delete-region', $event)"
+              @drag-section="$emit('drag-section', $event)"
+            />
+          </div>
         </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -169,50 +147,43 @@ const regionWidth = computed(() => {
 
 // Sorted sections by weight
 const sortedSections = computed(() => {
-  return [...props.sections].sort((a, b) => a.weight - b.weight)
+  return [...props.region.sections].sort((a, b) => a.weight - b.weight)
 })
-
-// Get sections for nested region
-const getSectionsForNestedRegion = (nestedPath) => {
-  return props.sections.filter(section => {
-    if (!section.region?.path) return false
-    return section.region.path.startsWith(nestedPath)
-  })
-}
 
 // Handle section drag end
 const onSectionDragEnd = (evt) => {
-  const { item, newIndex } = evt
-  const sectionId = item.dataset.sectionId
-
-  // Calculate new weight based on position
-  let newWeight = newIndex
-
-  // Adjust weights of other sections
-  sortedSections.value.forEach((section, index) => {
-    if (section.id !== sectionId && index >= newIndex) {
-      newWeight = Math.max(newWeight, section.weight + 1)
-    }
-  })
-
-  emit('drag-section', {
-    sectionId,
-    newPath: props.path,
-    newWeight
-  })
-}
-
-// Handle nested region drag end
-const onNestedRegionDragEnd = (evt, nestedIndex) => {
   const { oldIndex, newIndex } = evt
-
   if (oldIndex === newIndex) return
-
-  const oldPath = `${props.path}/${nestedIndex}/${oldIndex}`
-  const newPath = `${props.path}/${nestedIndex}/${newIndex}`
-
-  emit('drag-region', { oldPath, newPath })
+  const section = sortedSections.value[oldIndex]
+  emit('drag-section', {
+    sectionId: section.id,
+    newPath: props.path,
+    newWeight: newIndex
+  })
 }
+
+// Group nested regions by line index, keyed by section index
+const nestedLines = computed(() => {
+  if (!props.region.regions || !props.region.regions.length) return {}
+  const lines = {}
+  props.region.regions.forEach(region => {
+    // The line index is the first segment after the parent path
+    const parentDepth = props.path.split('/').length
+    const regionParts = region.path.split('/')
+    const lineIdx = Number(regionParts[parentDepth]) || 0
+    if (!lines[lineIdx]) lines[lineIdx] = []
+    lines[lineIdx].push(region)
+  })
+  // Sort each line's regions by their region index
+  Object.keys(lines).forEach(idx => {
+    lines[idx].sort((a, b) => {
+      const aIdx = Number(a.path.split('/').pop())
+      const bIdx = Number(b.path.split('/').pop())
+      return aIdx - bIdx
+    })
+  })
+  return lines
+})
 </script>
 
 <style scoped>
@@ -244,21 +215,20 @@ const onNestedRegionDragEnd = (evt, nestedIndex) => {
   margin-top: 40px; /* Space for region handle */
 }
 
-.sections-container-inner {
-  min-height: 50px;
-}
-
 .nested-regions {
-  margin-top: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
+  width: 100%;
 }
-
 .nested-line {
+  width: 100%;
   margin-bottom: 1px;
 }
-
-.nested-regions-container {
+.nested-line-inner {
   display: flex;
+  flex-direction: row;
   gap: 1px;
-  min-height: 80px;
+  width: 100%;
 }
 </style>

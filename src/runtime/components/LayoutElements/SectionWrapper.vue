@@ -9,8 +9,8 @@
       :path="path"
       :section-id="section.id"
       class="section-handle"
-      @add-layout="$emit('add-layout', { path: getInsertPath(), type: $event.type, insertAfter: true, event: $event.event })"
-      @add-content="$emit('add-content', { path: getInsertPath(), type: $event.type, event: $event.event })"
+      @add-layout="$emit('add-layout', { path, type: $event.type, event: $event.event, sectionIndex })"
+      @add-content="$emit('add-content', { path, type: $event.type, event: $event.event, sectionIndex })"
       @settings="handleSettings"
     >
       <template #modalSelectionSlot>
@@ -165,11 +165,21 @@ const emit = defineEmits([
   'seo-support'
 ])
 
+const sectionIndex = computed(() => {
+  // Find this section's index in the parent region
+  const parentSections = (section.region && section.region.path === path) ? [section] : []
+  // fallback: let parent region pass the index as a prop if needed
+  return parentSections.length ? 0 : undefined
+})
+
 // Get insert path for new content below this section
 const getInsertPath = () => {
-  // When adding content/layout after this section, we use the same path
-  // The weight will determine the order
-  return props.path
+  // Insert into a new row below the current row
+  const pathParts = props.path.split('/')
+  const currentRow = parseInt(pathParts[0])
+  const newRow = currentRow + 1
+  // Always insert into the first region of the new row
+  return `${newRow}/0`
 }
 
 // Handle settings click
