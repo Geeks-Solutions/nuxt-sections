@@ -19,7 +19,7 @@
         :list="sortedSections"
         :group="{ name: 'sections', pull: true, put: true }"
         item-key="id"
-        class="sections-container"
+        class="sections-container-inner"
         :animation="200"
         handle=".section-drag-handle"
         @end="onSectionDragEnd"
@@ -219,9 +219,9 @@ const onNestedRegionDragEnd = (evt, nestedIndex) => {
 .layout-region {
   position: relative;
   min-height: 100px;
-  padding: 8px;
   border: 1px dashed transparent; /* Invisible border */
   transition: border-color 0.2s;
+  border-color: #e0e0e0;
 }
 
 .layout-region:hover {
@@ -233,13 +233,18 @@ const onNestedRegionDragEnd = (evt, nestedIndex) => {
   top: 8px;
   left: 8px;
   z-index: 10;
+  opacity: 0;
+}
+
+.layout-region:hover .region-handle {
+  opacity: 1;
 }
 
 .region-content {
   margin-top: 40px; /* Space for region handle */
 }
 
-.sections-container {
+.sections-container-inner {
   min-height: 50px;
 }
 

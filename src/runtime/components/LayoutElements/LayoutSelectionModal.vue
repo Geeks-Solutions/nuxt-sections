@@ -1,13 +1,26 @@
 <template>
   <div class="selection-modal-wrapper">
     <transition name="modal">
-      <div v-if="show" class="selection-modal-container-wrapper" @click="handleClose">
-        <div class="modal-container" @click.stop>
+      <div
+        v-if="visible"
+        class="selection-modal-container-wrapper"
+        @click="handleCloseModal"
+      >
+        <div
+          class="modal-container"
+          :style="{ top: `${position.y}px`, left: `${position.x}px` }"
+          @click.stop
+        >
           <div class="modal-header">
             <h2>Select Layout</h2>
-            <button class="close-btn" @click="handleClose">
+            <button class="close-btn" @click="handleCloseModal">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path
+                  d="M6 6l8 8M14 6l-8 8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
           </div>
@@ -55,9 +68,7 @@
 
             <!-- Content Tab -->
             <div v-show="activeTab === 'content'" class="content-tab">
-              <slot name="content">
-                <p class="empty-message">Content selection will be handled by parent component</p>
-              </slot>
+              <slot name="sectionTypesContent"/>
             </div>
           </div>
         </div>
@@ -67,45 +78,40 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import {onBeforeUnmount, ref} from 'vue'
 
-const props = defineProps({
-  show: {
-    type: Boolean,
-    default: false
-  },
-  path: {
-    type: String,
-    default: null
-  }
-})
+const emit = defineEmits(['select', 'select-content'])
 
-const emit = defineEmits(['update:show', 'select', 'select-content'])
-
+const visible = ref(false)
+const position = ref({ x: 0, y: 0 })
 const activeTab = ref('layout')
 
-// Reset to layout tab when modal opens
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    activeTab.value = 'layout'
-  }
-})
+// Public function: open modal at given coordinates
+const openSelectionModal = (x, y) => {
+  position.value = { x, y: y - 56 }
+  visible.value = true
+  activeTab.value = 'layout'
+}
 
-const handleClose = () => {
-  emit('update:show', false)
+// Close modal
+const handleCloseModal = () => {
+  visible.value = false
+  activeTab.value = 'layout'
 }
 
 const handleLayoutSelect = (regionCount) => {
   emit('select', regionCount)
-  handleClose()
+  handleCloseModal()
 }
+
+defineExpose({ openSelectionModal, handleCloseModal }) // allow parent to call modal.open(x,y)
 </script>
 
 <style scoped>
 .selection-modal-wrapper {
   position: absolute;
-  top: 50px;
-  left: 10px;
+  top: 0;
+  left: 0;
 }
 
 .selection-modal-container-wrapper {
@@ -114,6 +120,7 @@ const handleLayoutSelect = (regionCount) => {
 }
 
 .modal-container {
+  position: absolute;
   background: white;
   border-radius: 12px;
   width: 100%;
@@ -122,6 +129,7 @@ const handleLayoutSelect = (regionCount) => {
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
 
 .modal-header {

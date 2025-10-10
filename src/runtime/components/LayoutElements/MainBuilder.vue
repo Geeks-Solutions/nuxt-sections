@@ -1,7 +1,7 @@
 <template>
   <div class="page-builder">
     <!-- Empty state -->
-    <div v-if="isEmpty && admin && editMode" class="empty-state">
+    <div v-if="isEmpty && admin && editMode && !isSideBarOpen" class="empty-state">
       <LayoutElementsRegionHandle
         type="empty"
         :drag-support="false"
@@ -36,17 +36,15 @@
 
     <!-- Layout Selection Modal -->
     <LayoutElementsLayoutSelectionModal
-      v-model:show="showLayoutModal"
-      :path="modalContext.path"
+      v-if="admin && editMode && !isSideBarOpen"
+      ref="layoutSelectionModal"
       @select="handleLayoutSelect"
-    />
+    >
+      <template #sectionTypesContent>
+        <slot name="sectionTypesContent"/>
+      </template>
+    </LayoutElementsLayoutSelectionModal>
 
-    <!-- Content Selection Modal -->
-    <LayoutElementsContentSelectionModal
-      v-model:show="showContentModal"
-      :path="modalContext.path"
-      @select="handleContentSelect"
-    />
   </div>
 </template>
 
@@ -63,6 +61,10 @@ const props = defineProps({
     default: false,
   },
   editMode: {
+    type: Boolean,
+    default: false,
+  },
+  isSideBarOpen: {
     type: Boolean,
     default: false,
   },
@@ -107,9 +109,10 @@ const emit = defineEmits(['update:pageData', 'seo-support', 'refresh-section'])
 // Reactive state
 const layouts = ref(props.pageData.metadata?.layouts || [])
 const sections = ref(props.pageData.sections || [])
+const layoutSelectionModal = ref(null)
 const showLayoutModal = ref(false)
 const showContentModal = ref(false)
-const modalContext = ref({ path: null, insertAfter: true })
+const modalContext = ref({ path: null, type: null, insertAfter: true })
 
 // Computed
 const isEmpty = computed(() => {
@@ -158,10 +161,11 @@ const recalculateWeights = () => {
 }
 
 // Handle empty state add
-const handleEmptyAdd = () => {
+const handleEmptyAdd = ({event}) => {
   // showContentModal.value = true
   // modalContext.value = { path: '0/0', insertAfter: false }
-  handleAddLayout({ path: '0/0', insertAfter: true })
+  handleAddLayout({ path: '0/0', insertAfter: true, event })
+  emitUpdate()
   // Create initial layout if doesn't exist
   // if (layouts.value.length === 0) {
   //   layouts.value.push({
@@ -171,14 +175,20 @@ const handleEmptyAdd = () => {
   // }
 }
 
+const showLayoutSelectionModal = (event) => {
+  layoutSelectionModal.value.openSelectionModal(event.clientX, event.clientY) // pass click coords
+}
+
 // Handle add layout from region/section handle
-const handleAddLayout = ({ path, insertAfter = true }) => {
-  if (showLayoutModal.value === true) {
-    showLayoutModal.value = false
-  } else {
-    modalContext.value = { path, insertAfter }
-    showLayoutModal.value = true
-  }
+const handleAddLayout = ({ path, type, insertAfter = true, event }) => {
+  // if (showLayoutModal.value === true) {
+  //   showLayoutModal.value = false
+  //   layoutSelectionModal.value.handleCloseModal()
+  // } else {
+  modalContext.value = { path, type, insertAfter }
+  showLayoutModal.value = true
+  showLayoutSelectionModal(event)
+  // }
 }
 
 // Handle add content from region/section handle
@@ -189,22 +199,24 @@ const handleAddContent = ({ path }) => {
 
 // Handle layout selection
 const handleLayoutSelect = (regionCount) => {
-  const { path, insertAfter } = modalContext.value
+  const { path, type, insertAfter } = modalContext.value
 
   if (!path) return
 
   const pathParts = path.split('/')
-  console.log('pathParts', pathParts)
   const lineIndex = Number.parseInt(pathParts[0])
-  console.log('lineIndex', lineIndex)
-  console.log('insertAfter', insertAfter)
+
   // Create new layout line
   const newLine = {
     id: generateId(),
     regions: Array.from({ length: regionCount }, () => ({ id: generateId() }))
   }
 
-  if (pathParts.length === 2) {
+  console.log('pathParts', pathParts)
+  console.log('type', type)
+  console.log('modalContext.value', modalContext.value)
+
+  if (pathParts.length === 2 && type !== 'section') {
     // Adding at line level
     const insertIndex = insertAfter ? lineIndex + 1 : lineIndex
     layouts.value.splice(insertIndex, 0, newLine)
@@ -226,12 +238,23 @@ const handleLayoutSelect = (regionCount) => {
 
   emitUpdate()
   showLayoutModal.value = false
+  layoutSelectionModal.value?.handleCloseModal()
 }
 
 // Handle content selection
 const handleContentSelect = (sectionData) => {
-  const { path } = modalContext.value
+  // console.log('layouts', layouts)
+  // console.log('props.pageData', props.pageData)
+  let { path } = modalContext.value
+  const { type } = modalContext.value
 
+  // Handle the case where the add content is called from a first-region handle in order to add the content on a second line inside one region
+  if (type && type === 'first-region') {
+    handleLayoutSelect(1)
+    path = path.split("/").map((v,i) => +v + (i === 0 ? 1 : 0)).join("/")
+  }
+
+  // handleLayoutSelect(1)
   // Create new section
   const newSection = {
     ...sectionData,
@@ -349,6 +372,8 @@ const updatePathsAfterLineInsertion = (fromIndex) => {
     }
   })
 }
+
+defineExpose({ handleContentSelect })
 </script>
 
 <style scoped>

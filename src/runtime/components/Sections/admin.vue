@@ -1102,10 +1102,12 @@
             </div>
             <div v-else>
               <LayoutElementsMainBuilder
+                ref="layoutMainBuilder"
                 :page-data="pageData"
                 :get-component="getComponent"
                 :admin="admin"
                 :edit-mode="editMode"
+                :is-side-bar-open="isSideBarOpen"
                 :invalid-sections-errors="invalidSectionsErrors"
                 :views-bg-color="viewsBgColor"
                 :lang="lang"
@@ -1115,7 +1117,262 @@
                 @seo-support="(view) => seoSectionsSupport[view.name] = true"
                 @refresh-section="({ view, data }) => refreshSectionView(view, data)"
                 @update:page-data="handlePageUpdate"
-              />
+              >
+                <template #sectionTypesContent>
+                  <div
+                       class="section-modal-content section-types prime"
+                       aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div
+                      class="flexSections sections-items-center sections-justify-center sections-px-4 sections-pb-20 sections-text-center inner-modal-conatiner">
+                      <div class="section-modal-content sections-bg-white relativeSections sections-shadow rounded-xl">
+                        <div class="flexSections sections-flex-row relativeSections sections-justify-center">
+                          <div v-if="!currentSection && isCreateInstance === false"
+                               class="flexSections sections-flex-col sections-my-3 sections-gap-4">
+                            <div class="flexSections sections-items-center sections-flex-row sections-gap-4 section-types-filter">
+                              <div>{{ $t('filterBy') }}</div>
+                              <input
+                                class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none sectionsFilterName"
+                                type="text"
+                                :placeholder="$t('filterName')"
+                                v-model="sectionsFilterName"
+                              />
+                              <div v-if="typesTab !== 'inventoryTypes'" class="relativeSections">
+                                <select v-model="sectionsFilterAppName" id="select" name="select" class="layoutSelect-select">
+                                  <option disabled value="" class="sections-text-FieldGray">{{
+                                      `-- ${$t('sectionsAppName')} --`
+                                    }}
+                                  </option>
+                                  <option v-for="appName in appNames.filter((item, index) => appNames.indexOf(item) === index)"
+                                          :value="appName">{{ appName }}
+                                  </option>
+                                </select>
+                                <div class="layoutSelect-arrow-icon">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M10 12L5 7h10l-5 5z"/>
+                                  </svg>
+                                </div>
+                              </div>
+                              <div class="slot-name sections-cursor-pointer" @click="clearSectionsFilters">
+                                {{ $t('filterClear') }}
+                              </div>
+                            </div>
+                          </div>
+                          <div v-else-if="!currentSection && isCreateInstance === true" class="flexSections sections-flex-row sections-my-3 sections-pb-6 sections-justify-center">
+                            <div class="sections-text-center h2 sections-cursor-pointer selectSectionType">
+                              {{ $t("selectSectionType") }}
+                            </div>
+                          </div>
+                          <div class="closeIcon" @click="isModalOpen = false; isCreateInstance = false">
+                            <LazyBaseIconsClose/>
+                          </div>
+                        </div>
+                        <div
+                          class="step-back"
+                          v-if="currentSection"
+                          @click="currentSection = null"
+                        >
+                          <LazyBaseIconsBack/>
+                        </div>
+
+                        <div v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true && filteredGlobalTypes.filter(gt => gt.id !== undefined)?.length > 0" class="flexSections sections-flex-row my-global-content" @click="showMyGlobal = !showMyGlobal">
+                          <span>{{ $t('myGlobal') }}</span>
+                          <span class="sections-pl-2">{{ showMyGlobal ? 'v' : '>' }}</span>
+                        </div>
+
+                        <div
+                          v-if="!currentSection && (typesTab === 'types' || typesTab === 'inventoryTypes') && isCreateInstance !== true"
+                          ref="intro-available-sections" class="intro-available-sections sections-m-1 sections-p-1 type-items content-wrapper">
+
+                          <div
+                            v-for="(type, index) in  [...showMyGlobal ? filteredGlobalTypes.filter(gt => gt.id !== undefined) : [], ...filteredTypes.filter(type => type.notCreated !== true && type.app_status !== 'disbaled' && type.app_status !== 'disabled'), ...filteredTypes.filter(type => type.notCreated === true || type.app_status === 'disbaled' || type.app_status === 'disabled')]"
+                            :key="type.name"
+                            class="section-item section-item-box"
+                            :class="[type.id === 'addition-empty' ? 'addition-empty' : '', showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length ? 'global' : '']"
+                          >
+                            <div
+                              v-if="type.type === 'local' || componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static').settings || componentsSetupData(type.section?.name || type.name, type.type).render_data"
+                              :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+                              {{ formatTexts(formatName(type.name), " ") }}
+                            </div>
+                            <div v-if="(type.access === 'private' && type.notCreated !== true) || (type.notCreated !== true && type.section)" class="section-delete">
+                              <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index, showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length)">
+                                <LazyBaseIconsTrash class="trash-icon-style"/>
+                              </div>
+                            </div>
+                            <div v-else-if="type.query_string_keys && type.query_string_keys.length > 0" class="section-info">
+                              <LazyTooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                                <div class="section-info-icon">
+                                  <LazyBaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                                                     class="info-icon-style" />
+                                </div>
+                              </LazyTooltipClickableTooltip>
+                            </div>
+                            <div v-else class="section-top-separator"></div>
+                            <div
+                              class="section-item active"
+                              @click="showMyGlobal && index < filteredGlobalTypes.filter(gt => gt.id !== undefined).length ? type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true) : type.notCreated !== true ? openCurrentSection(type) : openCurrentSection(type, false, true) ">
+                              <LazyBaseSubTypesSectionItem
+                                v-if="type.name"
+                                :title="formatName(type.name)"
+                                :component-item="getComponent(type.section?.name || type.name, type.type ? type.type : 'static')"
+                                :section="componentsSetupData(type.section?.name || type.name, type.type ? type.type : 'static')"
+                                :active="true"
+                              />
+                            </div>
+                            <div
+                              v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.type !== 'local' && type.notCreated !== true"
+                              class="flexSections sections-pl-2 sections-pb-1" style="font-size: 10px;">
+                              {{ $t('by') + type.application }}
+                            </div>
+                            <div v-if="type.app_status === 'disbaled' || type.app_status === 'disabled'" class="section-delete">
+                              <div class="section-delete-icon"
+                                   @click="openAuthConfigurableSectionTypeModal(type.application_id, index, type.requirements, type.name, type.application)">
+                                <div class="flexSections justify-between sections-items-end">
+                                  <div v-if="type.type === 'configurable'" class="flexSections sections-pl-2 sections-pb-1"
+                                       style="font-size: 8px;">
+                                    {{ $t('by') + type.application }}
+                                  </div>
+                                  <div v-else></div>
+                                  <LazyBaseIconsLocked class="trash-icon-style sections-p-1"/>
+                                </div>
+                              </div>
+                            </div>
+                            <div v-else-if="type.type === 'configurable' || type.type === 'dynamic'" class="section-delete">
+                              <div class="section-delete-icon"
+                                   @click="openUnAuthConfigurableSectionTypeModal(type.application_id, index, type.name, type.application)">
+                                <div class="flexSections justify-between sections-items-end">
+                                  <div class="flexSections sections-pl-2 sections-pb-1" style="font-size: 8px;">
+                                    {{ $t('by') + type.application }}
+                                  </div>
+                                  <LazyBaseIconsUnlocked class="trash-icon-style sections-p-1"/>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div v-else-if="!currentSection && (typesTab === 'globalTypes' || isCreateInstance === true)"
+                             class="m-1 p-1 type-items content-wrapper">
+                          <div
+                            v-if="isCreateInstance === false && globalTypes.filter(gt => gt.id !== undefined).length === 0 && loading === false">
+                            <button
+                              class="hp-button"
+                              @click="
+              (currentSection = null), (isModalOpen = true), (savedView = {}), (isCreateInstance = true), (isSideBarOpen = false), (canPromote = false), (sectionsFilterName = ''), (sectionsFilterAppName = '')
+            "
+                            >
+                              <div class="btn-icon plus-icon">
+                                <LazyBaseIconsPlus/>
+                              </div>
+                              <div class="btn-text">{{ $t("createGlobal") }}</div>
+                            </button>
+                          </div>
+                          <div
+                            class="section-item section-item-box"
+                            v-for="(type, index) in isCreateInstance === true ? filteredGlobalTypes.filter(gt => gt.notCreated === true) : filteredGlobalTypes.filter(gt => gt.id !== undefined)"
+                            :key="`${type.name}-${index}`"
+                          >
+                            <div
+                              v-if="type.type === 'local' || componentsSetupData(type && type.section ? type.section.name : type.name, type.type).settings || componentsSetupData(type && type.section ? type.section.name : type.name, type.type).render_data"
+                              :title="formatTexts(formatName(type.name), ' ')" class="text-capitalize section-item-title">
+                              {{ formatTexts(formatName(type.name), " ") }}
+                            </div>
+                            <div v-if="type.notCreated !== true" class="section-delete">
+                              <div class="section-delete-icon" @click="openDeleteSectionTypeModal(type.name, index)">
+                                <LazyBaseIconsTrash class="trash-icon-style"/>
+                              </div>
+                            </div>
+                            <div v-if="type.query_string_keys && type.query_string_keys.length > 0" class="global-section-info">
+                              <LazyTooltipClickableTooltip :content="`query_string(s): ${type.query_string_keys.join(', ')}`" position="top">
+                                <div class="global-section-info-icon">
+                                  <LazyBaseIconsInfo :title="`query_string(s): ${type.query_string_keys.join(', ')}`"
+                                                     class="info-icon-style"/>
+                                </div>
+                              </LazyTooltipClickableTooltip>
+                            </div>
+                            <div v-else-if="isCreateInstance === true" class="section-top-separator"></div>
+                            <div class="section-item" :class="{active: type.notCreated !== true || isCreateInstance === true}"
+                                 @click="type.notCreated === true ? openCurrentSection(type, true) : type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable' ? openCurrentSection(type, true) : addSectionType({...type.section, id: 'id-' + Date.now(), weight: 'null', type: type.type, instance_name: type.name, fields: type.fields, query_string_keys: type.query_string_keys, dynamic_options: type.dynamic_options, render_data: type.section && type.section.options && type.section.options[0] ? [{settings: type.section.options[0]}] : undefined}, null, true)">
+                              <LazyBaseSubTypesSectionItem
+                                v-if="type.name"
+                                :title="formatName(type.name)"
+                                :component-item="getComponent(type && type.section ? type.section.name : type.name, type.type)"
+                                :section="componentsSetupData(type && type.section ? type.section.name : type.name, type.type)"
+                                :active="true"
+                              />
+                            </div>
+                            <div v-if="type.type !== 'configurable' && type.type !== 'dynamic' && type.type !== 'local'"
+                                 class="flexSections sections-pl-2 sections-pb-1" style="font-size: 10px;">
+                              {{ $t('by') + type.application }}
+                            </div>
+                          </div>
+                        </div>
+                        <div v-else :ref="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : undefined" :class="currentSection.name === 'SimpleCTA' ? 'intro-simple-CTA-section-form' : ''" class="flexSections component-view-wrapper">
+                          <div class="component-view">
+                            <!-- we can use this short hand too -->
+                            <!-- <component :is="currentSection.type" :props="currentSection"  /> -->
+                            <LazyBaseTypesStatic
+                              v-if="currentSection.type === 'static'"
+                              :props="currentSection"
+                              @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+                              :savedView="savedView"
+                              :creationView="creationView"
+                              :locales="locales"
+                              :default-lang="defaultLang"
+                              :translation-component-support="translationComponentSupport"
+                              :sections-user-id="sectionsUserId"
+                              :instance="currentSection.instance === true"
+                              :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                              @load="(value) => loading = value"
+                              @promote-section="currentSection = {...currentSection, instance: true}"
+                              @creationViewLoaded="updateCreationView"
+                            />
+                            <LazyBaseTypesDynamic
+                              v-if="currentSection.type === 'dynamic'"
+                              :props="currentSection"
+                              @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+                              @errorAddingSection="errorAddingSection"
+                              :savedView="savedView"
+                              :headers="headers"
+                              :instance="currentSection.instance === true"
+                              :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                              :base-path="pagePath"
+                              @load="(value) => loading = value"
+                            />
+                            <LazyBaseTypesConfigurable
+                              v-if="currentSection.type === 'configurable'"
+                              ref="sectionsConfigurableType"
+                              @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+                              @errorAddingSection="errorAddingSection"
+                              :props="currentSection"
+                              :savedView="savedView"
+                              :headers="headers"
+                              :locales="locales"
+                              :default-lang="defaultLang"
+                              :sections-user-id="sectionsUserId"
+                              :sections-configurable-type="sectionsConfigurableTypeReference"
+                              :translation-component-support="translationComponentSupport"
+                              :instance="currentSection.instance === true"
+                              :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                              :base-path="pagePath"
+                              @loadReference="sectionsConfigurableTypeReference.value = sectionsConfigurableType"
+                              @load="(value) => loading = value"
+                              @promote-section="currentSection = {...currentSection, instance: true}"
+                            />
+                            <LazyBaseTypesLocal
+                              v-if="currentSection.type === 'local'"
+                              :props="currentSection"
+                              :savedView="savedView"
+                              :instance="currentSection.instance === true"
+                              :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
+                              @addSectionType="(section) => currentSection.instance === true ? (currentSection.linked_to !== '' && currentSection.linked_to !== undefined) ? updateGlobalType(section) : addNewGlobalType(section) : addSectionType(section)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </LayoutElementsMainBuilder>
 <!--              <div class="sections-dynamic-layout views">-->
 <!--                &lt;!&ndash; Draggable Rows &ndash;&gt;-->
 <!--                <draggable-->
@@ -2036,206 +2293,212 @@ const guideConfig = useState('guideConfig', () => {
 
 // ## Dynamic Layout Integration Started //
 
-const metadataLayoutStructure = {
-  "metadata": {
-    "layoutRows": [
-      {
-        "row": 0,
-        "cols": 2,
-        "weight": 0
-      },
-      {
-        "row": 1,
-        "cols": 3,
-        "weight": 1
-      },
-      {
-        "row": 2,
-        "cols": 1,
-        "weight": 2
-      }
-    ]
-  }
-}
-
-const sectionRegionStructure = {
-  "region": {
-    "path": "",
-    "row": 1,      // corresponds to metadata.layoutRows[x].row = 1
-    "col": 0,      // index in the cols array
-    "weight": 0    // position within that column
-  }
-}
-
-const rowId = computed(() => {
-  return `row-${Date.now()}`;
-});
-
-// Get initial grid from composable
-const sectionsGrid = computed(() => {
-  const layoutRows = pageData.value?.metadata?.layoutRows || [];
-  const sections = pageData.value?.sections || [];
-
-  // Initialize grid based on layoutRows
-  const grid = layoutRows
-    .sort((a, b) => a.weight - b.weight)
-    .map(rowConfig => ({
-      id: rowConfig.row,
-      row: rowConfig.row,
-      columns: rowConfig.cols,
-      colWidths: 100 / rowConfig.cols,
-      weight: rowConfig.weight,
-      cols: Array.from({ length: rowConfig.cols }, () => [])
-    }));
-
-  // Place sections into grid
-  sections.forEach(section => {
-    const { row, col, weight } = section.region;
-
-    // Find the row in grid
-    const gridRow = grid.find(r => r.row === row);
-
-    if (gridRow && col < gridRow.columns) {
-      gridRow.cols[col].push({
-        ...section,
-        _weight: weight || 0
-      });
-    }
-  });
-
-  // Sort sections within each column by weight
-  grid.forEach(row => {
-    row.cols.forEach(colSections => {
-      colSections.sort((a, b) => a._weight - b._weight);
-    });
-  });
-
-  return grid;
-})
-
-// Local mutable copy for draggable
-const localGrid = ref([]);
-
-// Sync with computed grid
-watch(sectionsGrid, (newGrid) => {
-  localGrid.value = JSON.parse(JSON.stringify(newGrid));
-}, { immediate: true, deep: true });
-
-// Handle row reordering
-function handleRowDrag(evt) {
-  if (evt.moved) {
-    const { oldIndex, newIndex } = evt.moved;
-
-    // Update weights based on new order
-    localGrid.value.forEach((row, index) => {
-      row.weight = index;
-    });
-
-    // Update metadata in pageData
-    // updateLayoutRowsMetadata();
-
-    // emit('row-reordered', {
-    //   oldIndex,
-    //   newIndex,
-    //   rows: localGrid.value
-    // });
-  }
-}
-
-// Handle section dragging between columns/rows
-function handleSectionDrag(evt, rowId, colIndex) {
-  if (evt.added) {
-    // Section added to this column
-    const section = evt.added.element;
-    const newWeight = evt.added.newIndex;
-
-    // updateSectionRegion(section.id, rowId, colIndex, newWeight);
-
-    // emit('section-moved', {
-    //   sectionId: section.id,
-    //   newRow: rowId,
-    //   newCol: colIndex,
-    //   newWeight
-    // });
-  } else if (evt.moved) {
-    // Section moved within same column
-    const section = evt.moved.element;
-    const newWeight = evt.moved.newIndex;
-
-    // updateSectionRegion(section.id, rowId, colIndex, newWeight);
-
-    // emit('section-moved', {
-    //   sectionId: section.id,
-    //   newRow: rowId,
-    //   newCol: colIndex,
-    //   newWeight
-    // });
-  } else if (evt.removed) {
-    // Section removed from this column (handled by the "added" event in target column)
-  }
-
-  // Recalculate weights for all sections in affected columns
-  recalculateWeights(rowId, colIndex);
-}
-
-// Update section region in pageData
-// function updateSectionRegion(sectionId, row, col, weight) {
-//   const section = props.pageData.sections.find(s => s.id === sectionId);
-//   if (section) {
-//     section.region = {
-//       row,
-//       col,
-//       weight
-//     };
+// const metadataLayoutStructure = {
+//   "metadata": {
+//     "layoutRows": [
+//       {
+//         "row": 0,
+//         "cols": 2,
+//         "weight": 0
+//       },
+//       {
+//         "row": 1,
+//         "cols": 3,
+//         "weight": 1
+//       },
+//       {
+//         "row": 2,
+//         "cols": 1,
+//         "weight": 2
+//       }
+//     ]
 //   }
 // }
+//
+// const sectionRegionStructure = {
+//   "region": {
+//     "path": "",
+//     "row": 1,      // corresponds to metadata.layoutRows[x].row = 1
+//     "col": 0,      // index in the cols array
+//     "weight": 0    // position within that column
+//   }
+// }
+//
+// const rowId = computed(() => {
+//   return `row-${Date.now()}`;
+// });
+//
+// // Get initial grid from composable
+// const sectionsGrid = computed(() => {
+//   const layoutRows = pageData.value?.metadata?.layoutRows || [];
+//   const sections = pageData.value?.sections || [];
+//
+//   // Initialize grid based on layoutRows
+//   const grid = layoutRows
+//     .sort((a, b) => a.weight - b.weight)
+//     .map(rowConfig => ({
+//       id: rowConfig.row,
+//       row: rowConfig.row,
+//       columns: rowConfig.cols,
+//       colWidths: 100 / rowConfig.cols,
+//       weight: rowConfig.weight,
+//       cols: Array.from({ length: rowConfig.cols }, () => [])
+//     }));
+//
+//   // Place sections into grid
+//   sections.forEach(section => {
+//     const { row, col, weight } = section.region;
+//
+//     // Find the row in grid
+//     const gridRow = grid.find(r => r.row === row);
+//
+//     if (gridRow && col < gridRow.columns) {
+//       gridRow.cols[col].push({
+//         ...section,
+//         _weight: weight || 0
+//       });
+//     }
+//   });
+//
+//   // Sort sections within each column by weight
+//   grid.forEach(row => {
+//     row.cols.forEach(colSections => {
+//       colSections.sort((a, b) => a._weight - b._weight);
+//     });
+//   });
+//
+//   return grid;
+// })
+//
+// // Local mutable copy for draggable
+// const localGrid = ref([]);
+//
+// // Sync with computed grid
+// watch(sectionsGrid, (newGrid) => {
+//   localGrid.value = JSON.parse(JSON.stringify(newGrid));
+// }, { immediate: true, deep: true });
+//
+// // Handle row reordering
+// function handleRowDrag(evt) {
+//   if (evt.moved) {
+//     const { oldIndex, newIndex } = evt.moved;
+//
+//     // Update weights based on new order
+//     localGrid.value.forEach((row, index) => {
+//       row.weight = index;
+//     });
+//
+//     // Update metadata in pageData
+//     // updateLayoutRowsMetadata();
+//
+//     // emit('row-reordered', {
+//     //   oldIndex,
+//     //   newIndex,
+//     //   rows: localGrid.value
+//     // });
+//   }
+// }
+//
+// // Handle section dragging between columns/rows
+// function handleSectionDrag(evt, rowId, colIndex) {
+//   if (evt.added) {
+//     // Section added to this column
+//     const section = evt.added.element;
+//     const newWeight = evt.added.newIndex;
+//
+//     // updateSectionRegion(section.id, rowId, colIndex, newWeight);
+//
+//     // emit('section-moved', {
+//     //   sectionId: section.id,
+//     //   newRow: rowId,
+//     //   newCol: colIndex,
+//     //   newWeight
+//     // });
+//   } else if (evt.moved) {
+//     // Section moved within same column
+//     const section = evt.moved.element;
+//     const newWeight = evt.moved.newIndex;
+//
+//     // updateSectionRegion(section.id, rowId, colIndex, newWeight);
+//
+//     // emit('section-moved', {
+//     //   sectionId: section.id,
+//     //   newRow: rowId,
+//     //   newCol: colIndex,
+//     //   newWeight
+//     // });
+//   } else if (evt.removed) {
+//     // Section removed from this column (handled by the "added" event in target column)
+//   }
+//
+//   // Recalculate weights for all sections in affected columns
+//   recalculateWeights(rowId, colIndex);
+// }
+//
+// // Update section region in pageData
+// // function updateSectionRegion(sectionId, row, col, weight) {
+// //   const section = props.pageData.sections.find(s => s.id === sectionId);
+// //   if (section) {
+// //     section.region = {
+// //       row,
+// //       col,
+// //       weight
+// //     };
+// //   }
+// // }
+//
+// // Recalculate weights for sections in a column
+// function recalculateWeights(rowId, colIndex) {
+//   const row = localGrid.value.find(r => r.row === rowId);
+//   if (!row) return;
+//
+//   const colSections = row.cols[colIndex];
+//   colSections.forEach((section, index) => {
+//     section._weight = index;
+//     // updateSectionRegion(section.id, rowId, colIndex, index);
+//   });
+// }
+//
+// // Update layoutRows metadata based on current grid
+// function updateLayoutRowsMetadata() {
+//   const updatedLayoutRows = localGrid.value.map((row, index) => ({
+//     row: row.row,
+//     cols: row.columns,
+//     weight: index
+//   }));
+//
+//   const updatedPageData = {
+//     ...props.pageData,
+//     metadata: {
+//       ...props.pageData.metadata,
+//       layoutRows: updatedLayoutRows
+//     }
+//   };
+//
+//   emit('update:pageData', updatedPageData);
+// }
+//
+// async function handleSectionMoved({ sectionId, newRow, newCol, newWeight }) {
+//   console.log('Section moved:', { sectionId, newRow, newCol, newWeight });
+//
+// }
+//
+// async function handleRowReordered({ oldIndex, newIndex, rows }) {
+//   console.log('Row reordered:', { oldIndex, newIndex });
+//
+// }
+//
+// function handlePageDataUpdate(updatedPageData) {
+//   pageData.value = updatedPageData;
+// }
 
-// Recalculate weights for sections in a column
-function recalculateWeights(rowId, colIndex) {
-  const row = localGrid.value.find(r => r.row === rowId);
-  if (!row) return;
 
-  const colSections = row.cols[colIndex];
-  colSections.forEach((section, index) => {
-    section._weight = index;
-    // updateSectionRegion(section.id, rowId, colIndex, index);
-  });
+const layoutMainBuilder = ref(null)
+
+const handlePageUpdate = (updatedData) => {
+  pageData.value = updatedData
+  console.log('updatedData', updatedData)
 }
-
-// Update layoutRows metadata based on current grid
-function updateLayoutRowsMetadata() {
-  const updatedLayoutRows = localGrid.value.map((row, index) => ({
-    row: row.row,
-    cols: row.columns,
-    weight: index
-  }));
-
-  const updatedPageData = {
-    ...props.pageData,
-    metadata: {
-      ...props.pageData.metadata,
-      layoutRows: updatedLayoutRows
-    }
-  };
-
-  emit('update:pageData', updatedPageData);
-}
-
-async function handleSectionMoved({ sectionId, newRow, newCol, newWeight }) {
-  console.log('Section moved:', { sectionId, newRow, newCol, newWeight });
-
-}
-
-async function handleRowReordered({ oldIndex, newIndex, rows }) {
-  console.log('Row reordered:', { oldIndex, newIndex });
-
-}
-
-function handlePageDataUpdate(updatedPageData) {
-  pageData.value = updatedPageData;
-}
-
-
 
 
 // Computed properties
@@ -4356,31 +4619,32 @@ const getGlobalSectionTypes = async (autoLoad) => {
           })
         })
 
-        if (autoLoad === true) {
-          if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
-            for (const gt of globalTypes.value.filter(gt => gt.auto_insertion === true)) {
-              loading.value = true
-              await new Promise((resolve) => setTimeout(resolve, 100)) // Keep delay if needed
-              if (gt.type === 'configurable') {
-                await renderConfigurableSection(gt, gt.section.options)
-              } else if (gt.type === 'dynamic') {
-                await renderDynamicSection(gt.section.name, gt.name, gt)
-              } else {
-                addSectionType({
-                  ...gt.section,
-                  id: 'id-' + Date.now(),
-                  weight: 'null',
-                  type: gt.type,
-                  instance_name: gt.name,
-                  fields: gt.fields,
-                  query_string_keys: gt.query_string_keys,
-                  dynamic_options: gt.dynamic_options,
-                  render_data: gt.section?.options?.[0] ? [{settings: gt.section.options[0]}] : undefined // Optional chaining
-                }, false, true)
-              }
-            }
-          }
-        }
+        // TODO: Implement back the auto load of global instances in the new dynamic layout
+        // if (autoLoad === true) {
+        //   if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
+        //     for (const gt of globalTypes.value.filter(gt => gt.auto_insertion === true)) {
+        //       loading.value = true
+        //       await new Promise((resolve) => setTimeout(resolve, 100)) // Keep delay if needed
+        //       if (gt.type === 'configurable') {
+        //         await renderConfigurableSection(gt, gt.section.options)
+        //       } else if (gt.type === 'dynamic') {
+        //         await renderDynamicSection(gt.section.name, gt.name, gt)
+        //       } else {
+        //         addSectionType({
+        //           ...gt.section,
+        //           id: 'id-' + Date.now(),
+        //           weight: 'null',
+        //           type: gt.type,
+        //           instance_name: gt.name,
+        //           fields: gt.fields,
+        //           query_string_keys: gt.query_string_keys,
+        //           dynamic_options: gt.dynamic_options,
+        //           render_data: gt.section?.options?.[0] ? [{settings: gt.section.options[0]}] : undefined // Optional chaining
+        //         }, false, true)
+        //       }
+        //     }
+        //   }
+        // }
         loading.value = false
         emit("load", false)
       },
@@ -4754,6 +5018,7 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
     creationView.value = false
     loading.value = false
 
+    layoutMainBuilder.value.handleContentSelect(section)
     computeLayoutData()
     if (showToastBool !== false) {
       sectionsChanged.value = true
@@ -4764,6 +5029,7 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
       )
     }
   } catch (e) {
+    console.log('e add section type', e)
     showToast(
       "Error",
       "error",
@@ -6112,11 +6378,6 @@ const openMyPage = (page) => {
   router.push(page.path)
 }
 
-const handlePageUpdate = (updatedData) => {
-  // pageData.value = updatedData
-  console.log('updatedData', updatedData)
-}
-
 // Lifecycle hooks
 onMounted(async () => {
   computedSEO.value.title = ""
@@ -6824,22 +7085,22 @@ span.handle {
   z-index: 10;
 }
 
-.modalContainer .section-item {
+.section-modal-content.section-types .section-item {
   width: 100%;
   height: 330px;
   margin: 0px;
 }
 
-.modalContainer .section-item.active {
+.section-modal-content.section-types .section-item.active {
   margin: 10px 0px;
   border: 1px solid #03b1c7;
 }
 
-.modalContainer .section-item.inactive {
+.section-modal-content.section-types .section-item.inactive {
   border: 1px solid #adadad;
 }
 
-.modalContainer .section-item .section-item-title {
+.section-modal-content.section-types .section-item .section-item-title {
   font-size: 16px;
   position: absolute;
   padding: 3px;
@@ -6852,7 +7113,7 @@ span.handle {
   white-space: nowrap;
 }
 
-.modalContainer .section-item-box {
+.section-modal-content.section-types .section-item-box {
   display: flex;
   flex-direction: column;
   background: #03b1c7;
@@ -6860,7 +7121,7 @@ span.handle {
   position: relative;
 }
 
-.modalContainer .section-item-box.global {
+.section-modal-content.section-types .section-item-box.global {
   box-shadow: 0 0 0 20px lightgrey;
 }
 
@@ -6872,9 +7133,9 @@ span.handle {
   visibility: hidden;
 }
 
-.modalContainer .type-items {
+.section-modal-content.section-types .type-items {
   display: grid;
-  grid-template-columns: repeat(2, 330px);
+  grid-template-columns: repeat(1, 330px);
   grid-gap: 25px;
   justify-content: center;
 }
@@ -8149,20 +8410,18 @@ section .ql-editor.ql-snow.grey-bg {
 
 
 
+/*
 .sections-dynamic-layout {
   width: 100%;
 }
-
 .rows-container {
   display: flex;
   flex-direction: column;
 }
-
 .sections-layout-row {
   width: 100%;
   transition: all 0.2s ease;
 }
-
 .sections-row-handle {
   display: flex;
   position: absolute;
@@ -8178,27 +8437,21 @@ section .ql-editor.ql-snow.grey-bg {
   user-select: none;
   z-index: 50;
 }
-
 .sections-row-handle span {
   font-size: 0.875rem;
   font-weight: 500;
   color: #374151;
 }
-
 .sections-layout-row .sections-row-handle {
   opacity: 0;
 }
-
-/* Show the handle when row is hovered */
 .sections-layout-row:hover .sections-row-handle.permit-edit {
   opacity: 0.6;
 }
-
 .sections-layout-row:hover .sections-row-columns.permit-edit {
   outline: 2px solid #03B1C7;
   margin: 0.25rem;
 }
-
 .hp-button.layout-floating-add-line {
   opacity: 0;
   position: absolute;
@@ -8207,31 +8460,25 @@ section .ql-editor.ql-snow.grey-bg {
   z-index: 50;
   transform: translateX(-50%);
 }
-
 .sections-layout-row:hover .layout-floating-add-line {
   opacity: 1;
 }
-
 section[section-id] .section-controls {
   opacity: 0;
 }
-
 section[section-id]:hover .section-controls.permit-edit {
   opacity: 0.6;
 }
-
 .sections-row-columns {
   display: flex;
   width: 100%;
   gap: 0;
 }
-
 .sections-layout-column {
   min-height: 60px;
   position: relative;
   transition: all 0.2s ease;
 }
-
 .empty-column {
   border: 2px dashed #d1d5db;
   border-radius: 0.375rem;
@@ -8241,14 +8488,12 @@ section[section-id]:hover .section-controls.permit-edit {
   justify-content: center;
   position: relative;
 }
-
 .empty-column::before {
   content: '';
   color: #9ca3af;
   font-size: 0.875rem;
   position: absolute;
 }
-
 .section-handle {
   position: absolute;
   top: 0.5rem;
@@ -8261,22 +8506,18 @@ section[section-id]:hover .section-controls.permit-edit {
   border-radius: 0.25rem;
   opacity: 0;
   transition: opacity 0.2s;
-}
-
+}*/
+/*
 .section-wrapper:hover .section-handle {
   opacity: 1;
 }
-
-/* Non-edit mode: clean layout */
 .sections-dynamic-layout:not(:has(.sections-row-handle)) .sections-layout-row {
   margin-bottom: 0;
 }
-
 .sections-dynamic-layout:not(:has(.sections-row-handle)) .sections-row-columns {
   gap: 0;
 }
-
 .sections-dynamic-layout:not(:has(.sections-row-handle)) .sections-layout-column {
   padding: 0;
-}
+}*/
 </style>

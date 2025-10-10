@@ -2,10 +2,12 @@
   <div class="region-handle-wrapper">
     <div class="handle-controls">
       <!-- Plus Icon - Only for first-region and section types -->
+      {{ type }}
+      {{ props.path }}
       <button
         v-if="showPlus"
         class="handle-btn plus-btn"
-        @click="handleAdd"
+        @click="handleAdd($event)"
         title="Add content or layout"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -93,15 +95,15 @@ const showPlus = computed(() => {
 })
 
 // Handle add (plus button)
-const handleAdd = () => {
+const handleAdd = (event) => {
   if (props.type === 'empty') {
-    emit('add')
+    emit('add', {event})
   } else if (props.type === 'first-region') {
     // Show modal with Layout and Content tabs
-    emit('add-layout', { path: props.path, insertAfter: true })
+    emit('add-layout', { path: props.path, type: props.type, insertAfter: true, event })
   } else if (props.type === 'section') {
     // Show modal with Layout and Content tabs
-    emit('add-layout', { path: props.path, insertAfter: true })
+    emit('add-layout', { path: props.path, type: props.type, insertAfter: true, event })
   }
 }
 

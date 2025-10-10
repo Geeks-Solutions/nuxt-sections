@@ -4,15 +4,19 @@
     :data-section-id="section.id"
   >
     <!-- Section Handle -->
-    <RegionHandle
+    <LayoutElementsRegionHandle
       type="section"
       :path="path"
       :section-id="section.id"
       class="section-handle"
-      @add-layout="$emit('add-layout', { path: getInsertPath(), insertAfter: true })"
-      @add-content="$emit('add-content', { path: getInsertPath() })"
+      @add-layout="$emit('add-layout', { path: getInsertPath(), type: $event.type, insertAfter: true, event: $event.event })"
+      @add-content="$emit('add-content', { path: getInsertPath(), type: $event.type, event: $event.event })"
       @settings="handleSettings"
-    />
+    >
+      <template #modalSelectionSlot>
+        <slot name="modalSelectionSlot" />
+      </template>
+    </LayoutElementsRegionHandle>
 
     <!-- Actual Section Component -->
     <div class="section-content">
@@ -96,7 +100,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import RegionHandle from './RegionHandle.vue'
 
 const props = defineProps({
   section: {
@@ -180,8 +183,6 @@ const handleSettings = () => {
 <style scoped>
 .section-wrapper {
   position: relative;
-  margin-bottom: 16px;
-  padding: 12px;
   border: 1px dashed transparent;
   transition: border-color 0.2s;
 }
@@ -193,9 +194,13 @@ const handleSettings = () => {
 .section-handle {
   position: absolute;
   top: 50%;
-  left: -40px;
   transform: translateY(-50%);
   z-index: 10;
+  opacity: 0;
+}
+
+.section-wrapper:hover .section-handle {
+  opacity: 1;
 }
 
 .section-content {
