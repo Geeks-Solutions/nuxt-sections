@@ -9,7 +9,7 @@
       />
     </div>
 
-    <!-- Recursive layout rendering -->
+    <!-- Only render top-level lines -->
     <template v-for="(region, lineIndex) in layoutTree" :key="region.id">
       <LayoutElementsLayoutLine
         :line="region"
@@ -31,31 +31,7 @@
         @delete-region="handleDeleteRegion"
         @drag-region="handleDragRegion"
         @drag-section="handleDragSection"
-      >
-        <template v-for="(nestedRegion, nestedIndex) in region.regions" :key="nestedRegion.id">
-          <LayoutElementsLayoutLine
-            :line="nestedRegion"
-            :line-index="nestedIndex"
-            :sections="nestedRegion.sections"
-            :get-component="getComponent"
-            :admin="admin"
-            :edit-mode="editMode"
-            :invalid-sections-errors="invalidSectionsErrors"
-            :views-bg-color="viewsBgColor"
-            :lang="lang"
-            :locales="locales"
-            :default-lang="defaultLang"
-            :seo-sections-support="seoSectionsSupport"
-            @seo-support="(view) => emit('seo-support', view)"
-            @refresh-section="(data) => emit('refresh-section', data)"
-            @add-layout="handleAddLayout"
-            @add-content="handleAddContent"
-            @delete-region="handleDeleteRegion"
-            @drag-region="handleDragRegion"
-            @drag-section="handleDragSection"
-          />
-        </template>
-      </LayoutElementsLayoutLine>
+      />
     </template>
 
     <!-- Layout Selection Modal -->

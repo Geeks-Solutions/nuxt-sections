@@ -11,8 +11,6 @@
       class="region-handle"
       @add-layout="$emit('add-layout', $event)"
       @add-content="$emit('add-content', $event)"
-      @add-line-below="$emit('add-line-below', $event)"
-      @add-content-or-nested-layout="$emit('add-content-or-nested-layout', $event)"
       @delete="$emit('delete-region', path)"
     />
 
