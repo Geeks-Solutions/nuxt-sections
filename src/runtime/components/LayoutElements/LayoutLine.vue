@@ -15,7 +15,7 @@
           :path="`${lineIndex}/${regionIndex}`"
           :is-first="regionIndex === 0"
           :region-count="line.regions.length"
-          :sections="region.sections"
+          :sections="getSectionsForRegion(`${lineIndex}/${regionIndex}`)"
           :get-component="getComponent"
           :admin="admin"
           :edit-mode="editMode"
@@ -97,6 +97,22 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-layout', 'add-content', 'delete-region', 'drag-region', 'drag-section', 'seo-support', 'refresh-section'])
+
+// Get sections for specific region
+const getSectionsForRegion = (regionPath) => {
+  return props.sections.filter(section => {
+    if (!section.region?.path) return false
+
+    const sectionPath = section.region.path
+    const pathParts = sectionPath.split('/')
+    const regionPathParts = regionPath.split('/')
+
+    // Check if section is directly in this region (not in nested regions)
+    if (pathParts.length !== regionPathParts.length) return false
+
+    return sectionPath.startsWith(regionPath)
+  }).sort((a, b) => a.weight - b.weight)
+}
 
 // Handle region drag end
 const onRegionDragEnd = (evt) => {
