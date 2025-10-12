@@ -299,39 +299,32 @@ const handleLayoutSelect = (regionCount) => {
     layoutSelectionModal.value?.handleCloseModal()
     return
   }
-  if (type === 'section' && typeof sectionIndex === 'number') {
-    // Find all sections in the target region
-    const regionSections = sections.value.filter(s => s.region?.path === path && s.type !== 'region')
-    // Split at the insertion index
-    const before = regionSections.slice(0, sectionIndex + 1)
-    const after = regionSections.slice(sectionIndex + 1)
-    // Remove all sections in this region from the flat list
-    sections.value = sections.value.filter(s => s.region?.path !== path || s.type === 'region')
-    // Add back the 'before' sections
-    before.forEach((s, idx) => {
-      s.region.path = path
-      s.weight = idx
-      sections.value.push(s)
+  // NEW: Handle adding a layout under a Section
+  if (type === 'section') {
+    // Find the parent region for this section
+    const section = sections.value.find(s => s.region?.path === path)
+    if (!section) return
+    // The parent region path is the same as the section's region.path
+    const parentRegionPath = section.region.path
+    // Find all regions that are direct children of this section (nested lines)
+    const nestedRegions = sections.value.filter(s => s.region?.path.startsWith(parentRegionPath + '/'))
+    // Determine the next line index for nesting
+    let maxLineIdx = -1
+    nestedRegions.forEach(r => {
+      const parts = r.region.path.split('/')
+      const lineIdx = Number(parts[parentRegionPath.split('/').length])
+      if (lineIdx > maxLineIdx) maxLineIdx = lineIdx
     })
-    // Insert the new layout as a nested line (e.g., path/0)
-    const nestedLineIdx = 0
+    const newLineIdx = maxLineIdx + 1
+    // Add new regions as nested under this section
     for (let i = 0; i < regionCount; i++) {
-      const nestedPath = `${path}/${nestedLineIdx}/${i}`
+      const regionPath = `${parentRegionPath}/${newLineIdx}/${i}`
       sections.value.push({
         id: generateId(),
         name: 'RegionPlaceholder',
         type: 'region',
-        region: { path: nestedPath },
+        region: { path: regionPath },
         weight: 0
-      })
-    }
-    // If there are 'after' sections, move them into a new nested region after the inserted layout
-    if (after.length > 0) {
-      const afterRegionPath = `${path}/1/0`
-      after.forEach((s, idx) => {
-        s.region.path = afterRegionPath
-        s.weight = idx
-        sections.value.push(s)
       })
     }
     normalizeSections(sections)
