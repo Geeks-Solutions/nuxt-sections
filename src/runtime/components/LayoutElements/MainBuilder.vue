@@ -5,34 +5,34 @@
       <LayoutElementsRegionHandle
         type="empty"
         :drag-support="false"
-        @add-layout="handleEmptyAdd"
+        @add="handleEmptyAdd"
       />
     </div>
 
-    <!-- Only render top-level lines -->
-    <template v-for="(region, lineIndex) in layoutTree" :key="region.id">
-      <LayoutElementsLayoutLine
-        :line="region"
-        :line-index="lineIndex"
-        :sections="region.sections"
-        :get-component="getComponent"
-        :admin="admin"
-        :edit-mode="editMode"
-        :invalid-sections-errors="invalidSectionsErrors"
-        :views-bg-color="viewsBgColor"
-        :lang="lang"
-        :locales="locales"
-        :default-lang="defaultLang"
-        :seo-sections-support="seoSectionsSupport"
-        @seo-support="(view) => emit('seo-support', view)"
-        @refresh-section="(data) => emit('refresh-section', data)"
-        @add-layout="handleAddLayout"
-        @add-content="handleAddContent"
-        @delete-region="handleDeleteRegion"
-        @drag-region="handleDragRegion"
-        @drag-section="handleDragSection"
-      />
-    </template>
+    <!-- Layout lines -->
+    <LayoutElementsLayoutLine
+      v-for="(line, lineIndex) in layouts"
+      :key="line.id"
+      :line="line"
+      :line-index="lineIndex"
+      :sections="getSectionsForLine(lineIndex)"
+      :get-component="getComponent"
+      :admin="admin"
+      :edit-mode="editMode"
+      :invalid-sections-errors="invalidSectionsErrors"
+      :views-bg-color="viewsBgColor"
+      :lang="lang"
+      :locales="locales"
+      :default-lang="defaultLang"
+      :seo-sections-support="seoSectionsSupport"
+      @seo-support="(view) => emit('seo-support', view)"
+      @refresh-section="(data) => emit('refresh-section', data)"
+      @add-layout="handleAddLayout"
+      @add-content="handleAddContent"
+      @delete-region="handleDeleteRegion"
+      @drag-region="handleDragRegion"
+      @drag-section="handleDragSection"
+    />
 
     <!-- Layout Selection Modal -->
     <LayoutElementsLayoutSelectionModal
@@ -44,6 +44,7 @@
         <slot name="sectionTypesContent"/>
       </template>
     </LayoutElementsLayoutSelectionModal>
+
   </div>
 </template>
 
@@ -106,6 +107,7 @@ const props = defineProps({
 const emit = defineEmits(['update:pageData', 'seo-support', 'refresh-section'])
 
 // Reactive state
+const layouts = ref(props.pageData.metadata?.layouts || [])
 const sections = ref(props.pageData.sections || [])
 const layoutSelectionModal = ref(null)
 const showLayoutModal = ref(false)
@@ -114,91 +116,12 @@ const modalContext = ref({ path: null, type: null, insertAfter: true })
 
 // Computed
 const isEmpty = computed(() => {
-  return sections.value.length === 0
+  return layouts.value.length === 0 && sections.value.length === 0
 })
-
-// --- Layout Tree Builder ---
-function buildLayoutTree(sections) {
-  // Build a tree structure from flat sections array
-  const tree = []
-  const regionMap = {}
-
-  // Sort sections by weight
-  const sortedSections = [...sections].sort((a, b) => a.weight - b.weight)
-
-  for (const section of sortedSections) {
-    const path = section.region?.path || '0/0'
-    const pathParts = path.split('/').map(Number)
-    let currentPath = ''
-    for (let i = 0; i < pathParts.length; i++) {
-      const idx = pathParts[i]
-      currentPath = currentPath ? `${currentPath}/${idx}` : `${idx}`
-      if (!regionMap[currentPath]) {
-        const regionNode = {
-          id: currentPath,
-          path: currentPath,
-          regions: [],
-          sections: [],
-          parent: null
-        }
-        regionMap[currentPath] = regionNode
-        if (i === 0) {
-          tree[idx] = regionNode
-        } else {
-          const parentPath = pathParts.slice(0, i).join('/')
-          const parent = regionMap[parentPath]
-          if (parent) {
-            parent.regions[idx] = regionNode
-            regionNode.parent = parent
-          }
-        }
-      }
-    }
-    // Add section to the final region
-    regionMap[currentPath].sections.push(section)
-  }
-
-  // Clean up undefined holes in arrays
-  function clean(arr) {
-    return arr.filter(Boolean)
-  }
-  function cleanTree(node) {
-    node.regions = clean(node.regions)
-    node.sections = clean(node.sections)
-    node.regions.forEach(cleanTree)
-  }
-  clean(tree)
-  tree.forEach(cleanTree)
-  return clean(tree)
-}
-
-const layoutTree = computed(() => buildLayoutTree(sections.value))
-
-// --- Normalization Function ---
-function normalizeSections(sections) {
-  // Recalculate region.path and weight for all sections based on their position in the tree
-  const newSections = []
-  function traverse(node, path) {
-    // Sort sections by weight
-    node.sections.sort((a, b) => a.weight - b.weight)
-    node.sections.forEach((section, idx) => {
-      section.region = { path }
-      section.weight = idx
-      newSections.push(section)
-    })
-    node.regions.forEach((region, idx) => {
-      traverse(region, path ? `${path}/${idx}` : `${idx}`)
-    })
-  }
-  layoutTree.value.forEach((region, idx) => {
-    traverse(region, `${idx}`)
-  })
-  // Replace sections array
-  sections.value = newSections
-}
 
 // Watch for external changes
 watch(() => props.pageData, (newData) => {
+  layouts.value = newData.metadata?.layouts || []
   sections.value = newData.sections || []
 }, { deep: true })
 
@@ -206,7 +129,22 @@ watch(() => props.pageData, (newData) => {
 const emitUpdate = () => {
   emit('update:pageData', {
     ...props.pageData,
+    metadata: {
+      ...props.pageData.metadata,
+      layouts: layouts.value
+    },
     sections: sections.value
+  })
+}
+
+// Get sections for a specific line
+const getSectionsForLine = (lineIndex) => {
+  return sections.value.filter(section => {
+    if (!section.region?.path) {
+      // Legacy sections without path - show in first line if it exists
+      return lineIndex === 0
+    }
+    return section.region.path.startsWith(`${lineIndex}/`)
   })
 }
 
@@ -215,12 +153,26 @@ const generateId = () => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
+// Recalculate weights based on current order
+const recalculateWeights = () => {
+  sections.value.forEach((section, index) => {
+    section.weight = index
+  })
+}
+
 // Handle empty state add
 const handleEmptyAdd = ({event}) => {
-  // Add a new section at the root (first region)
+  // showContentModal.value = true
+  // modalContext.value = { path: '0/0', insertAfter: false }
   handleAddLayout({ path: '0/0', insertAfter: true, event })
-  normalizeSections(sections)
   emitUpdate()
+  // Create initial layout if doesn't exist
+  // if (layouts.value.length === 0) {
+  //   layouts.value.push({
+  //     id: generateId(),
+  //     regions: [{ id: generateId() }]
+  //   })
+  // }
 }
 
 const showLayoutSelectionModal = (event) => {
@@ -229,9 +181,14 @@ const showLayoutSelectionModal = (event) => {
 
 // Handle add layout from region/section handle
 const handleAddLayout = ({ path, type, insertAfter = true, event }) => {
+  // if (showLayoutModal.value === true) {
+  //   showLayoutModal.value = false
+  //   layoutSelectionModal.value.handleCloseModal()
+  // } else {
   modalContext.value = { path, type, insertAfter }
   showLayoutModal.value = true
   showLayoutSelectionModal(event)
+  // }
 }
 
 // Handle add content from region/section handle
@@ -240,91 +197,45 @@ const handleAddContent = ({ path }) => {
   showContentModal.value = true
 }
 
-// Handle layout selection (add regions)
+// Handle layout selection
 const handleLayoutSelect = (regionCount) => {
   const { path, type, insertAfter } = modalContext.value
+
   if (!path) return
-  if (type === 'first-region') {
-    // Insert a new line (row) of regions below the current line
-    const pathParts = path.split('/')
-    const currentLine = Number.parseInt(pathParts[0])
-    // Shift all sections in lines after the current line down by 1
-    sections.value.forEach(section => {
-      if (section.region?.path) {
-        const parts = section.region.path.split('/')
-        if (Number.parseInt(parts[0]) > currentLine) {
-          parts[0] = (Number.parseInt(parts[0]) + 1).toString()
-          section.region.path = parts.join('/')
-        }
+
+  const pathParts = path.split('/')
+  const lineIndex = Number.parseInt(pathParts[0])
+
+  // Create new layout line
+  const newLine = {
+    id: generateId(),
+    regions: Array.from({ length: regionCount }, () => ({ id: generateId() }))
+  }
+
+  console.log('pathParts', pathParts)
+  console.log('type', type)
+  console.log('modalContext.value', modalContext.value)
+
+  if (pathParts.length === 2 && type !== 'section') {
+    // Adding at line level
+    const insertIndex = insertAfter ? lineIndex + 1 : lineIndex
+    layouts.value.splice(insertIndex, 0, newLine)
+
+    // Update paths for sections after insertion
+    updatePathsAfterLineInsertion(insertIndex)
+  } else {
+    // Adding nested layout within a region
+    const regionIndex = Number.parseInt(pathParts[1])
+    const parentRegion = getRegionByPath(path)
+
+    if (parentRegion) {
+      if (!parentRegion.nested) {
+        parentRegion.nested = []
       }
-    })
-    // Insert the new regions at the new line
-    for (let i = 0; i < regionCount; i++) {
-      const regionPath = `${currentLine + 1}/${i}`
-      sections.value.push({
-        id: generateId(),
-        name: 'RegionPlaceholder',
-        type: 'region',
-        region: { path: regionPath },
-        weight: 0
-      })
+      parentRegion.nested.push(newLine)
     }
-    normalizeSections(sections)
-    emitUpdate()
-    showLayoutModal.value = false
-    layoutSelectionModal.value?.handleCloseModal()
-    return
   }
-  // NEW: Handle adding a layout under a Section
-  if (type === 'section') {
-    // Find the parent region for this section
-    const section = sections.value.find(s => s.region?.path === path)
-    if (!section) return
-    // The parent region path is the same as the section's region.path
-    const parentRegionPath = section.region.path
-    // Find all regions that are direct children of this section (nested lines)
-    const nestedRegions = sections.value.filter(s => s.region?.path.startsWith(parentRegionPath + '/'))
-    // Determine the next line index for nesting
-    let maxLineIdx = -1
-    nestedRegions.forEach(r => {
-      const parts = r.region.path.split('/')
-      const lineIdx = Number(parts[parentRegionPath.split('/').length])
-      if (lineIdx > maxLineIdx) maxLineIdx = lineIdx
-    })
-    const newLineIdx = maxLineIdx + 1
-    // Add new regions as nested under this section
-    for (let i = 0; i < regionCount; i++) {
-      const regionPath = `${parentRegionPath}/${newLineIdx}/${i}`
-      sections.value.push({
-        id: generateId(),
-        name: 'RegionPlaceholder',
-        type: 'region',
-        region: { path: regionPath },
-        weight: 0
-      })
-    }
-    normalizeSections(sections)
-    emitUpdate()
-    showLayoutModal.value = false
-    layoutSelectionModal.value?.handleCloseModal()
-    return
-  }
-  // fallback: legacy
-  const pathParts = path.split('/').map(Number)
-  const parentPath = pathParts.slice(0, -1).join('/')
-  const baseIdx = pathParts[pathParts.length - 1]
-  const insertIdx = insertAfter ? baseIdx + 1 : baseIdx
-  for (let i = 0; i < regionCount; i++) {
-    const regionPath = parentPath ? `${parentPath}/${insertIdx + i}` : `${insertIdx + i}`
-    sections.value.push({
-      id: generateId(),
-      name: 'RegionPlaceholder',
-      type: 'region',
-      region: { path: regionPath },
-      weight: 0
-    })
-  }
-  normalizeSections(sections)
+
   emitUpdate()
   showLayoutModal.value = false
   layoutSelectionModal.value?.handleCloseModal()
@@ -332,74 +243,88 @@ const handleLayoutSelect = (regionCount) => {
 
 // Handle content selection
 const handleContentSelect = (sectionData) => {
-  const { path, type } = modalContext.value
-  if (type === 'first-region') {
-    // Insert a new line (row) below the current line, with one region, and add the content there
-    const pathParts = path.split('/')
-    const currentLine = Number.parseInt(pathParts[0])
-    // Shift all sections in lines after the current line down by 1
-    sections.value.forEach(section => {
-      if (section.region?.path) {
-        const parts = section.region.path.split('/')
-        if (Number.parseInt(parts[0]) > currentLine) {
-          parts[0] = (Number.parseInt(parts[0]) + 1).toString()
-          section.region.path = parts.join('/')
-        }
-      }
-    })
-    // Add the content in a new region in the new line
-    const newRegionPath = `${currentLine + 1}/0`
-    const newSection = {
-      ...sectionData,
-      id: generateId(),
-      region: { path: newRegionPath },
-      weight: 0
-    }
-    sections.value.push(newSection)
-    normalizeSections(sections)
-    emitUpdate()
-    showContentModal.value = false
-    return
+  // console.log('layouts', layouts)
+  // console.log('props.pageData', props.pageData)
+  let { path } = modalContext.value
+  const { type } = modalContext.value
+
+  // Handle the case where the add content is called from a first-region handle in order to add the content on a second line inside one region
+  if (type && type === 'first-region') {
+    handleLayoutSelect(1)
+    path = path.split("/").map((v,i) => +v + (i === 0 ? 1 : 0)).join("/")
   }
-  if (type === 'section') {
-    // Remove any placeholder in the target region
-    sections.value = sections.value.filter(
-      s => !(s.region?.path === path && s.name === 'RegionPlaceholder')
-    )
-    // Add the content to the region where the plus was clicked
-    const newSection = {
-      ...sectionData,
-      id: generateId(),
-      region: { path },
-      weight: 0
-    }
-    sections.value.push(newSection)
-    normalizeSections(sections)
-    emitUpdate()
-    showContentModal.value = false
-    return
+
+  // handleLayoutSelect(1)
+  // Create new section
+  const newSection = {
+    ...sectionData,
+    id: generateId(),
+    region: { path },
+    weight: sections.value.length
   }
-  // fallback: legacy
+
+  sections.value.push(newSection)
+  recalculateWeights()
+  emitUpdate()
+  showContentModal.value = false
 }
 
 // Handle region deletion
 const handleDeleteRegion = (path) => {
-  // Remove all sections in this region and its children
-  sections.value = sections.value.filter(s => !s.region?.path?.startsWith(path))
-  normalizeSections(sections)
+  const pathParts = path.split('/')
+  const lineIndex = parseInt(pathParts[0])
+
+  if (pathParts.length === 2) {
+    // Deleting a region from a line
+    const regionIndex = parseInt(pathParts[1])
+    const line = layouts.value[lineIndex]
+
+    if (line.regions.length === 1) {
+      // If last region, delete entire line
+      layouts.value.splice(lineIndex, 1)
+      updatePathsAfterLineInsertion(lineIndex)
+    } else {
+      line.regions.splice(regionIndex, 1)
+    }
+
+    // Remove sections in this region
+    sections.value = sections.value.filter(s =>
+      !s.region?.path?.startsWith(path + '/')
+    )
+  } else {
+    // Deleting nested region
+    const parentPath = pathParts.slice(0, -1).join('/')
+    const parentRegion = getRegionByPath(parentPath)
+    const nestedIndex = parseInt(pathParts[pathParts.length - 1])
+
+    if (parentRegion?.nested) {
+      parentRegion.nested.splice(nestedIndex, 1)
+      if (parentRegion.nested.length === 0) {
+        delete parentRegion.nested
+      }
+    }
+
+    // Remove sections in this nested region
+    sections.value = sections.value.filter(s =>
+      !s.region?.path?.startsWith(path + '/')
+    )
+  }
+
+  recalculateWeights()
   emitUpdate()
 }
 
 // Handle region drag
 const handleDragRegion = ({ oldPath, newPath }) => {
-  // Move all sections within this region to the new path
+  // Update all sections within this region
   sections.value.forEach(section => {
     if (section.region?.path?.startsWith(oldPath)) {
       const relativePath = section.region.path.substring(oldPath.length)
       section.region.path = newPath + relativePath
     }
   })
-  normalizeSections(sections)
+
+  recalculateWeights()
   emitUpdate()
 }
 
@@ -410,10 +335,44 @@ const handleDragSection = ({ sectionId, newPath, newWeight }) => {
     section.region.path = newPath
     section.weight = newWeight
   }
-  normalizeSections(sections)
+
+  recalculateWeights()
   emitUpdate()
 }
-// Remove legacy helpers getRegionByPath and updatePathsAfterLineInsertion
+
+// Helper: Get region by path
+const getRegionByPath = (path) => {
+  const pathParts = path.split('/')
+  const lineIndex = parseInt(pathParts[0])
+  const line = layouts.value[lineIndex]
+
+  if (!line) return null
+
+  let current = line.regions[parseInt(pathParts[1])]
+
+  for (let i = 2; i < pathParts.length; i++) {
+    if (!current?.nested) return null
+    current = current.nested[parseInt(pathParts[i])]
+  }
+
+  return current
+}
+
+// Helper: Update paths after line insertion/deletion
+const updatePathsAfterLineInsertion = (fromIndex) => {
+  sections.value.forEach(section => {
+    if (section.region?.path) {
+      const pathParts = section.region.path.split('/')
+      const lineIndex = parseInt(pathParts[0])
+
+      if (lineIndex >= fromIndex) {
+        pathParts[0] = (lineIndex + 1).toString()
+        section.region.path = pathParts.join('/')
+      }
+    }
+  })
+}
+
 defineExpose({ handleContentSelect })
 </script>
 
