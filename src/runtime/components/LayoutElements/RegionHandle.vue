@@ -96,8 +96,15 @@ const showPlus = computed(() => {
 
 // Handle add (plus button)
 const handleAdd = (event) => {
-  // Always emit the type and path for clarity
-  emit('add-layout', { path: props.path, type: props.type, sectionId: props.sectionId, event })
+  if (props.type === 'empty') {
+    emit('add', {event})
+  } else if (props.type === 'first-region') {
+    // Show modal with Layout and Content tabs
+    emit('add-layout', { path: props.path, type: props.type, insertAfter: true, event })
+  } else if (props.type === 'section') {
+    // Show modal with Layout and Content tabs
+    emit('add-layout', { path: props.path, type: props.type, insertAfter: true, event })
+  }
 }
 
 // Handle dots click (toggle dropdown)
