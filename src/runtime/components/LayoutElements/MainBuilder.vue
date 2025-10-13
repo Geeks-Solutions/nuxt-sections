@@ -189,19 +189,33 @@ const generateId = () => {
 
 // Recalculate weights for all regions
 const recalculateWeights = () => {
-  // Group by region.path
-  const regionGroups = {}
-  sections.value.forEach(section => {
-    const regionPath = section.region?.path
-    if (!regionGroups[regionPath]) regionGroups[regionPath] = []
-    regionGroups[regionPath].push(section)
-  })
-  Object.values(regionGroups).forEach(group => {
-    group.sort((a, b) => a.weight - b.weight)
-    group.forEach((section, idx) => {
-      section.weight = idx
-    })
-  })
+  // Sort sections by their region path (natural sort)
+  sections.value.sort((a, b) => {
+    const pathA = (a.region?.path || '').split('/').map(num => {
+      const parsed = Number.parseInt(num, 10);
+      return Number.isNaN(parsed) ? -1 : parsed;
+    });
+    const pathB = (b.region?.path || '').split('/').map(num => {
+      const parsed = Number.parseInt(num, 10);
+      return Number.isNaN(parsed) ? -1 : parsed;
+    });
+
+    for (let i = 0; i < Math.max(pathA.length, pathB.length); i++) {
+      const numA = pathA[i] ?? -1;
+      const numB = pathB[i] ?? -1;
+
+      if (numA !== numB) {
+        return numA - numB;
+      }
+    }
+
+    return 0;
+  });
+
+  // Update weights based on sorted order
+  sections.value.forEach((section, index) => {
+    section.weight = index;
+  });
 }
 
 // Handle empty state add
@@ -215,8 +229,8 @@ const showLayoutSelectionModal = (event) => {
 }
 
 // Handle add layout from region/section handle
-const handleAddLayout = ({ path, type, insertAfter = true, event }) => {
-  modalContext.value = { path, type, insertAfter }
+const handleAddLayout = ({ path, type, sectionIdx, insertAfter = true, event }) => {
+  modalContext.value = { path, type, sectionIdx, insertAfter }
   showLayoutModal.value = true
   showLayoutSelectionModal(event)
 }
@@ -323,7 +337,7 @@ const handleLayoutSelect = (regionCount) => {
 // Handle content selection
 const handleContentSelect = (sectionData) => {
   // eslint-disable-next-line prefer-const
-  let { path, type } = modalContext.value
+  let { path, type, sectionIdx } = modalContext.value
 
   // If first-region, add content in a new line directly after the current line
   if (type && type === 'first-region') {
@@ -359,10 +373,11 @@ const handleContentSelect = (sectionData) => {
     ...sectionData,
     id: generateId(),
     region: { path },
-    weight: maxWeight + 1
+    weight: maxWeight - 1
   }
 
-  sections.value.push(newSection)
+  // TODO: Update sectionId key to sectionWeight to avoid confusion
+  sections.value.splice(sectionIdx ? sectionIdx + 1 : 0, 0, newSection)
   recalculateWeights()
   emitUpdate()
   showContentModal.value = false

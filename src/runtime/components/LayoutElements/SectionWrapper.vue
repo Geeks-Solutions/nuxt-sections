@@ -9,10 +9,11 @@
       :path="path"
       :section-id="section.id"
       :section-weight="section.weight"
+      :section-idx="sectionIdx"
       :drag-support="!section._isPlaceholder"
       class="section-handle"
-      @add-layout="$emit('add-layout', { path, type: $event.type, event: $event.event, sectionIndex })"
-      @add-content="$emit('add-content', { path, type: $event.type, event: $event.event, sectionIndex })"
+      @add-layout="$emit('add-layout', { path, type: $event.type, sectionIdx: $event.sectionIdx, event: $event.event, sectionIndex })"
+      @add-content="$emit('add-content', { path, type: $event.type, sectionIdx: $event.sectionIdx, event: $event.event, sectionIndex })"
       @settings="handleSettings"
     >
       <template #modalSelectionSlot>
@@ -153,6 +154,10 @@ const props = defineProps({
   getComponent: {
     type: Function,
     required: true
+  },
+  sectionIdx: {
+    type: Number,
+    default: null
   }
 })
 

@@ -5,6 +5,7 @@
       {{ type }}
       {{ props.path }}
       W {{ sectionWeight }}
+      I {{ sectionIdx }}
       <button
         v-if="showPlus"
         class="handle-btn plus-btn"
@@ -83,6 +84,10 @@ const props = defineProps({
     type: Number,
     default: null
   },
+  sectionIdx: {
+    type: Number,
+    default: null
+  },
   dragSupport: {
     type: Boolean,
     default: true
@@ -108,7 +113,7 @@ const handleAdd = (event) => {
     emit('add-layout', { path: props.path, type: props.type, insertAfter: true, event })
   } else if (props.type === 'section') {
     // Show modal with Layout and Content tabs
-    emit('add-layout', { path: props.path, type: props.type, insertAfter: true, event })
+    emit('add-layout', { path: props.path, type: props.type, sectionIdx: props.sectionWeight, insertAfter: true, event })
   }
 }
 

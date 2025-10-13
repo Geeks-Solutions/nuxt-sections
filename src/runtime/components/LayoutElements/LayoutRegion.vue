@@ -153,7 +153,8 @@ function getItemProps(item, index) {
       lang: props.lang,
       locales: props.locales,
       defaultLang: props.defaultLang,
-      seoSectionsSupport: props.seoSectionsSupport
+      seoSectionsSupport: props.seoSectionsSupport,
+      sectionIdx: index
     }
   }
   return {}
