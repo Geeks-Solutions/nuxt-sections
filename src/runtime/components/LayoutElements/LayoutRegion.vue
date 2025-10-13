@@ -54,7 +54,7 @@
         >
           <draggable
             :list="nestedLine.regions"
-            :group="{ name: 'regions', pull: false, put: false }"
+            :group="{ name: 'regions', pull: true, put: true }"
             item-key="id"
             class="nested-regions-container"
             :animation="200"

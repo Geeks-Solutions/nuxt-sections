@@ -15,7 +15,7 @@
       :key="line.id"
       :line="line"
       :line-index="lineIndex"
-      :sections="getSectionsForLine(lineIndex)"
+      :sections="line.sections"
       :get-component="getComponent"
       :admin="admin"
       :edit-mode="editMode"
@@ -113,26 +113,46 @@ const showLayoutModal = ref(false)
 const showContentModal = ref(false)
 const modalContext = ref({ path: null, type: null, insertAfter: true })
 
-// Computed: Build layouts from sections' region.path
+// Recursive function to build layout tree with sections and nested regions
+function buildLayoutTree(sections, pathPrefix = []) {
+  // Sections that belong directly to this region (path matches exactly)
+  const directSections = sections.filter(section => {
+    const pathParts = section.region?.path?.split('/') || []
+    if (pathParts.length !== pathPrefix.length) return false
+    return pathParts.every((part, idx) => part === String(pathPrefix[idx]))
+  }).sort((a, b) => a.weight - b.weight)
+
+  // Group sections with longer paths by the next path part
+  const groups = {}
+  sections.forEach(section => {
+    const pathParts = section.region?.path?.split('/') || []
+    if (pathParts.length <= pathPrefix.length) return
+    // Only consider sections that match the current prefix
+    for (let i = 0; i < pathPrefix.length; i++) {
+      if (pathParts[i] !== String(pathPrefix[i])) return
+    }
+    const nextPart = pathParts[pathPrefix.length]
+    if (!groups[nextPart]) groups[nextPart] = []
+    groups[nextPart].push(section)
+  })
+  // For each group, build its children recursively
+  const regions = Object.keys(groups).sort((a, b) => a - b).map(part => {
+    const childPath = [...pathPrefix, part]
+    const id = `level-${childPath.join('-')}`
+    return {
+      id,
+      path: childPath.join('/'),
+      ...buildLayoutTree(groups[part], childPath)
+    }
+  })
+  return { sections: directSections, regions: regions.length > 0 ? regions : undefined }
+}
+
+// Computed: Build layouts from sections' region.path (supports unlimited nesting)
 const computedLayouts = computed(() => {
-  // Group sections by line index (first part of region.path)
-  const lines = {}
-  sections.value.forEach(section => {
-    if (!section.region?.path) return
-    const pathParts = section.region.path.split('/')
-    const lineIndex = parseInt(pathParts[0])
-    if (!lines[lineIndex]) lines[lineIndex] = { id: `line-${lineIndex}`, regions: {} }
-    const regionIndex = parseInt(pathParts[1])
-    if (!lines[lineIndex].regions[regionIndex]) lines[lineIndex].regions[regionIndex] = { id: `region-${lineIndex}-${regionIndex}` }
-    // Nested regions not handled here for simplicity
-  })
-  // Convert to array and sort by line index
-  return Object.keys(lines).sort((a, b) => a - b).map(lineIndex => {
-    const line = lines[lineIndex]
-    // Convert regions to array and sort by region index
-    line.regions = Object.keys(line.regions).sort((a, b) => a - b).map(regionIndex => line.regions[regionIndex])
-    return line
-  })
+  // The root returns { sections, regions }, but we only want the top-level regions for the UI
+  console.log('Layout tree:', buildLayoutTree(sections.value))
+  return buildLayoutTree(sections.value).regions || []
 })
 
 // Computed
@@ -153,20 +173,9 @@ const emitUpdate = () => {
   })
 }
 
-// Get sections for a specific line
-const getSectionsForLine = (lineIndex) => {
-  return sections.value.filter(section => {
-    if (!section.region?.path) {
-      // Legacy sections without path - show in first line if it exists
-      return lineIndex === 0
-    }
-    return section.region.path.startsWith(`${lineIndex}/`)
-  }).sort((a, b) => a.weight - b.weight)
-}
-
 // Generate unique ID
 const generateId = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
 // Recalculate weights for all regions
@@ -215,14 +224,14 @@ const handleLayoutSelect = (regionCount) => {
   let afterLineIndex = null
   // If first-region, insert after the current line
   if (modalContext.value.type === 'first-region' && modalContext.value.path) {
-    const currentLineIndex = parseInt(modalContext.value.path.split('/')[0])
+    const currentLineIndex = Number.parseInt(modalContext.value.path.split('/')[0])
     insertLineIndex = currentLineIndex + 1
     afterLineIndex = currentLineIndex
   } else {
     // Find the next available line index (at the end)
     const existingLines = sections.value
-      .map(s => s.region?.path && parseInt(s.region.path.split('/')[0]))
-      .filter(i => !isNaN(i))
+      .map(s => s.region?.path && Number.parseInt(s.region.path.split('/')[0]))
+      .filter(i => !Number.isNaN(i))
     insertLineIndex = existingLines.length > 0 ? Math.max(...existingLines) + 1 : 0
   }
 
@@ -230,8 +239,8 @@ const handleLayoutSelect = (regionCount) => {
   if (afterLineIndex !== null) {
     sections.value.forEach(section => {
       const pathParts = section.region?.path?.split('/')
-      if (pathParts && parseInt(pathParts[0]) >= insertLineIndex) {
-        section.region.path = `${parseInt(pathParts[0]) + 1}/${pathParts[1]}`
+      if (pathParts && Number.parseInt(pathParts[0]) >= insertLineIndex) {
+        section.region.path = `${Number.parseInt(pathParts[0]) + 1}/${pathParts[1]}`
       }
     })
   }
@@ -254,18 +263,19 @@ const handleLayoutSelect = (regionCount) => {
 
 // Handle content selection
 const handleContentSelect = (sectionData) => {
+  // eslint-disable-next-line prefer-const
   let { path, type } = modalContext.value
 
   // If first-region, add content in a new line directly after the current line
   if (type && type === 'first-region') {
-    const currentLineIndex = parseInt(path.split('/')[0])
+    const currentLineIndex = Number.parseInt(path.split('/')[0])
     const newLineIndex = currentLineIndex + 1
     path = `${newLineIndex}/0`
     // Shift all sections after newLineIndex up by 1
     sections.value.forEach(section => {
       const pathParts = section.region?.path?.split('/')
-      if (pathParts && parseInt(pathParts[0]) >= newLineIndex) {
-        section.region.path = `${parseInt(pathParts[0]) + 1}/${pathParts[1]}`
+      if (pathParts && Number.parseInt(pathParts[0]) >= newLineIndex) {
+        section.region.path = `${Number.parseInt(pathParts[0]) + 1}/${pathParts[1]}`
       }
     })
   }
@@ -313,24 +323,53 @@ const handleDragRegion = ({ oldPath, newPath }) => {
 
 // Handle section drag
 const handleDragSection = ({ sectionId, newPath, newWeight }) => {
-  const section = sections.value.find(s => s.id === sectionId)
-  if (!section) return
-  const oldPath = section.region.path
-  section.region.path = newPath
-  section.weight = newWeight
-
   // Remove placeholder in the destination region
-  sections.value = sections.value.filter(s => !(s.region?.path === newPath && s._isPlaceholder))
+  let filteredSections = sections.value.filter(s => !(s.region?.path === newPath && s._isPlaceholder))
+
+  // Find the section to move
+  const movingSection = filteredSections.find(s => s.id === sectionId)
+  if (!movingSection) return
+  const oldPath = movingSection.region.path
+
+  // Remove the section from its old position
+  filteredSections = filteredSections.filter(s => s.id !== sectionId)
+
+  // Update the section's region.path
+  movingSection.region.path = newPath
+
+  // Get all sections in the destination region
+  const destSections = filteredSections.filter(s => s.region?.path === newPath)
+
+  // Insert the section at the newWeight position
+  destSections.splice(newWeight, 0, movingSection)
+
+  // Build the new sections array, preserving order in all regions
+  const newSections = []
+  // Add all regions except the destination region
+  const regionPaths = [...new Set(filteredSections.map(s => s.region?.path))]
+  regionPaths.forEach(path => {
+    if (path === newPath) {
+      newSections.push(...destSections)
+    } else {
+      newSections.push(...filteredSections.filter(s => s.region?.path === path))
+    }
+  })
+  // If destination region was empty, just add destSections
+  if (!regionPaths.includes(newPath)) {
+    newSections.push(...destSections)
+  }
 
   // Recalculate weights for both old and new region
   const affectedPaths = [oldPath, newPath]
   affectedPaths.forEach(path => {
-    const regionSections = sections.value.filter(s => s.region?.path === path)
-    regionSections.sort((a, b) => a.weight - b.weight)
+    const regionSections = newSections.filter(s => s.region?.path === path)
     regionSections.forEach((s, idx) => {
       s.weight = idx
     })
   })
+
+  // Replace the sections array to ensure reactivity
+  sections.value = [...newSections]
   emitUpdate()
 }
 

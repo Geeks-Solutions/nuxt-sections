@@ -2,7 +2,7 @@
   <div class="layout-line">
     <draggable
       :list="line.regions"
-      :group="{ name: 'regions', pull: false, put: false }"
+      :group="{ name: 'regions', pull: true, put: true }"
       item-key="id"
       class="regions-container"
       :animation="200"
