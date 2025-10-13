@@ -215,8 +215,6 @@ function onRegionDragEnd(evt) {
 }
 
 .nested-regions-container {
-  display: flex;
-  gap: 1px;
   min-height: 80px;
 }
 </style>

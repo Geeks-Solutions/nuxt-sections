@@ -148,6 +148,7 @@ function onRegionDragEnd(evt) {
 <style scoped>
 .layout-line {
   margin-bottom: 1px;
+  width: 100%;
 }
 .sections-container {
   display: flex;

@@ -220,6 +220,37 @@ const handleAddContent = ({ path }) => {
 
 // Handle layout selection
 const handleLayoutSelect = (regionCount) => {
+  // If adding a nested line under a section
+  if (modalContext.value.type === 'section' && modalContext.value.path) {
+    const sectionPath = modalContext.value.path
+    // Find all existing nested lines under this section
+    const nestedLineIndices = sections.value
+      .map(s => {
+        const parts = s.region?.path?.split('/') || []
+        // Nested lines have a path longer than the sectionPath
+        if (parts.length === sectionPath.split('/').length + 2 && parts.slice(0, sectionPath.split('/').length).join('/') === sectionPath) {
+          return Number.parseInt(parts[sectionPath.split('/').length])
+        }
+        return null
+      })
+      .filter(i => i !== null && !Number.isNaN(i))
+    const nextNestedLineIndex = nestedLineIndices.length > 0 ? Math.max(...nestedLineIndices) + 1 : 0
+    // Add placeholder sections for the new nested line
+    for (let regionIdx = 0; regionIdx < regionCount; regionIdx++) {
+      sections.value.push({
+        id: generateId(),
+        region: { path: `${sectionPath}/${nextNestedLineIndex}/${regionIdx}` },
+        weight: 0,
+        type: 'placeholder',
+        _isPlaceholder: true
+      })
+    }
+    recalculateWeights()
+    emitUpdate()
+    showLayoutModal.value = false
+    layoutSelectionModal.value?.handleCloseModal()
+    return
+  }
   let insertLineIndex
   let afterLineIndex = null
   // If first-region, insert after the current line
