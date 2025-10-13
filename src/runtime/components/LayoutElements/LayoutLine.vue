@@ -1,40 +1,40 @@
 <template>
   <div class="layout-line">
     <!-- Sortable sections in this line -->
-    <draggable
-      :list="line.sections"
-      :group="{ name: 'sections', pull: true, put: true }"
-      item-key="id"
-      class="sections-container"
-      :animation="200"
-      handle=".section-drag-handle"
-      @end="onSectionDragEnd"
-    >
-      <template #item="{ element: section }">
-        <LayoutElementsSectionWrapper
-          :section="section"
-          :path="line.path"
-          :get-component="getComponent"
-          :admin="admin"
-          :edit-mode="editMode"
-          :invalid-sections-errors="invalidSectionsErrors"
-          :views-bg-color="viewsBgColor"
-          :lang="lang"
-          :locales="locales"
-          :default-lang="defaultLang"
-          :seo-sections-support="seoSectionsSupport"
-          @seo-support="(view) => emit('seo-support', view)"
-          @refresh-section="(data) => emit('refresh-section', data)"
-          @add-layout="$emit('add-layout', $event)"
-          @add-content="$emit('add-content', $event)"
-        />
-      </template>
-    </draggable>
+<!--    <draggable-->
+<!--      :list="line.sections"-->
+<!--      :group="{ name: 'sections', pull: true, put: true }"-->
+<!--      item-key="id"-->
+<!--      class="sections-container"-->
+<!--      :animation="200"-->
+<!--      handle=".section-drag-handle"-->
+<!--      @end="onSectionDragEnd"-->
+<!--    >-->
+<!--      <template #item="{ element: section }">-->
+<!--        <LayoutElementsSectionWrapper-->
+<!--          :section="section"-->
+<!--          :path="line.path"-->
+<!--          :get-component="getComponent"-->
+<!--          :admin="admin"-->
+<!--          :edit-mode="editMode"-->
+<!--          :invalid-sections-errors="invalidSectionsErrors"-->
+<!--          :views-bg-color="viewsBgColor"-->
+<!--          :lang="lang"-->
+<!--          :locales="locales"-->
+<!--          :default-lang="defaultLang"-->
+<!--          :seo-sections-support="seoSectionsSupport"-->
+<!--          @seo-support="(view) => emit('seo-support', view)"-->
+<!--          @refresh-section="(data) => emit('refresh-section', data)"-->
+<!--          @add-layout="$emit('add-layout', $event)"-->
+<!--          @add-content="$emit('add-content', $event)"-->
+<!--        />-->
+<!--      </template>-->
+<!--    </draggable>-->
 
     <!-- Sortable nested regions/lines -->
     <draggable
-      v-if="line.regions && line.regions.length > 0"
-      :list="line.regions"
+      v-if="line && line.items && line.items.length > 0"
+      :list="line.items"
       :group="{ name: 'regions', pull: true, put: true }"
       item-key="id"
       class="regions-container"
@@ -47,7 +47,7 @@
           :region="region"
           :path="region.path"
           :is-first="regionIndex === 0"
-          :region-count="line.regions.length"
+          :region-count="line.items.length"
           :get-component="getComponent"
           :admin="admin"
           :edit-mode="editMode"
@@ -57,8 +57,8 @@
           :locales="locales"
           :default-lang="defaultLang"
           :seo-sections-support="seoSectionsSupport"
-          @seo-support="(view) => emit('seo-support', view)"
-          @refresh-section="(data) => emit('refresh-section', data)"
+          @seo-support="(view) => $emit('seo-support', view)"
+          @refresh-section="(data) => $emit('refresh-section', data)"
           @add-layout="$emit('add-layout', $event)"
           @add-content="$emit('add-content', $event)"
           @delete-region="$emit('delete-region', $event)"
@@ -153,5 +153,8 @@ function onRegionDragEnd(evt) {
 .sections-container {
   display: flex;
   gap: 1px;
+}
+.regions-container {
+  display: flex;
 }
 </style>

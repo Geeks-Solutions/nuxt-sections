@@ -4,6 +4,7 @@
       <!-- Plus Icon - Only for first-region and section types -->
       {{ type }}
       {{ props.path }}
+      W {{ sectionWeight }}
       <button
         v-if="showPlus"
         class="handle-btn plus-btn"
@@ -76,6 +77,10 @@ const props = defineProps({
   },
   sectionId: {
     type: String,
+    default: null
+  },
+  sectionWeight: {
+    type: Number,
     default: null
   },
   dragSupport: {

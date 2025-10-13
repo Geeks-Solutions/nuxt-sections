@@ -121,7 +121,6 @@ function buildLayoutTree(sections, pathPrefix = []) {
     if (pathParts.length !== pathPrefix.length) return false
     return pathParts.every((part, idx) => part === String(pathPrefix[idx]))
   }).sort((a, b) => a.weight - b.weight)
-
   // Group sections with longer paths by the next path part
   const groups = {}
   sections.forEach(section => {
@@ -135,24 +134,34 @@ function buildLayoutTree(sections, pathPrefix = []) {
     if (!groups[nextPart]) groups[nextPart] = []
     groups[nextPart].push(section)
   })
-  // For each group, build its children recursively
-  const regions = Object.keys(groups).sort((a, b) => a - b).map(part => {
+
+  // For each group, build its children recursively as nested lines
+  const nestedLines = Object.keys(groups).sort((a, b) => a - b).map(part => {
     const childPath = [...pathPrefix, part]
     const id = `level-${childPath.join('-')}`
+    const line = buildLayoutTree(groups[part], childPath)
     return {
+      ...line,
       id,
       path: childPath.join('/'),
-      ...buildLayoutTree(groups[part], childPath)
+      itemType: 'line',
+      weight: line.items && line.items.length > 0 && typeof line.items[0].weight === 'number' ? line.items[0].weight : 0
     }
   })
-  return { sections: directSections, regions: regions.length > 0 ? regions : undefined }
+
+  // Merge sections and nested lines, sort by weight
+  const items = [...directSections, ...nestedLines].sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0))
+
+  return { items, path: pathPrefix.join('/'), id: `level-${pathPrefix.join('-')}` }
 }
 
 // Computed: Build layouts from sections' region.path (supports unlimited nesting)
 const computedLayouts = computed(() => {
-  // The root returns { sections, regions }, but we only want the top-level regions for the UI
-  console.log('Layout tree:', buildLayoutTree(sections.value))
-  return buildLayoutTree(sections.value).regions || []
+  // The root returns { items }, but we only want the top-level lines for the UI
+  const tree = buildLayoutTree(sections.value)
+  console.log('Tree:', tree)
+  // Only return items of type 'line' at the root level (main lines)
+  return (tree.items || []).filter(item => item.itemType === 'line')
 })
 
 // Computed
@@ -218,11 +227,22 @@ const handleAddContent = ({ path }) => {
   showContentModal.value = true
 }
 
+const computeLayoutPath = (pathSuffix) => {
+  if (modalContext.value.path.split('/').length > 2) {
+    const parts = modalContext.value.path.split('/')
+    parts.splice(-2, 2, ...pathSuffix.split('/')) // Extract the last 2 segments of the path, which is done to support nested regions path
+    return parts.join('/')
+  } else return pathSuffix
+}
+
 // Handle layout selection
 const handleLayoutSelect = (regionCount) => {
+  // eslint-disable-next-line prefer-const
+  let { path, type } = modalContext.value
+
   // If adding a nested line under a section
-  if (modalContext.value.type === 'section' && modalContext.value.path) {
-    const sectionPath = modalContext.value.path
+  if (type === 'section' && path) {
+    const sectionPath = path
     // Find all existing nested lines under this section
     const nestedLineIndices = sections.value
       .map(s => {
@@ -251,36 +271,44 @@ const handleLayoutSelect = (regionCount) => {
     layoutSelectionModal.value?.handleCloseModal()
     return
   }
-  let insertLineIndex
+
+  let newLineIndex
   let afterLineIndex = null
   // If first-region, insert after the current line
-  if (modalContext.value.type === 'first-region' && modalContext.value.path) {
-    const currentLineIndex = Number.parseInt(modalContext.value.path.split('/')[0])
-    insertLineIndex = currentLineIndex + 1
+  if (type === 'first-region' && path) {
+    const currentLineIndex = Number.parseInt(path.split('/')[path.split('/').length - 2])
+    newLineIndex = currentLineIndex + 1
     afterLineIndex = currentLineIndex
   } else {
     // Find the next available line index (at the end)
     const existingLines = sections.value
       .map(s => s.region?.path && Number.parseInt(s.region.path.split('/')[0]))
       .filter(i => !Number.isNaN(i))
-    insertLineIndex = existingLines.length > 0 ? Math.max(...existingLines) + 1 : 0
+    newLineIndex = existingLines.length > 0 ? Math.max(...existingLines) + 1 : 0
   }
 
-  // Shift all sections after insertLineIndex up by 1 (if inserting in the middle)
-  if (afterLineIndex !== null) {
+  // Shift all sections after newLineIndex up by 1 (if inserting in the middle)
+  if (afterLineIndex !== null && path.split('/').length === 2) {
     sections.value.forEach(section => {
       const pathParts = section.region?.path?.split('/')
-      if (pathParts && Number.parseInt(pathParts[0]) >= insertLineIndex) {
+      if (pathParts && Number.parseInt(pathParts[0]) >= newLineIndex) {
         section.region.path = `${Number.parseInt(pathParts[0]) + 1}/${pathParts[1]}`
+      }
+    })
+  } else if (afterLineIndex !== null && path.split('/').length > 2) {
+    sections.value.filter(s => s.region?.path.length === path.length && s.region?.path.split('/').slice(0, -2).join('/') === path.split('/').slice(0, -2).join('/')).forEach(section => {
+      const pathParts = section.region?.path?.split('/')
+      if (pathParts && Number.parseInt(pathParts[path.split('/').length - 2]) >= newLineIndex) {
+        section.region.path = computeLayoutPath(`${Number.parseInt(pathParts[path.split('/').length - 2]) + 1}/${pathParts[path.split('/').length - 1]}`)
       }
     })
   }
 
-  // Add placeholder sections for the new line
+  // Add placeholder sections for the new line, which what makes the regions shows as the layout is built based on the region path of the sections
   for (let regionIdx = 0; regionIdx < regionCount; regionIdx++) {
     sections.value.push({
       id: generateId(),
-      region: { path: `${insertLineIndex}/${regionIdx}` },
+      region: { path: computeLayoutPath(`${newLineIndex}/${regionIdx}`) },
       weight: 0,
       type: 'placeholder',
       _isPlaceholder: true
@@ -299,16 +327,25 @@ const handleContentSelect = (sectionData) => {
 
   // If first-region, add content in a new line directly after the current line
   if (type && type === 'first-region') {
-    const currentLineIndex = Number.parseInt(path.split('/')[0])
+    const currentLineIndex = Number.parseInt(path.split('/')[path.split('/').length - 2])
     const newLineIndex = currentLineIndex + 1
-    path = `${newLineIndex}/0`
+    path = computeLayoutPath(`${newLineIndex}/0`)
     // Shift all sections after newLineIndex up by 1
-    sections.value.forEach(section => {
-      const pathParts = section.region?.path?.split('/')
-      if (pathParts && Number.parseInt(pathParts[0]) >= newLineIndex) {
-        section.region.path = `${Number.parseInt(pathParts[0]) + 1}/${pathParts[1]}`
-      }
-    })
+    if (path.split('/').length === 2) {
+      sections.value.forEach(section => {
+        const pathParts = section.region?.path?.split('/')
+        if (pathParts && Number.parseInt(pathParts[0]) >= newLineIndex) {
+          section.region.path = `${Number.parseInt(pathParts[0]) + 1}/${pathParts[1]}`
+        }
+      })
+    } else {
+      sections.value.filter(s => s.region?.path.length === path.length && s.region?.path.split('/').slice(0, -2).join('/') === path.split('/').slice(0, -2).join('/')).forEach(section => {
+        const pathParts = section.region?.path?.split('/')
+        if (pathParts && Number.parseInt(pathParts[path.split('/').length - 2]) >= newLineIndex) {
+          section.region.path = computeLayoutPath(`${Number.parseInt(pathParts[path.split('/').length - 2]) + 1}/${pathParts[path.split('/').length - 1]}`)
+        }
+      })
+    }
   }
 
   // Remove placeholder in the target region

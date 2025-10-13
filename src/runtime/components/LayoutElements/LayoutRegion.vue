@@ -10,61 +10,32 @@
       @delete="$emit('delete-region', path)"
     />
 
-    <!-- Sortable sections in this region -->
+    <!-- Unified sortable items (sections and lines) -->
     <draggable
-      :list="region.sections"
-      :group="{ name: 'sections', pull: true, put: true }"
+      :list="region.items"
+      :group="{ name: 'region-items', pull: true, put: true }"
       item-key="id"
       class="sections-container-inner"
       :animation="200"
-      handle=".section-drag-handle"
-      @end="onSectionDragEnd"
+      handle=".section-drag-handle, .line-drag-handle"
+      @end="onItemDragEnd"
     >
-      <template #item="{ element: section }">
-        <LayoutElementsSectionWrapper
-          :section="section"
-          :path="region.path"
-          :get-component="getComponent"
-          :admin="admin"
-          :edit-mode="editMode"
-          :invalid-sections-errors="invalidSectionsErrors"
-          :views-bg-color="viewsBgColor"
-          :lang="lang"
-          :locales="locales"
-          :default-lang="defaultLang"
-          :seo-sections-support="seoSectionsSupport"
+      <template #item="{ element: item, index }">
+        <LayoutElementsLayoutLine
+          v-if="item.itemType === 'line'"
+          v-bind="getItemProps(item, index)"
+          class="nested-regions-container"
           @seo-support="(view) => emit('seo-support', view)"
           @refresh-section="(data) => emit('refresh-section', data)"
           @add-layout="$emit('add-layout', $event)"
           @add-content="$emit('add-content', $event)"
+          @delete-region="$emit('delete-region', $event)"
+          @drag-section="$emit('drag-section', $event)"
+          @drag-region="$emit('drag-region', $event)"
         />
-      </template>
-    </draggable>
-
-    <!-- Sortable nested lines (regions) -->
-    <draggable
-      v-if="region.regions && region.regions.length > 0"
-      :list="region.regions"
-      :group="{ name: 'regions', pull: true, put: true }"
-      item-key="id"
-      class="nested-regions-container"
-      :animation="200"
-      handle=".drag-handle"
-      @end="onRegionDragEnd"
-    >
-      <template #item="{ element: nestedLine, index: nestedLineIndex }">
-        <LayoutElementsLayoutLine
-          :line="nestedLine"
-          :line-index="nestedLineIndex"
-          :get-component="getComponent"
-          :admin="admin"
-          :edit-mode="editMode"
-          :invalid-sections-errors="invalidSectionsErrors"
-          :views-bg-color="viewsBgColor"
-          :lang="lang"
-          :locales="locales"
-          :default-lang="defaultLang"
-          :seo-sections-support="seoSectionsSupport"
+        <LayoutElementsSectionWrapper
+          v-else
+          v-bind="getItemProps(item, index)"
           @seo-support="(view) => emit('seo-support', view)"
           @refresh-section="(data) => emit('refresh-section', data)"
           @add-layout="$emit('add-layout', $event)"
@@ -151,24 +122,58 @@ const emit = defineEmits([
 ])
 
 const regionWidth = computed(() => {
-  // Example: equally divide width by regionCount
   if (!props.regionCount) return '100%'
   return (100 / props.regionCount) + '%'
 })
 
-function onSectionDragEnd(evt) {
-  emit('drag-section', {
-    sectionId: evt.item?.__vue__?.section?.id,
-    newPath: props.region.path,
-    newWeight: evt.newIndex
-  })
+function getItemProps(item, index) {
+  if (item.itemType === 'line') {
+    return {
+      line: item,
+      lineIndex: index,
+      getComponent: props.getComponent,
+      admin: props.admin,
+      editMode: props.editMode,
+      invalidSectionsErrors: props.invalidSectionsErrors,
+      viewsBgColor: props.viewsBgColor,
+      lang: props.lang,
+      locales: props.locales,
+      defaultLang: props.defaultLang,
+      seoSectionsSupport: props.seoSectionsSupport
+    }
+  } else {
+    return {
+      section: item,
+      path: props.region.path,
+      getComponent: props.getComponent,
+      admin: props.admin,
+      editMode: props.editMode,
+      invalidSectionsErrors: props.invalidSectionsErrors,
+      viewsBgColor: props.viewsBgColor,
+      lang: props.lang,
+      locales: props.locales,
+      defaultLang: props.defaultLang,
+      seoSectionsSupport: props.seoSectionsSupport
+    }
+  }
+  return {}
 }
 
-function onRegionDragEnd(evt) {
-  emit('drag-region', {
-    oldPath: evt.item?.__vue__?.region?.path,
-    newPath: props.region.regions[evt.newIndex]?.path
-  })
+function onItemDragEnd(evt) {
+  const item = evt.item?.__vue__?.item
+  if (!item) return
+  if (item.type === 'section') {
+    emit('drag-section', {
+      sectionId: item.id,
+      newPath: props.region.path,
+      newWeight: evt.newIndex
+    })
+  } else if (item.type === 'line') {
+    emit('drag-region', {
+      oldPath: item.path,
+      newPath: props.region.items[evt.newIndex]?.path
+    })
+  }
 }
 </script>
 
@@ -220,9 +225,5 @@ function onRegionDragEnd(evt) {
 
 .nested-line {
   margin-bottom: 1px;
-}
-
-.nested-regions-container {
-  min-height: 80px;
 }
 </style>
