@@ -1,6 +1,39 @@
 <template>
   <div class="layout-line">
+    <!-- Sortable sections in this line -->
     <draggable
+      :list="line.sections"
+      :group="{ name: 'sections', pull: true, put: true }"
+      item-key="id"
+      class="sections-container"
+      :animation="200"
+      handle=".section-drag-handle"
+      @end="onSectionDragEnd"
+    >
+      <template #item="{ element: section }">
+        <LayoutElementsSectionWrapper
+          :section="section"
+          :path="line.path"
+          :get-component="getComponent"
+          :admin="admin"
+          :edit-mode="editMode"
+          :invalid-sections-errors="invalidSectionsErrors"
+          :views-bg-color="viewsBgColor"
+          :lang="lang"
+          :locales="locales"
+          :default-lang="defaultLang"
+          :seo-sections-support="seoSectionsSupport"
+          @seo-support="(view) => emit('seo-support', view)"
+          @refresh-section="(data) => emit('refresh-section', data)"
+          @add-layout="$emit('add-layout', $event)"
+          @add-content="$emit('add-content', $event)"
+        />
+      </template>
+    </draggable>
+
+    <!-- Sortable nested regions/lines -->
+    <draggable
+      v-if="line.regions && line.regions.length > 0"
       :list="line.regions"
       :group="{ name: 'regions', pull: true, put: true }"
       item-key="id"
@@ -12,10 +45,9 @@
       <template #item="{ element: region, index: regionIndex }">
         <LayoutElementsLayoutRegion
           :region="region"
-          :path="`${lineIndex}/${regionIndex}`"
+          :path="region.path"
           :is-first="regionIndex === 0"
           :region-count="line.regions.length"
-          :sections="getSectionsForRegion(`${lineIndex}/${regionIndex}`)"
           :get-component="getComponent"
           :admin="admin"
           :edit-mode="editMode"
@@ -38,7 +70,6 @@
 </template>
 
 <script setup>
-
 const props = defineProps({
   line: {
     type: Object,
@@ -96,45 +127,30 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['add-layout', 'add-content', 'delete-region', 'drag-region', 'drag-section', 'seo-support', 'refresh-section'])
-
-// Get sections for specific region
-const getSectionsForRegion = (regionPath) => {
-  return props.sections.filter(section => {
-    if (!section.region?.path) return false
-
-    const sectionPath = section.region.path
-    const pathParts = sectionPath.split('/')
-    const regionPathParts = regionPath.split('/')
-
-    // Check if section is directly in this region (not in nested regions)
-    if (pathParts.length !== regionPathParts.length) return false
-
-    return sectionPath.startsWith(regionPath)
-  }).sort((a, b) => a.weight - b.weight)
+function onSectionDragEnd(evt) {
+  // Emit drag-section event with enough context for parent to update
+  emit('drag-section', {
+    sectionId: evt.item?.__vue__?.section?.id,
+    newPath: props.line.path,
+    newWeight: evt.newIndex
+  })
 }
 
-// Handle region drag end
-const onRegionDragEnd = (evt) => {
-  const { oldIndex, newIndex } = evt
-
-  if (oldIndex === newIndex) return
-
-  const oldPath = `${props.lineIndex}/${oldIndex}`
-  const newPath = `${props.lineIndex}/${newIndex}`
-
-  emit('drag-region', { oldPath, newPath })
+function onRegionDragEnd(evt) {
+  // Emit drag-region event with enough context for parent to update
+  emit('drag-region', {
+    oldPath: evt.item?.__vue__?.region?.path,
+    newPath: props.line.regions[evt.newIndex]?.path
+  })
 }
 </script>
 
 <style scoped>
 .layout-line {
-  margin-bottom: 1px; /* Minimal spacing between lines - invisible to user */
+  margin-bottom: 1px;
 }
-
-.regions-container {
+.sections-container {
   display: flex;
-  gap: 1px; /* Minimal gap between regions - invisible to user */
-  min-height: 100px;
+  gap: 1px;
 }
 </style>

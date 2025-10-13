@@ -1,9 +1,6 @@
 <template>
-  <div
-    class="layout-region"
-    :style="{ width: regionWidth }"
-  >
-    <!-- Region Handle - Only for first region or non-first regions -->
+  <div class="layout-region" :style="{ width: regionWidth }">
+    <!-- Region Handle -->
     <LayoutElementsRegionHandle
       :type="isFirst ? 'first-region' : 'region'"
       :path="path"
@@ -13,82 +10,71 @@
       @delete="$emit('delete-region', path)"
     />
 
-    <!-- Sections in this region -->
-    <div class="region-content">
-      <draggable
-        :list="sortedSections"
-        :group="{ name: 'sections', pull: true, put: true }"
-        item-key="id"
-        class="sections-container-inner"
-        :animation="200"
-        handle=".section-drag-handle"
-        @end="onSectionDragEnd"
-      >
-        <template #item="{ element: section }">
-          <LayoutElementsSectionWrapper
-            :section="section"
-            :path="path"
-            :get-component="getComponent"
-            :admin="admin"
-            :edit-mode="editMode"
-            :invalid-sections-errors="invalidSectionsErrors"
-            :views-bg-color="viewsBgColor"
-            :lang="lang"
-            :locales="locales"
-            :default-lang="defaultLang"
-            :seo-sections-support="seoSectionsSupport"
-            @seo-support="(view) => emit('seo-support', view)"
-            @refresh-section="(data) => emit('refresh-section', data)"
-            @add-layout="$emit('add-layout', $event)"
-            @add-content="$emit('add-content', $event)"
-          />
-        </template>
-      </draggable>
+    <!-- Sortable sections in this region -->
+    <draggable
+      :list="region.sections"
+      :group="{ name: 'sections', pull: true, put: true }"
+      item-key="id"
+      class="sections-container-inner"
+      :animation="200"
+      handle=".section-drag-handle"
+      @end="onSectionDragEnd"
+    >
+      <template #item="{ element: section }">
+        <LayoutElementsSectionWrapper
+          :section="section"
+          :path="region.path"
+          :get-component="getComponent"
+          :admin="admin"
+          :edit-mode="editMode"
+          :invalid-sections-errors="invalidSectionsErrors"
+          :views-bg-color="viewsBgColor"
+          :lang="lang"
+          :locales="locales"
+          :default-lang="defaultLang"
+          :seo-sections-support="seoSectionsSupport"
+          @seo-support="(view) => emit('seo-support', view)"
+          @refresh-section="(data) => emit('refresh-section', data)"
+          @add-layout="$emit('add-layout', $event)"
+          @add-content="$emit('add-content', $event)"
+        />
+      </template>
+    </draggable>
 
-      <!-- Nested regions (if any) -->
-      <div v-if="region.nested && region.nested.length > 0" class="nested-regions">
-        <div
-          v-for="(nestedLine, nestedIndex) in region.nested"
-          :key="nestedLine.id"
-          class="nested-line"
-        >
-          <draggable
-            :list="nestedLine.regions"
-            :group="{ name: 'regions', pull: true, put: true }"
-            item-key="id"
-            class="nested-regions-container"
-            :animation="200"
-            handle=".drag-handle"
-            @end="(evt) => onNestedRegionDragEnd(evt, nestedIndex)"
-          >
-            <template #item="{ element: nestedRegion, index: nestedRegionIndex }">
-              <LayoutElementsLayoutRegion
-                :region="nestedRegion"
-                :path="`${path}/${nestedIndex}/${nestedRegionIndex}`"
-                :is-first="nestedRegionIndex === 0"
-                :region-count="nestedLine.regions.length"
-                :sections="getSectionsForNestedRegion(`${path}/${nestedIndex}/${nestedRegionIndex}`)"
-                :get-component="getComponent"
-                :admin="admin"
-                :edit-mode="editMode"
-                :invalid-sections-errors="invalidSectionsErrors"
-                :views-bg-color="viewsBgColor"
-                :lang="lang"
-                :locales="locales"
-                :default-lang="defaultLang"
-                :seo-sections-support="seoSectionsSupport"
-                @seo-support="(view) => emit('seo-support', view)"
-                @refresh-section="(data) => emit('refresh-section', data)"
-                @add-layout="$emit('add-layout', $event)"
-                @add-content="$emit('add-content', $event)"
-                @delete-region="$emit('delete-region', $event)"
-                @drag-section="$emit('drag-section', $event)"
-              />
-            </template>
-          </draggable>
-        </div>
-      </div>
-    </div>
+    <!-- Sortable nested lines (regions) -->
+    <draggable
+      v-if="region.regions && region.regions.length > 0"
+      :list="region.regions"
+      :group="{ name: 'regions', pull: true, put: true }"
+      item-key="id"
+      class="nested-regions-container"
+      :animation="200"
+      handle=".drag-handle"
+      @end="onRegionDragEnd"
+    >
+      <template #item="{ element: nestedLine, index: nestedLineIndex }">
+        <LayoutElementsLayoutLine
+          :line="nestedLine"
+          :line-index="nestedLineIndex"
+          :get-component="getComponent"
+          :admin="admin"
+          :edit-mode="editMode"
+          :invalid-sections-errors="invalidSectionsErrors"
+          :views-bg-color="viewsBgColor"
+          :lang="lang"
+          :locales="locales"
+          :default-lang="defaultLang"
+          :seo-sections-support="seoSectionsSupport"
+          @seo-support="(view) => emit('seo-support', view)"
+          @refresh-section="(data) => emit('refresh-section', data)"
+          @add-layout="$emit('add-layout', $event)"
+          @add-content="$emit('add-content', $event)"
+          @delete-region="$emit('delete-region', $event)"
+          @drag-section="$emit('drag-section', $event)"
+          @drag-region="$emit('drag-region', $event)"
+        />
+      </template>
+    </draggable>
   </div>
 </template>
 
@@ -160,58 +146,29 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['add-layout', 'add-content', 'delete-region', 'drag-section', 'seo-support', 'refresh-section'])
+const emit = defineEmits([
+  'add-layout', 'add-content', 'delete-region', 'drag-region', 'drag-section', 'seo-support', 'refresh-section'
+])
 
-// Calculate region width
 const regionWidth = computed(() => {
-  return `${100 / props.regionCount}%`
+  // Example: equally divide width by regionCount
+  if (!props.regionCount) return '100%'
+  return (100 / props.regionCount) + '%'
 })
 
-// Sorted sections by weight
-const sortedSections = computed(() => {
-  return [...props.sections].sort((a, b) => a.weight - b.weight)
-})
-
-// Get sections for nested region
-const getSectionsForNestedRegion = (nestedPath) => {
-  return props.sections.filter(section => {
-    if (!section.region?.path) return false
-    return section.region.path.startsWith(nestedPath)
-  })
-}
-
-// Handle section drag end
-const onSectionDragEnd = (evt) => {
-  const { item, newIndex } = evt
-  const sectionId = item.dataset.sectionId
-
-  // Calculate new weight based on position
-  let newWeight = newIndex
-
-  // Adjust weights of other sections
-  sortedSections.value.forEach((section, index) => {
-    if (section.id !== sectionId && index >= newIndex) {
-      newWeight = Math.max(newWeight, section.weight + 1)
-    }
-  })
-
+function onSectionDragEnd(evt) {
   emit('drag-section', {
-    sectionId,
-    newPath: props.path,
-    newWeight
+    sectionId: evt.item?.__vue__?.section?.id,
+    newPath: props.region.path,
+    newWeight: evt.newIndex
   })
 }
 
-// Handle nested region drag end
-const onNestedRegionDragEnd = (evt, nestedIndex) => {
-  const { oldIndex, newIndex } = evt
-
-  if (oldIndex === newIndex) return
-
-  const oldPath = `${props.path}/${nestedIndex}/${oldIndex}`
-  const newPath = `${props.path}/${nestedIndex}/${newIndex}`
-
-  emit('drag-region', { oldPath, newPath })
+function onRegionDragEnd(evt) {
+  emit('drag-region', {
+    oldPath: evt.item?.__vue__?.region?.path,
+    newPath: props.region.regions[evt.newIndex]?.path
+  })
 }
 </script>
 
@@ -246,6 +203,7 @@ const onNestedRegionDragEnd = (evt, nestedIndex) => {
 
 .sections-container-inner {
   min-height: 50px;
+  margin-top: 40px;
 }
 
 .nested-regions {
