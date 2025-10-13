@@ -34,29 +34,29 @@
       </button>
 
       <!-- Delete Icon - Only for regions and sections -->
-      <button
-        v-if="type !== 'empty'"
-        class="handle-btn delete-btn"
-        @click="handleDelete"
-        title="Delete"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M3 4h10M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5 7v5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7M7 7v4M9 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </button>
+<!--      <button-->
+<!--        v-if="type !== 'empty'"-->
+<!--        class="handle-btn delete-btn"-->
+<!--        @click="handleDelete"-->
+<!--        title="Delete"-->
+<!--      >-->
+<!--        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">-->
+<!--          <path d="M3 4h10M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5 7v5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7M7 7v4M9 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>-->
+<!--        </svg>-->
+<!--      </button>-->
     </div>
 
     <!-- Dropdown Menu (shown on dots click) -->
     <div v-if="showDropdown" class="dropdown-menu" ref="dropdownRef">
-      <div class="dropdown-item" @click="handleSettings">
-        <span>Settings</span>
-      </div>
-      <div class="dropdown-item" @click="handleDuplicate">
-        <span>Duplicate</span>
-      </div>
-      <div v-if="type === 'section'" class="dropdown-item" @click="handleVisibility">
-        <span>Toggle Visibility</span>
-      </div>
+<!--      <div class="dropdown-item" @click="handleSettings">-->
+<!--        <span>Settings</span>-->
+<!--      </div>-->
+<!--      <div class="dropdown-item" @click="handleDuplicate">-->
+<!--        <span>Duplicate</span>-->
+<!--      </div>-->
+<!--      <div v-if="type === 'section'" class="dropdown-item" @click="handleVisibility">-->
+<!--        <span>Toggle Visibility</span>-->
+<!--      </div>-->
     </div>
   </div>
 </template>

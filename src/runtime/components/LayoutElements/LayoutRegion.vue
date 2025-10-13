@@ -197,6 +197,14 @@ function onRegionDragEnd(evt) {
   opacity: 1;
 }
 
+.nested-regions-container .layout-region .region-handle {
+  opacity: 0;
+}
+
+.nested-regions-container .layout-region:hover .region-handle {
+  opacity: 1;
+}
+
 .region-content {
   margin-top: 40px; /* Space for region handle */
 }

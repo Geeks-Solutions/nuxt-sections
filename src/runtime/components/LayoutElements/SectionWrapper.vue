@@ -8,6 +8,7 @@
       type="section"
       :path="path"
       :section-id="section.id"
+      :drag-support="!section._isPlaceholder"
       class="section-handle"
       @add-layout="$emit('add-layout', { path, type: $event.type, event: $event.event, sectionIndex })"
       @add-content="$emit('add-content', { path, type: $event.type, event: $event.event, sectionIndex })"
