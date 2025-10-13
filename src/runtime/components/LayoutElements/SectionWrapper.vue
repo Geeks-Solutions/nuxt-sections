@@ -167,7 +167,7 @@ const emit = defineEmits([
 
 const sectionIndex = computed(() => {
   // Find this section's index in the parent region
-  const parentSections = (section.region && section.region.path === path) ? [section] : []
+  const parentSections = (props.section.region && props.section.region.path === props.path) ? [props.section] : []
   // fallback: let parent region pass the index as a prop if needed
   return parentSections.length ? 0 : undefined
 })
