@@ -2,7 +2,7 @@
   <div class="page-builder">
     <!-- Empty state -->
     <div v-if="isEmpty && admin && editMode && !isSideBarOpen" class="empty-state">
-      <LayoutElementsRegionHandle
+      <LayoutElementsLayoutHandle
         type="empty"
         :drag-support="false"
         @add="handleEmptyAdd"
@@ -25,6 +25,10 @@
       :locales="locales"
       :default-lang="defaultLang"
       :seo-sections-support="seoSectionsSupport"
+      :sections-format-errors="sectionsFormatErrors"
+      :editable="editable"
+      :sections-theme-components="sectionsThemeComponents"
+      :page-metadata="pageMetadata"
       @seo-support="(view) => emit('seo-support', view)"
       @refresh-section="(data) => emit('refresh-section', data)"
       @add-layout="handleAddLayout"
@@ -32,6 +36,12 @@
       @delete-region="handleDeleteRegion"
       @drag-region="handleDragRegion"
       @drag-section="handleDragSection"
+      @section-alert="emit('section-alert', $event)"
+      @section-edit="emit('section-edit', $event)"
+      @section-delete="emit('section-delete', $event)"
+      @section-anchor="emit('section-anchor', $event)"
+      @section-seo="emit('section-seo', $event)"
+      @section-paint-brush="emit('section-paint-brush', $event)"
     />
 
     <!-- Layout Selection Modal -->
@@ -101,10 +111,37 @@ const props = defineProps({
   getComponent: {
     type: Function,
     required: true
+  },
+  sectionsFormatErrors: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  editable: {
+    type: Function,
+    required: true
+  },
+  sectionsThemeComponents: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  pageMetadata: {
+    type: Object,
+    default() {
+      return {}
+    }
   }
 })
 
-const emit = defineEmits(['update:pageData', 'seo-support', 'refresh-section'])
+const emit = defineEmits(['update:pageData', 'seo-support', 'refresh-section', 'section-alert',
+  'section-edit',
+  'section-delete',
+  'section-anchor',
+  'section-seo',
+  'section-paint-brush'])
 
 // Reactive state
 const sections = ref(props.pageData.sections || [])

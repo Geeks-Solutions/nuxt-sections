@@ -1,25 +1,98 @@
 <template>
   <div
-    class="section-wrapper"
+    class="section-wrapper section-view"
     :data-section-id="section.id"
   >
     <!-- Section Handle -->
-    <LayoutElementsRegionHandle
+    <LayoutElementsLayoutHandle
       type="section"
       :path="path"
       :section-id="section.id"
       :section-weight="section.weight"
       :section-idx="sectionIdx"
       :drag-support="!section._isPlaceholder"
+      :drop-down-menu-support="true"
       class="section-handle"
+      :style="`z-index: ${900 - section.weight}`"
       @add-layout="$emit('add-layout', { path, type: $event.type, sectionWeight: $event.sectionWeight, event: $event.event, sectionIndex })"
       @add-content="$emit('add-content', { path, type: $event.type, sectionWeight: $event.sectionWeight, event: $event.event, sectionIndex })"
-      @settings="handleSettings"
     >
-      <template #modalSelectionSlot>
-        <slot name="modalSelectionSlot" />
+      <template #dropDownMenu>
+        <div
+          class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl hide-mobile"
+          v-if="admin && editMode && view.altered !== true"
+        >
+          <!-- Alert icon -->
+          <button
+            v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"
+            class="hp-button"
+            @click="emit('section-alert', view)"
+          >
+            <LazyBaseIconsAlert/>
+          </button>
+
+          <!-- Edit icon + label -->
+          <button
+            v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)"
+            class="hp-button"
+            @click="emit('section-edit', view)"
+          >
+            <LazyBaseIconsEdit
+              :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : '#FFFFFF'"
+              class="edit-icon"
+            />
+            <span class="sections-pl-2 sections-no-wrap">{{ $t('sections.updateContent') }}</span>
+          </button>
+
+          <!-- Delete icon + label -->
+          <button
+            class="hp-button"
+            @click="emit('section-delete', view)"
+          >
+            <LazyBaseIconsTrash :color="'#FFFFFF'" class="trash-icon"/>
+            <span class="sections-pl-2 sections-no-wrap">{{ $t('sections.deleteContent') }}</span>
+          </button>
+
+          <!-- Anchor icon -->
+          <button
+            class="hp-button"
+            @click="emit('section-anchor', view)"
+          >
+            <LazyBaseIconsAnchor
+              :title="(view.linked_to !== '' && view.linked_to !== undefined)
+                ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}`
+                : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"
+              :color="'#FFFFFF'"
+              class="edit-icon"
+            />
+          </button>
+
+          <!-- SEO button -->
+          <div
+            v-if="seoSectionsSupport[view.name]"
+            @click="emit('section-seo', view)"
+          >
+            <div
+              :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')"
+              class="seo-btn"
+              :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}"
+            >
+              SEO
+            </div>
+          </div>
+
+          <!-- Brush icon + label -->
+          <button
+            v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
+            class="hp-button"
+            @click="emit('section-paint-brush', view)"
+          >
+            <LazyBaseIconsPaintBursh :color="'#FFFFFF'" />
+            <span class="sections-pl-2 sections-no-wrap">{{ $t('sections.styleContent') }}</span>
+          </button>
+        </div>
       </template>
-    </LayoutElementsRegionHandle>
+    </LayoutElementsLayoutHandle>
 
     <!-- Actual Section Component -->
     <div class="section-content">
@@ -30,46 +103,6 @@
         :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
       >
         <div class="section-view relativeSections">
-<!--          <div-->
-<!--            class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"-->
-<!--            v-if="admin && editMode && sectionOptions[view.id] && sectionOptions[view.id] === true && view.altered !== true"-->
-<!--          >-->
-<!--            <div v-if="sectionsFormatErrors[view.weight] || (view.error && view.status_code !== 404)"-->
-<!--                 @click="isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error">-->
-<!--              <LazyBaseIconsAlert/>-->
-<!--            </div>-->
-<!--            <div-->
-<!--              @click="toggleSectionsOptions(view.id); edit(currentViews.find(vw => vw.id === view.id), view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)"-->
-<!--              v-if="editable(view.type) || (view.linked_to !== '' && view.linked_to !== undefined)">-->
-<!--              <LazyBaseIconsEdit :color="(view.linked_to !== '' && view.linked_to !== undefined) ? '#FF0000' : undefined"-->
-<!--                                 class="edit-icon"/>-->
-<!--            </div>-->
-<!--            <LazyBaseIconsDrag class="drag-icon handle"/>-->
-<!--            <div-->
-<!--              @click="isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;">-->
-<!--              <LazyBaseIconsTrash class="trash-icon"/>-->
-<!--            </div>-->
-<!--            <div-->
-<!--              @click="copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)">-->
-<!--              <LazyBaseIconsAnchor-->
-<!--                :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `Anchor id: #${view.linked_to}-${view.id}, ${$t('clickToCopy')}` : `Anchor id: #${view.name}-${view.id}, ${$t('clickToCopy')}`"-->
-<!--                class="edit-icon"/>-->
-<!--            </div>-->
-<!--            <div-->
-<!--              v-if="seoSectionsSupport[view.name]"-->
-<!--              @click="seoBtnClicked(view.id)">-->
-<!--              <div :title="pageMetadata.seo && pageMetadata.seo[view.id] === true ? $t('seoDisable') : $t('seoEnable')" class="seo-btn" :class="{'enabled': pageMetadata.seo && pageMetadata.seo[view.id] === true}">SEO</div>-->
-<!--            </div>-->
-<!--            <div-->
-<!--              v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"-->
-<!--              @click="toggleSectionsOptions(view.id); openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])">-->
-<!--              <LazyBaseIconsPaintBursh />-->
-<!--            </div>-->
-<!--          </div>-->
-<!--          <div v-if="admin && editMode && view.altered !== true && !isSideBarOpen" :title="(view.linked_to !== '' && view.linked_to !== undefined) ? `${view.linked_to} (${view.id})` : `${view.name} (${view.id})`" @click="toggleSectionsOptions(view.id)"-->
-<!--               class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer" :class="{'flexSections': !isSideBarOpen}">-->
-<!--            <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon"/>-->
-<!--          </div>-->
           <div
             class="view-component"
             :class="admin && editMode && invalidSectionsErrors[`${view.name}-${view.weight}`] && invalidSectionsErrors[view.name].error && invalidSectionsErrors[`${view.name}-${view.weight}`].weight === view.weight ? 'invalidSection' : ''"
@@ -158,6 +191,28 @@ const props = defineProps({
   sectionIdx: {
     type: Number,
     default: null
+  },
+  sectionsFormatErrors: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  editable: {
+    type: Function,
+    required: true
+  },
+  sectionsThemeComponents: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  pageMetadata: {
+    type: Object,
+    default() {
+      return {}
+    }
   }
 })
 
@@ -169,7 +224,13 @@ const emit = defineEmits([
   'add-layout',
   'add-content',
   'refresh-section',
-  'seo-support'
+  'seo-support',
+  'section-alert',
+  'section-edit',
+  'section-delete',
+  'section-anchor',
+  'section-seo',
+  'section-paint-brush',
 ])
 
 const sectionIndex = computed(() => {
@@ -178,16 +239,6 @@ const sectionIndex = computed(() => {
   // fallback: let parent region pass the index as a prop if needed
   return parentSections.length ? 0 : undefined
 })
-
-// Get insert path for new content below this section
-const getInsertPath = () => {
-  // Insert into a new row below the current row
-  const pathParts = props.path.split('/')
-  const currentRow = parseInt(pathParts[0])
-  const newRow = currentRow + 1
-  // Always insert into the first region of the new row
-  return `${newRow}/0`
-}
 
 // Handle settings click
 const handleSettings = () => {
@@ -212,7 +263,9 @@ const handleSettings = () => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
+}
+
+.section-handle:not(.layout-handle-menu-active) {
   opacity: 0;
 }
 

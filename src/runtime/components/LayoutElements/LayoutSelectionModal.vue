@@ -84,19 +84,19 @@ const emit = defineEmits(['select', 'select-content'])
 
 const visible = ref(false)
 const position = ref({ x: 0, y: 0 })
-const activeTab = ref('layout')
+const activeTab = ref('content')
 
 // Public function: open modal at given coordinates
 const openSelectionModal = (x, y) => {
   position.value = { x, y: y - 112 }
   visible.value = true
-  activeTab.value = 'layout'
+  activeTab.value = 'content'
 }
 
 // Close modal
 const handleCloseModal = () => {
   visible.value = false
-  activeTab.value = 'layout'
+  activeTab.value = 'content'
 }
 
 const handleLayoutSelect = (regionCount) => {

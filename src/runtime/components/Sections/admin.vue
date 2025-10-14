@@ -872,7 +872,7 @@
 
             <!-- This is delete section page popup that opens when the admin click on the delete page button in red located at the top bottom of the page -->
             <div v-if="isDeleteSectionModalOpen && admin && editMode" ref="modal"
-                 class="fixed sections-z-200 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
+                 class="fixed sections-z-1000 overflow-hidden bg-grey bg-opacity-25 inset-0 p-8 overflow-y-auto modalContainer"
                  aria-labelledby="modal-title" role="dialog" aria-modal="true">
               <div
                 class="flexSections fullHeightSections items-center justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1114,6 +1114,16 @@
                 :locales="locales"
                 :default-lang="defaultLang"
                 :seo-sections-support="seoSectionsSupport"
+                :sections-format-errors="sectionsFormatErrors"
+                :editable="editable"
+                :sections-theme-components="sectionsThemeComponents"
+                :page-metadata="pageMetadata"
+                @section-alert="(view) => {isErrorsFormatModalOpen = true; displayedErrorFormat = sectionsFormatErrors[view.weight] ? sectionsFormatErrors[view.weight] : view.error}"
+                @section-edit="(view) => {edit(view, view.linked_to !== '' && view.linked_to !== undefined ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`)}"
+                @section-delete="(view) => {isDeleteSectionModalOpen = true; deletedSectionId = view.id; deletedSectionName = view.name;}"
+                @section-anchor="(view) => {copyAnchor((view.linked_to !== '' && view.linked_to !== undefined) ? `#${view.linked_to}-${view.id}` : `#${view.name}-${view.id}`, $event)}"
+                @section-seo="(view) => {seoBtnClicked(view.id)}"
+                @section-paint-brush="(view) => {openSectionThemeModal(currentViews.find(vw => vw.id === view.id), sectionsThemeComponents[view.name])}"
                 @seo-support="(view) => seoSectionsSupport[view.name] = true"
                 @refresh-section="({ view, data }) => refreshSectionView(view, data)"
                 @update:page-data="handlePageUpdate"
@@ -1517,7 +1527,7 @@ const loading = useState('loading', () => false);
 const currentSection = ref(null);
 const isCreateInstance = ref(false);
 const isModalOpen = ref(false);
-const isSideBarOpen = ref(false);
+const isSideBarOpen = useState('isSideBarOpen', () => false);
 const sectionsChanged = ref(false);
 const backToAddSectionList = ref(false);
 const isDeleteModalOpen = ref(false);
@@ -5956,16 +5966,17 @@ if (!useNuxtApp().$sectionsOptionsComponent) {
 }
 
 .section-view .controls {
-  background: #f5f5f5;
-  position: absolute !important;
-  right: 45px !important;
-  top: 10px;
-  z-index: 50 !important;
   --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
   box-shadow: 0 0 rgba(0, 0, 0, 0), 0 0 rgba(0, 0, 0, 0), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-ring-shadow, 0 0 rgba(0, 0, 0, 0)), var(--tw-shadow);
-  border-width: 1px;
+  flex-direction: column;
+  padding: 10px;
+  gap: 10px;
+}
+
+.section-view .controls .hp-button {
+  margin: 0;
 }
 
 .section-view .controls.optionsSettings {
@@ -5991,8 +6002,8 @@ if (!useNuxtApp().$sectionsOptionsComponent) {
 
 .section-view .controls svg {
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 25px;
+  height: 25px;
   color: #03b1c7;
   margin: 3px;
 }
@@ -6467,6 +6478,10 @@ span.handle {
 
 .sections-z-200 {
   z-index: 200;
+}
+
+.sections-z-1000 {
+  z-index: 1000;
 }
 
 .section-modal-wrapper {

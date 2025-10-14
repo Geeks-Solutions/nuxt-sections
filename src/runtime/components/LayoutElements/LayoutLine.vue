@@ -57,12 +57,22 @@
           :locales="locales"
           :default-lang="defaultLang"
           :seo-sections-support="seoSectionsSupport"
-          @seo-support="(view) => $emit('seo-support', view)"
-          @refresh-section="(data) => $emit('refresh-section', data)"
-          @add-layout="$emit('add-layout', $event)"
-          @add-content="$emit('add-content', $event)"
-          @delete-region="$emit('delete-region', $event)"
-          @drag-section="$emit('drag-section', $event)"
+          :sections-format-errors="sectionsFormatErrors"
+          :editable="editable"
+          :sections-theme-components="sectionsThemeComponents"
+          :page-metadata="pageMetadata"
+          @seo-support="(view) => emit('seo-support', view)"
+          @refresh-section="(data) => emit('refresh-section', data)"
+          @add-layout="emit('add-layout', $event)"
+          @add-content="emit('add-content', $event)"
+          @delete-region="emit('delete-region', $event)"
+          @drag-section="emit('drag-section', $event)"
+          @section-alert="emit('section-alert', $event)"
+          @section-edit="emit('section-edit', $event)"
+          @section-delete="emit('section-delete', $event)"
+          @section-anchor="emit('section-anchor', $event)"
+          @section-seo="emit('section-seo', $event)"
+          @section-paint-brush="emit('section-paint-brush', $event)"
         />
       </template>
     </draggable>
@@ -124,8 +134,45 @@ const props = defineProps({
   getComponent: {
     type: Function,
     required: true
+  },
+  sectionsFormatErrors: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  editable: {
+    type: Function,
+    required: true
+  },
+  sectionsThemeComponents: {
+    type: Object,
+    default() {
+      return {}
+    }
+  },
+  pageMetadata: {
+    type: Object,
+    default() {
+      return {}
+    }
   }
 })
+
+const emit = defineEmits([
+  'seo-support',
+  'refresh-section',
+  'add-layout',
+  'add-content',
+  'delete-region',
+  'drag-section',
+  'section-alert',
+  'section-edit',
+  'section-delete',
+  'section-anchor',
+  'section-seo',
+  'section-paint-brush'
+])
 
 function onSectionDragEnd(evt) {
   // Emit drag-section event with enough context for parent to update
