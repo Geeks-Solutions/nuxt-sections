@@ -225,12 +225,14 @@ const handleEmptyAdd = ({event}) => {
 }
 
 const showLayoutSelectionModal = (event) => {
-  layoutSelectionModal.value.openSelectionModal(event.clientX, event.clientY) // pass click coords
+  const sectionsMain = document.querySelector('.sections-main')
+  const scrollY = sectionsMain ? sectionsMain.scrollTop : 0
+  layoutSelectionModal.value.openSelectionModal(event.clientX + window.scrollX, event.clientY + scrollY) // pass click coords
 }
 
 // Handle add layout from region/section handle
-const handleAddLayout = ({ path, type, sectionIdx, insertAfter = true, event }) => {
-  modalContext.value = { path, type, sectionIdx, insertAfter }
+const handleAddLayout = ({ path, type, sectionWeight, insertAfter = true, event }) => {
+  modalContext.value = { path, type, sectionWeight, insertAfter }
   showLayoutModal.value = true
   showLayoutSelectionModal(event)
 }
@@ -337,7 +339,7 @@ const handleLayoutSelect = (regionCount) => {
 // Handle content selection
 const handleContentSelect = (sectionData) => {
   // eslint-disable-next-line prefer-const
-  let { path, type, sectionIdx } = modalContext.value
+  let { path, type, sectionWeight } = modalContext.value
 
   // If first-region, add content in a new line directly after the current line
   if (type && type === 'first-region') {
@@ -376,8 +378,7 @@ const handleContentSelect = (sectionData) => {
     weight: maxWeight - 1
   }
 
-  // TODO: Update sectionId key to sectionWeight to avoid confusion
-  sections.value.splice(sectionIdx ? sectionIdx + 1 : 0, 0, newSection)
+  sections.value.splice(sectionWeight ? sectionWeight + 1 : 0, 0, newSection)
   recalculateWeights()
   emitUpdate()
   showContentModal.value = false

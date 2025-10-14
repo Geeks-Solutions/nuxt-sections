@@ -154,7 +154,7 @@ function getItemProps(item, index) {
       locales: props.locales,
       defaultLang: props.defaultLang,
       seoSectionsSupport: props.seoSectionsSupport,
-      sectionIdx: index
+      sectionWeight: index
     }
   }
   return {}

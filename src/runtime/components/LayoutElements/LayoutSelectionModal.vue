@@ -88,7 +88,7 @@ const activeTab = ref('layout')
 
 // Public function: open modal at given coordinates
 const openSelectionModal = (x, y) => {
-  position.value = { x, y: y - 56 }
+  position.value = { x, y: y - 112 }
   visible.value = true
   activeTab.value = 'layout'
 }

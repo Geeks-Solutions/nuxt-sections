@@ -12,8 +12,8 @@
       :section-idx="sectionIdx"
       :drag-support="!section._isPlaceholder"
       class="section-handle"
-      @add-layout="$emit('add-layout', { path, type: $event.type, sectionIdx: $event.sectionIdx, event: $event.event, sectionIndex })"
-      @add-content="$emit('add-content', { path, type: $event.type, sectionIdx: $event.sectionIdx, event: $event.event, sectionIndex })"
+      @add-layout="$emit('add-layout', { path, type: $event.type, sectionWeight: $event.sectionWeight, event: $event.event, sectionIndex })"
+      @add-content="$emit('add-content', { path, type: $event.type, sectionWeight: $event.sectionWeight, event: $event.event, sectionIndex })"
       @settings="handleSettings"
     >
       <template #modalSelectionSlot>
