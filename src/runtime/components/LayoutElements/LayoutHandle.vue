@@ -36,10 +36,6 @@
           </template>
         </LazyBaseHelperComponentsBurgerMenu>
 
-        <!-- Dropdown Menu (shown on dots click) -->
-<!--        <div v-if="dropDownMenuSupport && showDropdown" ref="handleDropdownRef" class="dropdown-menu" @click="showDropdown = false">-->
-<!--          <slot name="dropDownMenu"/>-->
-<!--        </div>-->
       </div>
 
     </div>

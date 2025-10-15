@@ -14,10 +14,11 @@
     <draggable
       :list="region.items"
       :group="{ name: 'region-items', pull: true, put: true }"
-      item-key="id"
+      item-key="weight"
       class="sections-container-inner"
       :animation="200"
       handle=".section-drag-handle, .line-drag-handle"
+      @start="() => sectionDraggingState = true"
       @end="onItemDragEnd"
     >
       <template #item="{ element: item, index }">
@@ -62,7 +63,8 @@
 </template>
 
 <script setup>
-import {computed} from 'vue'
+import {computed, nextTick} from 'vue'
+import {useState} from "#imports";
 
 const props = defineProps({
   region: {
@@ -151,8 +153,10 @@ const props = defineProps({
   }
 })
 
+const sectionDraggingState = useState('sectionDraggingState', () => false)
+
 const emit = defineEmits([
-  'add-layout', 'add-content', 'delete-region', 'drag-region', 'drag-section', 'seo-support', 'refresh-section',
+  'add-layout', 'add-content', 'delete-region', 'drag-line','drag-region', 'drag-section', 'seo-support', 'refresh-section',
   'section-alert',
   'section-edit',
   'section-delete',
@@ -209,21 +213,23 @@ function getItemProps(item, index) {
   return {}
 }
 
-function onItemDragEnd(evt) {
-  const item = evt.item?.__vue__?.item
+async function onItemDragEnd(evt) {
+  const item = evt.item?.__draggable_context?.element
+  const newPath = evt.to?.firstChild?.__draggable_context?.element?.region?.path
   if (!item) return
-  if (item.type === 'section') {
-    emit('drag-section', {
-      sectionId: item.id,
-      newPath: props.region.path,
-      newWeight: evt.newIndex
-    })
-  } else if (item.type === 'line') {
-    emit('drag-region', {
+  if (item.type === 'line') {
+    emit('drag-line', {
       oldPath: item.path,
       newPath: props.region.items[evt.newIndex]?.path
     })
+  } else {
+    emit('drag-section', {
+      sectionId: item.id,
+      newPath: newPath || props.region.path,
+      newWeight: evt.newIndex
+    })
   }
+  sectionDraggingState.value = false
 }
 </script>
 

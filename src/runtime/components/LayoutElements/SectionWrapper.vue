@@ -2,6 +2,7 @@
   <div
     class="section-wrapper section-view"
     :data-section-id="section.id"
+    :class="{'hide-placeholder-section': section._isPlaceholder && sectionDraggingState}"
   >
     <!-- Section Handle -->
     <LayoutElementsLayoutHandle
@@ -136,6 +137,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import {useState} from "#imports";
 
 const props = defineProps({
   section: {
@@ -216,6 +218,8 @@ const props = defineProps({
   }
 })
 
+const sectionDraggingState = useState('sectionDraggingState')
+
 const view = computed(() => {
   return props.section
 })
@@ -275,5 +279,9 @@ const handleSettings = () => {
 
 .section-content {
   min-height: 50px;
+}
+
+.section-wrapper.section-view.hide-placeholder-section {
+  display: none;
 }
 </style>

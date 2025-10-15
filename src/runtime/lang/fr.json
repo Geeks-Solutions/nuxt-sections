@@ -287,6 +287,8 @@
   "seoDisable": "Désactiver",
   "seoEnable": "Activer",
   "sections": {
-    "insertLine": "Insérer une ligne"
+    "updateContent": "Mettre à jour le contenu",
+    "deleteContent": "Supprimer le contenu",
+    "styleContent": "Styliser le contenu"
   }
 }

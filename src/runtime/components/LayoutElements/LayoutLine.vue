@@ -1,41 +1,10 @@
 <template>
   <div class="layout-line">
-    <!-- Sortable sections in this line -->
-<!--    <draggable-->
-<!--      :list="line.sections"-->
-<!--      :group="{ name: 'sections', pull: true, put: true }"-->
-<!--      item-key="id"-->
-<!--      class="sections-container"-->
-<!--      :animation="200"-->
-<!--      handle=".section-drag-handle"-->
-<!--      @end="onSectionDragEnd"-->
-<!--    >-->
-<!--      <template #item="{ element: section }">-->
-<!--        <LayoutElementsSectionWrapper-->
-<!--          :section="section"-->
-<!--          :path="line.path"-->
-<!--          :get-component="getComponent"-->
-<!--          :admin="admin"-->
-<!--          :edit-mode="editMode"-->
-<!--          :invalid-sections-errors="invalidSectionsErrors"-->
-<!--          :views-bg-color="viewsBgColor"-->
-<!--          :lang="lang"-->
-<!--          :locales="locales"-->
-<!--          :default-lang="defaultLang"-->
-<!--          :seo-sections-support="seoSectionsSupport"-->
-<!--          @seo-support="(view) => emit('seo-support', view)"-->
-<!--          @refresh-section="(data) => emit('refresh-section', data)"-->
-<!--          @add-layout="$emit('add-layout', $event)"-->
-<!--          @add-content="$emit('add-content', $event)"-->
-<!--        />-->
-<!--      </template>-->
-<!--    </draggable>-->
-
     <!-- Sortable nested regions/lines -->
     <draggable
       v-if="line && line.items && line.items.length > 0"
       :list="line.items"
-      :group="{ name: 'regions', pull: true, put: true }"
+      :group="{ name: 'regions', pull: true, put: false }"
       item-key="id"
       class="regions-container"
       :animation="200"
@@ -66,6 +35,8 @@
           @add-layout="emit('add-layout', $event)"
           @add-content="emit('add-content', $event)"
           @delete-region="emit('delete-region', $event)"
+          @drag-line="emit('drag-line', $event)"
+          @drag-region="emit('drag-region', $event)"
           @drag-section="emit('drag-section', $event)"
           @section-alert="emit('section-alert', $event)"
           @section-edit="emit('section-edit', $event)"
@@ -165,6 +136,8 @@ const emit = defineEmits([
   'add-layout',
   'add-content',
   'delete-region',
+  'drag-line',
+  'drag-region',
   'drag-section',
   'section-alert',
   'section-edit',
@@ -174,20 +147,13 @@ const emit = defineEmits([
   'section-paint-brush'
 ])
 
-function onSectionDragEnd(evt) {
-  // Emit drag-section event with enough context for parent to update
-  emit('drag-section', {
-    sectionId: evt.item?.__vue__?.section?.id,
-    newPath: props.line.path,
-    newWeight: evt.newIndex
-  })
-}
-
 function onRegionDragEnd(evt) {
-  // Emit drag-region event with enough context for parent to update
+  const item = evt.item?.__draggable_context?.element
+  const path = evt.to?.firstChild?.__draggable_context?.element?.path
+  const newPath = `${path.substring(0, path.length - 1)}${evt.newIndex}`
   emit('drag-region', {
-    oldPath: evt.item?.__vue__?.region?.path,
-    newPath: props.line.regions[evt.newIndex]?.path
+    oldPath: item?.path,
+    newPath: newPath || props.region.path,
   })
 }
 </script>

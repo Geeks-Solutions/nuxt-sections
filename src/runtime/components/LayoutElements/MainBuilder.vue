@@ -34,8 +34,9 @@
       @add-layout="handleAddLayout"
       @add-content="handleAddContent"
       @delete-region="handleDeleteRegion"
-      @drag-region="handleDragRegion"
+      @drag-line="handleDragLine"
       @drag-section="handleDragSection"
+      @drag-region="handleDragRegion"
       @section-alert="emit('section-alert', $event)"
       @section-edit="emit('section-edit', $event)"
       @section-delete="emit('section-delete', $event)"
@@ -478,13 +479,23 @@ const handleDeleteRegion = (path) => {
   emitUpdate()
 }
 
+// Handle line drag
+const handleDragLine = ({ sectionId, newPath, newWeight }) => {
+
+}
+
 // Handle region drag
 const handleDragRegion = ({ oldPath, newPath }) => {
-  // Update all sections within this region
+  console.log("REGION DRAG CALLED", oldPath)
+  console.log("REGION DRAG CALLED", newPath)
+  // // Update all sections within this region
   sections.value.forEach(section => {
     if (section.region?.path?.startsWith(oldPath)) {
       const relativePath = section.region.path.substring(oldPath.length)
       section.region.path = newPath + relativePath
+    } else if (section.region?.path?.startsWith(newPath)) {
+      const relativePath = section.region.path.substring(newPath.length)
+      section.region.path = oldPath + relativePath
     }
   })
   recalculateWeights()
