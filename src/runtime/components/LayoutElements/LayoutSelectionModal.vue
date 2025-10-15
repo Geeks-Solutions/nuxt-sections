@@ -47,7 +47,7 @@
             <!-- Layout Tab -->
             <div v-show="activeTab === 'layout'" class="layout-options">
               <div
-                v-for="count in [1, 2, 3, 4, 5]"
+                v-for="count in [2, 3, 4, 5]"
                 :key="count"
                 class="layout-option"
                 @click="handleLayoutSelect(count)"
@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import {onBeforeUnmount, ref} from 'vue'
+import {ref} from 'vue'
 
 const emit = defineEmits(['select', 'select-content'])
 

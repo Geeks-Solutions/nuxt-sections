@@ -157,7 +157,7 @@ function buildLayoutTree(sections, pathPrefix = []) {
     const pathParts = section.region?.path?.split('/') || []
     if (pathParts.length !== pathPrefix.length) return false
     return pathParts.every((part, idx) => part === String(pathPrefix[idx]))
-  }).sort((a, b) => a.weight - b.weight)
+  })
   // Group sections with longer paths by the next path part
   const groups = {}
   sections.forEach(section => {
@@ -173,7 +173,7 @@ function buildLayoutTree(sections, pathPrefix = []) {
   })
 
   // For each group, build its children recursively as nested lines
-  const nestedLines = Object.keys(groups).sort((a, b) => a - b).map(part => {
+  const nestedLines = Object.keys(groups).map(part => {
     const childPath = [...pathPrefix, part]
     const id = `level-${childPath.join('-')}`
     const line = buildLayoutTree(groups[part], childPath)
@@ -187,7 +187,7 @@ function buildLayoutTree(sections, pathPrefix = []) {
   })
 
   // Merge sections and nested lines, sort by weight
-  const items = [...directSections, ...nestedLines].sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0))
+  const items = [...directSections, ...nestedLines]
 
   return { items, path: pathPrefix.join('/'), id: `level-${pathPrefix.join('-')}` }
 }
