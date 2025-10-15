@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import {computed, ref, watch} from 'vue'
 
 const props = defineProps({
   pageData: {
@@ -196,7 +196,7 @@ function buildLayoutTree(sections, pathPrefix = []) {
 const computedLayouts = computed(() => {
   // The root returns { items }, but we only want the top-level lines for the UI
   const tree = buildLayoutTree(sections.value)
-  console.log('Tree:', tree)
+  console.log('Tree:', tree.items)
   // Only return items of type 'line' at the root level (main lines)
   return (tree.items || []).filter(item => item.itemType === 'line')
 })
@@ -291,33 +291,82 @@ const computeLayoutPath = (pathSuffix) => {
 // Handle layout selection
 const handleLayoutSelect = (regionCount) => {
   // eslint-disable-next-line prefer-const
-  let { path, type } = modalContext.value
+  let { path, sectionWeight, type } = modalContext.value
 
   // If adding a nested line under a section
   if (type === 'section' && path) {
+
     const sectionPath = path
-    // Find all existing nested lines under this section
-    const nestedLineIndices = sections.value
-      .map(s => {
-        const parts = s.region?.path?.split('/') || []
-        // Nested lines have a path longer than the sectionPath
-        if (parts.length === sectionPath.split('/').length + 2 && parts.slice(0, sectionPath.split('/').length).join('/') === sectionPath) {
-          return Number.parseInt(parts[sectionPath.split('/').length])
+    const clickedSectionIndex = sections.value.findIndex(s => s.region?.path === sectionPath && s.weight === sectionWeight)
+
+    // Find all sections that have region.path === sectionPath or are nested under it
+    const relatedSections = sections.value
+      .map((s, index) => {
+        const sPath = s.region?.path
+        if (!sPath) return null
+
+        const parts = sPath.split('/')
+        const targetParts = sectionPath.split('/')
+
+        // Check if this is a direct match (section to convert)
+        if (sPath === sectionPath) {
+          return { section: s, index, type: 'direct', lineIndex: null }
         }
+
+        // Check if this is already a nested line under sectionPath
+        if (parts.length === targetParts.length + 2 &&
+          parts.slice(0, targetParts.length).join('/') === sectionPath) {
+          return {
+            section: s,
+            index,
+            type: 'nested',
+            lineIndex: Number.parseInt(parts[targetParts.length])
+          }
+        }
+
         return null
       })
-      .filter(i => i !== null && !Number.isNaN(i))
-    const nextNestedLineIndex = nestedLineIndices.length > 0 ? Math.max(...nestedLineIndices) + 1 : 0
+      .filter(item => item !== null)
+
+    // Sort by original index to maintain order
+    relatedSections.sort((a, b) => a.index - b.index)
+
+    // Find the position where the new line should be inserted
+    const clickedItemPosition = relatedSections.findIndex(item => item.index === clickedSectionIndex)
+    const insertPosition = clickedItemPosition + 1
+
+    // Assign new line indices based on sorted order
+    let currentLineIndex = 0
+    relatedSections.forEach((item, idx) => {
+      // Insert placeholder for new line at the correct position
+      if (idx === insertPosition) {
+        currentLineIndex++
+      }
+
+      if (item.type === 'direct') {
+        // Convert direct match to nested line format
+        item.section.region.path = `${sectionPath}/${currentLineIndex}/0`
+        currentLineIndex++
+      } else if (item.type === 'nested') {
+        // Update existing nested line to new index
+        const parts = item.section.region.path.split('/')
+        parts[sectionPath.split('/').length] = currentLineIndex.toString()
+        item.section.region.path = parts.join('/')
+        currentLineIndex++
+      }
+    })
+
     // Add placeholder sections for the new nested line
     for (let regionIdx = 0; regionIdx < regionCount; regionIdx++) {
       sections.value.push({
         id: generateId(),
-        region: { path: `${sectionPath}/${nextNestedLineIndex}/${regionIdx}` },
+        region: { path: `${sectionPath}/${insertPosition}/${regionIdx}` },
         weight: 0,
         type: 'placeholder',
         _isPlaceholder: true
       })
     }
+
     recalculateWeights()
     emitUpdate()
     showLayoutModal.value = false
@@ -405,17 +454,17 @@ const handleContentSelect = (sectionData) => {
   sections.value = sections.value.filter(s => !(s.region?.path === path && s._isPlaceholder))
 
   // Find the max weight in the target region
-  const maxWeight = Math.max(-1, ...sections.value.filter(s => s.region?.path === path).map(s => s.weight))
+  // const maxWeight = Math.max(-1, ...sections.value.filter(s => s.region?.path === path).map(s => s.weight))
 
   // Create new section
   const newSection = {
     ...sectionData,
     id: generateId(),
     region: { path },
-    weight: maxWeight - 1
+    // weight: maxWeight - 1 // TODO: Check if needed to add a weight, as this might have conflict with the recalculate weight logic
   }
 
-  sections.value.splice(sectionWeight ? sectionWeight + 1 : 0, 0, newSection)
+  sections.value.splice(sectionWeight || sectionWeight === 0 ? sectionWeight + 1 : 0, 0, newSection)
   recalculateWeights()
   emitUpdate()
   showContentModal.value = false
