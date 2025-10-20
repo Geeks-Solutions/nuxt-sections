@@ -1,11 +1,11 @@
 <template>
   <svg width="20" height="20" viewBox="0 0 20 20">
-    <circle cx="5" cy="5" r="2" fill="#666"/>
-    <circle cx="15" cy="5" r="2" fill="#666"/>
-    <circle cx="5" cy="10" r="2" fill="#666"/>
-    <circle cx="15" cy="10" r="2" fill="#666"/>
-    <circle cx="5" cy="15" r="2" fill="#666"/>
-    <circle cx="15" cy="15" r="2" fill="#666"/>
+    <circle cx="5" cy="5" r="2" :fill="color"/>
+    <circle cx="15" cy="5" r="2" :fill="color"/>
+    <circle cx="5" cy="10" r="2" :fill="color"/>
+    <circle cx="15" cy="10" r="2" :fill="color"/>
+    <circle cx="5" cy="15" r="2" :fill="color"/>
+    <circle cx="15" cy="15" r="2" :fill="color"/>
   </svg>
 </template>
 
@@ -18,7 +18,7 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: 'currentColor'
+    default: '#666'
   }
 });
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div class="layout-line">
-    <!-- Sortable nested regions/lines -->
+    <!-- Sortable nested regions -->
     <draggable
       v-if="line && line.items && line.items.length > 0"
       :list="line.items"

@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import {computed, nextTick} from 'vue'
+import {computed} from 'vue'
 import {useState} from "#imports";
 
 const props = defineProps({
@@ -224,7 +224,8 @@ async function onItemDragEnd(evt) {
     })
   } else {
     emit('drag-section', {
-      sectionId: item.id,
+      sectionWeight: item.weight,
+      oldPath: props.region.path,
       newPath: newPath || props.region.path,
       newWeight: evt.newIndex
     })

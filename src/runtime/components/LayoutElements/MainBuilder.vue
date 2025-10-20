@@ -10,40 +10,51 @@
     </div>
 
     <!-- Layout lines -->
-    <LayoutElementsLayoutLine
-      v-for="(line, lineIndex) in computedLayouts"
-      :key="line.id"
-      :line="line"
-      :line-index="lineIndex"
-      :sections="line.sections"
-      :get-component="getComponent"
-      :admin="admin"
-      :edit-mode="editMode"
-      :invalid-sections-errors="invalidSectionsErrors"
-      :views-bg-color="viewsBgColor"
-      :lang="lang"
-      :locales="locales"
-      :default-lang="defaultLang"
-      :seo-sections-support="seoSectionsSupport"
-      :sections-format-errors="sectionsFormatErrors"
-      :editable="editable"
-      :sections-theme-components="sectionsThemeComponents"
-      :page-metadata="pageMetadata"
-      @seo-support="(view) => emit('seo-support', view)"
-      @refresh-section="(data) => emit('refresh-section', data)"
-      @add-layout="handleAddLayout"
-      @add-content="handleAddContent"
-      @delete-region="handleDeleteRegion"
-      @drag-line="handleDragLine"
-      @drag-section="handleDragSection"
-      @drag-region="handleDragRegion"
-      @section-alert="emit('section-alert', $event)"
-      @section-edit="emit('section-edit', $event)"
-      @section-delete="emit('section-delete', $event)"
-      @section-anchor="emit('section-anchor', $event)"
-      @section-seo="emit('section-seo', $event)"
-      @section-paint-brush="emit('section-paint-brush', $event)"
-    />
+    <draggable
+      :list="computedLayouts"
+      :group="{ name: 'layout-lines', pull: true, put: false }"
+      item-key="weight"
+      :animation="200"
+      class="lines-container"
+      handle=".line-drag-handle"
+      @end="handleDragLine"
+    >
+      <template #item="{ element: line, index: lineIndex }">
+        <LayoutElementsLayoutLine
+          :key="line.id"
+          :line="line"
+          :line-index="lineIndex"
+          :sections="line.sections"
+          :get-component="getComponent"
+          :admin="admin"
+          :edit-mode="editMode"
+          :invalid-sections-errors="invalidSectionsErrors"
+          :views-bg-color="viewsBgColor"
+          :lang="lang"
+          :locales="locales"
+          :default-lang="defaultLang"
+          :seo-sections-support="seoSectionsSupport"
+          :sections-format-errors="sectionsFormatErrors"
+          :editable="editable"
+          :sections-theme-components="sectionsThemeComponents"
+          :page-metadata="pageMetadata"
+          @seo-support="(view) => emit('seo-support', view)"
+          @refresh-section="(data) => emit('refresh-section', data)"
+          @add-layout="handleAddLayout"
+          @add-content="handleAddContent"
+          @delete-region="handleDeleteRegion"
+          @drag-line="handleDragLine"
+          @drag-section="handleDragSection"
+          @drag-region="handleDragRegion"
+          @section-alert="emit('section-alert', $event)"
+          @section-edit="emit('section-edit', $event)"
+          @section-delete="emit('section-delete', $event)"
+          @section-anchor="emit('section-anchor', $event)"
+          @section-seo="emit('section-seo', $event)"
+          @section-paint-brush="emit('section-paint-brush', $event)"
+        />
+      </template>
+    </draggable>
 
     <!-- Layout Selection Modal -->
     <LayoutElementsLayoutSelectionModal
@@ -481,13 +492,11 @@ const handleDeleteRegion = (path) => {
 
 // Handle line drag
 const handleDragLine = ({ sectionId, newPath, newWeight }) => {
-
+  console.log("drag line ended")
 }
 
 // Handle region drag
 const handleDragRegion = ({ oldPath, newPath }) => {
-  console.log("REGION DRAG CALLED", oldPath)
-  console.log("REGION DRAG CALLED", newPath)
   // // Update all sections within this region
   sections.value.forEach(section => {
     if (section.region?.path?.startsWith(oldPath)) {
@@ -503,17 +512,26 @@ const handleDragRegion = ({ oldPath, newPath }) => {
 }
 
 // Handle section drag
-const handleDragSection = ({ sectionId, newPath, newWeight }) => {
+const handleDragSection = ({ sectionWeight, newPath, oldPath, newWeight }) => {
   // Remove placeholder in the destination region
   let filteredSections = sections.value.filter(s => !(s.region?.path === newPath && s._isPlaceholder))
 
   // Find the section to move
-  const movingSection = filteredSections.find(s => s.id === sectionId)
+  const movingSection = filteredSections.find(s => s.weight === sectionWeight)
   if (!movingSection) return
-  const oldPath = movingSection.region.path
 
   // Remove the section from its old position
-  filteredSections = filteredSections.filter(s => s.id !== sectionId)
+  filteredSections = filteredSections.filter(s => s.weight !== sectionWeight)
+  // Insert a placeholder in the old region path if there are no sections left inside it
+  if (!filteredSections.some(s => s.region?.path === oldPath)) {
+    filteredSections.push({
+      id: generateId(),
+      region: { path: oldPath },
+      weight: 0,
+      type: 'placeholder',
+      _isPlaceholder: true
+    })
+  }
 
   // Update the section's region.path
   movingSection.region.path = newPath
@@ -551,6 +569,7 @@ const handleDragSection = ({ sectionId, newPath, newWeight }) => {
 
   // Replace the sections array to ensure reactivity
   sections.value = [...newSections]
+  recalculateWeights()
   emitUpdate()
 }
 

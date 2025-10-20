@@ -6,6 +6,13 @@
       {{ path }}
       W {{ sectionWeight }}
       <button
+        v-if="type === 'first-region'"
+        class="handle-btn line-drag-handle"
+        title="Drag or open menu"
+      >
+        <LazyBaseIconsDragHandleDots color="red" />
+      </button>
+      <button
         v-if="showPlus"
         class="handle-btn plus-btn"
         title="Add content or layout"
@@ -147,19 +154,7 @@ const handleAdd = (event) => {
   cursor: grabbing;
 }
 
-.dropdown-menu-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: transparent;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 10px;
-  border-radius: 6px;
-  z-index: 1000;
+.region-handle-wrapper .line-drag-handle {
+  transform: rotate(90deg);
 }
 </style>

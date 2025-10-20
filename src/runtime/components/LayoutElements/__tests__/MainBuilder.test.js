@@ -421,4 +421,18 @@ describe('Layout MainBuilder Component', () => {
       expect(removedPlaceholder).toBeUndefined()
     })
   })
+
+  describe('handleDragLine', () => {
+
+  })
+
+  describe('handleDragRegion', () => {
+    // allow ordering regions within the same line only for now and have the region path and section weights updated correctly
+  })
+
+  describe('handleDragSection', () => {
+    // create a placeholder when moving a section from a region in case the region doesn't have sections left inside it (this is to prevent the region from being removed)
+    // update the section region path and weight to the new one where it got dropped
+  })
+
 })
