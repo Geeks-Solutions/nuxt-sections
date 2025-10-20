@@ -1,6 +1,6 @@
 <template>
   <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-  <svg fill="currentColor" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  <svg :fill="color" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
        viewBox="0 0 325.001 325.001" xml:space="preserve">
     <title>{{ title }}</title>
 <g id="XMLID_518_">
@@ -21,6 +21,10 @@ const props = defineProps({
   title: {
     type: String,
     default: 'Anchor' // Default title if not provided
+  },
+  color: {
+    type: String,
+    default: 'currentColor'
   }
 });
 </script>
