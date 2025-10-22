@@ -272,7 +272,7 @@
               <LazyBaseIconsEdit v-if="!editMode" />
               <LazyBaseIconsEye v-else />
             </button>
-            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper">
+            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper" ref="sectionWrapper">
               <div
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
                 v-if="admin && editMode && !isSideBarOpen"
@@ -1101,7 +1101,7 @@
                 </div>
               </div>
             </div>
-            <div v-else-if="selectedLayout === 'standard'" class="views">
+            <div v-else-if="selectedLayout === 'standard'" class="views views-content-wrapper">
               <draggable
                 v-model="alteredViews"
                 group="people"
@@ -1571,6 +1571,7 @@ const localePath = useLocalePath()
 const config = useRuntimeConfig();
 
 // Data properties converted to refs
+const sectionWrapper = ref(null);
 const locales = ref(['en', 'fr']);
 const translationComponentSupport = ref(true);
 const staticSuccess = ref(false);
@@ -4226,6 +4227,8 @@ const openEditMode = async () => {
       loading.value = false;
     }
   }
+
+  updateHeight()
 }
 const editable = (sectionType) => {
   switch (sectionType) {
@@ -5701,6 +5704,17 @@ const openMyPage = (page) => {
   router.push(page.path)
 }
 
+const updateHeight = () => {
+  try {
+    nextTick(() => {
+      if (sectionWrapper.value) {
+        const height = sectionWrapper.value.offsetHeight;
+        document.documentElement.style.setProperty('--section-height', `${height}px`);
+      }
+    })
+  } catch {}
+};
+
 // Lifecycle hooks
 onMounted(async () => {
   computedSEO.value.title = ""
@@ -5750,6 +5764,12 @@ onBeforeUnmount(() => {
 });
 
 // Watchers
+watch(sectionsChanged, (value) => {
+  if (value && admin && editMode.value && import.meta.client) {
+    updateHeight()
+  }
+})
+
 watch(isModalOpen, (value) => {
   const body = document.querySelector("body");
   if (value === true) {
@@ -7665,6 +7685,10 @@ section .ql-editor.ql-snow.grey-bg {
 
 .sections-popup-title {
   font-size: 24px;
+}
+
+main.sections-main .views-content-wrapper {
+  height: calc(100vh - var(--section-height, 0px));
 }
 
 @media screen and (max-width: 768px) {

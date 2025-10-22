@@ -3344,3 +3344,65 @@ describe('runIntro', () => {
     expect(setOptionMock).toHaveBeenCalledWith('keyboardNavigation', false)
   })
 })
+
+describe('Admin Top bar', () => {
+
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+  })
+
+  it('should keep sectionWrapper at top even if parent gets align-content: center applied', async () => {
+    const parentDiv = wrapper.find('.sections-config')
+    const sectionWrapper = wrapper.find('.section-wrapper')
+
+    expect(parentDiv.exists()).toBe(true)
+    expect(sectionWrapper.exists()).toBe(true)
+
+    // Force apply align-content: center to parent
+    parentDiv.element.style.display = 'flex'
+    parentDiv.element.style.flexDirection = 'column'
+    parentDiv.element.style.alignContent = 'center'
+    parentDiv.element.style.minHeight = '100vh'
+
+    // Wait for styles to be applied
+    await wrapper.vm.$nextTick()
+
+    // Force layout recalculation
+    parentDiv.element.offsetHeight
+
+    // Check position after forced style application
+    const rect = sectionWrapper.element.getBoundingClientRect()
+
+    // sectionWrapper should still be at the top
+    expect(rect.top).toBe(0)
+  })
+
+  it('should maintain top position when parent is centered and content is added', async () => {
+    const parentDiv = wrapper.find('.sections-config')
+    const sectionWrapper = wrapper.find('.section-wrapper')
+
+    // Apply centering styles
+    parentDiv.element.style.display = 'flex'
+    parentDiv.element.style.flexDirection = 'column'
+    parentDiv.element.style.alignContent = 'center'
+    parentDiv.element.style.minHeight = '100vh'
+
+    await wrapper.vm.$nextTick()
+
+    // Simulate content addition that might affect layout
+    const newDiv = document.createElement('div')
+    newDiv.style.height = '200px'
+    newDiv.textContent = 'New content'
+    parentDiv.element.appendChild(newDiv)
+
+    await wrapper.vm.$nextTick()
+    parentDiv.element.offsetHeight // Force reflow
+
+    const newTop = sectionWrapper.element.getBoundingClientRect().top
+
+    // Should still be at the same top position
+    expect(newTop).toBe(0)
+  })
+})
