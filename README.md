@@ -1500,6 +1500,14 @@ const library_sections_theme_components = (t) => {
 }
 ```
 
+* `supported_media_types` Configure the medias file types supported, expected to return a string of types separated by commas
+
+```js
+const supported_media_types = (t) => {
+  return '.jpg, .webp'
+}
+```
+
 ```js
 export {
   section_page_initialization_completed,
@@ -1516,7 +1524,8 @@ export {
   medias_api_response_received,
   pre_open_edit_mode,
   guide_config,
-  library_sections_theme_components
+  library_sections_theme_components,
+  supported_media_types
 };
 ```
 

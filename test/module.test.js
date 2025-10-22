@@ -3309,3 +3309,38 @@ describe('refreshSectionView', () => {
     expect(global.fetch.mock.calls[0][0]).toContain('/section/render')
   })
 })
+
+// Mock intro.js module
+const setOptionMock = vi.fn()
+vi.mock('intro.js/minified/intro.min.js', () => ({
+  default: () => ({
+    setOption: setOptionMock,
+    setDontShowAgain: vi.fn(),
+    exit: vi.fn(),
+    onexit: vi.fn(),
+  }),
+}))
+
+describe('runIntro', () => {
+
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+
+    wrapper.vm.intro = null
+    wrapper.vm.introRerun = false
+    wrapper.vm.guideConfig = { autoStart: true, disabled: false, override: false }
+    wrapper.vm.currentPages = 0
+  })
+
+  it('sets keyboardNavigation to false', async () => {
+    await wrapper.vm.runIntro('globalTour', false, false, '')
+
+    // Wait for dynamic import and next tick
+    await flushPromises()
+
+    // Check if setOption was called with keyboardNavigation false
+    expect(setOptionMock).toHaveBeenCalledWith('keyboardNavigation', false)
+  })
+})

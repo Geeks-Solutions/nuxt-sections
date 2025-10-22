@@ -3566,6 +3566,7 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
     intro.value = introJsModule.default()
 
     intro.value.setOption("dontShowAgain", true)
+    intro.value.setOption("keyboardNavigation", false)
     intro.value.setOption("nextLabel", i18n.t('intro.nextLabel'))
     intro.value.setOption("prevLabel", i18n.t('intro.prevLabel'))
     intro.value.setOption("doneLabel", i18n.t('intro.doneLabel'))

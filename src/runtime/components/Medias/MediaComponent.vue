@@ -24,6 +24,7 @@
             :alter-error-received="alterErrorReceived"
             :response-received="mediaResponseReceived"
             :request-pre-sent="mediaRequestReceived"
+            :accepted-file-types="getAcceptedFileTypes()"
             @getSelectedMedia="emitMedia"
           />
         </div>
@@ -128,6 +129,17 @@ async function mediaRequestReceived(method, url, payload) {
       return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
     }
   } catch {}
+}
+
+function getAcceptedFileTypes() {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['supported_media_types']) {
+      return hooksJs['supported_media_types']()
+    } else return ''
+  } catch {
+    return ''
+  }
 }
 
 // Expose methods to parent components
