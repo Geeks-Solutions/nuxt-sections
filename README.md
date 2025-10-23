@@ -1509,6 +1509,19 @@ const supported_media_types = (t) => {
 }
 ```
 
+* `wysiwyg_font_families` [Optional] Configure the font family list of Wysiwyg.
+If not provided, wysiwyg default font families will be used `['Sans Serif', 'Serif', 'Monospace']`
+
+```js
+const wysiwyg_font_families = (t) => {
+  return [
+    'Roboto',
+    'Open Sans',
+    'Lato',
+  ]
+}
+```
+
 ```js
 export {
   section_page_initialization_completed,
@@ -1526,7 +1539,8 @@ export {
   pre_open_edit_mode,
   guide_config,
   library_sections_theme_components,
-  supported_media_types
+  supported_media_types,
+  wysiwyg_font_families
 };
 ```
 

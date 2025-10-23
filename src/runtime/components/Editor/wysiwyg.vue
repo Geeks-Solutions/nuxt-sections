@@ -11,6 +11,7 @@
       :alter-error-received="alterErrorReceived"
       :response-received="mediaResponseReceived"
       :request-pre-sent="mediaRequestReceived"
+      :font-families="supportedFontFamilies()"
       @wysiwygMedia="(media) => emit('wysiwygMedia', media)"
       @settingsUpdate="(content) => emit('settingsUpdate', content)"
     />
@@ -106,6 +107,17 @@ async function mediaRequestReceived(method, url, payload) {
       return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
     }
   } catch {}
+}
+
+function supportedFontFamilies(nuxtApp) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['wysiwyg_font_families']) {
+      return hooksJs['wysiwyg_font_families'](nuxtApp)
+    }
+  } catch {
+    return []
+  }
 }
 
 // --- Watchers ---
