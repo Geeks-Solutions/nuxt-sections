@@ -1109,6 +1109,7 @@
                 @end="drag = false"
                 handle=".handle"
                 item-key="id"
+                class="draggable-standard"
               >
                 <!-- <transition-group> -->
                 <template #item="{ element: view, index }">
@@ -1186,6 +1187,9 @@
                 </template>
                 <!-- </transition-group> -->
               </draggable>
+              <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
+                <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
+              </section>
             </div>
             <div v-else>
               <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang" :admin="admin" :edit-mode="editMode" :is-side-bar-open="isSideBarOpen" @open-theme-modal="(section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])">
@@ -1322,10 +1326,6 @@
                 </template>
               </component>
             </div>
-
-            <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
-              <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
-            </section>
 
             <!-- ------------------------------------------------------------------------------------------- -->
 

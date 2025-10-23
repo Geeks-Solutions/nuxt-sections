@@ -1500,7 +1500,8 @@ const library_sections_theme_components = (t) => {
 }
 ```
 
-* `supported_media_types` Configure the medias file types supported, expected to return a string of types separated by commas
+* `supported_media_types` [Optional] Configure the medias file types supported, expected to return a string of types separated by commas,
+If not provided, any media file type will be supported. 
 
 ```js
 const supported_media_types = (t) => {

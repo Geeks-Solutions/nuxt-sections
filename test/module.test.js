@@ -754,6 +754,32 @@ describe('SectionsPage.vue', () => {
 
   });
 
+  it('Should position Component Creation view correctly directly under the last section', async () => {
+
+    await wrapper.setProps({
+      admin: true
+    });
+
+    wrapper.vm.isSideBarOpen = false
+    wrapper.vm.editMode = true
+    wrapper.vm.creationView = true
+    wrapper.vm.selectedLayout = 'standard'
+    wrapper.vm.currentSection = {name: 'wysiwyg', type: 'static'}
+
+    await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
+
+    await wrapper.vm.$nextTick()
+
+    const draggable = wrapper.find('.draggable-standard')
+    const creationView = wrapper.find('.creation-view-standard')
+
+    expect(creationView.exists()).toBe(true)
+
+    const nextSibling = draggable.element.nextElementSibling
+    expect(nextSibling).toBe(creationView.element)
+
+  })
+
   it('calls showToast when error conditions are met', async () => {
     wrapper.vm.errorResponseStatus = 429
     wrapper.vm.sectionsError = "API limit reached"
