@@ -12,6 +12,7 @@
       :response-received="mediaResponseReceived"
       :request-pre-sent="mediaRequestReceived"
       :font-families="supportedFontFamilies()"
+      :accepted-file-types="getAcceptedFileTypes()"
       @wysiwygMedia="(media) => emit('wysiwygMedia', media)"
       @settingsUpdate="(content) => emit('settingsUpdate', content)"
     />
@@ -33,6 +34,7 @@
 
 <script setup>
 import {useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs} from '#imports'
+import {getAcceptedFileTypes} from "../../utils/helpers.js";
 
 // --- Composables ---
 const nuxtApp = useNuxtApp()

@@ -777,3 +777,14 @@ export function loadScript(src: any, uniqueness = true, scriptLinksArray: any, s
   const { load } = useScript(src)
   return load()
 }
+
+export function getAcceptedFileTypes() {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['supported_media_types']) {
+      return hooksJs['supported_media_types']()
+    } else return ''
+  } catch {
+    return ''
+  }
+}
