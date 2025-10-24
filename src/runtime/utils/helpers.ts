@@ -657,20 +657,47 @@ export const useApiRequest = async <T = any>({
 
     let updatedURL = url
     let updatedBody = body
+    let apiOff
     try {
       const hooksJs = importJs(`/js/global-hooks`)
       if (hooksJs && hooksJs['api_pre_request']) {
         const preRequest = await hooksJs['api_pre_request']($nuxt, method, url, body, options)
         updatedURL = preRequest.url
         updatedBody = preRequest.body
+        apiOff = preRequest.apiOff
         if (updatedBody) {
           options.body = updatedBody
         }
       }
     } catch {}
 
-    // Make the request
-    const response = await fetch(updatedURL || url, options);
+    let response
+    if (!apiOff) {
+      // Make the request
+      response = await fetch(updatedURL || url, options);
+    } else {
+      try {
+        const hooksJs = importJs(`/js/global-hooks`)
+        if (hooksJs && hooksJs['api_calls_traffic']) {
+          const callRes = await hooksJs['api_calls_traffic']($nuxt, method, updatedURL || url, body, options)
+          if (callRes) {
+            response = callRes
+          } else {
+            response = {
+              ok: false,
+              status: 500,
+              statusText: "No response"
+            }
+          }
+        }
+      } catch {
+        response = {
+          ok: false,
+          status: 500,
+          statusText: "No response"
+        }
+      }
+    }
 
     // Handle response
     if (!response.ok) {
@@ -776,4 +803,15 @@ export function loadScript(src: any, uniqueness = true, scriptLinksArray: any, s
   scriptLinksArray.value.push(cleaned)
   const { load } = useScript(src)
   return load()
+}
+
+export function getAcceptedFileTypes() {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['supported_media_types']) {
+      return hooksJs['supported_media_types']()
+    } else return ''
+  } catch {
+    return ''
+  }
 }

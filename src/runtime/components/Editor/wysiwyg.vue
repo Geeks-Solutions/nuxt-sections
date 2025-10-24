@@ -11,6 +11,9 @@
       :alter-error-received="alterErrorReceived"
       :response-received="mediaResponseReceived"
       :request-pre-sent="mediaRequestReceived"
+      :forward-request="forwardMediaRequest"
+      :font-families="supportedFontFamilies()"
+      :accepted-file-types="getAcceptedFileTypes()"
       @wysiwygMedia="(media) => emit('wysiwygMedia', media)"
       @settingsUpdate="(content) => emit('settingsUpdate', content)"
     />
@@ -31,7 +34,8 @@
 </template>
 
 <script setup>
-import {useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs} from '#imports'
+import {useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs, computed} from '#imports'
+import {getAcceptedFileTypes} from "../../utils/helpers.js";
 
 // --- Composables ---
 const nuxtApp = useNuxtApp()
@@ -106,6 +110,36 @@ async function mediaRequestReceived(method, url, payload) {
       return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
     }
   } catch {}
+}
+
+const forwardMediaRequest = computed(() => {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['api_calls_traffic']) {
+      return forwardRequest
+    }
+  } catch {}
+  return null
+})
+
+async function forwardRequest(nuxtApp, method, url, body, payload, props) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['api_calls_traffic']) {
+      return await hooksJs['api_calls_traffic'](nuxtApp, method, url, body, payload, props)
+    }
+  } catch {}
+}
+
+function supportedFontFamilies(nuxtApp) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['wysiwyg_font_families']) {
+      return hooksJs['wysiwyg_font_families'](nuxtApp)
+    }
+  } catch {
+    return []
+  }
 }
 
 // --- Watchers ---

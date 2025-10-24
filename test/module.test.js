@@ -754,6 +754,32 @@ describe('SectionsPage.vue', () => {
 
   });
 
+  it('Should position Component Creation view correctly directly under the last section', async () => {
+
+    await wrapper.setProps({
+      admin: true
+    });
+
+    wrapper.vm.isSideBarOpen = false
+    wrapper.vm.editMode = true
+    wrapper.vm.creationView = true
+    wrapper.vm.selectedLayout = 'standard'
+    wrapper.vm.currentSection = {name: 'wysiwyg', type: 'static'}
+
+    await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
+
+    await wrapper.vm.$nextTick()
+
+    const draggable = wrapper.find('.draggable-standard')
+    const creationView = wrapper.find('.creation-view-standard')
+
+    expect(creationView.exists()).toBe(true)
+
+    const nextSibling = draggable.element.nextElementSibling
+    expect(nextSibling).toBe(creationView.element)
+
+  })
+
   it('calls showToast when error conditions are met', async () => {
     wrapper.vm.errorResponseStatus = 429
     wrapper.vm.sectionsError = "API limit reached"
@@ -3307,5 +3333,102 @@ describe('refreshSectionView', () => {
     await wrapper.vm.refreshSectionView(null, data)
 
     expect(global.fetch.mock.calls[0][0]).toContain('/section/render')
+  })
+})
+
+// Mock intro.js module
+const setOptionMock = vi.fn()
+vi.mock('intro.js/minified/intro.min.js', () => ({
+  default: () => ({
+    setOption: setOptionMock,
+    setDontShowAgain: vi.fn(),
+    exit: vi.fn(),
+    onexit: vi.fn(),
+  }),
+}))
+
+describe('runIntro', () => {
+
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+
+    wrapper.vm.intro = null
+    wrapper.vm.introRerun = false
+    wrapper.vm.guideConfig = { autoStart: true, disabled: false, override: false }
+    wrapper.vm.currentPages = 0
+  })
+
+  it('sets keyboardNavigation to false', async () => {
+    await wrapper.vm.runIntro('globalTour', false, false, '')
+
+    // Wait for dynamic import and next tick
+    await flushPromises()
+
+    // Check if setOption was called with keyboardNavigation false
+    expect(setOptionMock).toHaveBeenCalledWith('keyboardNavigation', false)
+  })
+})
+
+describe('Admin Top bar', () => {
+
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mountComponent()
+  })
+
+  it('should keep sectionWrapper at top even if parent gets align-content: center applied', async () => {
+    const parentDiv = wrapper.find('.sections-config')
+    const sectionWrapper = wrapper.find('.section-wrapper')
+
+    expect(parentDiv.exists()).toBe(true)
+    expect(sectionWrapper.exists()).toBe(true)
+
+    // Force apply align-content: center to parent
+    parentDiv.element.style.display = 'flex'
+    parentDiv.element.style.flexDirection = 'column'
+    parentDiv.element.style.alignContent = 'center'
+    parentDiv.element.style.minHeight = '100vh'
+
+    // Wait for styles to be applied
+    await wrapper.vm.$nextTick()
+
+    // Force layout recalculation
+    parentDiv.element.offsetHeight
+
+    // Check position after forced style application
+    const rect = sectionWrapper.element.getBoundingClientRect()
+
+    // sectionWrapper should still be at the top
+    expect(rect.top).toBe(0)
+  })
+
+  it('should maintain top position when parent is centered and content is added', async () => {
+    const parentDiv = wrapper.find('.sections-config')
+    const sectionWrapper = wrapper.find('.section-wrapper')
+
+    // Apply centering styles
+    parentDiv.element.style.display = 'flex'
+    parentDiv.element.style.flexDirection = 'column'
+    parentDiv.element.style.alignContent = 'center'
+    parentDiv.element.style.minHeight = '100vh'
+
+    await wrapper.vm.$nextTick()
+
+    // Simulate content addition that might affect layout
+    const newDiv = document.createElement('div')
+    newDiv.style.height = '200px'
+    newDiv.textContent = 'New content'
+    parentDiv.element.appendChild(newDiv)
+
+    await wrapper.vm.$nextTick()
+    parentDiv.element.offsetHeight // Force reflow
+
+    const newTop = sectionWrapper.element.getBoundingClientRect().top
+
+    // Should still be at the same top position
+    expect(newTop).toBe(0)
   })
 })

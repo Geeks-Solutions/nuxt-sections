@@ -245,7 +245,8 @@
     "privateAndLocked": "privé & bloqué",
     "byCreator": "par le créateur",
     "mediaUpdated": "Média mis à jour avec succès",
-    "mediaCreated": "Média créé avec succès"
+    "mediaCreated": "Média créé avec succès",
+    "unsupportedFileType": "Type de fichier non pris en charge"
   },
   "intro": {
     "createPage": "Créez une nouvelle page dans votre projet, la page portera l'URL dans la barre d'adresse",

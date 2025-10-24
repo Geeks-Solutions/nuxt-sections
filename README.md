@@ -1355,11 +1355,17 @@ const fetch_on_server = (useCookie) => {
 }
 ```
 
-* `api_pre_request`: Runs before an API request is sent. It allows modifying the request, such as updating the URL or body.
+* `api_pre_request`: Runs before an API request is sent. It allows modifying the request, such as updating the URL or body. Or turning off the request by return apiOff: true,
+If `apiOff: true` is returned then the call will go into a new hook: 
+* `api_calls_traffic` [Required when api_pre_request return `apiOff: true`] that has the following parameters(same as the api_pre_request function hook) `($nuxt, method, url, body, options)`
+The `api_calls_traffic` function is expected to return a proper response that match the response returned by an api
 
 ```js
 const api_pre_request = async ($nuxt, method, url, body, options) => {
-  return { url, body } // optionally update request before sending
+  return { url, body, apiOff } // optionally update request before sending
+}
+const api_calls_traffic = async ($nuxt, method, url, body, options, props) => {
+  return { /* response data */ }
 }
 ```
 
@@ -1500,6 +1506,28 @@ const library_sections_theme_components = (t) => {
 }
 ```
 
+* `supported_media_types` [Optional] Configure the medias file types supported, expected to return a string of types separated by commas,
+If not provided, any media file type will be supported. 
+
+```js
+const supported_media_types = (t) => {
+  return '.jpg, .webp'
+}
+```
+
+* `wysiwyg_font_families` [Optional] Configure the font family list of Wysiwyg.
+If not provided, wysiwyg default font families will be used `['Sans Serif', 'Serif', 'Monospace']`
+
+```js
+const wysiwyg_font_families = (t) => {
+  return [
+    'Roboto',
+    'Open Sans',
+    'Lato',
+  ]
+}
+```
+
 ```js
 export {
   section_page_initialization_completed,
@@ -1516,7 +1544,9 @@ export {
   medias_api_response_received,
   pre_open_edit_mode,
   guide_config,
-  library_sections_theme_components
+  library_sections_theme_components,
+  supported_media_types,
+  wysiwyg_font_families
 };
 ```
 

@@ -18,7 +18,7 @@
     <main ref="sectionsMainTarget" class="sections-main">
       <div class="sections-config sections-justify-center">
         <div v-if="!pageNotFound">
-          <div v-if="selectedLayout === 'standard'" class="views">
+          <div v-if="selectedLayout === 'standard'" class="views views-content-wrapper">
             <draggable
               v-model="alteredViews"
               group="people"

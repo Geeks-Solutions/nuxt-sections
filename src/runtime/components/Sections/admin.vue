@@ -272,7 +272,7 @@
               <LazyBaseIconsEdit v-if="!editMode" />
               <LazyBaseIconsEye v-else />
             </button>
-            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper">
+            <div class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper" ref="sectionWrapper">
               <div
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
                 v-if="admin && editMode && !isSideBarOpen"
@@ -1101,7 +1101,7 @@
                 </div>
               </div>
             </div>
-            <div v-else-if="selectedLayout === 'standard'" class="views">
+            <div v-else-if="selectedLayout === 'standard'" class="views views-content-wrapper">
               <draggable
                 v-model="alteredViews"
                 group="people"
@@ -1109,6 +1109,7 @@
                 @end="drag = false"
                 handle=".handle"
                 item-key="id"
+                class="draggable-standard"
               >
                 <!-- <transition-group> -->
                 <template #item="{ element: view, index }">
@@ -1186,6 +1187,9 @@
                 </template>
                 <!-- </transition-group> -->
               </draggable>
+              <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
+                <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
+              </section>
             </div>
             <div v-else>
               <component :is="getSelectedLayout()" :lang="lang" :locales="locales" :default-lang="defaultLang" :admin="admin" :edit-mode="editMode" :is-side-bar-open="isSideBarOpen" @open-theme-modal="(section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])">
@@ -1322,10 +1326,6 @@
                 </template>
               </component>
             </div>
-
-            <section v-if="creationView === true && admin && editMode && selectedLayout === 'standard'" :id="`${currentSection.name}-${currentSection.id}`" :section-id="currentSection.id" class="creation-view-standard">
-              <component :is="getCreationComponent" :section="createdView" :lang="lang" :locales="locales" :default-lang="defaultLang" ref="creationComponent" />
-            </section>
 
             <!-- ------------------------------------------------------------------------------------------- -->
 
@@ -1571,6 +1571,7 @@ const localePath = useLocalePath()
 const config = useRuntimeConfig();
 
 // Data properties converted to refs
+const sectionWrapper = ref(null);
 const locales = ref(['en', 'fr']);
 const translationComponentSupport = ref(true);
 const staticSuccess = ref(false);
@@ -3566,6 +3567,7 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
     intro.value = introJsModule.default()
 
     intro.value.setOption("dontShowAgain", true)
+    intro.value.setOption("keyboardNavigation", false)
     intro.value.setOption("nextLabel", i18n.t('intro.nextLabel'))
     intro.value.setOption("prevLabel", i18n.t('intro.prevLabel'))
     intro.value.setOption("doneLabel", i18n.t('intro.doneLabel'))
@@ -4225,6 +4227,8 @@ const openEditMode = async () => {
       loading.value = false;
     }
   }
+
+  updateHeight()
 }
 const editable = (sectionType) => {
   switch (sectionType) {
@@ -5700,6 +5704,17 @@ const openMyPage = (page) => {
   router.push(page.path)
 }
 
+const updateHeight = () => {
+  try {
+    nextTick(() => {
+      if (sectionWrapper.value) {
+        const height = sectionWrapper.value.offsetHeight;
+        document.documentElement.style.setProperty('--section-height', `${height}px`);
+      }
+    })
+  } catch {}
+};
+
 // Lifecycle hooks
 onMounted(async () => {
   computedSEO.value.title = ""
@@ -5749,6 +5764,12 @@ onBeforeUnmount(() => {
 });
 
 // Watchers
+watch(sectionsChanged, (value) => {
+  if (value && admin && editMode.value && import.meta.client) {
+    updateHeight()
+  }
+})
+
 watch(isModalOpen, (value) => {
   const body = document.querySelector("body");
   if (value === true) {
@@ -7664,6 +7685,10 @@ section .ql-editor.ql-snow.grey-bg {
 
 .sections-popup-title {
   font-size: 24px;
+}
+
+main.sections-main .views-content-wrapper {
+  height: calc(100vh - var(--section-height, 0px));
 }
 
 @media screen and (max-width: 768px) {
