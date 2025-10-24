@@ -24,6 +24,7 @@
             :alter-error-received="alterErrorReceived"
             :response-received="mediaResponseReceived"
             :request-pre-sent="mediaRequestReceived"
+            :forward-request="forwardMediaRequest"
             :accepted-file-types="getAcceptedFileTypes()"
             @getSelectedMedia="emitMedia"
           />
@@ -34,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref, useNuxtApp, useRoute, useCookie, onMounted } from '#imports'
+import { ref, useNuxtApp, useRoute, useCookie, onMounted, computed } from '#imports'
 import {importJs, getAcceptedFileTypes} from "../../utils/helpers.js";
 
 const props = defineProps({
@@ -127,6 +128,25 @@ async function mediaRequestReceived(method, url, payload) {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['medias_api_request_received']) {
       return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
+    }
+  } catch {}
+}
+
+const forwardMediaRequest = computed(() => {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['api_calls_traffic']) {
+      return forwardRequest
+    }
+  } catch {}
+  return null
+})
+
+async function forwardRequest(nuxtApp, method, url, body, payload, props) {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['api_calls_traffic']) {
+      return await hooksJs['api_calls_traffic'](nuxtApp, method, url, body, payload, props)
     }
   } catch {}
 }

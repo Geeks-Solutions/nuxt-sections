@@ -1355,11 +1355,17 @@ const fetch_on_server = (useCookie) => {
 }
 ```
 
-* `api_pre_request`: Runs before an API request is sent. It allows modifying the request, such as updating the URL or body.
+* `api_pre_request`: Runs before an API request is sent. It allows modifying the request, such as updating the URL or body. Or turning off the request by return apiOff: true,
+If `apiOff: true` is returned then the call will go into a new hook: 
+* `api_calls_traffic` [Required when api_pre_request return `apiOff: true`] that has the following parameters(same as the api_pre_request function hook) `($nuxt, method, url, body, options)`
+The `api_calls_traffic` function is expected to return a proper response that match the response returned by an api
 
 ```js
 const api_pre_request = async ($nuxt, method, url, body, options) => {
-  return { url, body } // optionally update request before sending
+  return { url, body, apiOff } // optionally update request before sending
+}
+const api_calls_traffic = async ($nuxt, method, url, body, options, props) => {
+  return { /* response data */ }
 }
 ```
 
