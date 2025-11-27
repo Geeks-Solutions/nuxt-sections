@@ -615,6 +615,15 @@ interface ApiError {
   };
 }
 
+export const useFetchToApiRequest = async (url: string, payload: ApiRequestOptions) => {
+  payload.url = url
+  payload.stopPostRequest = true
+  payload.useFetch = true
+  const res = await useApiRequest(payload)
+  // useFetch returns the response inside a value property
+  return { data: { value: res?.data } };
+}
+
 /**
  * A reusable fetch helper for Nuxt.js applications
  * @template T The expected return type of the API call
@@ -643,8 +652,9 @@ export const useApiRequest = async <T = any>({
     }
 
     // Configure request options
-    const options: RequestInit = {
+    const options = {
       method,
+      body,
       headers: requestHeaders,
       ...fetchOptions
     };
@@ -724,7 +734,7 @@ export const useApiRequest = async <T = any>({
       let updatedRes = res
       try {
         const hooksJs = importJs(`/js/global-hooks`)
-        if (hooksJs && hooksJs['api_post_request']) {
+        if (!fetchOptions.stopPostRequest && hooksJs && hooksJs['api_post_request']) {
           updatedRes = await hooksJs['api_post_request']($nuxt, method, url, body, options, res, onSuccess)
         }
       } catch { }
