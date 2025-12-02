@@ -40,7 +40,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   let fetchOnServer = true
   const hooksJs = importJs(`/js/global-hooks`)
   try {
-    if (hooksJs && hooksJs['fetch_on_server'] && hooksJs['fetch_on_server'](useCookie)) {
+    if (hooksJs && hooksJs['fetch_on_server']) {
       fetchOnServer = hooksJs['fetch_on_server'](useCookie)
     }
   } catch { }

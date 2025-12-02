@@ -1,5 +1,5 @@
-import {sectionHeader, useCookie, useNuxtApp, getSectionProjectIdentity} from "#imports";
-import {useFetch} from "#app";
+import { sectionHeader, useCookie, useNuxtApp, getSectionProjectIdentity } from "#imports";
+import { useFetch } from "#app";
 
 export const createMedia = async (payload, external_call) => {
   const nuxtApp = useNuxtApp();

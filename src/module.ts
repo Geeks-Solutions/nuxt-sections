@@ -109,6 +109,7 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Register $sections configuration plugin
     addPluginTemplate(resolve('./runtime/plugin'))
+    addPluginTemplate(resolve('./runtime/plugins/media-transformer'))
 
     await installModule('@geeks.solutions/vue-components')
 

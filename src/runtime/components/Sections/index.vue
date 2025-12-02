@@ -1297,7 +1297,18 @@ const fetchData = async () => {
   await computeLayoutData();
 };
 
-onServerPrefetch(async () => {await fetchData()});
+onServerPrefetch(async () => {
+  try {
+    const hooksJs = importJs(`/js/global-hooks`)
+    if (hooksJs && hooksJs['fetch_on_server']) {
+      if (hooksJs['fetch_on_server'](useCookie)) {
+        await fetchData() 
+      }
+    } else {
+      await fetchData()
+    }
+  } catch { await fetchData() }
+});
 
 // Sections DI / providers
 provide('languageSupport', (sectionName) => {

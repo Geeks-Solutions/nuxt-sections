@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Sections
+     <Sections
       :admin="admin"
       :page-name="pageName"
       :lang="lang"
