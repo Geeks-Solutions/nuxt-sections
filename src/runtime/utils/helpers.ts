@@ -210,6 +210,58 @@ export const abstractPathLanguage = (finalPath: any) => {
   }
 }
 
+/**
+ * Validates a page path to ensure it doesn't conflict with language prefixes
+ * @param path - The page path to validate (can include leading/trailing slashes)
+ * @param availableLocales - Array of available language codes (e.g., ['en', 'fr', 'de'])
+ * @returns Object with valid boolean and optional error message
+ */
+export const validatePagePath = (path: string, availableLocales: string[]): { valid: boolean, error: string | null } => {
+  // Handle empty or root paths - these are always valid
+  if (!path || path === '/') {
+    return { valid: true, error: null }
+  }
+
+  // If no locales are defined, all paths are valid
+  if (!availableLocales || availableLocales.length === 0) {
+    return { valid: true, error: null }
+  }
+
+  // Normalize the path: remove leading/trailing slashes and collapse multiple slashes
+  let cleanPath = path.trim()
+    .replace(/^\/+/, '')  // Remove leading slashes
+    .replace(/\/+$/, '')  // Remove trailing slashes
+    .replace(/\/+/g, '/')  // Collapse multiple slashes to single slash
+
+  // Handle empty path after normalization
+  if (!cleanPath) {
+    return { valid: true, error: null }
+  }
+
+  // Get the first segment of the path
+  const firstSegment = cleanPath.split('/')[0]
+
+  // Check if the entire path exactly matches a language code
+  if (availableLocales.includes(cleanPath)) {
+    return {
+      valid: false,
+      error: `Page path "${cleanPath}" conflicts with language code. Please choose a different path.`
+    }
+  }
+
+  // Check if the path starts with a language code
+  if (availableLocales.includes(firstSegment)) {
+    return {
+      valid: false,
+      error: `Page path cannot start with language code "${firstSegment}". Please choose a different path.`
+    }
+  }
+
+  // Path is valid
+  return { valid: true, error: null }
+}
+
+
 export const parsePath = (path: string): string => {
 
   let finalPath = path

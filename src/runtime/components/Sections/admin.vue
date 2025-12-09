@@ -1500,7 +1500,7 @@ import {
 } from '#imports';
 import { createMedia, getUser, requestVerification } from "../../utils/SectionsCMSBridge/functions.js"
 import {camelCase, upperFirst, isEqual} from 'lodash-es';
-import {getMySectionsPages, loadScript} from "../../utils/helpers.js";
+import {getMySectionsPages, loadScript, validatePagePath} from "../../utils/helpers.js";
 
 const {
   pageName,
@@ -2596,6 +2596,20 @@ const updatePageMetaData = async (seo, themeData) => {
     }
   }
 
+  // Validate page path against language prefixes
+  const validation = validatePagePathWithLocales(updatedPagePath)
+  
+  if (!validation.valid) {
+    loading.value = false
+    metadataErrors.value.path[0] = validation.error
+    showToast(
+      "Invalid page path",
+      "error",
+      validation.error
+    )
+    return
+  }
+
   const variables = {
     page: sectionsPageName.value,
     path: updatedPagePath,
@@ -3354,6 +3368,27 @@ const logDrag = (evt, slotName) => {
   }
   computeLayoutData()
 }
+
+/**
+ * Helper function to validate page path against language prefixes
+ * Gets available locales from global-hooks and validates the path
+ * @param {string} path - The page path to validate
+ * @returns {Object} Validation result with valid boolean and error message
+ */
+const validatePagePathWithLocales = (path) => {
+  let availableLocales = []
+  try {
+    const hooksJs = importJs('/js/global-hooks')
+    if (hooksJs && hooksJs['available_locales']) {
+      availableLocales = hooksJs['available_locales']()
+    }
+  } catch (e) {
+    // If global-hooks is not available, skip validation
+  }
+
+  return validatePagePath(path, availableLocales)
+}
+
 const createNewPage = async (page_name, payload, external_call, custom) => {
 
   createPagePathError.value = ""
@@ -3378,6 +3413,23 @@ const createNewPage = async (page_name, payload, external_call, custom) => {
       return
     }
   }
+
+  // Validate page path against language prefixes
+  if (custom) {
+    const pagePath = createPagePath.value.trim()
+    const validation = validatePagePathWithLocales(pagePath)
+    
+    if (!validation.valid) {
+      createPagePathError.value = validation.error
+      showToast(
+        "Invalid page path",
+        "error",
+        validation.error
+      )
+      return
+    }
+  }
+
 
   if (external_call !== true) {
     loading.value = true

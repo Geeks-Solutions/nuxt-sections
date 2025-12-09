@@ -72,7 +72,13 @@ function parsePath(path) {
   return finalPath
 }
 
+function getSectionProjectIdentity() {
+  return 'test-project-id'
+}
+
 // Register globally
 globalThis.importJs = importJs
 globalThis.abstractPathLanguage = abstractPathLanguage
 globalThis.parsePath = parsePath
+globalThis.getSectionProjectIdentity = getSectionProjectIdentity
+
