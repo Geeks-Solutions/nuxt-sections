@@ -1091,7 +1091,7 @@ defineExpose({
 }
 
 .text-area-field {
-  min-height: [48px];
+  min-height: 48px;
 }
 
 .wl-col {

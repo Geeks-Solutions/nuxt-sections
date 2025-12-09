@@ -422,6 +422,24 @@ In order to track the update of language selected from the Translation Component
 
 * The `locales` Array will have the value of the supported languages allowing you to have more control on the feature
 
+# Media Transformer
+
+The library supports a media transformer function that allows you to intercept and transform media URLs before they are displayed. This is particularly useful for offline mode support where you might need to serve media from a local source (like IndexedDB) instead of the network.
+
+To use this feature, create/edit the `media_transform` function in the `sections/js/global-hooks.js` file in your project with the following structure:
+
+```js
+// sections/js/global-hooks.js
+
+export const media_transform = async (url) => {
+  // Your transformation logic here
+  // Return the transformed URL (e.g. a blob URL) or the original URL
+  return url
+}
+```
+
+The library will automatically detect this file and inject the transformer into supported components (like `UniversalViewer`).
+
 # Media Meta Component
 
 * The module expose the media management component and show it as a mini BO that allow the user to create/edit/delete and select Medias from within the section forms.

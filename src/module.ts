@@ -3,14 +3,14 @@ import {
   createResolver,
   extendPages,
   addComponentsDir,
-  addImportsDir,
+  addImports,
   addPluginTemplate,
   addRouteMiddleware,
   installModule
 } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
-export interface ModuleOptions {}
+export interface ModuleOptions { }
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -82,12 +82,34 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     // Register utils function
-    addImportsDir(resolve('./runtime/utils'), {
-      prepend: true
-    })
+    addImports([
+      { name: 'importJs', from: resolve('./runtime/utils/helpers') },
+      { name: 'renderPageData', from: resolve('./runtime/utils/helpers') },
+      { name: 'getSectionProjectIdentity', from: resolve('./runtime/utils/helpers') },
+      { name: 'useApiRequest', from: resolve('./runtime/utils/helpers') },
+      { name: 'showToast', from: resolve('./runtime/utils/helpers') },
+      { name: 'formatName', from: resolve('./runtime/utils/helpers') },
+      { name: 'formatTexts', from: resolve('./runtime/utils/helpers') },
+      { name: 'importComp', from: resolve('./runtime/utils/helpers') },
+      { name: 'sectionHeader', from: resolve('./runtime/utils/helpers') },
+      { name: 'globalFileUpload', from: resolve('./runtime/utils/helpers') },
+      { name: 'deleteMedia', from: resolve('./runtime/utils/helpers') },
+      { name: 'addNewStaticType', from: resolve('./runtime/utils/helpers') },
+      { name: 'abstractPathLanguage', from: resolve('./runtime/utils/helpers') },
+      { name: 'parsePath', from: resolve('./runtime/utils/helpers') },
+      { name: 'parseQS', from: resolve('./runtime/utils/helpers') },
+      { name: 'getGlobalTypeData', from: resolve('./runtime/utils/helpers') },
+      { name: 'validateQS', from: resolve('./runtime/utils/helpers') },
+      { name: 'dummyDataPresets', from: resolve('./runtime/utils/helpers') },
+      { name: 'getRandomElement', from: resolve('./runtime/utils/helpers') },
+      { name: 'populateWithDummyValues', from: resolve('./runtime/utils/helpers') },
+      { name: 'loadScript', from: resolve('./runtime/utils/helpers') },
+      { name: 'getMySectionsPages', from: resolve('./runtime/utils/helpers') }
+    ])
 
     // Register $sections configuration plugin
     addPluginTemplate(resolve('./runtime/plugin'))
+    addPluginTemplate(resolve('./runtime/plugins/media-transformer'))
 
     await installModule('@geeks.solutions/vue-components')
 

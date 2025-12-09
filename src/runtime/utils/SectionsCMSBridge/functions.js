@@ -1,5 +1,5 @@
-import {sectionHeader, useCookie, useNuxtApp, getSectionProjectIdentity} from "#imports";
-import {useFetch} from "#app";
+import { sectionHeader, useCookie, useNuxtApp, getSectionProjectIdentity } from "#imports";
+import { useFetch } from "#app";
 
 export const createMedia = async (payload, external_call) => {
   const nuxtApp = useNuxtApp();
@@ -12,6 +12,7 @@ export const createMedia = async (payload, external_call) => {
   data.append('files[1][file]', fileData)
   data.append('type', fileData.type.includes('image') ? 'image' : 'document')
   data.append('title', payload['title'] || '')
+  data.append('seo_tag', payload['seo_tag'] || '')
   data.append('private_status', payload['private_status'] || 'public')
   data.append('locked_status', payload['locked_status'] || 'unlocked')
 

@@ -1,5 +1,5 @@
-import {useCookie, useNuxtApp, useRequestHeaders, useRoute, useFetch} from "#app";
-import {defineAsyncComponent} from "vue";
+import { useCookie, useNuxtApp, useRequestHeaders, useRoute, useFetch } from "#app";
+import { defineAsyncComponent } from "vue";
 
 export function formatName(name: string): string {
   switch (name) {
@@ -37,7 +37,7 @@ export const importJs = (path: string): any => {
 const sections = import.meta.glob('/sections/**/*.vue')
 // @ts-ignore
 const configs = import.meta.glob('../components/configs/**/*.vue')
-const importCache : any = {}
+const importCache: any = {}
 
 export const importComp = (path: string) => {
   if (importCache[path]) {
@@ -48,7 +48,7 @@ export const importComp = (path: string) => {
   const configPath = `../components/configs${path}.vue`
 
   let component = null
-  let setup : any = null
+  let setup: any = null
 
   // Check if section component exists
   if (sections[sectionPath]) {
@@ -62,11 +62,11 @@ export const importComp = (path: string) => {
   }
   else {
     console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
-    return {component: null, setup: null}
+    return { component: null, setup: null }
   }
 
-  importCache[path] = {component, setup}
-  return {component, setup}
+  importCache[path] = { component, setup }
+  return { component, setup }
 }
 
 export const sectionHeader = (header: Record<string, string>): Record<string, string> => {
@@ -84,7 +84,7 @@ export const sectionHeader = (header: Record<string, string>): Record<string, st
 }
 
 export async function globalFileUpload(file: File, oldMediaID?: string): Promise<{ data: any, success: boolean, error: any }> {
-  const $nuxt : any = useNuxtApp();
+  const $nuxt: any = useNuxtApp();
   if (oldMediaID) {
     try {
       await deleteMedia(oldMediaID);
@@ -92,7 +92,7 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
       return { data: '', success: false, error: e };
     }
   }
-  const token : any = useCookie("sections-auth-token").value;
+  const token: any = useCookie("sections-auth-token").value;
   const data = new FormData();
   data.append('files[1][file]', file);
   data.append('type', "image");
@@ -106,7 +106,7 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
     };
     const result = {
       data: await (await fetch($nuxt.$sections.serverUrl +
-        `/project/${getSectionProjectIdentity()}/media`, {method: "POST", body: data, ...config})).json()
+        `/project/${getSectionProjectIdentity()}/media`, { method: "POST", body: data, ...config })).json()
     }
 
     return { data: result.data, success: true, error: '' };
@@ -116,15 +116,15 @@ export async function globalFileUpload(file: File, oldMediaID?: string): Promise
 }
 
 export async function deleteMedia(id: string): Promise<{ data: any, success: boolean, error: any }> {
-  const $nuxt : any = useNuxtApp();
-  const token : any = useCookie("sections-auth-token").value;
+  const $nuxt: any = useNuxtApp();
+  const token: any = useCookie("sections-auth-token").value;
   try {
     const config = {
       headers: sectionHeader({ token }),
     };
     const result = {
       data: await (await fetch($nuxt.$sections.serverUrl + `/project/${getSectionProjectIdentity()}/media/${id}`,
-        {method: "DELETE", ...config})).json()
+        { method: "DELETE", ...config })).json()
     }
 
     return { data: result.data, success: true, error: '' };
@@ -134,15 +134,15 @@ export async function deleteMedia(id: string): Promise<{ data: any, success: boo
 }
 
 export async function addNewStaticType(sectionTypeName: string): Promise<{ status: string, message: any }> {
-  const $nuxt : any = useNuxtApp();
+  const $nuxt: any = useNuxtApp();
   if (sectionTypeName !== "") {
-    const token : any = useCookie("sections-auth-token").value;
+    const token: any = useCookie("sections-auth-token").value;
     const config = {
       headers: sectionHeader({ token })
     };
     const URL = $nuxt.$sections.serverUrl + `/project/${getSectionProjectIdentity()}/section-types/${sectionTypeName}`;
     try {
-      await $fetch(URL, {method: "POST", body: {}, ...config})
+      await $fetch(URL, { method: "POST", body: {}, ...config })
 
       return {
         status: 'success',
@@ -209,6 +209,58 @@ export const abstractPathLanguage = (finalPath: any) => {
     matchedLocale
   }
 }
+
+/**
+ * Validates a page path to ensure it doesn't conflict with language prefixes
+ * @param path - The page path to validate (can include leading/trailing slashes)
+ * @param availableLocales - Array of available language codes (e.g., ['en', 'fr', 'de'])
+ * @returns Object with valid boolean and optional error message
+ */
+export const validatePagePath = (path: string, availableLocales: string[]): { valid: boolean, error: string | null } => {
+  // Handle empty or root paths - these are always valid
+  if (!path || path === '/') {
+    return { valid: true, error: null }
+  }
+
+  // If no locales are defined, all paths are valid
+  if (!availableLocales || availableLocales.length === 0) {
+    return { valid: true, error: null }
+  }
+
+  // Normalize the path: remove leading/trailing slashes and collapse multiple slashes
+  let cleanPath = path.trim()
+    .replace(/^\/+/, '')  // Remove leading slashes
+    .replace(/\/+$/, '')  // Remove trailing slashes
+    .replace(/\/+/g, '/')  // Collapse multiple slashes to single slash
+
+  // Handle empty path after normalization
+  if (!cleanPath) {
+    return { valid: true, error: null }
+  }
+
+  // Get the first segment of the path
+  const firstSegment = cleanPath.split('/')[0]
+
+  // Check if the entire path exactly matches a language code
+  if (availableLocales.includes(cleanPath)) {
+    return {
+      valid: false,
+      error: `Page path "${cleanPath}" conflicts with language code. Please choose a different path.`
+    }
+  }
+
+  // Check if the path starts with a language code
+  if (availableLocales.includes(firstSegment)) {
+    return {
+      valid: false,
+      error: `Page path cannot start with language code "${firstSegment}". Please choose a different path.`
+    }
+  }
+
+  // Path is valid
+  return { valid: true, error: null }
+}
+
 
 export const parsePath = (path: string): string => {
 
@@ -304,8 +356,8 @@ export const parseQS = (path: string, routeQueries: boolean, queries: any): Reco
 }
 
 export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, error: any }> {
-  const $nuxt : any = useNuxtApp();
-  const token : any = useCookie("sections-auth-token").value;
+  const $nuxt: any = useNuxtApp();
+  const token: any = useCookie("sections-auth-token").value;
   const config = {
     headers: sectionHeader({ token }),
   };
@@ -335,8 +387,8 @@ export async function getGlobalTypeData(linked_to: string): Promise<{ res: any, 
       return result;
     }
   } catch (error: any) {
-      result.error = error;
-      return result;
+    result.error = error;
+    return result;
   }
 }
 
@@ -471,7 +523,7 @@ export const populateWithDummyValues = (obj: any, presets: Record<string, any[]>
 }
 
 export const getSectionProjectIdentity = (id?: any) => {
-  const nuxtApp : any = useNuxtApp()
+  const nuxtApp: any = useNuxtApp()
   if (id === true) {
     return nuxtApp.$sections.projectId
   } else if (nuxtApp.$sections.cname === "active") {
@@ -494,11 +546,11 @@ export const getSectionProjectIdentity = (id?: any) => {
 
 // Function to render page data
 export const renderPageData = async () => {
-  const app : any = useNuxtApp();
+  const app: any = useNuxtApp();
   const route = useRoute()
   try {
     const hooksJavascript = await importJs(`/js/global-hooks`);
-    if (hooksJavascript['init_params']) {
+    if (hooksJavascript && hooksJavascript['init_params']) {
       const paramsUpdate = hooksJavascript['init_params'](app.$sections, {
         qs: route.query,
         headers: app?.req ? app.req.headers : {},
@@ -509,7 +561,8 @@ export const renderPageData = async () => {
         app.$sections = paramsUpdate;
       }
     }
-  } catch (e) {}
+  } catch (e) {
+  }
 
   let websiteDomain = "";
   const scheme = window.location.protocol.replace(':', '');
@@ -527,12 +580,12 @@ export const renderPageData = async () => {
 
   let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`;
 
-  let payload : any = {};
+  let payload: any = {};
 
   let language;
   try {
     language = app.$i18n.locale.value;
-  } catch {}
+  } catch { }
 
   if (app.$sections.queryStringSupport === "enabled") {
     const query_string = parseQS(encodeURIComponent(pathMatch || '/'), Object.keys(route.query).length !== 0, route.query);
@@ -545,7 +598,7 @@ export const renderPageData = async () => {
   }
 
   const hooksJs = await importJs(`/js/global-hooks`);
-  if (hooksJs['page_pre_load']) {
+  if (hooksJs && hooksJs['page_pre_load']) {
     if (hooksJs['page_pre_load'](payload)) {
       payload = hooksJs['page_pre_load'](payload);
     }
@@ -565,8 +618,8 @@ export const renderPageData = async () => {
 
 };
 
-export const showToast = (title : any, variant : any, message : any, options : any) => {
-  const $nuxt : any = useNuxtApp();
+export const showToast = (title: any, variant: any, message: any, options: any) => {
+  const $nuxt: any = useNuxtApp();
   const toast = $nuxt.$toast
 
   toast[variant](
@@ -614,6 +667,15 @@ interface ApiError {
   };
 }
 
+export const useFetchToApiRequest = async (url: string, payload: ApiRequestOptions) => {
+  payload.url = url
+  payload.stopPostRequest = true
+  payload.useFetch = true
+  const res = await useApiRequest(payload)
+  // useFetch returns the response inside a value property
+  return { data: { value: res?.data } };
+}
+
 /**
  * A reusable fetch helper for Nuxt.js applications
  * @template T The expected return type of the API call
@@ -621,15 +683,15 @@ interface ApiError {
  * @returns {Promise<T>} - Returns a promise that resolves to the response data
  */
 export const useApiRequest = async <T = any>({
-                                               url,
-                                               method = 'GET',
-                                               body = null,
-                                               onSuccess = () => {},
-                                               onError = () => {},
-                                               headers = {},
-                                               ...fetchOptions
-                                             }: ApiRequestOptions): Promise<{ data: T; status: number } | undefined> => {
-  const $nuxt : any = useNuxtApp();
+  url,
+  method = 'GET',
+  body = null,
+  onSuccess = () => { },
+  onError = () => { },
+  headers = {},
+  ...fetchOptions
+}: ApiRequestOptions): Promise<{ data: T; status: number } | undefined> => {
+  const $nuxt: any = useNuxtApp();
   try {
     // Create a Headers object from provided headers or create a new one
     const requestHeaders = new Headers(headers);
@@ -642,8 +704,9 @@ export const useApiRequest = async <T = any>({
     }
 
     // Configure request options
-    const options: RequestInit = {
+    const options = {
       method,
+      body,
       headers: requestHeaders,
       ...fetchOptions
     };
@@ -669,7 +732,7 @@ export const useApiRequest = async <T = any>({
           options.body = updatedBody
         }
       }
-    } catch {}
+    } catch { }
 
     let response
     if (!apiOff) {
@@ -723,10 +786,10 @@ export const useApiRequest = async <T = any>({
       let updatedRes = res
       try {
         const hooksJs = importJs(`/js/global-hooks`)
-        if (hooksJs && hooksJs['api_post_request']) {
+        if (!fetchOptions.stopPostRequest && hooksJs && hooksJs['api_post_request']) {
           updatedRes = await hooksJs['api_post_request']($nuxt, method, url, body, options, res, onSuccess)
         }
-      } catch {}
+      } catch { }
       // Call success callback if provided
       if (onSuccess && typeof onSuccess === 'function') {
         onSuccess(updatedRes || res);
@@ -739,13 +802,13 @@ export const useApiRequest = async <T = any>({
       if (hooksJs && hooksJs['api_request_error']) {
         return hooksJs['api_request_error']($nuxt, method, url, body, error, fetchOptions)
       }
-    } catch {}
+    } catch { }
     throw error;
   }
 };
 
 export const getMySectionsPages = async (sectionHeader: any) => {
-  const app : any = useNuxtApp();
+  const app: any = useNuxtApp();
   try {
     const pagesResponse: any = await useApiRequest({
       url: `${app.$sections.serverUrl}/project/${app.$sections.projectId}/pages`,

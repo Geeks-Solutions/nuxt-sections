@@ -35,7 +35,7 @@
 
 <script setup>
 import {useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs, computed} from '#imports'
-import {getAcceptedFileTypes} from "../../utils/helpers.js";
+import {getAcceptedFileTypes, useFetchToApiRequest} from "../../utils/helpers.js";
 
 // --- Composables ---
 const nuxtApp = useNuxtApp()
@@ -116,20 +116,11 @@ const forwardMediaRequest = computed(() => {
   try {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['api_calls_traffic']) {
-      return forwardRequest
+      return useFetchToApiRequest
     }
   } catch {}
   return null
 })
-
-async function forwardRequest(nuxtApp, method, url, body, payload, props) {
-  try {
-    const hooksJs = importJs(`/js/global-hooks`)
-    if (hooksJs && hooksJs['api_calls_traffic']) {
-      return await hooksJs['api_calls_traffic'](nuxtApp, method, url, body, payload, props)
-    }
-  } catch {}
-}
 
 function supportedFontFamilies(nuxtApp) {
   try {

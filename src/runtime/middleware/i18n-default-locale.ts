@@ -40,17 +40,17 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   let fetchOnServer = true
   const hooksJs = importJs(`/js/global-hooks`)
   try {
-    if (hooksJs && hooksJs['fetch_on_server'] && hooksJs['fetch_on_server'](useCookie)) {
+    if (hooksJs && hooksJs['fetch_on_server']) {
       fetchOnServer = hooksJs['fetch_on_server'](useCookie)
     }
-  } catch {}
+  } catch { }
 
   let updateLocalizationOnCSR = true
   try {
     if (hooksJs && hooksJs['localize_on_csr']) {
       updateLocalizationOnCSR = hooksJs['localize_on_csr'](useCookie)
     }
-  } catch {}
+  } catch { }
 
   // Server-side logic
   if (import.meta.server && !store.getPageData && !to.fullPath.endsWith('/health') && !to.fullPath.endsWith('/admin') && fetchOnServer) {
@@ -72,7 +72,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           app.$sections = paramsUpdate;
         }
       }
-    } catch {}
+    } catch { }
 
     // Detect protocol and domain from headers
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http';
@@ -94,7 +94,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     let language;
     try {
       language = abstractedDefaultLocale ? abstractedDefaultLocale : undefined;
-    } catch {}
+    } catch { }
 
     // If query string support is enabled, prepare it for the request payload
     if (app.$sections.queryStringSupport === "enabled") {
@@ -114,7 +114,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       if (hookResult && typeof hookResult === 'object') {
         try {
           payload = JSON.parse(JSON.stringify(hookResult)); // Ensure payload is serializable
-        } catch {}
+        } catch { }
       }
     }
 
@@ -168,7 +168,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             })
           }
         });
-      } catch {}
+      } catch { }
     }
   } else {
     // Client-side locale setup (based on abstracted or default locale)
