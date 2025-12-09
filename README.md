@@ -426,10 +426,10 @@ In order to track the update of language selected from the Translation Component
 
 The library supports a media transformer function that allows you to intercept and transform media URLs before they are displayed. This is particularly useful for offline mode support where you might need to serve media from a local source (like IndexedDB) instead of the network.
 
-To use this feature, create a file at `sections/js/media-transform.js` in your project with the following structure:
+To use this feature, create/edit the `media_transform` function in the `sections/js/global-hooks.js` file in your project with the following structure:
 
 ```js
-// sections/js/media-transform.js
+// sections/js/global-hooks.js
 
 export const media_transform = async (url) => {
   // Your transformation logic here

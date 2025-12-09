@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.15] - 2025-12-09
+
+### Fixed
+
+- Update vue-components library version and fix to new version 3.0.6
+- Properly rely on the server prefetch hook to decide if fetching should happen on SSR
+- Added the `seo_tag` when creating a media from the CMSBridge function
+- Changed the way imports are performed to make the library runnable by referencing it as local files
+
+### Updated
+
+- Unify the way media are being fetched for Wysiwyg and Media components
+
+### Added
+
+- Validate page path to avoid conflicts with enabled languages
+- MediaURL transformer hook to enable host projects to perform a transformation on the media URL before it is used
+- New `useFetchToApiRequest` method to wrap the response of an API request into a payload similar to what a fetch yields
+
 ### [3.0.14] - 2025-10-22
 
 ### Fixed
