@@ -4,21 +4,20 @@
 // - Executing optional hooks for preprocessing data
 // - Storing the loaded page data into Pinia store (`sectionsDataStore`)
 
+import { defineNuxtRouteMiddleware, useNuxtApp, useState } from 'nuxt/app';
+import { useCookie } from '#app';
 import {
-  defineNuxtRouteMiddleware,
   getSectionProjectIdentity,   // Gets the current section project identity
   parsePath,                   // Encodes a path string to be used safely in a URL
   parseQS,                     // Constructs a query string for the request
   sectionHeader,               // Prepares necessary headers for the request
   useApiRequest,               // Custom API request utility
   abstractPathLanguage,       // Extracts locale info from a given path
-  useNuxtApp,
-  useState,
-  importJs,
-  useCookie                    // Dynamic JS module importer
-} from "#imports";
+  importJs                    // Dynamic JS module importer
+} from "../utils/helpers";
 
 import { useSectionsDataStore } from "../stores/sectionsDataStore"; // Pinia store for managing page data
+
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const app: any = useNuxtApp();
