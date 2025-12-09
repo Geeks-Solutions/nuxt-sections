@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "3.0.14",
+  "version": "3.0.15",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -44,16 +44,17 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
     "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit",
     "link": "npm link"
   },
   "dependencies": {
+    "@geeks.solutions/vue-components": "^3.0.6",
+    "@marshallswain/vuedraggable": "^4.2.0",
     "@nuxt/kit": "^3.17.1",
     "@nuxtjs/i18n": "^9.5.3",
     "intro.js": "^7.2.0",
-    "vue-toastification": "^2.0.0-rc.5",
-    "@marshallswain/vuedraggable": "^4.2.0",
-    "@geeks.solutions/vue-components": "3.0.5"
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@nuxt/devtools": "^2.4.0",
@@ -64,6 +65,7 @@
     "@nuxt/test-utils": "^3.17.2",
     "@testing-library/vue": "^8.1.0",
     "@types/node": "latest",
+    "@vitest/coverage-v8": "^3.1.2",
     "@vue/test-utils": "^2.4.6",
     "changelogen": "^0.6.1",
     "eslint": "^9.25.1",
@@ -75,9 +77,9 @@
     "vue-tsc": "^2.2.10"
   },
   "peerDependencies": {
-    "vue-toastification": "^2.0.0-rc.5",
     "@marshallswain/vuedraggable": "^4.2.0",
     "@pinia/nuxt": "^0.11.0",
-    "pinia": "^3.0.2"
+    "pinia": "^3.0.2",
+    "vue-toastification": "^2.0.0-rc.5"
   }
 }
