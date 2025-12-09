@@ -4230,6 +4230,7 @@ const openEditMode = async () => {
 
   updateHeight()
 }
+
 const editable = (sectionType) => {
   switch (sectionType) {
     case "local":
