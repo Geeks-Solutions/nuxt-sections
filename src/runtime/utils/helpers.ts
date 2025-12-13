@@ -531,13 +531,13 @@ export const getSectionProjectIdentity = (id?: any) => {
     if (process.client) {
       // Used for local development with cname active
       // return 'csstest.k8s-dev.geeks.solutions'
-      return window.location.host
+      return window.location.hostname
     } else {
       // In Nuxt 3, this would typically use the context from useRequestHeaders
       const headers = useRequestHeaders()
       // Used for local development with cname active
       // return 'csstest.k8s-dev.geeks.solutions'
-      return headers.host
+      return headers.host?.split(':')[0]
     }
   } else {
     return nuxtApp.$sections.projectId

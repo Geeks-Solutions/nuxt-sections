@@ -1,7 +1,7 @@
 vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
   const mod
     = await importOriginal
-  () // type is inferred
+      () // type is inferred
   return {
     ...mod,
     showToast: vi.fn(),
@@ -24,8 +24,8 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
 })
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {flushPromises, mount, shallowMount} from '@vue/test-utils'
-import {useNuxtApp} from "#app";
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import { useNuxtApp } from "#app";
 import * as vt from 'vue-toastification';
 import draggable from "@marshallswain/vuedraggable"
 
@@ -41,7 +41,7 @@ useNuxtApp().provide('toast', vt.useToast())
 useNuxtApp().provide('sections', mockedSectionsConfig)
 
 import {
-  importJs,sectionHeader,
+  importJs, sectionHeader,
   getSectionProjectIdentity,
   parsePath,
   parseQS,
@@ -168,7 +168,8 @@ const mockPageData = {
           media_id: "Media1"
         }
       },
-      linked_to: '' },
+      linked_to: ''
+    },
     {
       id: 'view-2',
       name: 'section2',
@@ -179,7 +180,8 @@ const mockPageData = {
           media_id: "Media2"
         }
       },
-      linked_to: '' }
+      linked_to: ''
+    }
   ],
   "layout": "standard",
   "page": "page5",
@@ -441,8 +443,8 @@ describe('SectionsPage.vue', () => {
 
     // Set sectionOptions for only the second view
     wrapper.vm.sectionOptions = {
-        'view-1': false,
-        'view-2': true,
+      'view-1': false,
+      'view-2': true,
     }
 
     await wrapper.vm.$nextTick()
@@ -507,25 +509,25 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.selectedVariation = 'testPage'
     wrapper.vm.currentSection = { id: 'section1' }
     wrapper.vm.displayVariations = {
-        testPage: {
-          altered: true,
-          views: {
-            section1: { id: 'section1', content: 'Old Content' },
-          },
+      testPage: {
+        altered: true,
+        views: {
+          section1: { id: 'section1', content: 'Old Content' },
         },
-      }
+      },
+    }
     wrapper.vm.updatedVariations = {
-        testPage: {
-          views: {
-            section1: { id: 'section1', content: 'Restored Content' },
-          },
+      testPage: {
+        views: {
+          section1: { id: 'section1', content: 'Restored Content' },
         },
-      }
+      },
+    }
     wrapper.vm.currentViews = [{ id: 'section1', content: 'Old Content' }]
     wrapper.vm.selectedLayout = 'standard'
     wrapper.vm.viewsPerRegions = {
-        region1: [{ id: 'section1', content: 'Old Content' }],
-      }
+      region1: [{ id: 'section1', content: 'Old Content' }],
+    }
 
     wrapper.vm.restoreSection();
 
@@ -642,7 +644,7 @@ describe('SectionsPage.vue', () => {
   it('should handle errors gracefully', async () => {
     global.fetch.mockRejectedValue({
       ok: false,
-      json: async () => {error: 'Fetch failed'},
+      json: async () => { error: 'Fetch failed' },
     })
 
     await wrapper.vm.getGlobalSectionTypes(false);
@@ -742,9 +744,9 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.editMode = true
     wrapper.vm.creationView = true
     wrapper.vm.selectedLayout = 'standard'
-    wrapper.vm.currentSection = {name: 'wysiwyg', type: 'static'}
+    wrapper.vm.currentSection = { name: 'wysiwyg', type: 'static' }
 
-    await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
+    await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' });
 
     expect(wrapper.vm.isSideBarOpen).toBe(true);
 
@@ -764,9 +766,9 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.editMode = true
     wrapper.vm.creationView = true
     wrapper.vm.selectedLayout = 'standard'
-    wrapper.vm.currentSection = {name: 'wysiwyg', type: 'static'}
+    wrapper.vm.currentSection = { name: 'wysiwyg', type: 'static' }
 
-    await wrapper.vm.openCurrentSection({name: 'wysiwyg', type: 'static'});
+    await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' });
 
     await wrapper.vm.$nextTick()
 
@@ -894,7 +896,7 @@ describe('SectionsPage.vue', () => {
       data: {
         "id": "67642846052f506967b3db96",
         "path": "page5",
-        "metadata": { project_metadata: { languages: ['en', 'fr'] }, en: {title: 'PAGE TITLE', description: 'PAGE TITLE'} },
+        "metadata": { project_metadata: { languages: ['en', 'fr'] }, en: { title: 'PAGE TITLE', description: 'PAGE TITLE' } },
         "sections": [
           { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
           { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
@@ -911,7 +913,7 @@ describe('SectionsPage.vue', () => {
       title: 'PAGE TITLE',
       description: 'PAGE TITLE',
       image: ''
-  })
+    })
 
   });
 
@@ -922,37 +924,37 @@ describe('SectionsPage.vue', () => {
         view1: {
           id: 'view1',
           private_data: {
-                media: {
-                  media_id: "Media1"
-                }
-              },
+            media: {
+              media_id: "Media1"
+            }
+          },
           weight: 2
         },
         view2: {
           id: 'view2',
           private_data: {
-                media: {
-                  media_id: "Media2"
-                }
-              },
+            media: {
+              media_id: "Media2"
+            }
+          },
           weight: 1
         },
         view3: {
           id: 'view3',
           private_data: {
-                media: {
-                  media_id: "Media3"
-                }
-              },
+            media: {
+              media_id: "Media3"
+            }
+          },
           weight: 3, altered: true
         },
         view4: {
           id: 'view4',
           private_data: {
-                media: {
-                  media_id: "Media4"
-                }
-              },
+            media: {
+              media_id: "Media4"
+            }
+          },
           weight: 4
         },
       },
@@ -985,19 +987,19 @@ describe('SectionsPage.vue', () => {
       {
         id: 'view1',
         private_data: {
-                media: {
-                  media_id: "Media1"
-                }
-              },
+          media: {
+            media_id: "Media1"
+          }
+        },
         weight: 2
       },
       {
         id: 'view4',
         private_data: {
-                media: {
-                  media_id: "Media4"
-                }
-              },
+          media: {
+            media_id: "Media4"
+          }
+        },
         weight: 3
       }
     ])
@@ -1011,37 +1013,37 @@ describe('SectionsPage.vue', () => {
         view1: {
           id: 'view1',
           private_data: {
-                media: {
-                  media_id: "Media1"
-                }
-              },
+            media: {
+              media_id: "Media1"
+            }
+          },
           weight: 2
         },
         view2: {
           id: 'view2',
           private_data: {
-                media: {
-                  media_id: "Media2"
-                }
-              },
+            media: {
+              media_id: "Media2"
+            }
+          },
           weight: 1
         },
         view3: {
           id: 'view3',
           private_data: {
-                media: {
-                  media_id: "Media3"
-                }
-              },
+            media: {
+              media_id: "Media3"
+            }
+          },
           weight: 3, altered: true
         },
         view4: {
           id: 'view4',
           private_data: {
-                media: {
-                  media_id: "Media4"
-                }
-              },
+            media: {
+              media_id: "Media4"
+            }
+          },
           weight: 4
         },
       },
@@ -1175,8 +1177,8 @@ describe('SectionsPage.vue', () => {
 
   it('Correctly initialize Original Variations', async () => {
     expect(wrapper.vm.originalVariations[wrapper.vm.activeVariation.pageName].views).toEqual({
-      'view-1': { id: 'view-1', name: 'section1', weight: 1, type: 'text', private_data: { media: { media_id: 'Media1'} }, linked_to: '' },
-      'view-2': { id: 'view-2', name: 'section2', weight: 2, type: 'image', private_data: { media: { media_id: 'Media2'} }, linked_to: '' }
+      'view-1': { id: 'view-1', name: 'section1', weight: 1, type: 'text', private_data: { media: { media_id: 'Media1' } }, linked_to: '' },
+      'view-2': { id: 'view-2', name: 'section2', weight: 2, type: 'image', private_data: { media: { media_id: 'Media2' } }, linked_to: '' }
     })
   });
 
@@ -1234,7 +1236,7 @@ describe('logDrag function, layout region position updates', () => {
         displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].slot = slotName
         displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].weight = evt.added.newIndex
         displayVariations.value[selectedVariation.value].altered = true
-      } else if(evt.moved) {
+      } else if (evt.moved) {
         displayVariations.value[selectedVariation.value].views[evt.moved.element.id].region[selectedLayout.value].weight = evt.moved.newIndex
         displayVariations.value[selectedVariation.value].altered = true
       }
@@ -1446,7 +1448,7 @@ describe('FieldSets.vue', () => {
     expect(wrapper.find('.custom-legend').exists()).toBe(true)
   })
 
-  it('renders slot content correctly',async () => {
+  it('renders slot content correctly', async () => {
     createComponent({}, { default: '<div class="custom-slot">Slot Content</div>' })
 
     await wrapper.vm.$nextTick()
@@ -1543,7 +1545,7 @@ const mockDownloadAnchor = {
   setAttribute: vi.fn(),
   click: vi.fn()
 }
-const mockPagePath = {value: 'page'}
+const mockPagePath = { value: 'page' }
 const mockFileInput = {
   click: vi.fn()
 }
@@ -2481,7 +2483,7 @@ describe('Settings Functions', () => {
       wrapper.vm.builderSettingsPayload = { primary_color: '#000', secondary_color: '#FFF' }
       global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => {},
+        json: async () => { },
       })
 
       // Test
@@ -2861,7 +2863,7 @@ const SidebarComponent = {
           window.addEventListener("mousemove", onMouseMove)
           window.addEventListener("mouseup", stopTracking)
         })
-      } catch {}
+      } catch { }
     }
 
     const startTracking = (event) => {
@@ -3306,7 +3308,7 @@ describe('refreshSectionView', () => {
 
     wrapper.vm.allSections = [
       { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' },
-      { name: 'duplicate', nameID: 'duplicate', type: 'configurable', render_data: [{settings: {}}] },
+      { name: 'duplicate', nameID: 'duplicate', type: 'configurable', render_data: [{ settings: {} }] },
       { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' }
     ]
 

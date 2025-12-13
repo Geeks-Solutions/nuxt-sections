@@ -5,7 +5,7 @@ import mitt from "mitt";
 
 export default defineNuxtPlugin((_nuxtApp) => {
   const config = useRuntimeConfig()
-  const sectionsConfig : any = config.public.sections
+  const sectionsConfig: any = config.public.sections
   _nuxtApp.vueApp.config.warnHandler = () => {
     // No-op: silence warnings
   }
