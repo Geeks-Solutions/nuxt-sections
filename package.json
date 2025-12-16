@@ -70,6 +70,7 @@
     "@vue/test-utils": "^2.4.6",
     "changelogen": "^0.6.1",
     "eslint": "^9.25.1",
+    "eslint-config-prettier": "^10.1.8",
     "happy-dom": "^17.4.6",
     "jsdom": "^26.1.0",
     "nuxt": "^3.17.1",
