@@ -42,6 +42,7 @@
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
     "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
     "lint": "eslint .",
+    "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
@@ -74,7 +75,8 @@
     "nuxt": "^3.17.1",
     "typescript": "~5.8.3",
     "vitest": "^3.1.2",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^2.2.10",
+    "prettier": "^3.7.4"
   },
   "peerDependencies": {
     "@marshallswain/vuedraggable": "^4.2.0",

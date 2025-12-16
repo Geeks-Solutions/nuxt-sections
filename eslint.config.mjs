@@ -10,11 +10,9 @@ export default createConfigForNuxt({
     stylistic: false,
   },
   dirs: {
-    src: [
-      './playground',
-    ],
+    src: ['./playground'],
   },
 })
-  .append(
-    // your custom flat config here...
-  )
+  .append
+  // your custom flat config here...
+  ()

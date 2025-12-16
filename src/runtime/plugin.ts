@@ -1,7 +1,7 @@
 import { defineNuxtPlugin, useRuntimeConfig } from '#app'
-import draggable from "@marshallswain/vuedraggable"
+import draggable from '@marshallswain/vuedraggable'
 import * as vt from 'vue-toastification'
-import mitt from "mitt";
+import mitt from 'mitt'
 
 export default defineNuxtPlugin((_nuxtApp) => {
   const config = useRuntimeConfig()
@@ -27,13 +27,13 @@ export default defineNuxtPlugin((_nuxtApp) => {
   _nuxtApp.provide('sections', $sections)
 
   const options = {
-    position: "top-right",
+    position: 'top-right',
     maxToasts: 20,
-    newestOnTop: true
+    newestOnTop: true,
   }
 
   _nuxtApp.vueApp.use(vt.default, options)
-  _nuxtApp.vueApp.component('draggable', draggable);
+  _nuxtApp.vueApp.component('draggable', draggable)
   // @ts-ignore
   _nuxtApp.provide('toast', vt.useToast ? vt.useToast() : vt.default.useToast())
 
@@ -47,7 +47,7 @@ export default defineNuxtPlugin((_nuxtApp) => {
   return {
     provide: {
       event: emitter.emit, // Will emit an event
-      listen: emitter.on // Will register a listener for an event
-    }
+      listen: emitter.on, // Will register a listener for an event
+    },
   }
 })

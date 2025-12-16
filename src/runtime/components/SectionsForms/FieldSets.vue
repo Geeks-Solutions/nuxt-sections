@@ -11,30 +11,26 @@
         animation="200"
         :disabled="props.dragDisabled"
         @start="drag = true"
-        @end="drag = false">
-        <template #item="{element: object, index: idx}">
-          <div
-            :key="object.id"
-            class="flex flex-col"
-            :class="props.mainWrapperClasses"
-          >
+        @end="drag = false"
+      >
+        <template #item="{ element: object, index: idx }">
+          <div :key="object.id" class="flex flex-col" :class="props.mainWrapperClasses">
             <fieldset :class="props.wrapperClasses">
               <legend :class="props.legendClasses">
                 {{ props.alterLengendLabel(props.legendLabel, idx) }}
               </legend>
 
               <span
-                class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile">
-                  <LazyBaseIconsDrag class="drag-icon handle" />
-                  <span
-                    @click="emit('remove-fieldset', object, idx)">
-                    <LazyBaseIconsTrash class="trash-icon" />
-                  </span>
+                class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
+              >
+                <LazyBaseIconsDrag class="drag-icon handle" />
+                <span @click="emit('remove-fieldset', object, idx)">
+                  <LazyBaseIconsTrash class="trash-icon" />
+                </span>
               </span>
 
               <!-- Pass object and idx to the default slot -->
               <slot :object="object" :idx="idx"></slot>
-
             </fieldset>
           </div>
         </template>
@@ -50,49 +46,50 @@ import { ref, computed } from '#imports'
 const props = defineProps({
   draggableClasses: {
     type: String,
-    default: ''
+    default: '',
   },
   mainWrapperClasses: {
     type: String,
-    default: ''
+    default: '',
   },
   wrapperClasses: {
     type: String,
-    default: 'fieldSetStyle border border-solid border-gray-300 p-3 mt-2 relativeSections'
+    default: 'fieldSetStyle border border-solid border-gray-300 p-3 mt-2 relativeSections',
   },
   legendClasses: {
     type: String,
-    default: 'w-auto px-16' // Note: Original had px-16, might be large?
+    default: 'w-auto px-16', // Note: Original had px-16, might be large?
   },
   legendLabel: {
     type: String,
-    default: ''
+    default: '',
   },
   alterLengendLabel: {
     type: Function,
     default: (label, idx) => {
       return `${label} #${idx + 1}:`
-    }
+    },
   },
-  arrayDataPop: { // Renamed prop to avoid conflict with computed name
+  arrayDataPop: {
+    // Renamed prop to avoid conflict with computed name
     type: Array,
-    default: () => []
+    default: () => [],
   },
   fieldsetGroup: {
     type: String,
-    default: 'default-fieldset-group' // Provide a default group name
+    default: 'default-fieldset-group', // Provide a default group name
   },
   dragDisabled: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
 // --- Emits ---
-const emit = defineEmits(['remove-fieldset', 'array-updated']);
+const emit = defineEmits(['remove-fieldset', 'array-updated'])
 
 // --- Refs ---
-const drag = ref(false);
+const drag = ref(false)
 
 // --- Computed ---
 // Handles getting/setting the array for v-model on draggable
@@ -102,10 +99,9 @@ let arrayData = computed({
     return props.arrayDataPop
   },
   set(newData) {
-    emit('array-updated', newData);
-  }
-});
-
+    emit('array-updated', newData)
+  },
+})
 </script>
 
 <style scoped>
@@ -124,7 +120,8 @@ let arrayData = computed({
 }
 
 /* Scoped styles from original */
-.drag-icon, .trash-icon {
+.drag-icon,
+.trash-icon {
   cursor: pointer;
   margin: 0 5px; /* Add some spacing */
 }
@@ -143,5 +140,4 @@ let arrayData = computed({
     display: none;
   }
 }
-
 </style>

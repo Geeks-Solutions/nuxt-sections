@@ -9,11 +9,12 @@
   </div>
 </template>
 
-<script setup> // Remove types and use js
+<script setup>
+// Remove types and use js
 // Removed TypeScript interfaces and PropType import
 
 // --- Props ---
-import {computed} from "#imports";
+import { computed } from '#imports'
 
 const props = defineProps({
   section: {
@@ -22,53 +23,54 @@ const props = defineProps({
   },
   lang: {
     type: String,
-    default: "en"
+    default: 'en',
   },
   // viewStructure prop seems unused in the original script logic, kept for compatibility if needed elsewhere.
   viewStructure: {
     settings: [
       {
         en: 'wysiwyg',
-        fr: 'wysiwyg'
-      }
-    ]
-  }
-});
+        fr: 'wysiwyg',
+      },
+    ],
+  },
+})
 
 // --- Computed Properties ---
-const htmlContent = computed(() => { // Removed <string> type annotation
-  const settings = props.section?.settings;
+const htmlContent = computed(() => {
+  // Removed <string> type annotation
+  const settings = props.section?.settings
   if (settings) {
     // Case 1: Settings is an array (most common case from the form component)
     if (Array.isArray(settings) && settings.length > 0 && settings[0]?.[props.lang] !== undefined) {
-      return settings[0][props.lang];
+      return settings[0][props.lang]
     }
     // Case 2: Settings is an object with language keys directly (less likely based on form)
     else if (typeof settings === 'object' && !Array.isArray(settings) && settings?.[props.lang]) {
-       // Check if it's not the array case missed somehow
-       if (settings[props.lang]) {
-         return settings[props.lang];
-       }
+      // Check if it's not the array case missed somehow
+      if (settings[props.lang]) {
+        return settings[props.lang]
+      }
     }
     // Case 3: Settings is just a string (fallback?)
     else if (typeof settings === 'string') {
-      return settings;
+      return settings
     }
   }
   // Return empty string or a placeholder if no content found
-  return ""; // Changed from "not found" to empty string for cleaner rendering
-});
+  return '' // Changed from "not found" to empty string for cleaner rendering
+})
 
-const cssClasses = computed(() => { // Removed <string> type annotation
-  const settings = props.section?.settings;
+const cssClasses = computed(() => {
+  // Removed <string> type annotation
+  const settings = props.section?.settings
   // Check if settings is an array and has the classes property
   if (Array.isArray(settings) && settings.length > 0 && settings[0]?.classes !== undefined) {
-    return settings[0].classes;
+    return settings[0].classes
   }
   // Return empty string if no classes found
-  return '';
-});
-
+  return ''
+})
 </script>
 
 <style scoped>
@@ -76,7 +78,8 @@ const cssClasses = computed(() => { // Removed <string> type annotation
   width: 87%;
   margin: 0 auto;
 }
-.wys-wrapper .title { /* This class seems unused in the template */
+.wys-wrapper .title {
+  /* This class seems unused in the template */
   max-width: 470px;
 }
 /* Added style for the v-html wrapper if needed */
@@ -86,5 +89,4 @@ const cssClasses = computed(() => { // Removed <string> type annotation
 
 /* Ensure Quill styles are globally available or imported if needed for ql-snow */
 /* @import 'quill/dist/quill.snow.css'; */ /* Example if needed */
-
 </style>

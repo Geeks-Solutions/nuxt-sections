@@ -5,14 +5,14 @@ export default defineVitestConfig({
   plugins: [],
   test: {
     globals: true,
-    environment: 'happy-dom',  // Using happy-dom instead of nuxt to avoid plugin loading
+    environment: 'happy-dom', // Using happy-dom instead of nuxt to avoid plugin loading
     setupFiles: ['./tests/setup/mocks.js'],
     exclude: [
       '**/node_modules/**',
       '**/.nuxt/**',
       '**/dist/**',
       '**/cypress/**',
-      '**/.{idea,git,cache,output,temp}/**'
+      '**/.{idea,git,cache,output,temp}/**',
     ],
     coverage: {
       provider: 'v8',
@@ -28,35 +28,30 @@ export default defineVitestConfig({
         '**/playground/**',
         '**/coverage/**',
         '**/*.config.*',
-        '**/mocks.js'
+        '**/mocks.js',
       ],
-      include: [
-        'src/**/*.{js,ts,vue}'
-      ],
+      include: ['src/**/*.{js,ts,vue}'],
       all: true,
       thresholds: {
         lines: 80,
         functions: 80,
         branches: 80,
-        statements: 80
-      }
+        statements: 80,
+      },
     },
     server: {
       deps: {
-        inline: [/vue-router/]
-      }
+        inline: [/vue-router/],
+      },
     },
-    testTimeout: 5000
+    testTimeout: 5000,
   },
   resolve: {
     alias: {
       '~': fileURLToPath(new URL('./', import.meta.url)),
       '@': fileURLToPath(new URL('./', import.meta.url)),
       '#app': fileURLToPath(new URL('./node_modules/nuxt/dist/app', import.meta.url)),
-      'vue': 'vue/dist/vue.esm-bundler.js'
-    }
-  }
+      vue: 'vue/dist/vue.esm-bundler.js',
+    },
+  },
 })
-
-
-

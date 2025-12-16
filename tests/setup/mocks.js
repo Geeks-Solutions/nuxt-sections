@@ -4,13 +4,13 @@ function importJs(path) {
       available_locales: () => ['en', 'de', 'fr', 'es'],
       init_params: vi.fn((sections, params) => ({
         ...sections,
-        modified: true
+        modified: true,
       })),
       page_pre_load: vi.fn((payload) => ({
         ...payload,
-        preloaded: true
-      }))
-    }
+        preloaded: true,
+      })),
+    },
   }
 
   try {
@@ -34,8 +34,10 @@ function abstractPathLanguage(finalPath) {
   }
 
   if (availableLocales.length > 0) {
-    matchedLocale = availableLocales.find((locale) =>
-      decodeURIComponent(finalPath) === `${locale}` || decodeURIComponent(finalPath).startsWith(`${locale}/`)
+    matchedLocale = availableLocales.find(
+      (locale) =>
+        decodeURIComponent(finalPath) === `${locale}` ||
+        decodeURIComponent(finalPath).startsWith(`${locale}/`)
     )
 
     if (matchedLocale) {
@@ -53,7 +55,7 @@ function abstractPathLanguage(finalPath) {
 
   return {
     path: finalPath,
-    matchedLocale
+    matchedLocale,
   }
 }
 
@@ -81,4 +83,3 @@ globalThis.importJs = importJs
 globalThis.abstractPathLanguage = abstractPathLanguage
 globalThis.parsePath = parsePath
 globalThis.getSectionProjectIdentity = getSectionProjectIdentity
-

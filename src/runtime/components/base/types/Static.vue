@@ -2,7 +2,13 @@
   <div class="text-center">
     <div class="element-type">
       <!-- Access nested props.props -->
-      <h3>{{ props.props.linked_to ? formatTexts(formatName(props.props.linked_to, '/')) : formatTexts(formatName(props.props.name, " / ")) }}</h3>
+      <h3>
+        {{
+          props.props.linked_to
+            ? formatTexts(formatName(props.props.linked_to, '/'))
+            : formatTexts(formatName(props.props.name, ' / '))
+        }}
+      </h3>
 
       <!-- Global Instance Fields -->
       <div v-if="globalSectionMode">
@@ -15,37 +21,44 @@
         <!-- Access nested props.props -->
         <div v-if="!props.props.linked_to" class="autoInsertRow">
           <input
-              class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
-              type="text"
-              :placeholder="t('instanceName')+'*'"
-              :disabled="!!props.props.linked_to"
-              v-model="instanceName"
+            class="py-4 pl-6 border rounded-xl border-FieldGray h-48px instanceInput my-2 focus:outline-none"
+            type="text"
+            :placeholder="t('instanceName') + '*'"
+            :disabled="!!props.props.linked_to"
+            v-model="instanceName"
           />
         </div>
-        <span v-if="instanceNameError" class="pagesReference mb-2">{{ t('instanceNameRequired') }}</span>
+        <span v-if="instanceNameError" class="pagesReference mb-2">{{
+          t('instanceNameRequired')
+        }}</span>
       </div>
-      <LazyBaseSubTypesGlobalReferences :global-section-mode="globalSectionMode" :show-pages-list="showPagesList" :pages="pages" @showPagesClicked="showPagesList = !showPagesList" />
+      <LazyBaseSubTypesGlobalReferences
+        :global-section-mode="globalSectionMode"
+        :show-pages-list="showPagesList"
+        :pages="pages"
+        @showPagesClicked="showPagesList = !showPagesList"
+      />
 
       <!-- Form and SubType -->
       <form>
         <div>
-           <LazyBaseSubTypesSubType
-              ref="viewSaved"
-              :name="props.props.name"
-              :creationView="creationView"
-              :promote-button="!instance && !props.props.creation && !globalSectionMode"
-              :is-side-bar-open="isSideBarOpen"
-              :locales="locales"
-              :default-lang="defaultLang"
-              :translation-component-support="translationComponentSupport"
-              :sections-user-id="sectionsUserId"
-              :saved-settings="savedView?.settings"
-              @promote-section="emit('promote-section')"
-              @addStatic="addStatic"
-              @creationViewLoaded="(settings) => emit('creationViewLoaded', settings)"
-           >
-             <slot />
-           </LazyBaseSubTypesSubType>
+          <LazyBaseSubTypesSubType
+            ref="viewSaved"
+            :name="props.props.name"
+            :creationView="creationView"
+            :promote-button="!instance && !props.props.creation && !globalSectionMode"
+            :is-side-bar-open="isSideBarOpen"
+            :locales="locales"
+            :default-lang="defaultLang"
+            :translation-component-support="translationComponentSupport"
+            :sections-user-id="sectionsUserId"
+            :saved-settings="savedView?.settings"
+            @promote-section="emit('promote-section')"
+            @addStatic="addStatic"
+            @creationViewLoaded="(settings) => emit('creationViewLoaded', settings)"
+          >
+            <slot />
+          </LazyBaseSubTypesSubType>
         </div>
       </form>
     </div>
@@ -66,124 +79,131 @@ import {
   formatName,
   formatTexts,
   showToast,
-  nextTick
+  nextTick,
 } from '#imports'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 // Props
 const props = defineProps({
-  props: { // Nested object containing name, linked_to, type, region, instance_name etc.
+  props: {
+    // Nested object containing name, linked_to, type, region, instance_name etc.
     type: Object,
     default: () => ({}),
   },
-  savedView: { // Contains id, weight, settings
+  savedView: {
+    // Contains id, weight, settings
     type: Object,
     default: () => ({}),
   },
   creationView: {
     type: Boolean,
-    default: false
+    default: false,
   },
   locales: {
     type: Array,
-    default: () => ['en', 'fr']
+    default: () => ['en', 'fr'],
   },
   defaultLang: {
     type: String,
-    default: 'en'
+    default: 'en',
   },
   translationComponentSupport: {
     type: Boolean,
-    default: false
+    default: false,
   },
   sectionsUserId: {
     type: String,
-    default: ''
+    default: '',
   },
   instance: {
     type: Boolean,
-    default: false
+    default: false,
   },
   linked: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isSideBarOpen: {
     type: Boolean,
-    default: false
+    default: false,
   },
-   // Prop 'creation' is nested within props.props
-   // Removed incorrect top-level 'creation' prop definition.
-});
+  // Prop 'creation' is nested within props.props
+  // Removed incorrect top-level 'creation' prop definition.
+})
 
 // Emits
-const emit = defineEmits(['addSectionType', 'load', 'promote-section', 'creationViewLoaded']);
+const emit = defineEmits(['addSectionType', 'load', 'promote-section', 'creationViewLoaded'])
 
 // Reactive State
-const showPagesList = ref(false);
-const autoInsert = ref(false);
-const instanceNameError = ref(false);
-const instanceName = ref('');
-const pages = ref([]);
-const viewSaved = ref(null); // Ref for subType component
-const importedComponentRef = ref(null); // Ref for the dynamically imported component
-const elements = ref([]); // To store fields from imported component if needed
+const showPagesList = ref(false)
+const autoInsert = ref(false)
+const instanceNameError = ref(false)
+const instanceName = ref('')
+const pages = ref([])
+const viewSaved = ref(null) // Ref for subType component
+const importedComponentRef = ref(null) // Ref for the dynamically imported component
+const elements = ref([]) // To store fields from imported component if needed
 
 // Computed Properties
 const component = computed(() => {
   // Access nested props.props.name and props.props.type
-  if (!props.props.name || !props.props.type) return null;
-  const path = `/views/${props.props.name}_${props.props.type}`;
-  return importComp(path).component;
-});
+  if (!props.props.name || !props.props.type) return null
+  const path = `/views/${props.props.name}_${props.props.type}`
+  return importComp(path).component
+})
 
-const id = computed(() => props.savedView.id || `id-${Date.now()}`);
+const id = computed(() => props.savedView.id || `id-${Date.now()}`)
 // Ensure weight is handled correctly, default to null if not present or 0
-const weight = computed(() => (props.savedView.weight === 0 || props.savedView.weight) ? props.savedView.weight : null);
-const globalSectionMode = computed(() => props.instance || props.linked);
+const weight = computed(() =>
+  props.savedView.weight === 0 || props.savedView.weight ? props.savedView.weight : null
+)
+const globalSectionMode = computed(() => props.instance || props.linked)
 
 // Methods converted to functions
 function addStatic(settings, private_data) {
-  instanceNameError.value = false;
+  instanceNameError.value = false
   if (globalSectionMode.value && !instanceName.value) {
-    instanceNameError.value = true;
-    return;
+    instanceNameError.value = true
+    return
   }
-  emit("addSectionType", {
+  emit('addSectionType', {
     name: props.props.name, // Access nested props
-    type: "static",
+    type: 'static',
     settings,
     private_data,
     id: id.value,
     weight: weight.value,
     auto_insertion: autoInsert.value,
     instance_name: instanceName.value,
-    region: props.props.region // Access nested props
-  });
+    region: props.props.region, // Access nested props
+  })
 }
 
 async function getGlobalType() {
-  emit("load", true);
+  emit('load', true)
   try {
     // Access nested props.props.linked_to
-    const result = await getGlobalTypeData(props.props.linked_to); // Assuming helper is adapted
+    const result = await getGlobalTypeData(props.props.linked_to) // Assuming helper is adapted
     if (result.res && result.res.data) {
-      autoInsert.value = result.res.data.auto_insertion;
+      autoInsert.value = result.res.data.auto_insertion
       if (result.res.data.pages && result.res.data.pages.length > 0) {
-        pages.value = result.res.data.pages.map(p => p.path);
+        pages.value = result.res.data.pages.map((p) => p.path)
       }
-      instanceName.value = result.res.data.name;
+      instanceName.value = result.res.data.name
     } else if (result.error) {
       // Handle error - Use Nuxt 3 compatible toast/notification
-      console.error("Error loading global type:", result.error?.response?.data?.message || 'Unknown error');
-      showToast("Error", "error", result.error.response.data.message); // Replace if using a toast system
+      console.error(
+        'Error loading global type:',
+        result.error?.response?.data?.message || 'Unknown error'
+      )
+      showToast('Error', 'error', result.error.response.data.message) // Replace if using a toast system
     }
   } catch (error) {
-    console.error("Error fetching global type data:", error);
-    showToast("Error", "error", 'An unexpected error occurred.'); // Replace if using a toast system
+    console.error('Error fetching global type data:', error)
+    showToast('Error', 'error', 'An unexpected error occurred.') // Replace if using a toast system
   } finally {
-    emit("load", false);
+    emit('load', false)
   }
 }
 
@@ -222,26 +242,30 @@ onMounted(async () => {
   // Consider if this is still the best approach.
   // Use watch or nextTick if component loading is asynchronous.
   if (importedComponentRef.value && importedComponentRef.value.fields) {
-      elements.value = importedComponentRef.value.fields;
+    elements.value = importedComponentRef.value.fields
   } else {
-      // Watch for the component to load if it's async
-      watch(component, (newCompInstance) => {
-          if (newCompInstance && newCompInstance.fields) {
-              elements.value = newCompInstance.fields;
-          }
-      }, { immediate: true }); // Check immediately in case it's already loaded
+    // Watch for the component to load if it's async
+    watch(
+      component,
+      (newCompInstance) => {
+        if (newCompInstance && newCompInstance.fields) {
+          elements.value = newCompInstance.fields
+        }
+      },
+      { immediate: true }
+    ) // Check immediately in case it's already loaded
   }
-
 
   // Fetch global type if linked
-  if (props.props.linked_to) { // Access nested props
-    getGlobalType();
+  if (props.props.linked_to) {
+    // Access nested props
+    getGlobalType()
   }
-});
-
+})
 </script>
 
-<style scoped> /* Changed to scoped */
+<style scoped>
+/* Changed to scoped */
 .dashboard button {
   background: black;
   margin: 10px;
