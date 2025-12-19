@@ -702,8 +702,10 @@ interface ApiRequestOptions {
 
 /**
  * Interface for API error response
+ * Add the data at the root for retro compatibility
  */
 interface ApiError {
+  data: any
   response: {
     data: any
     status: number
@@ -817,6 +819,7 @@ export const useApiRequest = async <T = any>({
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       const error: ApiError = {
+        data: errorData,
         response: {
           data: errorData,
           status: response.status,
