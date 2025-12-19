@@ -2,7 +2,7 @@
   <div class="load_container" v-if="loading || loadingNum > 0">
     <div class="load_overlay"></div>
     <div class="load_image">
-      <img src="../../../assets/loading.gif"  alt="Loading"/>
+      <img src="../../../assets/loading.gif" alt="Loading" />
     </div>
   </div>
 </template>
@@ -16,8 +16,8 @@ const props = defineProps({
   loadingNum: {
     type: Number,
     default: 0,
-  }
-});
+  },
+})
 </script>
 
 <style>

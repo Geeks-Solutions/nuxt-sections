@@ -1,7 +1,5 @@
 vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
-  const mod
-    = await importOriginal
-      () // type is inferred
+  const mod = await importOriginal() // type is inferred
   return {
     ...mod,
     showToast: vi.fn(),
@@ -13,43 +11,44 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
               mediaFields: [
                 { name: 'media_field_1' },
                 { name: '' }, // will be filtered
-                { name: 'media_field_2' }
-              ]
-            }
-          }
-        })
+                { name: 'media_field_2' },
+              ],
+            },
+          },
+        }),
       }
-    })
+    }),
   }
 })
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
-import { useNuxtApp } from "#app";
-import * as vt from 'vue-toastification';
-import draggable from "@marshallswain/vuedraggable"
+import { useNuxtApp } from '#app'
+import * as vt from 'vue-toastification'
+import draggable from '@marshallswain/vuedraggable'
 
 const mockedSectionsConfig = {
   cname: true,
   serverUrl: 'http://localhost:3000',
   projectId: 'test-project',
   queryStringSupport: 'enabled',
-  projectLocales: ''
+  projectLocales: '',
 }
 
 useNuxtApp().provide('toast', vt.useToast())
 useNuxtApp().provide('sections', mockedSectionsConfig)
 
 import {
-  importJs, sectionHeader,
+  importJs,
+  sectionHeader,
   getSectionProjectIdentity,
   parsePath,
   parseQS,
   useApiRequest,
   showToast,
   importComp,
-  validateQS
-} from "~/src/runtime/utils/helpers.js";
+  validateQS,
+} from '~/src/runtime/utils/helpers.js'
 
 global.importJs = importJs
 global.sectionHeader = sectionHeader
@@ -63,15 +62,16 @@ global.validateQS = validateQS
 
 const showToastMock = vi.fn()
 
-import SectionsPage from '../src/runtime/components/Sections/admin.vue';
-import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue';
-import WysiwygStatic from '../src/runtime/components/configs/views/wysiwyg_static.vue';
-import Wysiwyg from '../src/runtime/components/configs/forms/wysiwyg.vue';
+import SectionsPage from '../src/runtime/components/Sections/admin.vue'
+import FieldSets from '../src/runtime/components/SectionsForms/FieldSets.vue'
+import WysiwygStatic from '../src/runtime/components/configs/views/wysiwyg_static.vue'
+import Wysiwyg from '../src/runtime/components/configs/forms/wysiwyg.vue'
 
 import { createI18n } from 'vue-i18n'
 import { createPinia, setActivePinia } from 'pinia'
 
-let stubs = { // Add basic stubs for common lazy components
+let stubs = {
+  // Add basic stubs for common lazy components
   LazyBaseIconsBack: true,
   LazyBaseIconsClose: true,
   LazyBaseIconsAnchor: true,
@@ -111,8 +111,8 @@ let stubs = { // Add basic stubs for common lazy components
   LazyBaseIconsLoading: true,
   SettingsIcon: true, // If SettingsIcon is a separate component
   NuxtLink: { template: '<a><slot /></a>' }, // Stub NuxtLink,
-  draggable
-};
+  draggable,
+}
 
 const i18n = createI18n({
   legacy: false,
@@ -120,8 +120,8 @@ const i18n = createI18n({
   fallbackLocale: 'en',
   messages: {
     en: {},
-    fr: {}
-  }
+    fr: {},
+  },
 })
 
 // Helper to dynamically mount the component with custom props
@@ -133,9 +133,9 @@ const mountComponent = (props = {}) => {
       config: {
         globalProperties: {
           parsePath: vi.fn().mockReturnValue('mocked/path'),
-          importJs: vi.fn()
-        }
-      }
+          importJs: vi.fn(),
+        },
+      },
     },
     props: {
       pageName: 'variation1',
@@ -149,15 +149,15 @@ const mountComponent = (props = {}) => {
       _sectionsOptions: {},
       sectionsPageData: null,
       ...props,
-    }
+    },
   })
 }
 
 const mockPageData = {
-  "id": "67642846052f506967b3db96",
-  "path": "page5",
-  "metadata": { project_metadata: { languages: ['en'] } },
-  "sections": [
+  id: '67642846052f506967b3db96',
+  path: 'page5',
+  metadata: { project_metadata: { languages: ['en'] } },
+  sections: [
     {
       id: 'view-1',
       name: 'section1',
@@ -165,10 +165,10 @@ const mockPageData = {
       type: 'text',
       private_data: {
         media: {
-          media_id: "Media1"
-        }
+          media_id: 'Media1',
+        },
       },
-      linked_to: ''
+      linked_to: '',
     },
     {
       id: 'view-2',
@@ -177,27 +177,26 @@ const mockPageData = {
       type: 'image',
       private_data: {
         media: {
-          media_id: "Media2"
-        }
+          media_id: 'Media2',
+        },
       },
-      linked_to: ''
-    }
+      linked_to: '',
+    },
   ],
-  "layout": "standard",
-  "page": "page5",
-  "variations": [],
-  "invalid_sections": [],
-  "last_updated": 1737103250
-};
+  layout: 'standard',
+  page: 'page5',
+  variations: [],
+  invalid_sections: [],
+  last_updated: 1737103250,
+}
 
 describe('SectionsPage.vue', () => {
   let wrapper
 
   beforeEach(() => {
-
     setActivePinia(createPinia())
 
-    vi.clearAllMocks();
+    vi.clearAllMocks()
 
     global.fetch = vi.fn(() =>
       Promise.resolve({
@@ -264,17 +263,17 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.mutateVariation('home')
 
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
 
     expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
       { id: 'view2', private_data: {}, weight: 1 },
       { id: 'view1', private_data: {}, weight: 2 },
-      { id: 'view4', private_data: {}, weight: 3 }
+      { id: 'view4', private_data: {}, weight: 3 },
     ])
-
   })
 
-  it('calls initializeSections and computeLayoutData in fetch()', async () => { // Changed test to it
+  it('calls initializeSections and computeLayoutData in fetch()', async () => {
+    // Changed test to it
 
     global.fetch.mockResolvedValueOnce({
       ok: true,
@@ -288,9 +287,9 @@ describe('SectionsPage.vue', () => {
     //   json: () => Promise.resolve(mockPageData),
     // });
 
-    await flushPromises();
+    await flushPromises()
 
-    const result = wrapper.vm.currentViews;
+    const result = wrapper.vm.currentViews
 
     // Expected result should be sorted by weight
     expect(result).toEqual([
@@ -301,10 +300,10 @@ describe('SectionsPage.vue', () => {
         type: 'text',
         private_data: {
           media: {
-            media_id: "Media1"
-          }
+            media_id: 'Media1',
+          },
         },
-        linked_to: ''
+        linked_to: '',
       },
       {
         id: 'view-2',
@@ -313,42 +312,49 @@ describe('SectionsPage.vue', () => {
         type: 'image',
         private_data: {
           media: {
-            media_id: "Media2"
-          }
+            media_id: 'Media2',
+          },
         },
-        linked_to: ''
-      }
-    ]);
+        linked_to: '',
+      },
+    ])
 
     const newViews = [
       { id: 3, name: 'View 3', weight: 0 }, // Will be assigned weight 0
       { id: 1, name: 'View 1', weight: 1 }, // Will be assigned weight 1
-    ];
+    ]
 
     // Call the setter
-    wrapper.vm.displayVariations.variation1.views = newViews;
+    wrapper.vm.displayVariations.variation1.views = newViews
 
-    expect(wrapper.vm.displayVariations.variation1.views[0]).toEqual({ id: 3, name: 'View 3', weight: 0 });
-    expect(wrapper.vm.displayVariations.variation1.views[1]).toEqual({ id: 1, name: 'View 1', weight: 1 });
-
+    expect(wrapper.vm.displayVariations.variation1.views[0]).toEqual({
+      id: 3,
+      name: 'View 3',
+      weight: 0,
+    })
+    expect(wrapper.vm.displayVariations.variation1.views[1]).toEqual({
+      id: 1,
+      name: 'View 1',
+      weight: 1,
+    })
 
     // Component's fetch method is called.
     // Need to ensure $nuxt is available if renderPageData relies on it.
     // The global mock for useNuxtApp should provide $sections.
     if (wrapper.vm.$options.fetch) {
-      await wrapper.vm.$options.fetch.call(wrapper.vm);
-    } else if (typeof wrapper.vm.fetch === 'function') { // For <script setup> or setup() returning fetch
-      await wrapper.vm.fetch();
+      await wrapper.vm.$options.fetch.call(wrapper.vm)
+    } else if (typeof wrapper.vm.fetch === 'function') {
+      // For <script setup> or setup() returning fetch
+      await wrapper.vm.fetch()
     }
 
     // Check if fetch was called by useApiRequest
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining(`http://localhost:3000/project/test-project/page/variation1`), // URL check
       expect.objectContaining({
-        method: 'POST'
+        method: 'POST',
       })
-    );
-
+    )
   })
 
   it('addSectionType function should set section.weight if it is null, "null", or undefined', async () => {
@@ -356,43 +362,41 @@ describe('SectionsPage.vue', () => {
       variation1: {
         views: { view1: {}, view2: {}, view3: {} },
       },
-    };
-    wrapper.vm.selectedVariation = 'variation1';
+    }
+    wrapper.vm.selectedVariation = 'variation1'
 
-    const testCases = [null, 'null', undefined];
+    const testCases = [null, 'null', undefined]
     testCases.forEach((initialWeight, idx) => {
       wrapper.vm.displayVariations = {
         variation1: {
           views: { view1: {}, view2: {}, view3: {} },
         },
-      };
-      const section = { weight: initialWeight };
-      const instance = {}; // Placeholder, customize if needed
+      }
+      const section = { weight: initialWeight }
+      const instance = {} // Placeholder, customize if needed
 
-      wrapper.vm.addSectionType(section, showToast, instance);
+      wrapper.vm.addSectionType(section, showToast, instance)
 
-      expect(section.weight).toBe(3); // Expect the length of views
+      expect(section.weight).toBe(3) // Expect the length of views
     })
   })
 
   it('renders a SettingsIcon for each view', async () => {
-
     wrapper.vm.initializeSections({
-      data: mockPageData
+      data: mockPageData,
     })
 
     wrapper.vm.editMode = true
 
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
 
     const settingsIcons = wrapper.findAll('.settings-icon-wrapper')
     expect(settingsIcons.length).toBe(2)
-  });
+  })
 
   it('toggles sectionOptions for the correct view when SettingsIcon is clicked', async () => {
-
     wrapper.vm.initializeSections({
-      data: mockPageData
+      data: mockPageData,
     })
     // Initialize sectionOptions
     wrapper.vm.sectionOptions = {
@@ -404,28 +408,27 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.$nextTick()
     // Find the SettingsIcon for the first view and click it
-    const firstSettingsIcon = wrapper.findAll('.settings-icon-wrapper').at(0);
-    await firstSettingsIcon.trigger('click');
+    const firstSettingsIcon = wrapper.findAll('.settings-icon-wrapper').at(0)
+    await firstSettingsIcon.trigger('click')
 
     // Assert that sectionOptions for 'view-1' is toggled
-    expect(wrapper.vm.sectionOptions['view-1']).toBe(true);
+    expect(wrapper.vm.sectionOptions['view-1']).toBe(true)
     // Assert that sectionOptions for 'view-2' is unchanged
-    expect(wrapper.vm.sectionOptions['view-2']).toBe(false);
+    expect(wrapper.vm.sectionOptions['view-2']).toBe(false)
 
     // Find the SettingsIcon for the second view and click it
-    const secondSettingsIcon = wrapper.findAll('.settings-icon-wrapper').at(1);
-    await secondSettingsIcon.trigger('click');
+    const secondSettingsIcon = wrapper.findAll('.settings-icon-wrapper').at(1)
+    await secondSettingsIcon.trigger('click')
 
     // Assert that sectionOptions for 'view-2' is toggled
-    expect(wrapper.vm.sectionOptions['view-2']).toBe(true);
+    expect(wrapper.vm.sectionOptions['view-2']).toBe(true)
     // Assert that sectionOptions for 'view-1' remains unchanged
-    expect(wrapper.vm.sectionOptions['view-1']).toBe(false);
-  });
+    expect(wrapper.vm.sectionOptions['view-1']).toBe(false)
+  })
 
   it('renders controls div only for the view with sectionOptions set to true', async () => {
-
     wrapper.vm.initializeSections({
-      data: mockPageData
+      data: mockPageData,
     })
     // Set sectionOptions for only the first view
     wrapper.vm.sectionOptions = {
@@ -437,9 +440,9 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.$nextTick()
     // Assert that the controls div is rendered for the first view
-    const controls = wrapper.findAll('.controls');
-    expect(controls.length).toBe(3);
-    expect(controls.at(0).element.closest('section').id).toBe('section1-view-1');
+    const controls = wrapper.findAll('.controls')
+    expect(controls.length).toBe(3)
+    expect(controls.at(0).element.closest('section').id).toBe('section1-view-1')
 
     // Set sectionOptions for only the second view
     wrapper.vm.sectionOptions = {
@@ -449,18 +452,17 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.$nextTick()
     // Assert that the controls div is now rendered for the second view
-    const updatedControls = wrapper.findAll('.controls');
-    expect(updatedControls.length).toBe(3);
-    expect(updatedControls.at(0).element.closest('section').id).toBe('section1-view-1');
-  });
+    const updatedControls = wrapper.findAll('.controls')
+    expect(updatedControls.length).toBe(3)
+    expect(updatedControls.at(0).element.closest('section').id).toBe('section1-view-1')
+  })
 
   it('shows input and select filters for all tabs', async () => {
-
     wrapper.vm.editMode = true
     wrapper.vm.isModalOpen = true
     wrapper.vm.appNames = ['sections']
 
-    const tabs = ['types', 'globalTypes', 'inventoryTypes'];
+    const tabs = ['types', 'globalTypes', 'inventoryTypes']
 
     for (const tab of tabs) {
       // Set the active tab
@@ -469,38 +471,40 @@ describe('SectionsPage.vue', () => {
 
       await wrapper.vm.$nextTick()
       // Assert input field is visible
-      const inputFilter = wrapper.find('input.sectionsFilterName');
-      expect(inputFilter.exists()).toBe(true);
+      const inputFilter = wrapper.find('input.sectionsFilterName')
+      expect(inputFilter.exists()).toBe(true)
 
       if (tab !== 'inventoryTypes') {
-        const selectFilter = wrapper.find('select#select');
-        expect(selectFilter.exists()).toBe(true);
+        const selectFilter = wrapper.find('select#select')
+        expect(selectFilter.exists()).toBe(true)
       }
 
       // Assert the "clear filters" text is visible
-      const clearFilters = wrapper.find('.slot-name');
-      expect(clearFilters.exists()).toBe(true);
+      const clearFilters = wrapper.find('.slot-name')
+      expect(clearFilters.exists()).toBe(true)
     }
-  });
+  })
 
   it('should maintain region weight and stay in position when editing a section in a non-standard layout', async () => {
     const section = {
       id: 'test-section',
       type: 'custom',
       region: { customLayout: { slot: 'main', weight: 3 } },
-    };
+    }
 
     wrapper.vm.selectedLayout = 'customLayout'
     wrapper.vm.selectedVariation = 'variation1'
 
-    wrapper.vm.addSectionType(section, false, false);
+    wrapper.vm.addSectionType(section, false, false)
 
     await wrapper.vm.$nextTick()
-    expect(wrapper.vm.displayVariations[wrapper.vm.selectedVariation].views[section.id].region.customLayout.weight).toBe(3);
-  });
+    expect(
+      wrapper.vm.displayVariations[wrapper.vm.selectedVariation].views[section.id].region
+        .customLayout.weight
+    ).toBe(3)
+  })
 
   it('should restore the section from updatedVariations', async () => {
-
     wrapper.setProps({
       pageName: 'testPage',
       variations: [{ name: 'testPage', active: true }],
@@ -529,14 +533,12 @@ describe('SectionsPage.vue', () => {
       region1: [{ id: 'section1', content: 'Old Content' }],
     }
 
-    wrapper.vm.restoreSection();
+    wrapper.vm.restoreSection()
 
     await wrapper.vm.$nextTick()
-    expect(wrapper.vm.displayVariations.testPage.altered).toBe(false);
-    expect(wrapper.vm.displayVariations.testPage.views.section1.content).toBe(
-      'Restored Content'
-    );
-    expect(wrapper.vm.currentViews[0].content).toBe('Restored Content');
+    expect(wrapper.vm.displayVariations.testPage.altered).toBe(false)
+    expect(wrapper.vm.displayVariations.testPage.views.section1.content).toBe('Restored Content')
+    expect(wrapper.vm.currentViews[0].content).toBe('Restored Content')
 
     wrapper.vm.selectedVariation = 'testPage'
     wrapper.vm.currentSection = { id: 'section1' }
@@ -562,34 +564,31 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.selectedSlotRegion = 'region1'
     wrapper.vm.selectedLayout = 'custom-layout'
 
-    wrapper.vm.restoreSection();
+    wrapper.vm.restoreSection()
 
     await wrapper.vm.$nextTick()
-    expect(wrapper.vm.viewsPerRegions.region1[0].content).toBe('Restored Content');
-  });
+    expect(wrapper.vm.viewsPerRegions.region1[0].content).toBe('Restored Content')
+  })
 
   it('Hide SettingsIcon for the views when sidebar is opened', async () => {
-
     wrapper.vm.isSideBarOpen = true
 
     await wrapper.vm.$nextTick()
-    const settingsIcons = wrapper.findAll('.settings-icon-wrapper');
-    expect(settingsIcons.length).toBe(0);
-  });
-
-
+    const settingsIcons = wrapper.findAll('.settings-icon-wrapper')
+    expect(settingsIcons.length).toBe(0)
+  })
 
   it('should not proceed if globalTypes already has data', async () => {
     wrapper.vm.globalTypes = [{ id: 1, name: 'Test' }]
 
-    vi.resetAllMocks();
+    vi.resetAllMocks()
 
     await wrapper.vm.$nextTick()
 
-    await wrapper.vm.getGlobalSectionTypes(false);
+    await wrapper.vm.getGlobalSectionTypes(false)
 
-    expect(global.fetch).toHaveBeenCalledOnce();
-  });
+    expect(global.fetch).toHaveBeenCalledOnce()
+  })
 
   it('should fetch and process global types if not already loaded', async () => {
     const mockResponse = {
@@ -603,7 +602,7 @@ describe('SectionsPage.vue', () => {
           pages: ['Page1'],
         },
       ],
-    };
+    }
 
     wrapper.vm.globalTypes = []
 
@@ -623,36 +622,36 @@ describe('SectionsPage.vue', () => {
       ok: true,
       json: async () => mockResponse,
     })
-    await wrapper.vm.getGlobalSectionTypes(false);
+    await wrapper.vm.getGlobalSectionTypes(false)
 
     await wrapper.vm.$nextTick()
 
-    expect(global.fetch).toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalled()
 
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.vm.globalTypes).toHaveLength(2);
+    expect(wrapper.vm.globalTypes).toHaveLength(2)
     expect(wrapper.vm.globalTypes[0]).toMatchObject({
       name: 'Section1',
       type: 'configurable',
       regions: ['Region1'],
       auto_insertion: true,
-    });
-    expect(wrapper.vm.loading).toBe(false);
-  });
+    })
+    expect(wrapper.vm.loading).toBe(false)
+  })
 
   it('should handle errors gracefully', async () => {
     global.fetch.mockRejectedValue({
       ok: false,
-      json: async () => { error: 'Fetch failed' },
+      json: async () => {
+        error: 'Fetch failed'
+      },
     })
 
-    await wrapper.vm.getGlobalSectionTypes(false);
+    await wrapper.vm.getGlobalSectionTypes(false)
 
-    expect(wrapper.vm.loading).toBe(false);
-  });
-
-
+    expect(wrapper.vm.loading).toBe(false)
+  })
 
   it('includes query_string and language in variables when queryStringSupport is enabled', async () => {
     const gt = {
@@ -660,8 +659,8 @@ describe('SectionsPage.vue', () => {
         name: 'testSection',
       },
       query_string_keys: ['key1', 'key2'],
-    };
-    const options = { option1: true };
+    }
+    const options = { option1: true }
 
     global.fetch.mockResolvedValueOnce({
       ok: true,
@@ -670,26 +669,25 @@ describe('SectionsPage.vue', () => {
 
     vi.resetAllMocks()
 
-    await wrapper.vm.renderConfigurableSection(gt, options);
+    await wrapper.vm.renderConfigurableSection(gt, options)
 
     // Assert axios.post is cssalled with the correct URL and variables
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:3000/project/test-project/section/render',
       expect.any(Object)
-    );
-
-  });
+    )
+  })
 
   it('does not include query_string if queryStringSupport is disabled', async () => {
-    wrapper.vm.nuxtApp.$sections.queryStringSupport = 'disabled';
+    wrapper.vm.nuxtApp.$sections.queryStringSupport = 'disabled'
 
     const gt = {
       section: {
         name: 'testSection',
       },
       query_string_keys: [],
-    };
-    const options = { option1: true };
+    }
+    const options = { option1: true }
 
     global.fetch.mockResolvedValueOnce({
       ok: true,
@@ -698,26 +696,25 @@ describe('SectionsPage.vue', () => {
 
     vi.resetAllMocks()
 
-    await wrapper.vm.renderConfigurableSection(gt, options);
+    await wrapper.vm.renderConfigurableSection(gt, options)
 
     // Assert axios.post is called without query_string in variables
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:3000/project/test-project/section/render',
       expect.any(Object)
-    );
-
-  });
+    )
+  })
 
   it('include language if locale matches defaultLocale', async () => {
-    wrapper.vm.nuxtApp.$sections.queryStringSupport = "enabled";
+    wrapper.vm.nuxtApp.$sections.queryStringSupport = 'enabled'
 
     const gt = {
       section: {
         name: 'testSection',
       },
       query_string_keys: ['key1', 'key2'],
-    };
-    const options = { option1: true };
+    }
+    const options = { option1: true }
 
     global.fetch.mockResolvedValueOnce({
       ok: true,
@@ -726,19 +723,19 @@ describe('SectionsPage.vue', () => {
 
     vi.resetAllMocks()
 
-    await wrapper.vm.renderConfigurableSection(gt, options);
+    await wrapper.vm.renderConfigurableSection(gt, options)
 
     // Assert axios.post is called with query_string but no language
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:3000/project/test-project/section/render',
       expect.any(Object)
-    );
-  });
+    )
+  })
 
   it('Add section type side bar view: Add section popup shows on the sidebar', async () => {
     wrapper.setProps({
-      admin: true
-    });
+      admin: true,
+    })
 
     wrapper.vm.isSideBarOpen = false
     wrapper.vm.editMode = true
@@ -746,21 +743,19 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.selectedLayout = 'standard'
     wrapper.vm.currentSection = { name: 'wysiwyg', type: 'static' }
 
-    await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' });
+    await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' })
 
-    expect(wrapper.vm.isSideBarOpen).toBe(true);
+    expect(wrapper.vm.isSideBarOpen).toBe(true)
 
     const creationView = wrapper.find('.creation-view-standard')
 
-    expect(creationView.exists()).toBe(true);
-
-  });
+    expect(creationView.exists()).toBe(true)
+  })
 
   it('Should position Component Creation view correctly directly under the last section', async () => {
-
     await wrapper.setProps({
-      admin: true
-    });
+      admin: true,
+    })
 
     wrapper.vm.isSideBarOpen = false
     wrapper.vm.editMode = true
@@ -768,7 +763,7 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.selectedLayout = 'standard'
     wrapper.vm.currentSection = { name: 'wysiwyg', type: 'static' }
 
-    await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' });
+    await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' })
 
     await wrapper.vm.$nextTick()
 
@@ -779,143 +774,137 @@ describe('SectionsPage.vue', () => {
 
     const nextSibling = draggable.element.nextElementSibling
     expect(nextSibling).toBe(creationView.element)
-
   })
 
   it('calls showToast when error conditions are met', async () => {
     wrapper.vm.errorResponseStatus = 429
-    wrapper.vm.sectionsError = "API limit reached"
-    showToastMock('Error',
-      'error',
-      wrapper.vm.sectionsError,
-      { duration: 3000 })
+    wrapper.vm.sectionsError = 'API limit reached'
+    showToastMock('Error', 'error', wrapper.vm.sectionsError, { duration: 3000 })
     // Wait for onMounted to resolve
     await wrapper.vm.$nextTick()
 
-    expect(showToastMock).toHaveBeenCalledWith(
-      'Error',
-      'error',
-      'API limit reached',
-      { duration: 3000 }
-    )
+    expect(showToastMock).toHaveBeenCalledWith('Error', 'error', 'API limit reached', {
+      duration: 3000,
+    })
   })
 
   it('Correctly initialize pageMetadata based on the enabled locales for a project', async () => {
-
     vi.clearAllMocks()
 
     wrapper.vm.initializeSections({
       data: {
-        "id": "67642846052f506967b3db96",
-        "path": "page5",
-        "metadata": { project_metadata: { languages: ['en'] } },
-        "sections": [
+        id: '67642846052f506967b3db96',
+        path: 'page5',
+        metadata: { project_metadata: { languages: ['en'] } },
+        sections: [
           { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
         ],
-        "layout": "standard",
-        "page": "page5",
-        "variations": [],
-        "invalid_sections": [],
-        "last_updated": 1737103250
-      }
+        layout: 'standard',
+        page: 'page5',
+        variations: [],
+        invalid_sections: [],
+        last_updated: 1737103250,
+      },
     })
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.locales).toStrictEqual(['en'])
     expect(wrapper.vm.pageMetadata).toStrictEqual({
       en: {
         title: '',
-        description: ''
-      }
+        description: '',
+      },
     })
 
-    await vi.clearAllMocks();
+    await vi.clearAllMocks()
     wrapper.vm.pageMetadata = {}
 
     wrapper.vm.initializeSections({
       data: {
-        "id": "67642846052f506967b3db96",
-        "path": "page5",
-        "metadata": { project_metadata: { languages: ['fr'] } },
-        "sections": [
+        id: '67642846052f506967b3db96',
+        path: 'page5',
+        metadata: { project_metadata: { languages: ['fr'] } },
+        sections: [
           { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
         ],
-        "layout": "standard",
-        "page": "page5",
-        "variations": [],
-        "invalid_sections": [],
-        "last_updated": 1737103250
-      }
+        layout: 'standard',
+        page: 'page5',
+        variations: [],
+        invalid_sections: [],
+        last_updated: 1737103250,
+      },
     })
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.locales).toStrictEqual(['fr'])
     expect(wrapper.vm.pageMetadata).toStrictEqual({
       fr: {
         title: '',
-        description: ''
-      }
+        description: '',
+      },
     })
 
-    await vi.clearAllMocks();
+    await vi.clearAllMocks()
     wrapper.vm.pageMetadata = {}
 
     wrapper.vm.initializeSections({
       data: {
-        "id": "67642846052f506967b3db96",
-        "path": "page5",
-        "metadata": { project_metadata: { languages: ['en', 'fr'] } },
-        "sections": [
+        id: '67642846052f506967b3db96',
+        path: 'page5',
+        metadata: { project_metadata: { languages: ['en', 'fr'] } },
+        sections: [
           { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
         ],
-        "layout": "standard",
-        "page": "page5",
-        "variations": [],
-        "invalid_sections": [],
-        "last_updated": 1737103250
-      }
+        layout: 'standard',
+        page: 'page5',
+        variations: [],
+        invalid_sections: [],
+        last_updated: 1737103250,
+      },
     })
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.locales).toStrictEqual(['en', 'fr'])
     expect(wrapper.vm.pageMetadata).toStrictEqual({
       en: {
         title: '',
-        description: ''
+        description: '',
       },
       fr: {
         title: '',
-        description: ''
-      }
+        description: '',
+      },
     })
 
-    await vi.clearAllMocks();
+    await vi.clearAllMocks()
     wrapper.vm.pageMetadata = {}
 
     wrapper.vm.initializeSections({
       data: {
-        "id": "67642846052f506967b3db96",
-        "path": "page5",
-        "metadata": { project_metadata: { languages: ['en', 'fr'] }, en: { title: 'PAGE TITLE', description: 'PAGE TITLE' } },
-        "sections": [
+        id: '67642846052f506967b3db96',
+        path: 'page5',
+        metadata: {
+          project_metadata: { languages: ['en', 'fr'] },
+          en: { title: 'PAGE TITLE', description: 'PAGE TITLE' },
+        },
+        sections: [
           { id: 'view-1', name: 'section1', weight: 1, type: 'text', linked_to: '' },
-          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' }
+          { id: 'view-2', name: 'section2', weight: 2, type: 'image', linked_to: '' },
         ],
-        "layout": "standard",
-        "page": "page5",
-        "variations": [],
-        "invalid_sections": [],
-        "last_updated": 1737103250
-      }
+        layout: 'standard',
+        page: 'page5',
+        variations: [],
+        invalid_sections: [],
+        last_updated: 1737103250,
+      },
     })
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.computedSEO).toStrictEqual({
       title: 'PAGE TITLE',
       description: 'PAGE TITLE',
-      image: ''
+      image: '',
     })
-
-  });
+  })
 
   it('When saving the page, the private_data field must be stored per sections', async () => {
     wrapper.vm.displayVariations.home = {
@@ -925,37 +914,38 @@ describe('SectionsPage.vue', () => {
           id: 'view1',
           private_data: {
             media: {
-              media_id: "Media1"
-            }
+              media_id: 'Media1',
+            },
           },
-          weight: 2
+          weight: 2,
         },
         view2: {
           id: 'view2',
           private_data: {
             media: {
-              media_id: "Media2"
-            }
+              media_id: 'Media2',
+            },
           },
-          weight: 1
+          weight: 1,
         },
         view3: {
           id: 'view3',
           private_data: {
             media: {
-              media_id: "Media3"
-            }
+              media_id: 'Media3',
+            },
           },
-          weight: 3, altered: true
+          weight: 3,
+          altered: true,
         },
         view4: {
           id: 'view4',
           private_data: {
             media: {
-              media_id: "Media4"
-            }
+              media_id: 'Media4',
+            },
           },
-          weight: 4
+          weight: 4,
         },
       },
       altered: false,
@@ -972,38 +962,37 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.mutateVariation('home')
 
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
 
     expect(JSON.parse(global.fetch.mock.calls[2][1].body).sections).toStrictEqual([
       {
         id: 'view2',
         private_data: {
           media: {
-            media_id: "Media2"
-          }
+            media_id: 'Media2',
+          },
         },
-        weight: 1
+        weight: 1,
       },
       {
         id: 'view1',
         private_data: {
           media: {
-            media_id: "Media1"
-          }
+            media_id: 'Media1',
+          },
         },
-        weight: 2
+        weight: 2,
       },
       {
         id: 'view4',
         private_data: {
           media: {
-            media_id: "Media4"
-          }
+            media_id: 'Media4',
+          },
         },
-        weight: 3
-      }
+        weight: 3,
+      },
     ])
-
   })
 
   it('When saving the page meta, the section theme settings of the page must be preserved', async () => {
@@ -1014,37 +1003,38 @@ describe('SectionsPage.vue', () => {
           id: 'view1',
           private_data: {
             media: {
-              media_id: "Media1"
-            }
+              media_id: 'Media1',
+            },
           },
-          weight: 2
+          weight: 2,
         },
         view2: {
           id: 'view2',
           private_data: {
             media: {
-              media_id: "Media2"
-            }
+              media_id: 'Media2',
+            },
           },
-          weight: 1
+          weight: 1,
         },
         view3: {
           id: 'view3',
           private_data: {
             media: {
-              media_id: "Media3"
-            }
+              media_id: 'Media3',
+            },
           },
-          weight: 3, altered: true
+          weight: 3,
+          altered: true,
         },
         view4: {
           id: 'view4',
           private_data: {
             media: {
-              media_id: "Media4"
-            }
+              media_id: 'Media4',
+            },
           },
-          weight: 4
+          weight: 4,
         },
       },
       altered: false,
@@ -1053,14 +1043,14 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.originalThemeSettings = {
       global: {
         'view-1': {
-          "--section-background-color": "rgb(103, 59, 183)"
-        }
+          '--section-background-color': 'rgb(103, 59, 183)',
+        },
       },
       specific: {
         'view-2': {
-          "--section-background-color": "rgb(66, 165, 246)"
-        }
-      }
+          '--section-background-color': 'rgb(66, 165, 246)',
+        },
+      },
     }
 
     wrapper.vm.selectedVariation = 'home'
@@ -1074,137 +1064,148 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.updatePageMetaData()
 
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
 
     expect(JSON.parse(global.fetch.mock.calls[2][1].body).metadata).toStrictEqual({
       en: {
-        description: "",
-        title: "",
+        description: '',
+        title: '',
       },
       fr: {
-        description: "",
-        title: "",
+        description: '',
+        title: '',
       },
       sections_builder: {
         global: {
-          "view-1": {
-            "--section-background-color": "rgb(103, 59, 183)",
+          'view-1': {
+            '--section-background-color': 'rgb(103, 59, 183)',
           },
         },
         specific: {
-          "view-2": {
-            "--section-background-color": "rgb(66, 165, 246)",
+          'view-2': {
+            '--section-background-color': 'rgb(66, 165, 246)',
           },
         },
       },
     })
-
   })
 
   it('Correctly initialize Configurable sections', async () => {
-
     vi.clearAllMocks()
 
     wrapper.vm.initializeSections({
       data: {
-        "id": "67642846052f506967b3db96",
-        "path": "page5",
-        "metadata": { project_metadata: { languages: ['en'] } },
-        "sections": [
+        id: '67642846052f506967b3db96',
+        path: 'page5',
+        metadata: { project_metadata: { languages: ['en'] } },
+        sections: [
           {
-            "error": null,
-            "id": "684957c99953350007ceaedc",
-            "name": "67125916f3a99d00076d1ee8:categories_articles_-_dev",
-            "type": "configurable",
-            "settings": "",
-            "status_code": null,
-            "region": {},
-            "query_string_keys": [
-              "page_path",
-              "categories_titles"
-            ],
-            "render_data": [],
-            "linked_to": "",
-            "weight": 2,
-            "private_data": {}
+            error: null,
+            id: '684957c99953350007ceaedc',
+            name: '67125916f3a99d00076d1ee8:categories_articles_-_dev',
+            type: 'configurable',
+            settings: '',
+            status_code: null,
+            region: {},
+            query_string_keys: ['page_path', 'categories_titles'],
+            render_data: [],
+            linked_to: '',
+            weight: 2,
+            private_data: {},
           },
           {
-            "error": null,
-            "id": "684957c99953350007ceaedd",
-            "name": "67125916f3a99d00076d1ee8:selective_articles_-_dev",
-            "type": "configurable",
-            "settings": "",
-            "status_code": null,
-            "region": {},
-            "query_string_keys": null,
-            "render_data": [],
-            "linked_to": "",
-            "weight": 3,
-            "private_data": {}
+            error: null,
+            id: '684957c99953350007ceaedd',
+            name: '67125916f3a99d00076d1ee8:selective_articles_-_dev',
+            type: 'configurable',
+            settings: '',
+            status_code: null,
+            region: {},
+            query_string_keys: null,
+            render_data: [],
+            linked_to: '',
+            weight: 3,
+            private_data: {},
           },
           {
-            "error": null,
-            "id": "685ea033a21e4d00081cc539",
-            "name": "67125916f3a99d00076d1ee8:top_articles_-_dev",
-            "type": "configurable",
-            "settings": "",
-            "status_code": null,
-            "region": {},
-            "query_string_keys": null,
-            "render_data": [],
-            "linked_to": "",
-            "weight": 5,
-            "private_data": {}
-          }
+            error: null,
+            id: '685ea033a21e4d00081cc539',
+            name: '67125916f3a99d00076d1ee8:top_articles_-_dev',
+            type: 'configurable',
+            settings: '',
+            status_code: null,
+            region: {},
+            query_string_keys: null,
+            render_data: [],
+            linked_to: '',
+            weight: 5,
+            private_data: {},
+          },
         ],
-        "layout": "standard",
-        "page": "page5",
-        "variations": [],
-        "invalid_sections": [],
-        "last_updated": 1737103250
-      }
+        layout: 'standard',
+        page: 'page5',
+        variations: [],
+        invalid_sections: [],
+        last_updated: 1737103250,
+      },
     })
-    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.vm.currentViews[0].name).toEqual('categories_articles_-_dev')
-    expect(wrapper.vm.currentViews[0].nameID).toEqual('67125916f3a99d00076d1ee8:categories_articles_-_dev')
+    expect(wrapper.vm.currentViews[0].nameID).toEqual(
+      '67125916f3a99d00076d1ee8:categories_articles_-_dev'
+    )
     expect(wrapper.vm.currentViews[1].name).toEqual('selective_articles_-_dev')
-    expect(wrapper.vm.currentViews[1].nameID).toEqual('67125916f3a99d00076d1ee8:selective_articles_-_dev')
+    expect(wrapper.vm.currentViews[1].nameID).toEqual(
+      '67125916f3a99d00076d1ee8:selective_articles_-_dev'
+    )
     expect(wrapper.vm.currentViews[2].name).toEqual('top_articles_-_dev')
     expect(wrapper.vm.currentViews[2].nameID).toEqual('67125916f3a99d00076d1ee8:top_articles_-_dev')
-
-  });
+  })
 
   it('Correctly initialize Original Variations', async () => {
     expect(wrapper.vm.originalVariations[wrapper.vm.activeVariation.pageName].views).toEqual({
-      'view-1': { id: 'view-1', name: 'section1', weight: 1, type: 'text', private_data: { media: { media_id: 'Media1' } }, linked_to: '' },
-      'view-2': { id: 'view-2', name: 'section2', weight: 2, type: 'image', private_data: { media: { media_id: 'Media2' } }, linked_to: '' }
+      'view-1': {
+        id: 'view-1',
+        name: 'section1',
+        weight: 1,
+        type: 'text',
+        private_data: { media: { media_id: 'Media1' } },
+        linked_to: '',
+      },
+      'view-2': {
+        id: 'view-2',
+        name: 'section2',
+        weight: 2,
+        type: 'image',
+        private_data: { media: { media_id: 'Media2' } },
+        linked_to: '',
+      },
     })
-  });
-
+  })
 })
 
 const mockUseState = vi.fn()
 const mockSelectedLayout = { value: 'standard' }
 const mockDisplayVariations = {
   value: {
-    'testPage': {
+    testPage: {
       name: 'testPage',
       views: {
-        'element1': {
+        element1: {
           region: {
-            standard: { slot: '', weight: 0 }
-          }
+            standard: { slot: '', weight: 0 },
+          },
         },
-        'element2': {
+        element2: {
           region: {
-            standard: { slot: '', weight: 0 }
-          }
-        }
+            standard: { slot: '', weight: 0 },
+          },
+        },
       },
-      altered: false
-    }
-  }
+      altered: false,
+    },
+  },
 }
 const mockSelectedVariation = { value: 'testPage' }
 
@@ -1217,8 +1218,8 @@ describe('logDrag function, layout region position updates', () => {
 
     // Setup useState mock to return our mock state objects
     mockUseState
-      .mockReturnValueOnce(mockSelectedLayout)     // selectedLayout
-      .mockReturnValueOnce(mockDisplayVariations)  // displayVariations
+      .mockReturnValueOnce(mockSelectedLayout) // selectedLayout
+      .mockReturnValueOnce(mockDisplayVariations) // displayVariations
 
     // Reset the mock data
     mockDisplayVariations.value.testPage.views.element1.region.standard = { slot: '', weight: 0 }
@@ -1233,11 +1234,17 @@ describe('logDrag function, layout region position updates', () => {
 
     logDrag = (evt, slotName) => {
       if (evt.added) {
-        displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].slot = slotName
-        displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[selectedLayout.value].weight = evt.added.newIndex
+        displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[
+          selectedLayout.value
+        ].slot = slotName
+        displayVariations.value[selectedVariation.value].views[evt.added.element.id].region[
+          selectedLayout.value
+        ].weight = evt.added.newIndex
         displayVariations.value[selectedVariation.value].altered = true
       } else if (evt.moved) {
-        displayVariations.value[selectedVariation.value].views[evt.moved.element.id].region[selectedLayout.value].weight = evt.moved.newIndex
+        displayVariations.value[selectedVariation.value].views[evt.moved.element.id].region[
+          selectedLayout.value
+        ].weight = evt.moved.newIndex
         displayVariations.value[selectedVariation.value].altered = true
       }
     }
@@ -1247,8 +1254,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       added: {
         element: { id: 'element1' },
-        newIndex: 2
-      }
+        newIndex: 2,
+      },
     }
     const slotName = 'header'
 
@@ -1263,8 +1270,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       added: {
         element: { id: 'element2' },
-        newIndex: 1
-      }
+        newIndex: 1,
+      },
     }
     const slotName = 'sidebar'
 
@@ -1279,8 +1286,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       added: {
         element: { id: 'element1' },
-        newIndex: 0
-      }
+        newIndex: 0,
+      },
     }
     const slotName = 'footer'
 
@@ -1295,8 +1302,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       moved: {
         element: { id: 'element1' },
-        newIndex: 3
-      }
+        newIndex: 3,
+      },
     }
 
     logDrag(evt, 'anySlot')
@@ -1311,8 +1318,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       moved: {
         element: { id: 'element2' },
-        newIndex: 5
-      }
+        newIndex: 5,
+      },
     }
 
     logDrag(evt, 'header')
@@ -1324,8 +1331,8 @@ describe('logDrag function, layout region position updates', () => {
   it('should not modify any state when neither added nor moved', () => {
     const evt = {
       removed: {
-        element: { id: 'element1' }
-      }
+        element: { id: 'element1' },
+      },
     }
 
     logDrag(evt, 'header')
@@ -1347,8 +1354,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       added: {
         element: { id: 'element1' },
-        newIndex: 1
-      }
+        newIndex: 1,
+      },
     }
 
     logDrag(evt, undefined)
@@ -1362,8 +1369,8 @@ describe('logDrag function, layout region position updates', () => {
     const evt = {
       added: {
         element: { id: 'element1' },
-        newIndex: 1
-      }
+        newIndex: 1,
+      },
     }
 
     logDrag(evt, null)
@@ -1372,13 +1379,12 @@ describe('logDrag function, layout region position updates', () => {
     expect(mockDisplayVariations.value.testPage.views.element1.region.standard.weight).toBe(1)
     expect(mockDisplayVariations.value.testPage.altered).toBe(true)
   })
-
 })
 
 const mockData = [
   { id: 0, name: 'Item 1' },
   { id: 1, name: 'Item 2' },
-  { id: 2, name: 'Item 3' }
+  { id: 2, name: 'Item 3' },
 ]
 
 describe('FieldSets.vue', () => {
@@ -1392,9 +1398,9 @@ describe('FieldSets.vue', () => {
       propsData: {
         arrayDataPop: mockData,
         legendLabel: 'Test Legend',
-        ...propsData
+        ...propsData,
       },
-      slots
+      slots,
     })
   }
 
@@ -1437,7 +1443,7 @@ describe('FieldSets.vue', () => {
       draggableClasses: 'custom-draggable',
       mainWrapperClasses: 'main-wrapper',
       wrapperClasses: 'custom-wrapper',
-      legendClasses: 'custom-legend'
+      legendClasses: 'custom-legend',
     })
 
     await wrapper.vm.$nextTick()
@@ -1458,47 +1464,44 @@ describe('FieldSets.vue', () => {
 })
 
 describe('Z-index Test', () => {
-
   const TestComponent = {
     template: `
     <div>
       <div class="media-container" style="position: relative; z-index: 10;">Media container</div>
       <div class="flexSections control-button config-buttons" style="right: 0px; left: auto; top: 0; position: relative; z-index: 5;">Target Div</div>
     </div>
-  `
-  };
+  `,
+  }
 
   it('ensures the target controls div does not display above the Media container div', async () => {
-    const wrapper = shallowMount(TestComponent);
+    const wrapper = shallowMount(TestComponent)
 
-    const backgroundDiv = wrapper.find('.media-container');
-    const targetDiv = wrapper.find('.control-button.config-buttons');
-
-    await wrapper.vm.$nextTick()
-
-    const backgroundZIndex = window.getComputedStyle(backgroundDiv.element).zIndex || 1;
-    const targetZIndex = window.getComputedStyle(targetDiv.element).zIndex || 0;
+    const backgroundDiv = wrapper.find('.media-container')
+    const targetDiv = wrapper.find('.control-button.config-buttons')
 
     await wrapper.vm.$nextTick()
 
-    expect(Number(targetZIndex)).toBeLessThan(Number(backgroundZIndex));
-  });
-});
+    const backgroundZIndex = window.getComputedStyle(backgroundDiv.element).zIndex || 1
+    const targetZIndex = window.getComputedStyle(targetDiv.element).zIndex || 0
 
-describe("WysiwygStatic", () => {
+    await wrapper.vm.$nextTick()
 
-  it("renders the .ql-snow .ql-editor class when html exists", () => {
+    expect(Number(targetZIndex)).toBeLessThan(Number(backgroundZIndex))
+  })
+})
+
+describe('WysiwygStatic', () => {
+  it('renders the .ql-snow .ql-editor class when html exists', () => {
     const wrapper = shallowMount(WysiwygStatic, {
       propsData: {
         section: {
-          settings: [{ en: "<p>Test content</p>" }],
+          settings: [{ en: '<p>Test content</p>' }],
         },
-        lang: "en",
+        lang: 'en',
       },
-    });
-  });
-
-});
+    })
+  })
+})
 
 // Import Export Tests
 const mockAllSections = ref([
@@ -1506,23 +1509,23 @@ const mockAllSections = ref([
     id: 1,
     name: 'Header',
     type: 'static',
-    region: { desktop: { slot: 'header' } }
+    region: { desktop: { slot: 'header' } },
   },
   {
     id: 2,
     name: 'Footer',
     type: 'configurable',
     nameID: 'footer-config',
-    linked_to: 'footer-instance'
-  }
+    linked_to: 'footer-instance',
+  },
 ])
 const mockJsonFilePick = ref(null)
 const mockTypes = ref([
   {
     name: 'footer-config',
     access: 'public',
-    app_status: 'enabled'
-  }
+    app_status: 'enabled',
+  },
 ])
 const mockSelectedSlotRegion = ref('')
 
@@ -1532,43 +1535,43 @@ const mockAddSectionType = vi.fn()
 const mockI18n = {
   t: vi.fn((key) => {
     const translations = {
-      'importSections': 'Import will overwrite existing sections',
-      'activateConfigSections': 'Please activate',
-      'forProject': 'for this project',
-      'successImported': 'Successfully imported'
+      importSections: 'Import will overwrite existing sections',
+      activateConfigSections: 'Please activate',
+      forProject: 'for this project',
+      successImported: 'Successfully imported',
     }
     return translations[key] || key
-  })
+  }),
 }
 // Mock DOM elements
 const mockDownloadAnchor = {
   setAttribute: vi.fn(),
-  click: vi.fn()
+  click: vi.fn(),
 }
 const mockPagePath = { value: 'page' }
 const mockFileInput = {
-  click: vi.fn()
+  click: vi.fn(),
 }
 
 // The functions to test (would normally be imported from your composable)
 const exportSections = () => {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-    layout: mockSelectedLayout.value,
-    sections: mockAllSections.value
-  }))
+  const dataStr =
+    'data:text/json;charset=utf-8,' +
+    encodeURIComponent(
+      JSON.stringify({
+        layout: mockSelectedLayout.value,
+        sections: mockAllSections.value,
+      })
+    )
   const dlAnchorElem = document.getElementById('downloadAnchorElem')
-  dlAnchorElem.setAttribute("href", dataStr)
-  dlAnchorElem.setAttribute("download", `${mockPagePath.value}.json`)
+  dlAnchorElem.setAttribute('href', dataStr)
+  dlAnchorElem.setAttribute('download', `${mockPagePath.value}.json`)
   dlAnchorElem.click()
 }
 
 const initImportSections = () => {
   if (Object.keys(mockDisplayVariations.value[mockSelectedVariation.value].views).length > 0) {
-    mockShowToast(
-      "Warning",
-      "warning",
-      mockI18n.t('importSections')
-    )
+    mockShowToast('Warning', 'warning', mockI18n.t('importSections'))
   } else {
     mockJsonFilePick.value.click()
   }
@@ -1577,7 +1580,7 @@ const initImportSections = () => {
 const importSections = (e) => {
   const jsonFile = e.target.files[0]
   const reader = new FileReader()
-  reader.readAsText(jsonFile, "UTF-8")
+  reader.readAsText(jsonFile, 'UTF-8')
   reader.onload = (evt) => {
     const jsonFileResult = evt.target.result
     const parsedImport = JSON.parse(jsonFileResult)
@@ -1587,29 +1590,38 @@ const importSections = (e) => {
 
     sections.forEach((section) => {
       sectionsNames.push(section.name)
-      if (section.type === "configurable") {
-        const sectionTypeObject = mockTypes.value.find(type => type.name === section.nameID)
-        if (sectionTypeObject && (sectionTypeObject.access === 'private' || sectionTypeObject.access === 'public_scoped') && sectionTypeObject.app_status !== 'enabled') {
+      if (section.type === 'configurable') {
+        const sectionTypeObject = mockTypes.value.find((type) => type.name === section.nameID)
+        if (
+          sectionTypeObject &&
+          (sectionTypeObject.access === 'private' ||
+            sectionTypeObject.access === 'public_scoped') &&
+          sectionTypeObject.app_status !== 'enabled'
+        ) {
           mockShowToast(
-            "Warning",
-            "warning",
+            'Warning',
+            'warning',
             `${mockI18n.t('activateConfigSections')} ${section.name} ${mockI18n.t('forProject')}`
           )
         }
       }
-      if (section.linked_to && section.linked_to !== "") {
+      if (section.linked_to && section.linked_to !== '') {
         section.instance_name = section.linked_to
         section.options = section.settings
       }
-      if (section.region && section.region[mockSelectedLayout.value] && section.region[mockSelectedLayout.value].slot) {
+      if (
+        section.region &&
+        section.region[mockSelectedLayout.value] &&
+        section.region[mockSelectedLayout.value].slot
+      ) {
         mockSelectedSlotRegion.value = section.region[mockSelectedLayout.value].slot
       }
-      mockAddSectionType(section, false, section.linked_to && section.linked_to !== "")
+      mockAddSectionType(section, false, section.linked_to && section.linked_to !== '')
     })
 
     mockShowToast(
-      "Success",
-      "info",
+      'Success',
+      'info',
       `${mockI18n.t('successImported')} ${sectionsNames.length} sections: ${sectionsNames.join(', ')}`
     )
   }
@@ -1635,19 +1647,19 @@ describe('Import/Export Functionality', () => {
         id: 1,
         name: 'Header',
         type: 'static',
-        region: { desktop: { slot: 'header' } }
+        region: { desktop: { slot: 'header' } },
       },
       {
         id: 2,
         name: 'Footer',
         type: 'configurable',
         nameID: 'footer-config',
-        linked_to: 'footer-instance'
-      }
+        linked_to: 'footer-instance',
+      },
     ]
     mockPagePath.value = 'test-page'
     mockDisplayVariations.value = {
-      default: { views: {} }
+      default: { views: {} },
     }
     mockSelectedVariation.value = 'default'
     mockJsonFilePick.value = mockFileInput
@@ -1664,13 +1676,14 @@ describe('Import/Export Functionality', () => {
 
       const expectedData = {
         layout: 'desktop',
-        sections: mockAllSections.value
+        sections: mockAllSections.value,
       }
-      const expectedDataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expectedData))
+      const expectedDataStr =
+        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(expectedData))
 
       expect(document.getElementById).toHaveBeenCalledWith('downloadAnchorElem')
-      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("href", expectedDataStr)
-      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("download", "test-page.json")
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith('href', expectedDataStr)
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith('download', 'test-page.json')
       expect(mockDownloadAnchor.click).toHaveBeenCalled()
     })
 
@@ -1683,12 +1696,13 @@ describe('Import/Export Functionality', () => {
 
       const expectedData = {
         layout: 'mobile',
-        sections: [{ id: 3, name: 'Mobile Header' }]
+        sections: [{ id: 3, name: 'Mobile Header' }],
       }
-      const expectedDataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expectedData))
+      const expectedDataStr =
+        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(expectedData))
 
-      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("href", expectedDataStr)
-      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith("download", "mobile-page.json")
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith('href', expectedDataStr)
+      expect(mockDownloadAnchor.setAttribute).toHaveBeenCalledWith('download', 'mobile-page.json')
     })
   })
 
@@ -1699,9 +1713,9 @@ describe('Import/Export Functionality', () => {
       initImportSections()
 
       expect(mockShowToast).toHaveBeenCalledWith(
-        "Warning",
-        "warning",
-        "Import will overwrite existing sections"
+        'Warning',
+        'warning',
+        'Import will overwrite existing sections'
       )
       expect(mockFileInput.click).not.toHaveBeenCalled()
     })
@@ -1719,15 +1733,15 @@ describe('Import/Export Functionality', () => {
       mockSelectedVariation.value = 'variant1'
       mockDisplayVariations.value = {
         default: { views: {} },
-        variant1: { views: { view1: {} } }
+        variant1: { views: { view1: {} } },
       }
 
       initImportSections()
 
       expect(mockShowToast).toHaveBeenCalledWith(
-        "Warning",
-        "warning",
-        "Import will overwrite existing sections"
+        'Warning',
+        'warning',
+        'Import will overwrite existing sections'
       )
     })
   })
@@ -1740,11 +1754,14 @@ describe('Import/Export Functionality', () => {
       mockFileReader = {
         readAsText: vi.fn(),
         onload: null,
-        result: null
+        result: null,
       }
 
       // Mock FileReader constructor
-      vi.stubGlobal('FileReader', vi.fn(() => mockFileReader))
+      vi.stubGlobal(
+        'FileReader',
+        vi.fn(() => mockFileReader)
+      )
 
       mockFile = new File(['test'], 'test.json', { type: 'application/json' })
     })
@@ -1756,23 +1773,23 @@ describe('Import/Export Functionality', () => {
           {
             name: 'Imported Header',
             type: 'static',
-            region: { tablet: { slot: 'top' } }
+            region: { tablet: { slot: 'top' } },
           },
           {
             name: 'Imported Footer',
             type: 'configurable',
             nameID: 'footer-config',
             linked_to: 'footer-link',
-            settings: { color: 'blue' }
-          }
-        ]
+            settings: { color: 'blue' },
+          },
+        ],
       }
 
       const mockEvent = {
         target: {
           files: [mockFile],
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
 
       importSections(mockEvent)
@@ -1780,8 +1797,8 @@ describe('Import/Export Functionality', () => {
       // Simulate FileReader onload
       const mockFileEvent = {
         target: {
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
       mockFileReader.onload(mockFileEvent)
 
@@ -1789,9 +1806,9 @@ describe('Import/Export Functionality', () => {
       expect(mockSelectedSlotRegion.value).toBe('top')
       expect(mockAddSectionType).toHaveBeenCalledTimes(2)
       expect(mockShowToast).toHaveBeenCalledWith(
-        "Success",
-        "info",
-        "Successfully imported 2 sections: Imported Header, Imported Footer"
+        'Success',
+        'info',
+        'Successfully imported 2 sections: Imported Header, Imported Footer'
       )
     })
 
@@ -1804,30 +1821,30 @@ describe('Import/Export Functionality', () => {
             type: 'configurable',
             nameID: 'config-type',
             linked_to: 'linked-instance',
-            settings: { theme: 'dark' }
-          }
-        ]
+            settings: { theme: 'dark' },
+          },
+        ],
       }
 
       const mockEvent = {
         target: {
-          files: [mockFile]
-        }
+          files: [mockFile],
+        },
       }
 
       importSections(mockEvent)
 
       const mockFileEvent = {
         target: {
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
       mockFileReader.onload(mockFileEvent)
 
       expect(mockAddSectionType).toHaveBeenCalledWith(
         expect.objectContaining({
           instance_name: 'linked-instance',
-          options: { theme: 'dark' }
+          options: { theme: 'dark' },
         }),
         false,
         true
@@ -1839,8 +1856,8 @@ describe('Import/Export Functionality', () => {
         {
           name: 'disabled-config',
           access: 'private',
-          app_status: 'disabled'
-        }
+          app_status: 'disabled',
+        },
       ]
 
       const importData = {
@@ -1849,30 +1866,30 @@ describe('Import/Export Functionality', () => {
           {
             name: 'Disabled Section',
             type: 'configurable',
-            nameID: 'disabled-config'
-          }
-        ]
+            nameID: 'disabled-config',
+          },
+        ],
       }
 
       const mockEvent = {
         target: {
-          files: [mockFile]
-        }
+          files: [mockFile],
+        },
       }
 
       importSections(mockEvent)
 
       const mockFileEvent = {
         target: {
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
       mockFileReader.onload(mockFileEvent)
 
       expect(mockShowToast).toHaveBeenCalledWith(
-        "Warning",
-        "warning",
-        "Please activate Disabled Section for this project"
+        'Warning',
+        'warning',
+        'Please activate Disabled Section for this project'
       )
     })
 
@@ -1882,30 +1899,30 @@ describe('Import/Export Functionality', () => {
         sections: [
           {
             name: 'Static Section',
-            type: 'static'
-          }
-        ]
+            type: 'static',
+          },
+        ],
       }
 
       const mockEvent = {
         target: {
-          files: [mockFile]
-        }
+          files: [mockFile],
+        },
       }
 
       importSections(mockEvent)
 
       const mockFileEvent = {
         target: {
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
       mockFileReader.onload(mockFileEvent)
 
       expect(mockAddSectionType).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Static Section',
-          type: 'static'
+          type: 'static',
         }),
         false,
         undefined
@@ -1919,33 +1936,33 @@ describe('Import/Export Functionality', () => {
           {
             name: 'Empty Linked Section',
             type: 'configurable',
-            linked_to: ''
-          }
-        ]
+            linked_to: '',
+          },
+        ],
       }
 
       const mockEvent = {
         target: {
-          files: [mockFile]
-        }
+          files: [mockFile],
+        },
       }
 
       importSections(mockEvent)
 
       const mockFileEvent = {
         target: {
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
       mockFileReader.onload(mockFileEvent)
 
       expect(mockAddSectionType).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Empty Linked Section',
-          linked_to: ''
+          linked_to: '',
         }),
         false,
-        ""
+        ''
       )
     })
   })
@@ -1957,12 +1974,14 @@ describe('Import/Export Functionality', () => {
       mockFileReader = {
         readAsText: vi.fn(),
         onload: null,
-        result: null
+        result: null,
       }
 
       // Mock FileReader constructor
-      vi.stubGlobal('FileReader', vi.fn(() => mockFileReader))
-
+      vi.stubGlobal(
+        'FileReader',
+        vi.fn(() => mockFileReader)
+      )
     })
 
     it('should handle missing DOM element in exportSections', () => {
@@ -1975,16 +1994,16 @@ describe('Import/Export Functionality', () => {
       const mockFile = new File(['invalid json'], 'test.json', { type: 'application/json' })
       const mockEvent = {
         target: {
-          files: [mockFile]
-        }
+          files: [mockFile],
+        },
       }
 
       importSections(mockEvent)
 
       const mockFileEvent = {
         target: {
-          result: 'invalid json'
-        }
+          result: 'invalid json',
+        },
       }
 
       expect(() => mockFileReader.onload(mockFileEvent)).toThrow()
@@ -1996,24 +2015,24 @@ describe('Import/Export Functionality', () => {
         sections: [
           {
             name: 'No Region Section',
-            type: 'static'
-          }
-        ]
+            type: 'static',
+          },
+        ],
       }
 
       const mockFile = new File(['test'], 'test.json', { type: 'application/json' })
       const mockEvent = {
         target: {
-          files: [mockFile]
-        }
+          files: [mockFile],
+        },
       }
 
       importSections(mockEvent)
 
       const mockFileEvent = {
         target: {
-          result: JSON.stringify(importData)
-        }
+          result: JSON.stringify(importData),
+        },
       }
 
       expect(() => mockFileReader.onload(mockFileEvent)).not.toThrow()
@@ -2023,12 +2042,10 @@ describe('Import/Export Functionality', () => {
 })
 
 describe('sanitizeURL', () => {
-
   let wrapper
 
   beforeEach(() => {
-
-    vi.clearAllMocks();
+    vi.clearAllMocks()
 
     window.history.pushState({}, '', '/some-page?auth_code=abc123&project_id=xyz789&keep_me=yes')
     global.fetch = vi.fn(() =>
@@ -2096,27 +2113,24 @@ describe('addNewStaticType', () => {
 
     // Mock getSectionTypes
     // wrapper.vm.getSectionTypes = vi.fn().mockResolvedValue(undefined)
-
   })
 
   it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields', async () => {
-
     await vi.resetAllMocks()
 
     await wrapper.vm.addNewStaticType('customForm')
 
     await wrapper.vm.$nextTick()
     // Expect URL includes correct path
-    expect(global.fetch.mock.calls[1][0]).toContain(
-      '/section-types/customForm'
-    );
+    expect(global.fetch.mock.calls[1][0]).toContain('/section-types/customForm')
 
     // Expect filtered fields only (non-empty name)
-    expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
+    expect(global.fetch.mock.calls[1][1].body).toEqual(
+      '{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}'
+    )
   })
 
   it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields when mediaFields prop has a default() function', async () => {
-
     await vi.resetAllMocks()
 
     importComp.mockReturnValue({
@@ -2128,25 +2142,25 @@ describe('addNewStaticType', () => {
                 return [
                   { name: 'media_field_1' },
                   { name: '' }, // will be filtered
-                  { name: 'media_field_2' }
+                  { name: 'media_field_2' },
                 ]
-              }
-            }
-          }
-        }
-      })
+              },
+            },
+          },
+        },
+      }),
     })
 
     await wrapper.vm.addNewStaticType('customForm')
 
     await wrapper.vm.$nextTick()
     // Expect URL includes correct path
-    expect(global.fetch.mock.calls[1][0]).toContain(
-      '/section-types/customForm'
-    );
+    expect(global.fetch.mock.calls[1][0]).toContain('/section-types/customForm')
 
     // Expect filtered fields only (non-empty name)
-    expect(global.fetch.mock.calls[1][1].body).toEqual('{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}')
+    expect(global.fetch.mock.calls[1][1].body).toEqual(
+      '{"fields":[{"name":"media_field_1"},{"name":"media_field_2"}]}'
+    )
   })
 })
 
@@ -2159,7 +2173,7 @@ describe('Wysiwyg - validate default language content', () => {
         defaultLang,
         selectedLang,
         quillKey: 'test-key',
-        locales: ['en', 'fr']
+        locales: ['en', 'fr'],
       },
       global: {
         plugins: [i18n, createPinia()],
@@ -2167,9 +2181,9 @@ describe('Wysiwyg - validate default language content', () => {
         config: {
           globalProperties: {
             parsePath: vi.fn().mockReturnValue('mocked/path'),
-            importJs: vi.fn()
-          }
-        }
+            importJs: vi.fn(),
+          },
+        },
       },
     })
   }
@@ -2267,13 +2281,13 @@ describe('Settings Functions', () => {
         fr: { title: '', description: '' },
         pagePath: '/original-path',
         media: {},
-        mediaMetatag: {}
+        mediaMetatag: {},
       }
       wrapper.vm.pageMetadata = {
         en: { title: 'Test Title', description: 'Test Description' },
         pagePath: '/original-path',
         media: {},
-        mediaMetatag: {}
+        mediaMetatag: {},
       }
       wrapper.vm.pagePath = '/original-path'
 
@@ -2291,12 +2305,12 @@ describe('Settings Functions', () => {
         en: { title: 'Original Title', description: 'Original Description' },
         pagePath: '/original-path',
         media: {},
-        mediaMetatag: {}
+        mediaMetatag: {},
       }
       wrapper.vm.pageMetadata = {
         en: { title: 'Updated Title', description: 'Updated Description' },
         media: {},
-        mediaMetatag: {}
+        mediaMetatag: {},
       }
       wrapper.vm.pagePath = '/updated-path'
 
@@ -2312,7 +2326,7 @@ describe('Settings Functions', () => {
       // Setup
       wrapper.vm.originalMetaData = {}
       wrapper.vm.pageMetadata = {
-        en: { title: 'Test Title', description: 'Test Description' }
+        en: { title: 'Test Title', description: 'Test Description' },
       }
 
       // Test
@@ -2375,10 +2389,12 @@ describe('Settings Functions', () => {
 
       // Assert
       expect(wrapper.vm.projectMetadata.builder).toEqual({
-        builder_settings: {}
+        builder_settings: {},
       })
       expect(wrapper.vm.updatedBuilderSettings).toEqual(settings)
-      expect(wrapper.vm.updatedBuilderSettingsPerTab[wrapper.vm.currentSettingsTab]).toEqual(settings)
+      expect(wrapper.vm.updatedBuilderSettingsPerTab[wrapper.vm.currentSettingsTab]).toEqual(
+        settings
+      )
     })
 
     it('should initialize builder_settings if builder exists but settings dont', () => {
@@ -2409,8 +2425,8 @@ describe('Settings Functions', () => {
     it('should successfully update project metadata', async () => {
       // Setup
       const mockResponse = {
-        "id": "67642846052f506967b3db96",
-        "metadata": { project_metadata: { languages: ['es', 'fr'] } },
+        id: '67642846052f506967b3db96',
+        metadata: { project_metadata: { languages: ['es', 'fr'] } },
       }
 
       global.fetch.mockResolvedValueOnce({
@@ -2427,14 +2443,16 @@ describe('Settings Functions', () => {
       // Assert
       expect(wrapper.vm.loading).toBe(false)
       expect(wrapper.vm.unsavedSettingsError['test_tab']).toBe(false)
-      expect(wrapper.vm.originalBuilderSettings).toEqual({ project_metadata: { languages: ['es', 'fr'] } })
+      expect(wrapper.vm.originalBuilderSettings).toEqual({
+        project_metadata: { languages: ['es', 'fr'] },
+      })
     })
 
     it('should close modals when no unsaved settings remain', async () => {
       // Setup
       const mockResponse = {
-        "id": "67642846052f506967b3db96",
-        "metadata": { project_metadata: { languages: ['es', 'fr'] } },
+        id: '67642846052f506967b3db96',
+        metadata: { project_metadata: { languages: ['es', 'fr'] } },
       }
 
       global.fetch.mockResolvedValueOnce({
@@ -2457,8 +2475,8 @@ describe('Settings Functions', () => {
     it('should not close modals when unsaved settings remain', async () => {
       // Setup
       const mockResponse = {
-        "id": "67642846052f506967b3db96",
-        "metadata": { project_metadata: { languages: ['es', 'fr'] } },
+        id: '67642846052f506967b3db96',
+        metadata: { project_metadata: { languages: ['es', 'fr'] } },
       }
 
       global.fetch.mockResolvedValueOnce({
@@ -2483,7 +2501,7 @@ describe('Settings Functions', () => {
       wrapper.vm.builderSettingsPayload = { primary_color: '#000', secondary_color: '#FFF' }
       global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => { },
+        json: async () => {},
       })
 
       // Test
@@ -2494,7 +2512,7 @@ describe('Settings Functions', () => {
       expect(global.fetch.mock.calls[0][1]).toEqual({
         method: 'PUT',
         headers: expect.anything(),
-        body: '{"metadata":{"primary_color":"#000","secondary_color":"#FFF"}}'
+        body: '{"metadata":{"primary_color":"#000","secondary_color":"#FFF"}}',
       })
     })
   })
@@ -2543,7 +2561,7 @@ describe('Theme Functions', () => {
       const section = { id: 'section1', name: 'Test Section' }
       const themeComponents = [
         { id: 'theme1', name: 'Theme 1' },
-        { id: 'theme2', name: 'Theme 2' }
+        { id: 'theme2', name: 'Theme 2' },
       ]
       wrapper.vm.originalThemeSettings = { color: 'blue' }
 
@@ -2568,7 +2586,7 @@ describe('Theme Functions', () => {
         section,
         themeComponents,
         currentTheme: {},
-        originalTheme: { color: 'blue' }
+        originalTheme: { color: 'blue' },
       })
     })
 
@@ -2608,20 +2626,16 @@ describe('Theme Functions', () => {
     beforeEach(() => {
       // Setup default current section data
       wrapper.vm.currentSectionData = {
-        section: { name: 'test-section' }
+        section: { name: 'test-section' },
       }
       wrapper.vm.sectionsThemeComponents = {
-        'test-section': [
-          { id: 'theme1' },
-          { id: 'theme2' }
-        ]
+        'test-section': [{ id: 'theme1' }, { id: 'theme2' }],
       }
     })
 
     it('should close modal when no unsaved settings exist', () => {
       // Setup
-      wrapper.vm.unsavedThemeSettings = vi.fn()
-        .mockReturnValue(false)
+      wrapper.vm.unsavedThemeSettings = vi.fn().mockReturnValue(false)
       wrapper.vm.sectionsThemeModal = true
       wrapper.vm.isSideBarOpen = true
       wrapper.vm.currentThemeTab = { id: 'theme1' }
@@ -2643,7 +2657,7 @@ describe('Theme Functions', () => {
     beforeEach(() => {
       wrapper.vm.currentSectionData = {
         currentTheme: { theme1: { settings: 'current' } },
-        section: { id: 'section1' }
+        section: { id: 'section1' },
       }
       wrapper.vm.originalThemeSettings = { theme1: { settings: 'original' } }
     })
@@ -2652,7 +2666,7 @@ describe('Theme Functions', () => {
       // Setup
       const tab = 'theme1'
       const mockHook = {
-        handle_unsaved_settings: vi.fn().mockReturnValue(false)
+        handle_unsaved_settings: vi.fn().mockReturnValue(false),
       }
       wrapper.vm.importJs.mockReturnValue(mockHook)
 
@@ -2734,7 +2748,7 @@ describe('Theme Functions', () => {
       wrapper.vm.currentThemeTab = { id: 'theme1' }
       wrapper.vm.currentSectionData = {
         section: { id: 'section1' },
-        currentTheme: {}
+        currentTheme: {},
       }
       wrapper.vm.originalThemeSettings = { existing: 'settings' }
     })
@@ -2743,7 +2757,7 @@ describe('Theme Functions', () => {
       // Setup
       const settings = { color: 'blue', font: 'Arial' }
       wrapper.vm.currentSectionData.currentTheme = {
-        theme1: {}
+        theme1: {},
       }
 
       // Test
@@ -2770,8 +2784,8 @@ describe('Theme Functions', () => {
       const settings = { color: 'blue' }
       wrapper.vm.currentSectionData.currentTheme = {
         theme1: {
-          'other-section': { existing: 'data' }
-        }
+          'other-section': { existing: 'data' },
+        },
       }
 
       // Test
@@ -2779,10 +2793,11 @@ describe('Theme Functions', () => {
 
       // Assert
       expect(wrapper.vm.currentSectionData.currentTheme['theme1']['section1']).toEqual(settings)
-      expect(wrapper.vm.currentSectionData.currentTheme['theme1']['other-section']).toEqual({ existing: 'data' })
+      expect(wrapper.vm.currentSectionData.currentTheme['theme1']['other-section']).toEqual({
+        existing: 'data',
+      })
     })
   })
-
 })
 
 const SidebarComponent = {
@@ -2828,7 +2843,7 @@ const SidebarComponent = {
       resizeTarget: null,
       parentElement: null,
       maxWidth: 0,
-      handleWidth: 3
+      handleWidth: 3,
     })
 
     // Mock functions
@@ -2840,30 +2855,32 @@ const SidebarComponent = {
           setTimeout(() => {
             if (resizeTarget.value) {
               resizeTarget.value.scrollTo({
-                top: 0
+                top: 0,
               })
             }
             if (sectionsMainTarget.value && currentSection.value) {
               const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`
-              const targetElement = sectionsMainTarget.value.querySelector(`[id="${safeViewAnchor.substring(1)}"]`)
+              const targetElement = sectionsMainTarget.value.querySelector(
+                `[id="${safeViewAnchor.substring(1)}"]`
+              )
               if (targetElement) {
                 const targetPosition = targetElement.offsetTop
                 sectionsMainTarget.value.scrollTo({
                   top: targetPosition,
-                  behavior: 'smooth'
+                  behavior: 'smooth',
                 })
               } else {
                 sectionsMainTarget.value.scrollTo({
                   top: sectionsMainTarget.value.scrollHeight,
-                  behavior: 'smooth'
+                  behavior: 'smooth',
                 })
               }
             }
           }, 600)
-          window.addEventListener("mousemove", onMouseMove)
-          window.addEventListener("mouseup", stopTracking)
+          window.addEventListener('mousemove', onMouseMove)
+          window.addEventListener('mouseup', stopTracking)
         })
-      } catch { }
+      } catch {}
     }
 
     const startTracking = (event) => {
@@ -2872,7 +2889,7 @@ const SidebarComponent = {
       event.preventDefault()
       const handleElement = event.currentTarget
 
-      const targetSelector = handleElement.getAttribute("data-target")
+      const targetSelector = handleElement.getAttribute('data-target')
       const targetElement = resizeTarget.value.closest(targetSelector)
 
       if (!targetElement) {
@@ -2890,8 +2907,7 @@ const SidebarComponent = {
     const onMouseMove = (event) => {
       if (!resizeData.value.tracking) return
 
-      const cursorScreenXDelta =
-        event.screenX - resizeData.value.startCursorScreenX
+      const cursorScreenXDelta = event.screenX - resizeData.value.startCursorScreenX
       const newWidth = Math.min(
         resizeData.value.startWidth + cursorScreenXDelta,
         resizeData.value.maxWidth
@@ -2919,9 +2935,9 @@ const SidebarComponent = {
       sideBarSizeManagement,
       startTracking,
       onMouseMove,
-      stopTracking
+      stopTracking,
     }
-  }
+  },
 }
 
 describe('Sidebar Resize Functionality', () => {
@@ -2940,7 +2956,7 @@ describe('Sidebar Resize Functionality', () => {
     Element.prototype.scrollTo = mockScrollTo
 
     wrapper = mount(SidebarComponent, {
-      attachTo: document.body
+      attachTo: document.body,
     })
   })
 
@@ -2964,19 +2980,19 @@ describe('Sidebar Resize Functionality', () => {
       const mockContainerWidth = 1200 // pixels
       Object.defineProperty(container.element, 'offsetWidth', {
         value: mockContainerWidth,
-        writable: true
+        writable: true,
       })
 
       // Mock aside initial dimensions
       Object.defineProperty(aside.element, 'offsetWidth', {
         value: 527, // Initial width
-        writable: true
+        writable: true,
       })
 
       // Mock parentElement
       Object.defineProperty(aside.element, 'parentElement', {
         value: container.element,
-        writable: true
+        writable: true,
       })
 
       // Mock closest method to return the aside element
@@ -2996,7 +3012,7 @@ describe('Sidebar Resize Functionality', () => {
         button: 0,
         screenX: 100,
         preventDefault: vi.fn(),
-        currentTarget: resizeHandle.element
+        currentTarget: resizeHandle.element,
       }
 
       // Mock getAttribute on the resize handle
@@ -3011,7 +3027,7 @@ describe('Sidebar Resize Functionality', () => {
 
       // Simulate mouse move event that would exceed max width
       const mouseMoveEvent = {
-        screenX: 2000 // Large movement to test max constraint
+        screenX: 2000, // Large movement to test max constraint
       }
 
       // Call onMouseMove directly to test the constraint
@@ -3042,7 +3058,7 @@ describe('Sidebar Resize Functionality', () => {
         // Mock container width
         Object.defineProperty(container.element, 'offsetWidth', {
           value: testCase.containerWidth,
-          writable: true
+          writable: true,
         })
 
         // Set up resize data
@@ -3050,7 +3066,8 @@ describe('Sidebar Resize Functionality', () => {
         vm.resizeData.handleWidth = 3
 
         // Calculate max width using the actual logic from startTracking function
-        const calculatedMaxWidth = vm.resizeData.parentElement.offsetWidth - vm.resizeData.handleWidth
+        const calculatedMaxWidth =
+          vm.resizeData.parentElement.offsetWidth - vm.resizeData.handleWidth
 
         expect(calculatedMaxWidth).toBe(testCase.expectedMaxWidth)
       }
@@ -3081,12 +3098,12 @@ describe('Sidebar Resize Functionality', () => {
       const containerWidth = 1000
       Object.defineProperty(container.element, 'offsetWidth', {
         value: containerWidth,
-        writable: true
+        writable: true,
       })
 
       Object.defineProperty(aside.element, 'offsetWidth', {
         value: 500,
-        writable: true
+        writable: true,
       })
 
       // Set up resize data
@@ -3129,17 +3146,17 @@ describe('Sidebar Resize Functionality', () => {
       // Mock required properties
       Object.defineProperty(container.element, 'offsetWidth', {
         value: 1000,
-        writable: true
+        writable: true,
       })
 
       Object.defineProperty(aside.element, 'offsetWidth', {
         value: 500,
-        writable: true
+        writable: true,
       })
 
       Object.defineProperty(aside.element, 'parentElement', {
         value: container.element,
-        writable: true
+        writable: true,
       })
 
       // Mock getAttribute and closest methods
@@ -3151,7 +3168,7 @@ describe('Sidebar Resize Functionality', () => {
         button: 0,
         screenX: 100,
         preventDefault: vi.fn(),
-        currentTarget: resizeHandle.element
+        currentTarget: resizeHandle.element,
       }
 
       // Call startTracking directly instead of triggering event
@@ -3185,11 +3202,11 @@ describe('refreshSectionView', () => {
     wrapper.vm.allSections = [
       { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
       { id: 2, name: 'section2', nameID: 'section2', query_string_keys: ['param2'] },
-      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] }
+      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] },
     ]
     wrapper.vm.currentViews = [
       { id: 1, name: 'section1', render_data: 'old-data-1' },
-      { id: 2, name: 'section2', render_data: 'old-data-2' }
+      { id: 2, name: 'section2', render_data: 'old-data-2' },
     ]
     wrapper.vm.sectionsQueryStringLanguageSupport = ['section2']
     wrapper.vm.sectionsQsKeys = ['param1', 'param2']
@@ -3201,7 +3218,7 @@ describe('refreshSectionView', () => {
     global.fetch.mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ render_data: 'new-data' })
+      json: () => Promise.resolve({ render_data: 'new-data' }),
     })
   })
 
@@ -3211,8 +3228,8 @@ describe('refreshSectionView', () => {
     const data = {
       sections: [
         { id: 'view-1', qs: { param: 'value1' } },
-        { id: 'view-2', qs: { param: 'value2' } }
-      ]
+        { id: 'view-2', qs: { param: 'value2' } },
+      ],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3231,9 +3248,7 @@ describe('refreshSectionView', () => {
     vi.resetAllMocks()
 
     const data = {
-      sections: [
-        { name: 'section1', qs: { param: 'value1' } }
-      ]
+      sections: [{ name: 'section1', qs: { param: 'value1' } }],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3247,11 +3262,11 @@ describe('refreshSectionView', () => {
     wrapper.vm.allSections = [
       { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
       { id: 2, name: 'section2', nameID: 'section2', query_string_keys: ['param2'] },
-      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] }
+      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] },
     ]
 
     const data = {
-      qs: { param1: 'value1' }
+      qs: { param1: 'value1' },
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3267,11 +3282,11 @@ describe('refreshSectionView', () => {
     wrapper.vm.allSections = [
       { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
       { id: 2, name: 'section2', nameID: 'section2', query_string_keys: ['param2'] },
-      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] }
+      { name: 'section3', nameID: 'section3', query_string_keys: ['param3'] },
     ]
 
     const data = {
-      qs: { language: 'en' }
+      qs: { language: 'en' },
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3289,12 +3304,12 @@ describe('refreshSectionView', () => {
         name: 'configurable1',
         nameID: 'configurable1',
         type: 'configurable',
-        render_data: [{ settings: { fallback: 'value' } }]
-      }
+        render_data: [{ settings: { fallback: 'value' } }],
+      },
     ]
 
     const data = {
-      sections: [{ name: 'configurable1' }]
+      sections: [{ name: 'configurable1' }],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3308,16 +3323,17 @@ describe('refreshSectionView', () => {
 
     wrapper.vm.allSections = [
       { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' },
-      { name: 'duplicate', nameID: 'duplicate', type: 'configurable', render_data: [{ settings: {} }] },
-      { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' }
+      {
+        name: 'duplicate',
+        nameID: 'duplicate',
+        type: 'configurable',
+        render_data: [{ settings: {} }],
+      },
+      { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' },
     ]
 
     const data = {
-      sections: [
-        { name: 'duplicate' },
-        { name: 'duplicate' },
-        { name: 'duplicate' }
-      ]
+      sections: [{ name: 'duplicate' }, { name: 'duplicate' }, { name: 'duplicate' }],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3329,7 +3345,7 @@ describe('refreshSectionView', () => {
     await vi.resetAllMocks()
 
     const data = {
-      sections: [{ id: 'view-1' }]
+      sections: [{ id: 'view-1' }],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
@@ -3350,7 +3366,6 @@ vi.mock('intro.js/minified/intro.min.js', () => ({
 }))
 
 describe('runIntro', () => {
-
   let wrapper
 
   beforeEach(() => {
@@ -3374,7 +3389,6 @@ describe('runIntro', () => {
 })
 
 describe('Admin Top bar', () => {
-
   let wrapper
 
   beforeEach(() => {

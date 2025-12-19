@@ -28,8 +28,7 @@
 <script setup>
 import { useI18n } from '#imports'
 
-
-const { t } = useI18n(); // Get translation function
+const { t } = useI18n() // Get translation function
 
 // Props definition
 const props = defineProps({
@@ -39,16 +38,16 @@ const props = defineProps({
   },
   globalSectionMode: {
     type: Boolean,
-    default: false
+    default: false,
   },
   showPagesList: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
 // Emits definition
-const emit = defineEmits(['showPagesClicked']);
+const emit = defineEmits(['showPagesClicked'])
 
 // No methods or complex logic needed in script setup for this component
 </script>

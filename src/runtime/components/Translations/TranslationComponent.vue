@@ -5,13 +5,23 @@
         v-for="(loc, index) in props.locales"
         :key="loc"
         class="translationComponent"
-        :class="[formLang === loc ? 'selectedLang' : 'unselectedLang', index === 0 ? 'roundedLeft' : index === props.locales.length - 1 ? 'roundedRight' : '']"
-        @click="formLang = loc; emit('setFormLang', loc)"
+        :class="[
+          formLang === loc ? 'selectedLang' : 'unselectedLang',
+          index === 0 ? 'roundedLeft' : index === props.locales.length - 1 ? 'roundedRight' : '',
+        ]"
+        @click="changeLang(loc)"
       >
         <!-- Show checkmark if the global i18n locale matches this button's locale -->
         <div v-show="locale === loc" class="checkMark">
           <svg xmlns="http://www.w3.org/2000/svg" width="23" height="22" id="check">
-            <g fill="none" fill-rule="evenodd" :stroke="formLang === loc ? '#FFFFFF' : '#03B1C7'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+            <g
+              fill="none"
+              fill-rule="evenodd"
+              :stroke="formLang === loc ? '#FFFFFF' : '#03B1C7'"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+            >
               <path d="M21 10.07V11a10 10 0 1 1-5.93-9.14"></path>
               <path d="M22 2 11 13l-3-3"></path>
             </g>
@@ -33,26 +43,31 @@
 import { useI18n, ref } from '#imports'
 
 // --- Composables ---
-const { t, locale } = useI18n(); // Get translation function and reactive locale
+const { t, locale } = useI18n() // Get translation function and reactive locale
 
 // --- Props ---
 const props = defineProps({
   locales: {
     type: Array, // Removed 'as () => string[]'
-    default: () => ['en', 'fr']
+    default: () => ['en', 'fr'],
   },
   defaultLang: {
     type: String,
-    default: 'en'
-  }
-});
+    default: 'en',
+  },
+})
 
 // --- Emits ---
-const emit = defineEmits(['setFormLang']);
+const emit = defineEmits(['setFormLang'])
 
 // --- Refs ---
 // Initialize formLang with the current global locale or the default prop
-const formLang = ref(locale.value || props.defaultLang);
+const formLang = ref(locale.value || props.defaultLang)
+
+function changeLang(loc) {
+  formLang.value = loc
+  emit('setFormLang', loc)
+}
 
 // Note: If you need formLang to always sync with the global locale,
 // you could watch locale:
@@ -61,7 +76,6 @@ const formLang = ref(locale.value || props.defaultLang);
 // });
 // However, the original component seemed to manage formLang independently
 // after initialization, only emitting changes.
-
 </script>
 
 <style scoped>
@@ -71,7 +85,7 @@ const formLang = ref(locale.value || props.defaultLang);
 .translationComponent {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  background-color: #03B1C7;
+  background-color: #03b1c7;
   justify-content: center;
   align-items: center;
   cursor: pointer;
@@ -79,18 +93,18 @@ const formLang = ref(locale.value || props.defaultLang);
   display: flex;
 }
 .selectedLang {
-  background-color: #03B1C7;
+  background-color: #03b1c7;
 }
 .unselectedLang {
   background: white;
-  border-color: #03B1C7;
+  border-color: #03b1c7;
   border-width: 1px;
 }
 .roundedRight {
-  border-bottom-right-radius: 0.5rem
+  border-bottom-right-radius: 0.5rem;
 }
 .roundedLeft {
-  border-top-left-radius: 0.5rem
+  border-top-left-radius: 0.5rem;
 }
 .SectionsFontLight {
   font-weight: 300;
@@ -98,8 +112,9 @@ const formLang = ref(locale.value || props.defaultLang);
 .SectionsTextWhite {
   color: white;
 }
-.SetionsTextBlue { /* Typo in original? Should be SectionsTextBlue? */
-  color: #03B1C7;
+.SetionsTextBlue {
+  /* Typo in original? Should be SectionsTextBlue? */
+  color: #03b1c7;
 }
 .checkMark {
   margin-right: 8px;

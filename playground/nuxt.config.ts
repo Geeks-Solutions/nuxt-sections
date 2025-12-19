@@ -4,31 +4,29 @@ export default defineNuxtConfig({
     host: '0.0.0.0',
     port: 443,
   },
-  modules: ['../src/module', "@nuxtjs/i18n", "@nuxtjs/tailwindcss", "@nuxt/image", "@pinia/nuxt"],
+  modules: ['../src/module', '@nuxtjs/i18n', '@nuxtjs/tailwindcss', '@nuxt/image', '@pinia/nuxt'],
   i18n: {
-    strategy: "no_prefix",
+    strategy: 'no_prefix',
     detectBrowserLanguage: false,
-    defaultLocale: "en",
+    defaultLocale: 'en',
     locales: [
       {
-        name: "French",
-        code: "fr",
-        iso: "fr",
-        file: "fr.js"
+        name: 'French',
+        code: 'fr',
+        iso: 'fr',
+        file: 'fr.js',
       },
       {
-        name: "English",
-        code: "en",
-        iso: "en",
-        file: "en.js"
-      }
+        name: 'English',
+        code: 'en',
+        iso: 'en',
+        file: 'en.js',
+      },
     ],
     lazy: true,
-    langDir: "lang/"
+    langDir: 'lang/',
   },
-  tailwindcss: {
-
-  },
+  tailwindcss: {},
   devtools: { enabled: true },
   compatibilityDate: '2025-04-08',
   runtimeConfig: {
@@ -39,12 +37,12 @@ export default defineNuxtConfig({
         environment: process.env.NUXT_ENV_SECTIONS_ENV,
         queryStringSupport: process.env.NUXT_ENV_SECTIONS_QUERY_STRING_SUPPORT,
         // projectLocales: process.env.NUXT_ENV_SECTIONS_LOCALES ?? 'en,fr',
-        cname: process.env.NUXT_ENV_SECTIONS_CNAME
+        cname: process.env.NUXT_ENV_SECTIONS_CNAME,
       },
-      SIGNATURE_PACKAGES: process.env.NUXT_ENV_SIGNATURE_PACKAGES
-    }
+      SIGNATURE_PACKAGES: process.env.NUXT_ENV_SIGNATURE_PACKAGES,
+    },
   },
   imports: {
-    autoImport: false
-  }
+    autoImport: false,
+  },
 })

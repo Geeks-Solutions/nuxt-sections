@@ -7,7 +7,7 @@
         :alt="props.media.seo_tag || ''"
         class="media-viewer-image"
         loading="lazy"
-      >
+      />
     </div>
     <!-- Display document -->
     <div v-else-if="props.media.type === 'document'" class="media-viewer-document-wrapper">
@@ -19,9 +19,12 @@
         class="media-viewer-document-iframe"
       ></iframe>
       <!-- Otherwise, show title and link -->
-      <span v-else class="media-viewer-document-link-wrapper"> <!-- Specific class for link -->
+      <span v-else class="media-viewer-document-link-wrapper">
+        <!-- Specific class for link -->
         {{ props.media.title ? `${props.media.title} : ` : '' }}
-        <a :href="props.media.url" target="_blank" class="media-viewer-document-link">{{ props.media.url }}</a>
+        <a :href="props.media.url" target="_blank" class="media-viewer-document-link">{{
+          props.media.url
+        }}</a>
       </span>
     </div>
     <!-- Add handling for other media types if necessary -->
@@ -34,7 +37,6 @@
 </template>
 
 <script setup>
-
 // --- Props ---
 const props = defineProps({
   media: {
@@ -42,15 +44,14 @@ const props = defineProps({
     required: true, // Keep track that it's required, defineProps handles this by lack of default
     // Add a validator for better type checking in JS if needed
     validator: (value) => {
-      return typeof value === 'object' && value !== null && typeof value.url === 'string';
-    }
+      return typeof value === 'object' && value !== null && typeof value.url === 'string'
+    },
   },
   previewMedia: {
     type: Boolean,
-    default: false
-  }
-});
-
+    default: false,
+  },
+})
 </script>
 
 <!--// TODO: Check component display after below styles that were automatically generated -->
@@ -80,10 +81,10 @@ const props = defineProps({
 }
 
 .media-viewer-document-link-wrapper {
-   /* Styles for the link container */
-   display: block;
-   padding: 10px;
-   border: 1px dashed #eee; /* Example style */
+  /* Styles for the link container */
+  display: block;
+  padding: 10px;
+  border: 1px dashed #eee; /* Example style */
 }
 
 .media-viewer-document-link {
@@ -94,7 +95,7 @@ const props = defineProps({
 }
 
 .media-viewer-empty {
-   /* Styles for when no media is available */
-   /* Example: min-height: 100px; border: 1px dashed #ccc; */
+  /* Styles for when no media is available */
+  /* Example: min-height: 100px; border: 1px dashed #ccc; */
 }
 </style>

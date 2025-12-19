@@ -19,10 +19,10 @@
 </template>
 
 <script setup>
-import { ref, inject, watch, onMounted, onBeforeUnmount } from "#imports"
+import { ref, inject, watch, onMounted, onBeforeUnmount } from '#imports'
 
-const menuManager = inject("menuManager") // shared state
-const id = Symbol("menuId")               // unique id for this instance
+const menuManager = inject('menuManager') // shared state
+const id = Symbol('menuId') // unique id for this instance
 const isOpen = ref(false)
 const menuRef = ref(null)
 
@@ -35,9 +35,12 @@ function toggle() {
   }
 }
 
-watch(() => menuManager?.current?.value, (val) => {
-  isOpen.value = val === id
-})
+watch(
+  () => menuManager?.current?.value,
+  (val) => {
+    isOpen.value = val === id
+  }
+)
 
 // Close on outside click
 function handleClickOutside(event) {
@@ -48,11 +51,11 @@ function handleClickOutside(event) {
 }
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside)
+  document.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -78,7 +81,7 @@ onBeforeUnmount(() => {
   height: 4px;
   max-width: 4px;
   max-height: 4px;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 50%;
 }
 
@@ -106,5 +109,4 @@ onBeforeUnmount(() => {
     justify-items: start !important;
   }
 }
-
 </style>
