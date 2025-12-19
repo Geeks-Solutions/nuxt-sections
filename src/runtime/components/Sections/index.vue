@@ -73,14 +73,8 @@
                     <draggable
                       v-model="alteredViewsPerRegions[slotName]"
                       group="people"
-                      @start="
-                        drag = true
-                        highlightRegions = true
-                      "
-                      @end="
-                        drag = false
-                        highlightRegions = false
-                      "
+                      @start="handleDragState(true)"
+                      @end="handleDragState(false)"
                       handle=".handle"
                       item-key="id"
                       :class="{
@@ -488,6 +482,10 @@ useHead(() => {
 })
 
 // Methods (now as regular functions)
+function handleDragState(starting) {
+  drag.value = starting
+  highlightRegions.value = starting
+}
 const initializeSectionsCMSEvents = () => {
   if (!window.SectionsCMS) {
     window.SectionsCMS = ref({})
