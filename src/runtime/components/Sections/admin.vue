@@ -16,22 +16,11 @@
         <div
           class="step-back-aside"
           v-if="currentSection && creationView"
-          @click="
-            backToAddSectionList = true
-            restoreType = 'section'
-            isRestoreSectionOpen = true
-          "
+          @click="openRestoreModal('section', { backToAddSectionList: true })"
         >
           <LazyBaseIconsBack />
         </div>
-        <div
-          v-if="currentSection"
-          class="closeIcon"
-          @click="
-            restoreType = 'section'
-            isRestoreSectionOpen = true
-          "
-        >
+        <div v-if="currentSection" class="closeIcon" @click="openRestoreModal('section')">
           <LazyBaseIconsClose />
         </div>
         <a
@@ -230,15 +219,7 @@
                           ? [pageMetadata['mediaMetatag']]
                           : []
                       "
-                      @uploadContainerClicked="
-                        selectedMediaType = 'mediaMetatag'
-                        $refs.sectionsMediaComponent.openModal(
-                          pageMetadata['mediaMetatag'] &&
-                            Object.keys(pageMetadata['mediaMetatag']).length > 0
-                            ? pageMetadata['mediaMetatag'].media_id
-                            : null
-                        )
-                      "
+                      @uploadContainerClicked="handleMetadataMediaOpen('mediaMetatag')"
                       @removeUploadedImage="removeMedia('mediaMetatag')"
                     />
                   </div>
@@ -257,15 +238,7 @@
                           ? [pageMetadata['media']]
                           : []
                       "
-                      @uploadContainerClicked="
-                        selectedMediaType = 'media'
-                        $refs.sectionsMediaComponent.openModal(
-                          pageMetadata['media'] && Object.keys(pageMetadata['media']).length > 0
-                            ? pageMetadata['media'].media_id
-                            : null,
-                          'document'
-                        )
-                      "
+                      @uploadContainerClicked="handleMetadataMediaOpen('media', 'document')"
                       @removeUploadedImage="removeMedia('media')"
                     />
                     <LazyMediasMediaComponent
@@ -491,10 +464,7 @@
                           data-toggle="tooltip"
                           data-placement="top"
                           :title="$t('settingsSectionsLabel')"
-                          @click="
-                            switchSettingsTab('page_settings')
-                            openMetaDataModal()
-                          "
+                          @click="handleSettingsModal('page_settings')"
                         >
                           <LazyBaseIconsSettings />
                           <span class="sections-pl-2 sections-no-wrap">{{
@@ -580,14 +550,7 @@
                       <button
                         v-if="selectedLayout === 'standard'"
                         class="hp-button"
-                        @click="
-                          ((currentSection = null),
-                          (isModalOpen = true),
-                          (savedView = {}),
-                          (isCreateInstance = false),
-                          (isSideBarOpen = false),
-                          runIntro('addNewSectionModal', introRerun.value))
-                        "
+                        @click="resetModalState({ topic: 'addNewSectionModal' })"
                       >
                         <div class="btn-icon plus-icon">
                           <LazyBaseIconsPlus />
@@ -612,10 +575,7 @@
                       class="hp-button grey"
                       :class="{ pageHasNoChanges: pageHasNoChanges }"
                       :disabled="pageHasNoChanges"
-                      @click="
-                        restoreType = 'page'
-                        isRestoreSectionOpen = true
-                      "
+                      @click="openRestoreModal('page')"
                     >
                       <div class="save-icon">
                         <LazyBaseIconsRestore :title="$t('Restore')" />
@@ -627,16 +587,7 @@
                         <div class="flexSections">
                           <button
                             class="hp-button sections-no-wrap"
-                            @click="
-                              ((currentSection = null),
-                              (isModalOpen = true),
-                              (savedView = {}),
-                              (isCreateInstance = true),
-                              (isSideBarOpen = false),
-                              (canPromote = false),
-                              (sectionsFilterName = ''),
-                              (sectionsFilterAppName = ''))
-                            "
+                            @click="resetModalState({ isGlobal: true })"
                           >
                             <div class="btn-icon plus-icon">
                               <LazyBaseIconsPlus />
@@ -694,10 +645,7 @@
                           data-toggle="tooltip"
                           data-placement="top"
                           :title="settingsTabTitle(tab)"
-                          @click="
-                            switchSettingsTab(tab)
-                            openMetaDataModal()
-                          "
+                          @click="handleSettingsModal(tab)"
                         >
                           <LazyBaseIconsSettings />
                           <span class="sections-pl-2 sections-no-wrap">{{
@@ -801,13 +749,7 @@
                         {{ $t('selectSectionType') }}
                       </div>
                     </div>
-                    <div
-                      class="closeIcon"
-                      @click="
-                        isModalOpen = false
-                        isCreateInstance = false
-                      "
-                    >
+                    <div class="closeIcon" @click="closeModal">
                       <LazyBaseIconsClose />
                     </div>
                   </div>
@@ -1056,19 +998,7 @@
                         loading === false
                       "
                     >
-                      <button
-                        class="hp-button"
-                        @click="
-                          ((currentSection = null),
-                          (isModalOpen = true),
-                          (savedView = {}),
-                          (isCreateInstance = true),
-                          (isSideBarOpen = false),
-                          (canPromote = false),
-                          (sectionsFilterName = ''),
-                          (sectionsFilterAppName = ''))
-                        "
-                      >
+                      <button class="hp-button" @click="resetModalState({ isGlobal: true })">
                         <div class="btn-icon plus-icon">
                           <LazyBaseIconsPlus />
                         </div>
@@ -1130,34 +1060,7 @@
                       <div
                         class="section-item"
                         :class="{ active: type.notCreated !== true || isCreateInstance === true }"
-                        @click="
-                          type.notCreated === true
-                            ? openCurrentSection(type, true)
-                            : type.type === 'local' ||
-                                type.type === 'dynamic' ||
-                                type.type === 'configurable'
-                              ? openCurrentSection(type, true)
-                              : addSectionType(
-                                  {
-                                    ...type.section,
-                                    id: 'id-' + Date.now(),
-                                    weight: 'null',
-                                    type: type.type,
-                                    instance_name: type.name,
-                                    fields: type.fields,
-                                    query_string_keys: type.query_string_keys,
-                                    dynamic_options: type.dynamic_options,
-                                    render_data:
-                                      type.section &&
-                                      type.section.options &&
-                                      type.section.options[0]
-                                        ? [{ settings: type.section.options[0] }]
-                                        : undefined,
-                                  },
-                                  null,
-                                  true
-                                )
-                        "
+                        @click="handleSectionItemClick(type)"
                       >
                         <LazyBaseSubTypesSectionItem
                           v-if="type.name"
@@ -1334,17 +1237,7 @@
                     }}
                   </div>
                   <div class="flexSections sections-flex-row">
-                    <button
-                      class="hp-button"
-                      @click="
-                        showMyGlobal && deletingGlobalInstance
-                          ? deleteGlobalSectionType(
-                              selectedSectionTypeName,
-                              selectedSectionTypeIndex
-                            )
-                          : deleteSectionType(selectedSectionTypeName, selectedSectionTypeIndex)
-                      "
-                    >
+                    <button class="hp-button" @click="handleConfirmDeleteSectionType">
                       <div class="btn-text">
                         {{ $t('Confirm') }}
                       </div>
@@ -1430,7 +1323,7 @@
                     {{ $t('delete-section-page') }}
                   </div>
                   <div class="flexSections sections-flex-row sections-justify-center">
-                    <button class="hp-button danger" @click="deleteSectionPage()">
+                    <button class="hp-button danger" @click="handleConfirmDeletePage">
                       <div class="btn-text">
                         {{ $t('Confirm') }}
                       </div>
@@ -1558,13 +1451,7 @@
                           {{ $t('Confirm') }}
                         </div>
                       </button>
-                      <button
-                        class="hp-button"
-                        @click="
-                          isAuthModalOpen = false
-                          requirementsInputs = {}
-                        "
-                      >
+                      <button class="hp-button" @click="handleAuthModal">
                         <div class="btn-text">
                           {{ $t('Cancel') }}
                         </div>
@@ -1750,25 +1637,12 @@
                             sectionsFormatErrors[view.weight] ||
                             (view.error && view.status_code !== 404)
                           "
-                          @click="
-                            isErrorsFormatModalOpen = true
-                            displayedErrorFormat = sectionsFormatErrors[view.weight]
-                              ? sectionsFormatErrors[view.weight]
-                              : view.error
-                          "
+                          @click="handleSectionAction('showError', view)"
                         >
                           <LazyBaseIconsAlert />
                         </div>
                         <div
-                          @click="
-                            toggleSectionsOptions(view.id)
-                            edit(
-                              currentViews.find((vw) => vw.id === view.id),
-                              view.linked_to !== '' && view.linked_to !== undefined
-                                ? `#${view.linked_to}-${view.id}`
-                                : `#${view.name}-${view.id}`
-                            )
-                          "
+                          @click="handleSectionAction('edit', view)"
                           v-if="
                             editable(view.type) ||
                             (view.linked_to !== '' && view.linked_to !== undefined)
@@ -1784,13 +1658,7 @@
                           />
                         </div>
                         <LazyBaseIconsDrag class="drag-icon handle" />
-                        <div
-                          @click="
-                            isDeleteSectionModalOpen = true
-                            deletedSectionId = view.id
-                            deletedSectionName = view.name
-                          "
-                        >
+                        <div @click="handleSectionAction('delete', view)">
                           <LazyBaseIconsTrash class="trash-icon" />
                         </div>
                         <div
@@ -1829,13 +1697,7 @@
                         </div>
                         <div
                           v-if="sectionsThemeComponents[view.name] && !view.id.startsWith('id-')"
-                          @click="
-                            toggleSectionsOptions(view.id)
-                            openSectionThemeModal(
-                              currentViews.find((vw) => vw.id === view.id),
-                              sectionsThemeComponents[view.name]
-                            )
-                          "
+                          @click="handleSectionAction('theme', view)"
                         >
                           <LazyBaseIconsPaintBursh />
                         </div>
@@ -1953,12 +1815,11 @@
                       <button
                         class="hp-button"
                         @click.stop.prevent="
-                          ((currentSection = null),
-                          (isModalOpen = true),
-                          (savedView = {}),
-                          (selectedSlotRegion = slotName),
-                          runIntro('addNewSectionModal', introRerun.value),
-                          checkIntroLastStep('addNewSectionModal'))
+                          resetModalState({
+                            slotName,
+                            topic: 'addNewSectionModal',
+                            checkIntro: true,
+                          })
                         "
                       >
                         <div class="btn-icon plus-icon">
@@ -1980,15 +1841,7 @@
                             sectionsThemeComponents[slotName]
                           "
                         >
-                          <div
-                            @click="
-                              toggleRegionsOptions(slotName)
-                              openSectionThemeModal(
-                                { id: slotName, name: slotName },
-                                sectionsThemeComponents[slotName]
-                              )
-                            "
-                          >
+                          <div @click="handleRegionTheme(slotName)">
                             <LazyBaseIconsPaintBursh />
                           </div>
                         </div>
@@ -2009,14 +1862,8 @@
                       <draggable
                         v-model="alteredViewsPerRegions[slotName]"
                         group="people"
-                        @start="
-                          drag = true
-                          highlightRegions = true
-                        "
-                        @end="
-                          drag = false
-                          highlightRegions = false
-                        "
+                        @start="handleDragState(true)"
+                        @end="handleDragState(false)"
                         @change="(evt) => logDrag(evt, slotName)"
                         handle=".handle"
                         item-key="id"
@@ -2058,28 +1905,12 @@
                                     sectionsFormatErrors[view.weight] ||
                                     (view.error && view.status_code !== 404)
                                   "
-                                  @click="
-                                    isErrorsFormatModalOpen = true
-                                    displayedErrorFormat = sectionsFormatErrors[view.weight]
-                                      ? sectionsFormatErrors[view.weight]
-                                      : view.error
-                                  "
+                                  @click="handleSectionAction('showError', view)"
                                 >
                                   <LazyBaseIconsAlert />
                                 </div>
                                 <div
-                                  @click="
-                                    toggleSectionsOptions(view.id)
-                                    edit(
-                                      viewsPerRegions[view.region[selectedLayout].slot].find(
-                                        (vw) => vw.id === view.id
-                                      ),
-                                      view.linked_to !== '' && view.linked_to !== undefined
-                                        ? `#${view.linked_to}-${view.id}`
-                                        : `#${view.name}-${view.id}`
-                                    )
-                                    selectedSlotRegion = slotName
-                                  "
+                                  @click="handleSectionAction('edit', view, slotName)"
                                   v-if="
                                     editable(view.type) ||
                                     (view.linked_to !== '' && view.linked_to !== undefined)
@@ -2095,13 +1926,7 @@
                                   />
                                 </div>
                                 <LazyBaseIconsDrag class="drag-icon handle" />
-                                <div
-                                  @click="
-                                    isDeleteSectionModalOpen = true
-                                    deletedSectionId = view.id
-                                    deletedSectionName = view.name
-                                  "
-                                >
+                                <div @click="handleSectionAction('delete', view)">
                                   <LazyBaseIconsTrash class="trash-icon" />
                                 </div>
                                 <div
@@ -2146,15 +1971,7 @@
                                   v-if="
                                     sectionsThemeComponents[view.name] && !view.id.startsWith('id-')
                                   "
-                                  @click="
-                                    toggleSectionsOptions(view.id)
-                                    openSectionThemeModal(
-                                      viewsPerRegions[view.region[selectedLayout].slot].find(
-                                        (vw) => vw.id === view.id
-                                      ),
-                                      sectionsThemeComponents[view.name]
-                                    )
-                                  "
+                                  @click="handleSectionAction('theme', view, slotName)"
                                 >
                                   <LazyBaseIconsPaintBursh />
                                 </div>
@@ -3065,6 +2882,148 @@ useHead(() => {
 })
 
 // Methods (now as regular functions)
+
+/* --- Smart DRY Helpers for Multiline template expressions --- */
+function resetModalState(options = {}) {
+  currentSection.value = null
+  isModalOpen.value = true
+  savedView.value = {}
+  isCreateInstance.value = options.isGlobal || false
+  isSideBarOpen.value = false
+  if (options.isGlobal) {
+    canPromote.value = false
+    sectionsFilterName.value = ''
+    sectionsFilterAppName.value = ''
+  }
+  if (options.slotName) {
+    selectedSlotRegion.value = options.slotName
+  }
+  if (options.topic) {
+    runIntro(options.topic, introRerun.value)
+  }
+  if (options.checkIntro) {
+    checkIntroLastStep(options.topic)
+  }
+}
+
+function openRestoreModal(type, options = {}) {
+  restoreType.value = type
+  isRestoreSectionOpen.value = true
+  if (options.backToAddSectionList) {
+    backToAddSectionList.value = true
+  }
+}
+
+function handleMetadataMediaOpen(type, mediaType = 'media') {
+  selectedMediaType.value = type
+  const mediaId =
+    pageMetadata.value[type] && Object.keys(pageMetadata.value[type]).length > 0
+      ? pageMetadata.value[type].media_id
+      : null
+  sectionsMediaComponent.value.openModal(mediaId, mediaType)
+}
+
+function handleSettingsModal(tab) {
+  switchSettingsTab(tab)
+  openMetaDataModal()
+}
+
+function handleSectionAction(action, view, slotName) {
+  if (action === 'showError') {
+    isErrorsFormatModalOpen.value = true
+    displayedErrorFormat.value = sectionsFormatErrors.value[view.weight]
+      ? sectionsFormatErrors.value[view.weight]
+      : view.error
+  } else if (action === 'edit') {
+    toggleSectionsOptions(view.id)
+    const viewToEdit =
+      (viewsPerRegions.value[view.region[selectedLayout.value].slot] || []).find(
+        (vw) => vw.id === view.id
+      ) || currentViews.value.find((vw) => vw.id === view.id)
+
+    const anchor =
+      view.linked_to !== '' && view.linked_to !== undefined
+        ? `#${view.linked_to}-${view.id}`
+        : `#${view.name}-${view.id}`
+
+    edit(viewToEdit, anchor)
+    selectedSlotRegion.value = slotName || view.region[selectedLayout.value].slot
+  } else if (action === 'delete') {
+    isDeleteSectionModalOpen.value = true
+    deletedSectionId.value = view.id
+    deletedSectionName.value = view.name
+  } else if (action === 'theme') {
+    toggleSectionsOptions(view.id)
+    const viewToTheme =
+      (viewsPerRegions.value[view.region[selectedLayout.value].slot] || []).find(
+        (vw) => vw.id === view.id
+      ) || currentViews.value.find((vw) => vw.id === view.id)
+
+    openSectionThemeModal(viewToTheme, sectionsThemeComponents.value[view.name])
+  }
+}
+
+function handleDragState(starting) {
+  drag.value = starting
+  highlightRegions.value = starting
+}
+
+function handleRegionTheme(slotName) {
+  toggleRegionsOptions(slotName)
+  openSectionThemeModal({ id: slotName, name: slotName }, sectionsThemeComponents.value[slotName])
+}
+
+function closeModal() {
+  isModalOpen.value = false
+  isCreateInstance.value = false
+}
+
+function handleAuthModal(open = false) {
+  isAuthModalOpen.value = open
+  if (!open) {
+    requirementsInputs.value = {}
+  }
+}
+
+function handleSectionItemClick(type) {
+  if (type.notCreated === true) {
+    openCurrentSection(type, true)
+  } else if (type.type === 'local' || type.type === 'dynamic' || type.type === 'configurable') {
+    openCurrentSection(type, true)
+  } else {
+    addSectionType(
+      {
+        ...type.section,
+        id: 'id-' + Date.now(),
+        weight: 'null',
+        type: type.type,
+        instance_name: type.name,
+        fields: type.fields,
+        query_string_keys: type.query_string_keys,
+        dynamic_options: type.dynamic_options,
+        render_data:
+          type.section && type.section.options && type.section.options[0]
+            ? [{ settings: type.section.options[0] }]
+            : undefined,
+      },
+      null,
+      true
+    )
+  }
+}
+
+function handleConfirmDeleteSectionType() {
+  if (showMyGlobal.value && deletingGlobalInstance.value) {
+    deleteGlobalSectionType(selectedSectionTypeName.value, selectedSectionTypeIndex.value)
+  } else {
+    deleteSectionType(selectedSectionTypeName.value, selectedSectionTypeIndex.value)
+  }
+}
+
+function handleConfirmDeletePage() {
+  deleteSectionPage()
+}
+/* ----------------------------------------------------------- */
 const seoBtnClicked = (id) => {
   if (!pageMetadata.value.seo) {
     pageMetadata.value.seo = {}

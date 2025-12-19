@@ -9,10 +9,7 @@
           formLang === loc ? 'selectedLang' : 'unselectedLang',
           index === 0 ? 'roundedLeft' : index === props.locales.length - 1 ? 'roundedRight' : '',
         ]"
-        @click="
-          formLang = loc
-          emit('setFormLang', loc)
-        "
+        @click="changeLang(loc)"
       >
         <!-- Show checkmark if the global i18n locale matches this button's locale -->
         <div v-show="locale === loc" class="checkMark">
@@ -66,6 +63,11 @@ const emit = defineEmits(['setFormLang'])
 // --- Refs ---
 // Initialize formLang with the current global locale or the default prop
 const formLang = ref(locale.value || props.defaultLang)
+
+function changeLang(loc) {
+  formLang.value = loc
+  emit('setFormLang', loc)
+}
 
 // Note: If you need formLang to always sync with the global locale,
 // you could watch locale:
