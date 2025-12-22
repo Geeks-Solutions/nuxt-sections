@@ -2258,7 +2258,6 @@
 import { useSectionsDataStore } from '../../stores/sectionsDataStore.js'
 import {
   computed,
-  dummyDataPresets,
   formatName,
   formatTexts,
   getSectionProjectIdentity,
@@ -2290,6 +2289,7 @@ import {
   useRuntimeConfig,
   useState,
   validateQS,
+  dummyDataPresets,
   watch,
 } from '#imports'
 import {
@@ -2935,19 +2935,21 @@ function handleSectionAction(action, view, slotName) {
       ? sectionsFormatErrors.value[view.weight]
       : view.error
   } else if (action === 'edit') {
-    toggleSectionsOptions(view.id)
     const viewToEdit =
-      (viewsPerRegions.value[view.region[selectedLayout.value].slot] || []).find(
-        (vw) => vw.id === view.id
-      ) || currentViews.value.find((vw) => vw.id === view.id)
+      slotName !== undefined
+        ? (viewsPerRegions.value[view.region[selectedLayout.value].slot] || []).find(
+            (vw) => vw.id === view.id
+          )
+        : currentViews.value.find((vw) => vw.id === view.id)
 
     const anchor =
       view.linked_to !== '' && view.linked_to !== undefined
         ? `#${view.linked_to}-${view.id}`
         : `#${view.name}-${view.id}`
 
+    toggleSectionsOptions(view.id)
     edit(viewToEdit, anchor)
-    selectedSlotRegion.value = slotName || view.region[selectedLayout.value].slot
+    if (slotName !== undefined) selectedSlotRegion.value = slotName
   } else if (action === 'delete') {
     isDeleteSectionModalOpen.value = true
     deletedSectionId.value = view.id

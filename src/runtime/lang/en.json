@@ -189,6 +189,7 @@
       "duration": "Duration:",
       "downloadMedia": "Download Media",
       "deleteMedia": "DELETE MEDIA",
+      "revert": "Revert Changes",
       "Global Platform": "Global Platform",
       "deleteMediaMsg": "Are you sure you want to delete this media?",
       "cancel": "Cancel",

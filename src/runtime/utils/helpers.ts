@@ -1,4 +1,4 @@
-import { useCookie, useNuxtApp, useRequestHeaders, useRoute, useFetch } from '#app'
+import { useCookie, useNuxtApp, useRequestHeaders, useRoute } from '#app'
 import { defineAsyncComponent } from 'vue'
 
 export function formatName(name: string): string {
@@ -393,7 +393,7 @@ export async function getGlobalTypeData(linked_to: string): Promise<{ res: any; 
 
   const result = {
     res: {},
-    error: null,
+    error: { response: null },
   }
 
   try {
@@ -926,7 +926,7 @@ export function loadScript(
     }
 
     const { load } = useScript(src)
-    scriptPromises[key] = load().catch((err) => {
+    scriptPromises[key] = load().catch(() => {
       // allow retry on failure
       delete scriptPromises[key]
     })
