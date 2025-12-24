@@ -69,7 +69,7 @@
               :sections-user-id="sectionsUserId"
               :instance="currentSection.instance === true"
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
-              :is-side-bar-open="isSideBarOpen"
+              :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
               @load="(value) => (loading = value)"
               @promote-section="currentSection = { ...currentSection, instance: true }"
               @creationViewLoaded="updateCreationView"
@@ -91,7 +91,7 @@
               :instance="currentSection.instance === true"
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
               :base-path="pagePath"
-              :is-side-bar-open="isSideBarOpen"
+              :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
               @load="(value) => (loading = value)"
             />
             <LazyBaseTypesConfigurable
@@ -117,7 +117,7 @@
               :instance="currentSection.instance === true"
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
               :base-path="pagePath"
-              :is-side-bar-open="isSideBarOpen"
+              :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
               @loadReference="sectionsConfigurableTypeReference.value = sectionsConfigurableType"
               @load="(value) => (loading = value)"
               @promote-section="currentSection = { ...currentSection, instance: true }"
@@ -354,7 +354,12 @@
         </div>
 
         <div
-          v-if="!currentSection && dynamicSideComponent === true"
+          v-show="
+            dynamicSideComponent === true &&
+            !currentSection &&
+            !sectionsThemeModal &&
+            !metadataModal
+          "
           class="section-modal-wrapper dynamic-side-component"
         >
           <div class="dynamic-side-component-wrapper">
@@ -381,7 +386,7 @@
             <button
               :ref="!editMode ? 'intro-edit-page' : undefined"
               @click="openEditMode()"
-              v-if="admin && !isSideBarOpen"
+              v-if="admin && (!isSideBarOpen || currentSidebarKeepEditBar)"
               class="intro-edit-page sections-bg-blue control-button hide-mobile btn-text edit-page"
               :title="!editMode ? $t('Edit page') : $t('View page')"
             >
@@ -394,7 +399,7 @@
             >
               <div
                 class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
-                v-if="admin && editMode && !isSideBarOpen"
+                v-if="admin && editMode && (!isSideBarOpen || currentSidebarKeepEditBar)"
               >
                 <div class="flexSections sections-flex-row sections-justify-center top-bar-wrapper">
                   <div class="flexSections top-bar-page-content-wrapper">
@@ -665,7 +670,12 @@
                 </div>
               </div>
               <div
-                v-if="admin && editMode && !isSideBarOpen && sectionsChanged"
+                v-if="
+                  admin &&
+                  editMode &&
+                  (!isSideBarOpen || currentSidebarKeepEditBar) &&
+                  sectionsChanged
+                "
                 class="sections-p-3 sections-text-center mainmsg sections-pt-3"
               >
                 {{ $t('changesPublished') }}
@@ -1703,7 +1713,12 @@
                         </div>
                       </div>
                       <div
-                        v-if="admin && editMode && view.altered !== true && !isSideBarOpen"
+                        v-if="
+                          admin &&
+                          editMode &&
+                          view.altered !== true &&
+                          (!isSideBarOpen || currentSidebarKeepEditBar)
+                        "
                         :title="
                           view.linked_to !== '' && view.linked_to !== undefined
                             ? `${view.linked_to} (${view.id})`
@@ -1789,7 +1804,7 @@
                 :default-lang="defaultLang"
                 :admin="admin"
                 :edit-mode="editMode"
-                :is-side-bar-open="isSideBarOpen"
+                :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
                 @open-theme-modal="
                   (section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])
                 "
@@ -1799,7 +1814,7 @@
                   <div class="flexSections flex-col">
                     <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
                     <div
-                      v-if="admin && editMode && !isSideBarOpen"
+                      v-if="admin && editMode && (!isSideBarOpen || currentSidebarKeepEditBar)"
                       :ref="
                         selectedLayout !== 'standard' && slotIdx === 0
                           ? 'intro-add-new-section'
@@ -1847,7 +1862,10 @@
                         </div>
                         <div
                           v-if="
-                            admin && editMode && !isSideBarOpen && sectionsThemeComponents[slotName]
+                            admin &&
+                            editMode &&
+                            (!isSideBarOpen || currentSidebarKeepEditBar) &&
+                            sectionsThemeComponents[slotName]
                           "
                           :title="'line-1'"
                           @click="toggleRegionsOptions(slotName)"
@@ -1977,7 +1995,12 @@
                                 </div>
                               </div>
                               <div
-                                v-if="admin && editMode && view.altered !== true && !isSideBarOpen"
+                                v-if="
+                                  admin &&
+                                  editMode &&
+                                  view.altered !== true &&
+                                  (!isSideBarOpen || currentSidebarKeepEditBar)
+                                "
                                 :title="
                                   view.linked_to !== '' && view.linked_to !== undefined
                                     ? `${view.linked_to} (${view.id})`
@@ -2595,6 +2618,9 @@ const sectionsThemeComponents = ref({})
 const sectionsThemeModal = ref(false)
 
 const dynamicSideComponent = ref(false)
+const keepEditBarVisible = ref(false)
+const sidebarStateStack = ref([])
+const MAX_SIDEBAR_STACK_DEPTH = 5
 
 const dynamicSideBarComponentPath = ref('')
 
@@ -2625,6 +2651,52 @@ const guideConfig = useState('guideConfig', () => {
     return defaultConfig
   }
 })
+
+// Computed property for current sidebar keepEditBarVisible state
+const currentSidebarKeepEditBar = computed(() => {
+  if (sidebarStateStack.value.length === 0) return false
+  return sidebarStateStack.value[sidebarStateStack.value.length - 1].keepEditBarVisible
+})
+
+// Helper function to push sidebar state with depth limit
+function pushSidebarState(state) {
+  if (sidebarStateStack.value.length >= MAX_SIDEBAR_STACK_DEPTH) {
+    showToast('Error', 'error', 'Maximum sidebar depth reached. Close some panels first.')
+    return false
+  }
+  sidebarStateStack.value.push(state)
+  isSideBarOpen.value = true
+  return true
+}
+
+// Helper function to pop sidebar state and restore previous
+function popSidebarState() {
+  if (sidebarStateStack.value.length === 0) return
+
+  sidebarStateStack.value.pop()
+
+  if (sidebarStateStack.value.length > 0) {
+    const prevState = sidebarStateStack.value[sidebarStateStack.value.length - 1]
+    keepEditBarVisible.value = prevState.keepEditBarVisible
+
+    // Restore to previous view based on type
+    if (prevState.type === 'default') {
+      currentSection.value = null
+      metadataModal.value = false
+      sectionsThemeModal.value = false
+      dynamicSideComponent.value = true
+    }
+    // For other types, the respective modal/section state is already set
+  } else {
+    // Fully close sidebar
+    dynamicSideComponent.value = false
+    isSideBarOpen.value = false
+    keepEditBarVisible.value = false
+    currentSection.value = null
+    metadataModal.value = false
+    sectionsThemeModal.value = false
+  }
+}
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -2889,7 +2961,7 @@ function resetModalState(options = {}) {
   isModalOpen.value = true
   savedView.value = {}
   isCreateInstance.value = options.isGlobal || false
-  isSideBarOpen.value = false
+  //isSideBarOpen.value = false
   if (options.isGlobal) {
     canPromote.value = false
     sectionsFilterName.value = ''
@@ -2957,9 +3029,11 @@ function handleSectionAction(action, view, slotName) {
   } else if (action === 'theme') {
     toggleSectionsOptions(view.id)
     const viewToTheme =
-      (viewsPerRegions.value[view.region[selectedLayout.value].slot] || []).find(
-        (vw) => vw.id === view.id
-      ) || currentViews.value.find((vw) => vw.id === view.id)
+      slotName !== undefined
+        ? (viewsPerRegions.value[view.region[selectedLayout.value].slot] || []).find(
+            (vw) => vw.id === view.id
+          )
+        : currentViews.value.find((vw) => vw.id === view.id)
 
     openSectionThemeModal(viewToTheme, sectionsThemeComponents.value[view.name])
   }
@@ -3516,7 +3590,7 @@ const updateProjectMetadata = async (payload, external_call) => {
 
           if (!hasUnsavedSettings) {
             metadataModal.value = false
-            isSideBarOpen.value = false
+            popSidebarState()
           }
 
           if (res.data.metadata && res.data.metadata && res.data.metadata) {
@@ -3685,7 +3759,7 @@ const updatePageMetaData = async (seo, themeData) => {
 
           if (!hasUnsavedSettings) {
             sectionsThemeModal.value = false
-            isSideBarOpen.value = false
+            popSidebarState()
           }
 
           if (res.data.metadata && res.data.metadata && res.data.metadata.sections_builder) {
@@ -3695,7 +3769,7 @@ const updatePageMetaData = async (seo, themeData) => {
           unsavedSettingsError.value['page_settings'] = false
 
           metadataModal.value = false
-          isSideBarOpen.value = false
+          popSidebarState()
           metadataFormLang.value = i18n.locale.value.toString()
         }
 
@@ -3906,7 +3980,7 @@ const updateGlobalType = async (section) => {
           sectionTypeName.value = ''
           currentSection.value = null
           isModalOpen.value = false
-          isSideBarOpen.value = false
+          popSidebarState()
           loading.value = false
 
           showToast('Success', 'success', i18n.t('globalTypeUpdated'))
@@ -4000,7 +4074,7 @@ const addNewGlobalType = async (section, instance_name, payload, external_call) 
 
             currentSection.value = null
             isCreateInstance.value = false
-            isSideBarOpen.value = false
+            //isSideBarOpen.value = false
             showMyGlobal.value = true
           } else {
             loading.value = false
@@ -5506,6 +5580,7 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
     } else {
       section.linkedTo = ''
       section.linked_to = ''
+      popSidebarState()
     }
 
     displayVariations.value[selectedVariation.value].views[section.id] = section
@@ -5528,7 +5603,6 @@ const addSectionType = (section, showToastBool = true, instance = false) => {
     currentViews.value = displayVariations.value[selectedVariation.value].views
     displayVariations.value[selectedVariation.value].altered = true
     isModalOpen.value = false
-    isSideBarOpen.value = false
     savedView.value = {}
     createdView.value = {}
     creationView.value = false
@@ -6090,69 +6164,65 @@ const saveVariation = () => {
   })
 }
 const edit = (view, viewAnchor) => {
-  if (isSideBarOpen.value !== true) {
-    canPromote.value = true
-    types.value.map((type) => {
-      if (view.type === 'configurable') {
-        if (type.name.split(':')[1] === view.name) {
-          view.fields = type.fields
-          view.multiple = type.multiple
-          view.application_id = type.application_id
-          if (type.dynamic_options) {
-            view.dynamic_options = true
-          }
-        }
-      } else {
-        if (type.name === view.name) {
-          view.fields = type.fields
-          view.multiple = type.multiple
-          if (type.dynamic_options) {
-            view.dynamic_options = true
-          }
+  canPromote.value = true
+  types.value.map((type) => {
+    if (view.type === 'configurable') {
+      if (type.name.split(':')[1] === view.name) {
+        view.fields = type.fields
+        view.multiple = type.multiple
+        view.application_id = type.application_id
+        if (type.dynamic_options) {
+          view.dynamic_options = true
         }
       }
-    })
-
-    if (view.linked_to !== '') {
-      view.instance = true
+    } else {
+      if (type.name === view.name) {
+        view.fields = type.fields
+        view.multiple = type.multiple
+        if (type.dynamic_options) {
+          view.dynamic_options = true
+        }
+      }
     }
+  })
 
-    currentSection.value = view
-    savedView.value = view
-    isSideBarOpen.value = true
+  if (view.linked_to !== '') {
+    view.instance = true
+  }
 
-    nextTick(() => {
-      resizeData.value.parentElement = resizeTarget.value.parentElement
-      resizeData.value.resizeTarget = resizeTarget.value
-      setTimeout(() => {
-        if (resizeTarget.value) {
-          resizeTarget.value.scrollTo({
-            top: 0,
-          })
-        }
-      }, 600)
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', stopTracking)
-    })
+  currentSection.value = view
+  savedView.value = view
+  pushSidebarState({ type: 'section', keepEditBarVisible: false })
 
+  nextTick(() => {
+    resizeData.value.parentElement = resizeTarget.value.parentElement
+    resizeData.value.resizeTarget = resizeTarget.value
     setTimeout(() => {
-      if (sectionsMainTarget.value) {
-        const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`
-        const targetElement = sectionsMainTarget.value.querySelector(
-          `[id="${safeViewAnchor.substring(1)}"]`
-        )
-        if (targetElement) {
-          const targetPosition = targetElement.offsetTop
-          sectionsMainTarget.value.scrollTo({
-            top: targetPosition,
-            behavior: 'smooth',
-          })
-        }
+      if (resizeTarget.value) {
+        resizeTarget.value.scrollTo({
+          top: 0,
+        })
       }
     }, 600)
-  } else if (currentSection.value.name !== view.name) {
-    showToast('Edit', 'error', i18n.t('editingSection'))
-  }
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', stopTracking)
+  })
+
+  setTimeout(() => {
+    if (sectionsMainTarget.value) {
+      const safeViewAnchor = `${viewAnchor.replace(/ /g, '\\ ')}`
+      const targetElement = sectionsMainTarget.value.querySelector(
+        `[id="${safeViewAnchor.substring(1)}"]`
+      )
+      if (targetElement) {
+        const targetPosition = targetElement.offsetTop
+        sectionsMainTarget.value.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth',
+        })
+      }
+    }
+  }, 600)
 
   updatedVariations.value = JSON.parse(JSON.stringify(displayVariations.value))
 }
@@ -6553,7 +6623,7 @@ const openMetaDataModal = () => {
   currentSection.value = null
   nextTick(() => {
     metadataModal.value = true
-    isSideBarOpen.value = true
+    pushSidebarState({ type: 'metadata', keepEditBarVisible: false })
     sideBarSizeManagement()
   })
 }
@@ -6589,7 +6659,7 @@ const openCurrentSection = async (type, global, createSection) => {
   } else {
     if (type.type === 'static' || type.type === 'configurable' || createSection) {
       isModalOpen.value = false
-      isSideBarOpen.value = true
+      pushSidebarState({ type: 'section', keepEditBarVisible: false })
 
       nextTick(() => {
         try {
@@ -6720,14 +6790,13 @@ const closeMetadataModal = () => {
     isRestoreSectionOpen.value = true
   } else {
     metadataModal.value = false
-    isSideBarOpen.value = false
+    popSidebarState()
     metadataFormLang.value = i18n.locale.value.toString()
   }
 }
 const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) => {
   if (metadataModalOpened === true) {
     metadataModal.value = false
-    isSideBarOpen.value = false
     isRestoreSectionOpen.value = false
     updatedPageSettingsTabs.value.forEach((tab) => {
       try {
@@ -6753,7 +6822,6 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
     }
   } else if (sectionsThemeModalOpened) {
     sectionsThemeModal.value = false
-    isSideBarOpen.value = false
     isRestoreSectionOpen.value = false
     sectionsThemeComponents.value[currentSectionData.value.section.name].forEach((tab) => {
       try {
@@ -6772,7 +6840,6 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
     currentThemeTab.value = {}
     currentSectionData.value = {}
   } else {
-    isSideBarOpen.value = false
     isCreateInstance.value = false
     isRestoreSectionOpen.value = false
     if (creationView.value === true) {
@@ -6784,7 +6851,6 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
         isModalOpen.value = true
         savedView.value = {}
         isCreateInstance.value = false
-        isSideBarOpen.value = false
       }
     } else if (restoreType.value === 'section') {
       restoreSection()
@@ -6792,6 +6858,7 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
       restoreVariations()
     }
   }
+  popSidebarState()
 }
 const restoreSection = () => {
   displayVariations.value[selectedVariation.value].altered = false
@@ -6900,7 +6967,7 @@ const openSectionThemeModal = (section, themeComponents) => {
   currentSection.value = null
   nextTick(() => {
     sectionsThemeModal.value = true
-    isSideBarOpen.value = true
+    pushSidebarState({ type: 'theme', keepEditBarVisible: false })
     sideBarSizeManagement()
   })
 }
@@ -6913,7 +6980,7 @@ const closeSectionThemeModal = () => {
     isRestoreSectionOpen.value = true
   } else {
     sectionsThemeModal.value = false
-    isSideBarOpen.value = false
+    popSidebarState()
     currentThemeTab.value = {}
     currentSectionData.value = {}
   }
@@ -7298,17 +7365,35 @@ provide('loadScript', loadScriptWithUniqueness)
 
 if (!useNuxtApp().$sideBarComponent) {
   useNuxtApp().provide('sideBarComponent', {
-    show: () => {
+    show: (options) => {
+      const pushed = pushSidebarState({
+        type: 'default',
+        keepEditBarVisible: options?.keepEditBarVisible || false,
+      })
+      if (!pushed) return
+
+      keepEditBarVisible.value = options?.keepEditBarVisible || false
       currentSection.value = null
+      metadataModal.value = false
+      sectionsThemeModal.value = false
       nextTick(() => {
         dynamicSideComponent.value = true
-        isSideBarOpen.value = true
         sideBarSizeManagement()
       })
     },
     hide: () => {
+      // Clear the entire stack and close sidebar
+      sidebarStateStack.value = []
       dynamicSideComponent.value = false
       isSideBarOpen.value = false
+      keepEditBarVisible.value = false
+      currentSection.value = null
+      metadataModal.value = false
+      sectionsThemeModal.value = false
+    },
+    back: () => {
+      // Pop one level from the stack
+      popSidebarState()
     },
     setPath: (path) => {
       dynamicSideBarComponentPath.value = path
@@ -7738,7 +7823,7 @@ span.handle {
 
 .modalContainer {
   padding: 20px;
-  position: fixed !important;
+  position: fixed;
   inset: 0;
   z-index: 10;
 }
@@ -7767,7 +7852,7 @@ span.handle {
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 300px;
+  width: 100%;
   white-space: nowrap;
 }
 
@@ -7857,10 +7942,6 @@ span.handle {
 
 .sections-z-200 {
   z-index: 200;
-}
-
-.section-modal-wrapper {
-  max-width: 780px;
 }
 
 .section-modal-wrapper.success-section-type .header {
@@ -8001,7 +8082,7 @@ span.handle {
   padding-left: 16px;
 }
 
-@media only screen and (max-height: 850px) {
+@container sections-main (max-height: 850px) {
   .content-wrapper {
     overflow-y: scroll;
     height: 450px;
@@ -8643,13 +8724,13 @@ span.handle {
   color: rgb(216, 42, 42);
 }
 
-@media (min-width: 768px) {
+@container sections-main (min-width: 768px) {
   .md\:flex-row {
     flex-direction: row !important;
   }
 }
 
-@media only screen and (max-height: 800px) {
+@container sections-main (max-height: 800px) {
   .sections-page-settings {
     overflow: scroll;
   }
@@ -8890,7 +8971,7 @@ section .ql-editor.ql-snow.grey-bg {
   background-color: #03b1c7;
   color: white;
 }
-@media only screen and (max-width: 400px) {
+@container sections-main (max-width: 400px) {
   .sections-aside .component-view {
     width: 350px;
   }
@@ -8898,10 +8979,7 @@ section .ql-editor.ql-snow.grey-bg {
     width: 350px;
   }
 }
-@media only screen and (max-width: 768px) {
-  .section-wrapper .edit-mode-wrapper {
-    flex-direction: column-reverse;
-  }
+@container sections-main (max-width: 768px) {
   .sections-config .config-buttons {
     flex-direction: column-reverse;
     align-items: center;
@@ -8909,9 +8987,6 @@ section .ql-editor.ql-snow.grey-bg {
   .intro-top-bar {
     flex-direction: column;
     align-items: center;
-  }
-  .section-wrapper .edit-mode-wrapper {
-    margin-left: 0;
   }
   .sections-container > .sections-aside {
     min-width: fit-content;
@@ -8931,6 +9006,17 @@ section .ql-editor.ql-snow.grey-bg {
   }
   .hp-button.danger {
     height: 36px;
+  }
+}
+
+@container sections-main (max-width: 868px) {
+  .section-wrapper .edit-mode-wrapper {
+    flex-direction: column-reverse;
+    margin-left: 0;
+  }
+
+  .section-modal-content.modalContainer {
+    position: absolute;
   }
 }
 
@@ -9015,7 +9101,7 @@ main.sections-main .views-content-wrapper {
   height: calc(100vh - var(--section-height, 0px));
 }
 
-@media screen and (max-width: 768px) {
+@container sections-main (max-width: 768px) {
   .sections-container .component-view {
     margin: 0;
     width: 100%;
@@ -9046,7 +9132,6 @@ main.sections-main .views-content-wrapper {
   .modalContainer .closeIcon svg {
     height: 25px;
     width: 25px;
-    right: 0;
   }
   .selectSectionType {
     width: 100%;

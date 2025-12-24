@@ -95,14 +95,15 @@ const props = defineProps({
   width: 100%;
   overflow: auto;
   align-content: center;
+  container-type: inline-size;
 }
 .card-content .comp-preview {
   position: absolute;
-  width: 1736px;
+  width: 840px;
   top: 0;
   left: 0;
   overflow: hidden;
-  transform: scale(0.188);
+  transform: scale(calc(100cqw / 840px));
   transform-origin: top left;
   pointer-events: none;
   color: initial;
