@@ -1,13 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: ["@nuxt/eslint", "@nuxt/test-utils", "@nuxtjs/i18n"],
+  modules: ['@nuxt/eslint', '@nuxt/test-utils', '@nuxtjs/i18n'],
   imports: {
-    autoImport: false
+    autoImport: false,
   },
   nitro: {
     compressPublicAssets: {
       gzip: true,
-      brotli: true
+      brotli: true,
     },
-  }
+  },
 })

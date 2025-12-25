@@ -5,49 +5,49 @@ const mockNuxtApp = {
   $i18n: {
     locale: { value: 'en' },
     availableLocales: ['en', 'de', 'fr', 'es'],
-    setLocale: vi.fn()
+    setLocale: vi.fn(),
   },
   $sections: {
     serverUrl: 'https://api.example.com',
-    queryStringSupport: 'enabled'
+    queryStringSupport: 'enabled',
   },
   ssrContext: {
     event: {
       req: {
         headers: {
           'x-forwarded-proto': 'https',
-          'host': 'example.com'
+          host: 'example.com',
         },
-        body: {}
-      }
-    }
-  }
+        body: {},
+      },
+    },
+  },
 }
 
 const mockStore = {
-  setPageData: vi.fn()
+  setPageData: vi.fn(),
 }
 
 const mockRoute = {
   params: {
-    pathMatch: 'en/about'
+    pathMatch: 'en/about',
   },
   query: {
-    test: 'value'
-  }
+    test: 'value',
+  },
 }
 
 // Mock Nuxt composables
 vi.mock('#app', () => ({
   useNuxtApp: () => mockNuxtApp,
   useState: vi.fn((key, defaultFn) => ({ value: defaultFn() })),
-  defineNuxtRouteMiddleware: vi.fn((fn) => fn)
+  defineNuxtRouteMiddleware: vi.fn((fn) => fn),
 }))
 
 // Mock Pinia store
 const mockUseSectionsDataStore = vi.fn(() => mockStore)
 vi.mock('../stores/sectionsDataStore', () => ({
-  useSectionsDataStore: mockUseSectionsDataStore
+  useSectionsDataStore: mockUseSectionsDataStore,
 }))
 
 // Mock other helper functions - need to make sure these are available in the middleware
@@ -60,7 +60,7 @@ vi.mock('./helpers', () => ({
   sectionHeader,
   getSectionProjectIdentity,
   parseQS,
-  useApiRequest: mockUseApiRequest
+  useApiRequest: mockUseApiRequest,
 }))
 
 // Make these available globally for the middleware function
@@ -96,11 +96,13 @@ const routeMiddleware = async (to, from) => {
       if (hooksJs['init_params']) {
         const paramsUpdate = hooksJs['init_params'](app.$sections, {
           qs: route.query,
-          headers: app.ssrContext && app.ssrContext.event.req ? app.ssrContext.event.req.headers : {},
+          headers:
+            app.ssrContext && app.ssrContext.event.req ? app.ssrContext.event.req.headers : {},
           reqBody: app.ssrContext && app.ssrContext.event.req ? app.ssrContext.event.req.body : {},
-          url: app.ssrContext && app.ssrContext.event.req && app.ssrContext.event.req.headers
-            ? app.ssrContext.event.req.headers.host
-            : 'localhost'
+          url:
+            app.ssrContext && app.ssrContext.event.req && app.ssrContext.event.req.headers
+              ? app.ssrContext.event.req.headers.host
+              : 'localhost',
         })
         if (paramsUpdate) {
           app.$sections = paramsUpdate
@@ -114,7 +116,7 @@ const routeMiddleware = async (to, from) => {
     const websiteDomain = app.ssrContext.event.req.headers.host
 
     const config = {
-      headers: sectionHeader({ origin: `${scheme}://${websiteDomain}` })
+      headers: sectionHeader({ origin: `${scheme}://${websiteDomain}` }),
     }
 
     let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${globalThis.parsePath(encodeURIComponent(pageName))}`
@@ -126,13 +128,17 @@ const routeMiddleware = async (to, from) => {
       language = abstractedDefaultLocale ? abstractedDefaultLocale : undefined
     } catch {}
 
-    if (app.$sections.queryStringSupport === "enabled") {
-      const query_string = parseQS(encodeURIComponent(pathMatch || '/'), Object.keys(route.query).length !== 0, route.query)
+    if (app.$sections.queryStringSupport === 'enabled') {
+      const query_string = parseQS(
+        encodeURIComponent(pathMatch || '/'),
+        Object.keys(route.query).length !== 0,
+        route.query
+      )
       payload = {
         query_string: {
           ...query_string,
-          language
-        }
+          language,
+        },
       }
     }
 
@@ -170,17 +176,26 @@ const routeMiddleware = async (to, from) => {
           body: payload,
           ...config,
           onSuccess: async (res) => {
-            if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.defaultLang) {
+            if (
+              res.data.metadata.project_metadata &&
+              res.data.metadata.project_metadata.defaultLang
+            ) {
               await setupLocalization(res.data.metadata.project_metadata.defaultLang)
             }
             store.setPageData({ res })
           },
           onError: async (error) => {
-            if (error.response && error.response.data && error.response.data.options && error.response.data.options.project_metadata && error.response.data.options.project_metadata.defaultLang) {
+            if (
+              error.response &&
+              error.response.data &&
+              error.response.data.options &&
+              error.response.data.options.project_metadata &&
+              error.response.data.options.project_metadata.defaultLang
+            ) {
               await setupLocalization(error.response.data.options.project_metadata.defaultLang)
             }
             store.setPageData({ error })
-          }
+          },
         })
       } catch {}
     }
@@ -220,7 +235,7 @@ describe('Route Middleware', () => {
     it('should set locale on client-side with matched locale', async () => {
       const mockTo = {
         params: { pathMatch: 'de/about' },
-        query: {}
+        query: {},
       }
       const mockFrom = {}
 
@@ -233,7 +248,7 @@ describe('Route Middleware', () => {
     it('should use default locale when no locale matches', async () => {
       const mockTo = {
         params: { pathMatch: 'about' },
-        query: {}
+        query: {},
       }
       const mockFrom = {}
 
@@ -246,7 +261,7 @@ describe('Route Middleware', () => {
       // Mock a locale that's not in availableLocales
       const mockToWithUnavailableLocale = {
         params: { pathMatch: 'zh/about' },
-        query: {}
+        query: {},
       }
       const mockFrom = {}
 

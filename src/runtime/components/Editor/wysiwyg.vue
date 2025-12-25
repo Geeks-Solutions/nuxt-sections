@@ -19,9 +19,9 @@
     />
     <span v-if="props.htmlError" :class="props.htmlErrorClass">{{ props.htmlError }}</span>
     <div class="flex flex-col items-start justify-start mt-8">
-      <label class="mr-4 font-medium">{{ t("forms.cssClasses") }}</label>
-      <span class="text-xs text-Gray_800">{{ t("forms.cssClassesDesc") }}</span>
-      <span class="text-xs text-Gray_800 pb-1">{{ t("forms.cssClassesDesc2") }}</span>
+      <label class="mr-4 font-medium">{{ t('forms.cssClasses') }}</label>
+      <span class="text-xs text-Gray_800">{{ t('forms.cssClassesDesc') }}</span>
+      <span class="text-xs text-Gray_800 pb-1">{{ t('forms.cssClassesDesc2') }}</span>
       <input
         v-model="cssClasses"
         type="text"
@@ -34,48 +34,52 @@
 </template>
 
 <script setup>
-import {useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs, computed} from '#imports'
-import {getAcceptedFileTypes, useFetchToApiRequest} from "../../utils/helpers.js";
+import { useI18n, ref, useNuxtApp, useRoute, useCookie, watch, importJs, computed } from '#imports'
+import { getAcceptedFileTypes, useFetchToApiRequest } from '../../utils/helpers.js'
 
 // --- Composables ---
 const nuxtApp = useNuxtApp()
-const sectionsConfig = nuxtApp.$sections;
-const route = useRoute();
-const { t } = useI18n();
+const sectionsConfig = nuxtApp.$sections
+const route = useRoute()
+const { t } = useI18n()
 // Use useCookie composable - returns a Ref<string | null | undefined>
-const authToken = useCookie('sections-auth-token');
+const authToken = useCookie('sections-auth-token')
 
 // --- Props ---
 const props = defineProps({
   html: {
     type: String,
-    default: ""
+    default: '',
   },
   cssClassesProp: {
     type: String,
-    default: ""
+    default: '',
   },
   htmlError: {
     type: String,
-    default: ""
+    default: '',
   },
   htmlErrorClass: {
     type: String,
-    default: "sections-required-field-error"
-  }
-});
+    default: 'sections-required-field-error',
+  },
+})
 
 // --- Emits ---
-const emit = defineEmits(['wysiwygMedia', 'settingsUpdate', 'cssClassesChanged']);
+const emit = defineEmits(['wysiwygMedia', 'settingsUpdate', 'cssClassesChanged'])
 
 // --- Refs ---
-const cssClasses = ref(props.cssClassesProp);
+const cssClasses = ref(props.cssClassesProp)
 
 function alterMediasServerUrl() {
   let updatedServerUrl
   try {
     const hooksJs = importJs(`/js/global-hooks`)
-    if (hooksJs && hooksJs['medias_api_url'] && hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)) {
+    if (
+      hooksJs &&
+      hooksJs['medias_api_url'] &&
+      hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)
+    ) {
       updatedServerUrl = hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)
     }
   } catch {}
@@ -98,7 +102,13 @@ async function mediaResponseReceived(method, url, payload, response) {
   try {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['medias_api_response_received']) {
-      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload, response)
+      return await hooksJs['medias_api_response_received'](
+        useCookie,
+        method,
+        url,
+        payload,
+        response
+      )
     }
   } catch {}
 }
@@ -134,15 +144,17 @@ function supportedFontFamilies(nuxtApp) {
 }
 
 // --- Watchers ---
-watch(() => props.cssClassesProp, (newValue) => {
-  cssClasses.value = newValue;
-});
+watch(
+  () => props.cssClassesProp,
+  (newValue) => {
+    cssClasses.value = newValue
+  }
+)
 
 // Optional: Watch the local ref and emit changes if direct v-model on input is not used
 // watch(cssClasses, (newValue) => {
 //   emit('cssClassesChanged', newValue);
 // });
-
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
 <template>
   <div>
-     <Sections
+    <Sections
       :admin="admin"
       :page-name="pageName"
       :lang="lang"
@@ -12,14 +12,21 @@
 
 <script setup>
 import { useNuxtApp, useRoute, useHead, useCookie, useAsyncData } from '#app'
-import {definePageMeta, useI18n, onMounted, onBeforeMount, importJs, renderPageData, computed} from "#imports";
-
+import {
+  definePageMeta,
+  useI18n,
+  onMounted,
+  onBeforeMount,
+  importJs,
+  renderPageData,
+  computed,
+} from '#imports'
 
 defineOptions({
-  name: 'DynamicSectionsPage'
+  name: 'DynamicSectionsPage',
 })
 definePageMeta({
-  layout: 'defaults'
+  layout: 'defaults',
 })
 
 // Get route and language
@@ -37,28 +44,32 @@ const lang = computed({
   },
   set(newLang) {
     locale.value = newLang
-  }
+  },
 })
 
 const admin = computed({
   get() {
     return !!useCookie('sections-auth-token').value
-  }
-});
+  },
+})
 
 // Head title
 useHead({
-  title: pageName
+  title: pageName,
 })
 
 // Load sectionsPageData
-const { data: sectionsPageData } = await useAsyncData('sectionsPageData', async () => {
-  if (import.meta.client && !nuxtApp.isHydrating) {
-    return await renderPageData()
-  } else return null
-}, {
-  immediate: true
-})
+const { data: sectionsPageData } = await useAsyncData(
+  'sectionsPageData',
+  async () => {
+    if (import.meta.client && !nuxtApp.isHydrating) {
+      return await renderPageData()
+    } else return null
+  },
+  {
+    immediate: true,
+  }
+)
 
 // Optional: Dynamic lifecycle hook imports
 const importHooks = (hook, params) => {

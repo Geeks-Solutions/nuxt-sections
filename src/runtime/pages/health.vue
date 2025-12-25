@@ -6,9 +6,9 @@
 import { useHead } from '#imports'
 
 defineOptions({
-  name: 'Health'
+  name: 'Health',
 })
 useHead({
-  title: 'Health'
+  title: 'Health',
 })
 </script>

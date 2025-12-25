@@ -8,10 +8,9 @@
     x="0px"
     y="0px"
     viewBox="0 0 1024 768"
-    style="enable-background:new 0 0 1024 768;"
+    style="enable-background: new 0 0 1024 768"
     xml:space="preserve"
   >
-
     <path
       fill="currentColor"
       d="M802.6,161.4l-18-18L658.8,17.5c0,0,0,0,0,0L648.5,7.3C643.8,2.6,637.6,0,631,0H246.7c-15.7,0-32.6,12.1-32.6,38.7v477.7

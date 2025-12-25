@@ -18,6 +18,7 @@ npm run test:coverage
 ## Coverage Reports
 
 Coverage reports are generated in multiple formats:
+
 - **HTML**: Open `coverage/index.html` in your browser for an interactive report
 - **LCOV**: `coverage/lcov.info` for CI/CD integration (Codecov, Coveralls, etc.)
 - **JSON Summary**: `coverage/coverage-summary.json` for programmatic access
@@ -26,6 +27,7 @@ Coverage reports are generated in multiple formats:
 ## Coverage Thresholds
 
 The project maintains the following coverage thresholds:
+
 - **Lines**: 80%
 - **Functions**: 80%
 - **Branches**: 80%
@@ -34,6 +36,7 @@ The project maintains the following coverage thresholds:
 ## GitHub Integration
 
 Coverage reports are automatically generated on:
+
 - Push to `main`, `master`, or `develop` branches
 - Pull requests to these branches
 
@@ -42,6 +45,7 @@ Coverage data is uploaded to [Codecov](https://codecov.io/) and PR comments show
 ## Configuration
 
 Coverage configuration is in [`vitest.config.ts`](./vitest.config.ts):
+
 - **Provider**: V8 (fast, accurate)
 - **Included**: All files in `src/**/*.{js,ts,vue}`
 - **Excluded**: Tests, config files, playground, node_modules

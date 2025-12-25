@@ -6,11 +6,11 @@ import {
   addImports,
   addPluginTemplate,
   addRouteMiddleware,
-  installModule
+  installModule,
 } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
-export interface ModuleOptions { }
+export interface ModuleOptions {}
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -20,7 +20,6 @@ export default defineNuxtModule<ModuleOptions>({
   // Default configuration options of the Nuxt module
   defaults: {},
   async setup(_options, _nuxt) {
-
     if (!_nuxt.options.modules.includes('@pinia/nuxt')) {
       _nuxt.options.modules.push('@pinia/nuxt')
     }
@@ -30,7 +29,7 @@ export default defineNuxtModule<ModuleOptions>({
     addRouteMiddleware({
       name: 'i18n-default-locale',
       path: resolve('./runtime/middleware/i18n-default-locale'),
-      global: true // Makes it run on every route
+      global: true, // Makes it run on every route
     })
 
     await installModule('@nuxtjs/i18n', {
@@ -44,7 +43,7 @@ export default defineNuxtModule<ModuleOptions>({
           code: 'fr',
           file: resolve('./runtime/lang/fr.json'),
         },
-      ]
+      ],
     })
 
     // Extend routes
@@ -78,7 +77,7 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Register components
     addComponentsDir({
-      path: resolve('./runtime/components')
+      path: resolve('./runtime/components'),
     })
 
     // Register utils function
@@ -104,7 +103,7 @@ export default defineNuxtModule<ModuleOptions>({
       { name: 'getRandomElement', from: resolve('./runtime/utils/helpers') },
       { name: 'populateWithDummyValues', from: resolve('./runtime/utils/helpers') },
       { name: 'loadScript', from: resolve('./runtime/utils/helpers') },
-      { name: 'getMySectionsPages', from: resolve('./runtime/utils/helpers') }
+      { name: 'getMySectionsPages', from: resolve('./runtime/utils/helpers') },
     ])
 
     // Register $sections configuration plugin
@@ -127,6 +126,5 @@ export default defineNuxtModule<ModuleOptions>({
         config.optimizeDeps.needsInterop.push('@marshallswain/vuedraggable')
       }
     })
-
-  }
+  },
 })

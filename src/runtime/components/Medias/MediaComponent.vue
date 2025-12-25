@@ -36,38 +36,38 @@
 
 <script setup>
 import { ref, useNuxtApp, useRoute, useCookie, onMounted, computed } from '#imports'
-import {importJs, getAcceptedFileTypes, useFetchToApiRequest} from "../../utils/helpers.js";
+import { importJs, getAcceptedFileTypes, useFetchToApiRequest } from '../../utils/helpers.js'
 
 const props = defineProps({
   sectionsUserId: {
     type: String,
-    default: ''
-  }
-});
+    default: '',
+  },
+})
 
-const emit = defineEmits(['emittedMedia']);
+const emit = defineEmits(['emittedMedia'])
 
 // Composables
-const route = useRoute();
-const sections = useNuxtApp().$sections;
+const route = useRoute()
+const sections = useNuxtApp().$sections
 
 // Reactive state
-const projectId = ref(sections.projectId);
-const authorsUri = ref('');
-const mediasUri = ref('');
-const mediaByIdUri = ref('');
-const selectedMediaId = ref(route.query.id);
-const loading = ref(false);
-const isOpen = ref(false);
-const mediaIdEditing = ref('');
-const mediaCategory = ref('');
+const projectId = ref(sections.projectId)
+const authorsUri = ref('')
+const mediasUri = ref('')
+const mediaByIdUri = ref('')
+const selectedMediaId = ref(route.query.id)
+const loading = ref(false)
+const isOpen = ref(false)
+const mediaIdEditing = ref('')
+const mediaCategory = ref('')
 
 // Initialize URIs
 onMounted(() => {
   let uris = {
     authorsUri: '',
     mediasUri: '',
-    mediaByIdUri: ''
+    mediaByIdUri: '',
   }
   try {
     const hooksJs = importJs(`/js/global-hooks`)
@@ -75,33 +75,42 @@ onMounted(() => {
       uris = hooksJs['medias_api_url'](useCookie, projectId)
     }
   } catch {}
-  authorsUri.value = uris && uris.authorsUri ? uris.authorsUri : `${sections.serverUrl}/project/${projectId.value}/users`;
-  mediasUri.value = uris && uris.mediasUri ? uris.mediasUri : `${sections.serverUrl}/project/${projectId.value}/medias`;
-  mediaByIdUri.value = uris && uris.mediaByIdUri ? uris.mediaByIdUri : `${sections.serverUrl}/project/${projectId.value}/media/`;
-});
+  authorsUri.value =
+    uris && uris.authorsUri
+      ? uris.authorsUri
+      : `${sections.serverUrl}/project/${projectId.value}/users`
+  mediasUri.value =
+    uris && uris.mediasUri
+      ? uris.mediasUri
+      : `${sections.serverUrl}/project/${projectId.value}/medias`
+  mediaByIdUri.value =
+    uris && uris.mediaByIdUri
+      ? uris.mediaByIdUri
+      : `${sections.serverUrl}/project/${projectId.value}/media/`
+})
 
 // Methods
 function emitMedia(media) {
-  emit('emittedMedia', media);
+  emit('emittedMedia', media)
 }
 
 function openModal(mediaId, category) {
   if (mediaId && mediaId !== '') {
-    mediaIdEditing.value = mediaId;
+    mediaIdEditing.value = mediaId
   } else {
-    mediaIdEditing.value = null;
+    mediaIdEditing.value = null
   }
-  mediaCategory.value = category;
-  isOpen.value = true;
+  mediaCategory.value = category
+  isOpen.value = true
 }
 
 function closeModal() {
-  isOpen.value = false;
+  isOpen.value = false
 }
 
 function handleOverlayClick(event) {
   if (event.target.classList.contains('section-module-modal-overlay')) {
-    isOpen.value = false;
+    isOpen.value = false
   }
 }
 
@@ -118,7 +127,13 @@ async function mediaResponseReceived(method, url, payload, response) {
   try {
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['medias_api_response_received']) {
-      return await hooksJs['medias_api_response_received'](useCookie, method, url, payload, response)
+      return await hooksJs['medias_api_response_received'](
+        useCookie,
+        method,
+        url,
+        payload,
+        response
+      )
     }
   } catch {}
 }
@@ -145,8 +160,8 @@ const forwardMediaRequest = computed(() => {
 // Expose methods to parent components
 defineExpose({
   openModal,
-  closeModal
-});
+  closeModal,
+})
 </script>
 
 <style>
