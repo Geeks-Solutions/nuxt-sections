@@ -9009,7 +9009,7 @@ section .ql-editor.ql-snow.grey-bg {
   }
 }
 
-@container sections-main (max-width: 868px) {
+@container sections-main (max-width: 1024px) {
   .section-wrapper .edit-mode-wrapper {
     flex-direction: column-reverse;
     margin-left: 0;
@@ -9017,6 +9017,11 @@ section .ql-editor.ql-snow.grey-bg {
 
   .section-modal-content.modalContainer {
     position: absolute;
+  }
+
+  .top-bar-wrapper {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
@@ -9149,10 +9154,6 @@ main.sections-main .views-content-wrapper {
   }
   .intro-available-sections {
     margin-top: 20px;
-  }
-  .top-bar-wrapper {
-    flex-direction: row;
-    flex-wrap: wrap;
   }
   .top-bar-page-content-wrapper {
     flex-direction: row;
