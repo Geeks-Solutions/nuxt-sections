@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "3.0.17",
+  "version": "3.0.18",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -42,6 +42,7 @@
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
     "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
     "lint": "eslint .",
+    "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
@@ -49,7 +50,7 @@
     "link": "npm link"
   },
   "dependencies": {
-    "@geeks.solutions/vue-components": "^3.0.8",
+    "@geeks.solutions/vue-components": "^3.0.9",
     "@marshallswain/vuedraggable": "^4.2.0",
     "@nuxt/kit": "^3.17.1",
     "@nuxtjs/i18n": "^9.5.3",
@@ -69,12 +70,14 @@
     "@vue/test-utils": "^2.4.6",
     "changelogen": "^0.6.1",
     "eslint": "^9.25.1",
+    "eslint-config-prettier": "^10.1.8",
     "happy-dom": "^17.4.6",
     "jsdom": "^26.1.0",
     "nuxt": "^3.17.1",
     "typescript": "~5.8.3",
     "vitest": "^3.1.2",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^2.2.10",
+    "prettier": "^3.7.4"
   },
   "peerDependencies": {
     "@marshallswain/vuedraggable": "^4.2.0",

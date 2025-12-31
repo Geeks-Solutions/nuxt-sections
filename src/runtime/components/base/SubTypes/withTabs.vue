@@ -2,12 +2,7 @@
   <div class="tabs-grid">
     <div>
       <!-- Iterate over tabs -->
-      <div
-        @click="activeTab = tab"
-        class="section-item"
-        v-for="(tab, k) in tabs"
-        :key="k"
-      >
+      <div @click="activeTab = tab" class="section-item" v-for="(tab, k) in tabs" :key="k">
         <!-- Pass props to sectionItem -->
         <LazyBaseSubTypesSectionItem :title="tab" :active="activeTab === tab" base />
       </div>
@@ -28,29 +23,30 @@ const props = defineProps({
     type: Array,
     default: () => [], // Use factory function for default array
   },
-});
+})
 
 // Reactive state for the active tab, initialized with the first tab if available
-const activeTab = ref(props.tabs.length > 0 ? props.tabs[0] : '');
-const nuxtApp = useNuxtApp();
+const activeTab = ref(props.tabs.length > 0 ? props.tabs[0] : '')
+const nuxtApp = useNuxtApp()
 
 // Lifecycle hooks (Removed $root.$emit logic)
 onMounted(() => {
   // console.log('withTabs mounted. Previous $root.$emit("toggleWithTabs", true) removed.');
   // If the toggleWithTabs logic is needed, it should be reimplemented
   // using props, provide/inject, or a store (like Pinia).
-  nuxtApp.$emit("toggleWithTabs", true);
-});
+  nuxtApp.$emit('toggleWithTabs', true)
+})
 
 onUnmounted(() => {
   // console.log('withTabs unmounted. Previous $root.$emit("toggleWithTabs", false) removed.');
-  nuxtApp.$emit("toggleWithTabs", false);
-});
+  nuxtApp.$emit('toggleWithTabs', false)
+})
 
 // No methods needed in script setup for this component's current logic
 </script>
 
-<style scoped> /* Changed to scoped */
+<style scoped>
+/* Changed to scoped */
 .section-item {
   width: 100px;
   height: 100px;

@@ -20,8 +20,8 @@
 import { ref, computed } from '#imports'
 
 defineOptions({
-  name: 'ClickableTooltip'
-});
+  name: 'ClickableTooltip',
+})
 
 const props = defineProps({
   content: {
@@ -36,16 +36,16 @@ const props = defineProps({
     type: String,
     default: '',
   },
-});
+})
 
-const isVisible = ref(false);
+const isVisible = ref(false)
 
 const tooltipPosition = computed(() => {
-  return `tooltip-${props.position}`;
-});
+  return `tooltip-${props.position}`
+})
 
 const toggleTooltip = () => {
-  isVisible.value = !isVisible.value;
+  isVisible.value = !isVisible.value
 }
 </script>
 

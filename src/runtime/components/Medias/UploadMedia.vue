@@ -2,16 +2,18 @@
   <div class="section-module-upload-media-main-container">
     <label class="section-module-upload-media-label">{{ mediaLabel }}</label>
     <div class="section-module-upload-media-sub-container">
-
       <div class="section-module-upload-media-container-wrapper">
-        <div class="section-module-upload-media-white-container" @click="$emit('uploadContainerClicked')">
-          <div
-            class="section-module-upload-media-container"
-          >
+        <div
+          class="section-module-upload-media-white-container"
+          @click="$emit('uploadContainerClicked')"
+        >
+          <div class="section-module-upload-media-container">
             <div>
-              <LazyBaseIconsEmptyImage v-if="media.length === 0 || (media.length > 0 && media[0].url === '')"
-                          alt="empty"
-                          class="section-module-upload-media-image"/>
+              <LazyBaseIconsEmptyImage
+                v-if="media.length === 0 || (media.length > 0 && media[0].url === '')"
+                alt="empty"
+                class="section-module-upload-media-image"
+              />
               <div v-if="media.length > 0 && media[0].url !== ''">
                 <div v-if="isMediaDocument && media[0].metadata?.type !== 'lottie'">
                   <div class="section-module-upload-media-document">
@@ -31,17 +33,32 @@
             </div>
             <div>
               <div>
-                <div v-if="media.length > 0 && media[0].seo_tag" class="section-module-upload-media-seo">{{ seoTag + media[0].seo_tag }}</div>
+                <div
+                  v-if="media.length > 0 && media[0].seo_tag"
+                  class="section-module-upload-media-seo"
+                >
+                  {{ seoTag + media[0].seo_tag }}
+                </div>
                 <div>
-                  <span v-if="media.length === 0 || (media.length > 0 && media[0].url === '')" class="section-module-upload-media-upload-text">{{ t(uploadText) }}</span>
-                  <span v-else class="section-module-upload-media-upload-text">{{ t(changeText) }}</span>
+                  <span
+                    v-if="media.length === 0 || (media.length > 0 && media[0].url === '')"
+                    class="section-module-upload-media-upload-text"
+                    >{{ t(uploadText) }}</span
+                  >
+                  <span v-else class="section-module-upload-media-upload-text">{{
+                    t(changeText)
+                  }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div @click="$emit('removeUploadedImage')">
-          <LazyBaseIconsCross v-if="media.length > 0 && media[0].url !== ''" alt="" class="section-module-upload-media-cross"/>
+          <LazyBaseIconsCross
+            v-if="media.length > 0 && media[0].url !== ''"
+            alt=""
+            class="section-module-upload-media-cross"
+          />
         </div>
       </div>
     </div>
@@ -49,47 +66,47 @@
 </template>
 
 <script setup>
-import {computed, useI18n} from '#imports'
+import { computed, useI18n } from '#imports'
 
 defineOptions({
-  name: 'UploadMedia'
-});
+  name: 'UploadMedia',
+})
 
 const props = defineProps({
   mediaLabel: {
     type: String,
-    default: 'Media'
+    default: 'Media',
   },
   uploadText: {
     type: String,
-    default: 'mediaComponent.Upload'
+    default: 'mediaComponent.Upload',
   },
   changeText: {
     type: String,
-    default: 'mediaComponent.Change'
+    default: 'mediaComponent.Change',
   },
   seoTag: {
     type: String,
-    default: 'SEO tag: '
+    default: 'SEO tag: ',
   },
   isDocument: {
     type: Boolean,
-    default: false
+    default: false,
   },
   media: {
     type: Array,
-    default: () => []
-  }
-});
+    default: () => [],
+  },
+})
 
 const isMediaDocument = computed(() => {
   return props.media?.[0]?.metadata?.type === 'lottie' || props.isDocument
 })
 
-defineEmits(['uploadContainerClicked', 'removeUploadedImage']);
+defineEmits(['uploadContainerClicked', 'removeUploadedImage'])
 
 // For i18n usage
-const { t } = useI18n();
+const { t } = useI18n()
 </script>
 
 <style>
@@ -120,7 +137,8 @@ const { t } = useI18n();
 
 .section-module-upload-media-container {
   --tw-shadow: 4px 2px 10px rgba(0, 0, 0, 0.1);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   border-radius: 0.75rem;
   text-align: center;
   padding: 0.5rem;
@@ -162,7 +180,7 @@ const { t } = useI18n();
 }
 
 .section-module-upload-media-document {
-  background: #61035B;
+  background: #61035b;
   display: flex;
   flex-direction: column;
   width: 200px;

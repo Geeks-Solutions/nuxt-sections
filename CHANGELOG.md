@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.18] - 2025-12-24
+
+### Fixed
+
+- Api Error now carries data field at the root for backward compatibility
+- Media upload failure disallow using the media in the content
+- Raw HTML content inside Wysiwyg does not leak format rendering
+
+### Added
+
+- Activate Github actions to enforce code format
+- Navigation stack to the sideBar component to allow deep navigations in Edit UI #245
+- Added an async Event emitter with a Promise all settled return mechanism to act when all listeners have resolved #247
+
+### Updated
+
+- First pass of code linting with fixes to keep the build green
+- Edit UI responsiveness now relies on container query instead of media queries
+- Bump vue-components library to 3.0.9
+
 ### [3.0.17] - 2025-12-13
 
 ### Fixed
@@ -45,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a new global hook management to update medias file types supported
 - Add a new global hook management to update wysiwyg font families supported
 
-
 ### [3.0.13] - 2025-09-29
 
 ### Fixed
@@ -72,7 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Top bar display enhancement: Top bar of the edit mode, add a page (display enhancement) #229
 - Guide enhancement #230
-
 
 ### [3.0.10] - 2025-08-27
 
@@ -201,14 +219,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Updated
 
 - Update vue-components library version and fix to new version 1.0.18
-- Update Configurable form to read section types new required field #174 
+- Update Configurable form to read section types new required field #174
 
 ### [1.1.3] - 2025-04-10
 
 ### Updated
 
 - Update vue-components library version and fix to new version 1.0.17
-
 
 ### [1.1.2] - 2025-04-01
 
@@ -228,7 +245,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - introduced a new hook `init_params` that takes a params configuration and some context including query strings and request headers & body and update the params with the returned value: New query string env variable problems eweev/geeks/meta-sections#139
 
-
 ### [1.1.0] - 2025-03-17
 
 ### Removed
@@ -236,9 +252,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimization update: Global css import for quill editor is moved to the form and view components to only load the css when the components are used
 
 **Breaking Change**
+
 - Using `v-html` to display the wysiwyg content will still work, but it will no more have the wysiwyg styles `headings, aligments etc...`
 - Use the new introduced component to display the wysiwyg content
-`<gWysiwygContent :html-content="html" />`
+  `<gWysiwygContent :html-content="html" />`
 
 ### Added
 
@@ -250,7 +267,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Metatag adjustments #149
 
-
 ### [1.0.18] - 2025-03-06
 
 ### Added
@@ -259,7 +275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
-- Sections settings icon to show the section name when hovered: When hovering an the gear icon of a section, have its name showing #143 
+- Sections settings icon to show the section name when hovered: When hovering an the gear icon of a section, have its name showing #143
 
 - Hide sections settings icons when side bar is opened: When adding or editing a section, the site side must be as if I am in view mode #142
 
@@ -270,7 +286,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scroll management when editing or adding sections in layouts: When using a layout and editing a section you need to use the anchor to be scrolled to the section you are editing #141
 
 - Wysiwyg Headings styles not applied in view mode: When adding a wysiwyg or editing one in a page without css, idf you apply headings on the text , it is not reflected in the view mode #144
-
 
 ### [1.0.17] - 2025-02-03
 
@@ -288,7 +303,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Display bugs: When a layout is selected and you have added several section in the left layout for example, when you click to delete a section the display of the popup is not correct #132 + When you are in edit mode and you edit a section with a media and then you click to edit the media, the display of the options of the page are blocking the one of the editor #126
 
-- Bug of loosing layout data when saving page metadata + Bug of changing section weight when editing it inside a layout region: Losing sections weight when editing and using a specific layout #135 +  you add a section in a region and then ou move it to another region, it vanish #138
+- Bug of loosing layout data when saving page metadata + Bug of changing section weight when editing it inside a layout region: Losing sections weight when editing and using a specific layout #135 + you add a section in a region and then ou move it to another region, it vanish #138
 
 - Bug fix when adding or editing a section in a layout: When you are in a layout like extended-layout and you are editing or adding a section, the add new section button is showing for all region and they are clickable, they should not #140
 
@@ -299,25 +314,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - defaultLang support value can be set in Sections BO: Read the new default language field from project metadata #117.
-Value of this field is now exposed to all sections views and forms for a better management of `Language Translations`
+  Value of this field is now exposed to all sections views and forms for a better management of `Language Translations`
 
 - Sections Tutorial: Interactive user guides #115
 
-- Translation management for configurable fields #109: Dynamic fields of configurable section forms are now translatable by default for the following types 'wysiwyg', 'string', 'textfield', 'textarea' 
+- Translation management for configurable fields #109: Dynamic fields of configurable section forms are now translatable by default for the following types 'wysiwyg', 'string', 'textfield', 'textarea'
 
 ### Updated
 
 - Automated test coverage for the fetch hook Fix automated test for the fetch hook #107
 
 - Performance update: Loaded scripts size decreased by shifting the current wysiwyg editor component to the global editor component from vue-components library.
-Which is using lazy load import of the quill libraries to only include the component where it is used
+  Which is using lazy load import of the quill libraries to only include the component where it is used
 
 ### Changed
 
 - Wysiwyg Editor component to use the one coming from vue-components library: Wysiwyg Component update needed #110
 
 - Condition to send the language when it is not default to always send it: Send the language query string even though the Sections site is in its default language #114:
-Current language of the site will now always be sent in the payload query strings
+  Current language of the site will now always be sent in the payload query strings
 
 ### Fixed
 
@@ -332,7 +347,6 @@ Current language of the site will now always be sent in the payload query string
 ### Fixed
 
 - Fixed refresh section function problem with cname enabled that was not using the website domain
-
 
 ### [1.0.14] - 2024-12-16
 
@@ -355,7 +369,6 @@ Current language of the site will now always be sent in the payload query string
 - Settings popup for the page to read project metadata and apply custom css #70
 
 - query string to include language when it is not the default one when rendering a section #101
-
 
 ### [1.0.13] - 2024-11-11
 
@@ -387,7 +400,7 @@ Current language of the site will now always be sent in the payload query string
 
 - Section types listing updated tabs to Available sections, global Sections and Inventory #67
 
-- Update wysiwygs image with default alt and lazy loading #75 
+- Update wysiwygs image with default alt and lazy loading #75
 
 - page_pre_render hook #97
 

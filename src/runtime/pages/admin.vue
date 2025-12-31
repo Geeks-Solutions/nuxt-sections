@@ -1,22 +1,29 @@
 <template>
   <div>
-    <LazyBaseIconsLoading :loading="true"/>
+    <LazyBaseIconsLoading :loading="true" />
   </div>
 </template>
 
 <script setup>
-import { useHead, useNuxtApp, useI18n, useRoute, navigateTo, getSectionProjectIdentity } from '#imports'
+import {
+  useHead,
+  useNuxtApp,
+  useI18n,
+  useRoute,
+  navigateTo,
+  getSectionProjectIdentity,
+} from '#imports'
 
 defineOptions({
-  name: 'SectionsAdmin'
+  name: 'SectionsAdmin',
 })
 useHead({
-  title: 'Admin'
+  title: 'Admin',
 })
 
 const { locale } = useI18n()
-const nuxtApp = useNuxtApp();
-const route = useRoute();
+const nuxtApp = useNuxtApp()
+const route = useRoute()
 
 let languagePrefix = locale.value
 if (route.params.prefix) {
