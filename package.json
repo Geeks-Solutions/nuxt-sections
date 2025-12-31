@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "3.0.17",
+  "version": "3.0.18",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -50,7 +50,7 @@
     "link": "npm link"
   },
   "dependencies": {
-    "@geeks.solutions/vue-components": "^3.0.8",
+    "@geeks.solutions/vue-components": "^3.0.9",
     "@marshallswain/vuedraggable": "^4.2.0",
     "@nuxt/kit": "^3.17.1",
     "@nuxtjs/i18n": "^9.5.3",

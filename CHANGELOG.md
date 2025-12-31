@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.18] - 2025-12-24
+
+### Fixed
+
+- Api Error now carries data field at the root for backward compatibility
+- Media upload failure disallow using the media in the content
+- Raw HTML content inside Wysiwyg does not leak format rendering
+
+### Added
+
+- Activate Github actions to enforce code format
+- Navigation stack to the sideBar component to allow deep navigations in Edit UI #245
+- Added an async Event emitter with a Promise all settled return mechanism to act when all listeners have resolved #247
+
+### Updated
+
+- First pass of code linting with fixes to keep the build green
+- Edit UI responsiveness now relies on container query instead of media queries
+- Bump vue-components library to 3.0.9
+
 ### [3.0.17] - 2025-12-13
 
 ### Fixed
