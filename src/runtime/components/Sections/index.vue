@@ -466,6 +466,7 @@ useHead(() => {
           : {},
       pageMetadata.value['media'] && pageMetadata.value['media'].url
         ? {
+            id: 'page-selected-css',
             rel: 'stylesheet',
             href: pageMetadata.value['media'].url,
           }
