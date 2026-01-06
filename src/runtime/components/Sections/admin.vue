@@ -2286,6 +2286,7 @@ import {
   getSectionProjectIdentity,
   importComp,
   importJs,
+  inject,
   navigateTo,
   nextTick,
   onBeforeUnmount,
@@ -2452,6 +2453,7 @@ const sectionsMainTarget = ref(null)
 const componentsSetup = ref({})
 const currentSettingsTab = ref('page_settings')
 const settingsTabs = ref(['page_settings'])
+const injectedTransformer = inject(Symbol.for('mediaURLTransformer'), null)
 
 const updatedPageSettingsTabs = computed(() => {
   let builderSettingsTabs
@@ -3186,7 +3188,6 @@ const initializeSections = (res, skipHook) => {
       pageMetadata.value[langKey].description = res.data.metadata[langKey].description
     }
   }
-
   if (res.data.metadata.project_metadata && res.data.metadata.project_metadata.media) {
     projectMetadata.value.media = res.data.metadata.project_metadata.media
   }
@@ -3415,7 +3416,7 @@ const pageNotFoundManagement = (error) => {
   //   navigateTo(route.localePath(error.response.data.options.project_metadata.pagePath404))
   // }
 }
-const selectedCSS = (mediaObject, mediaFieldName) => {
+const selectedCSS = async (mediaObject, mediaFieldName) => {
   const media = {
     media_id: '',
     url: '',
@@ -3425,7 +3426,13 @@ const selectedCSS = (mediaObject, mediaFieldName) => {
   }
   media.filename = mediaObject.files[0].filename
   media.media_id = mediaObject.id
-  media.url = mediaObject.files[0].url
+
+  if (injectedTransformer && typeof injectedTransformer === 'function') {
+    media.url = await injectedTransformer(mediaObject.files[0].url)
+  } else {
+    media.url = mediaObject.files[0].url
+  }
+
   media.seo_tag = mediaObject.seo_tag
   if (mediaObject.files[0].headers) {
     media.headers = mediaObject.files[0].headers
