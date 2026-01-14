@@ -1326,17 +1326,13 @@ const fetchData = async () => {
   const inBrowser = process.client
 
   let websiteDomain = ''
-  const isServer = process.server
 
-  if (isServer && !admin) {
-    await checkToken()
-  } else {
-    const auth_code = route.query.auth_code
-    if (auth_code) {
-      await sanitizeURL()
-    }
+  const auth_code = route.query.auth_code
+  if (auth_code) {
+    await sanitizeURL()
   }
 
+  const isServer = process.server
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
     : window.location.protocol.replace(':', '')
@@ -1459,6 +1455,11 @@ const fetchData = async () => {
 
 onServerPrefetch(async () => {
   try {
+    // Processing the Auth code should be done server side only
+    // and regardless of host `fetch_on_server` resolve
+    if (!admin) {
+      await checkToken()
+    }
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['fetch_on_server']) {
       if (hooksJs['fetch_on_server'](useCookie)) {
@@ -1467,7 +1468,8 @@ onServerPrefetch(async () => {
     } else {
       await fetchData()
     }
-  } catch {
+  } catch (error) {
+    console.error(error)
     await fetchData()
   }
 })
