@@ -5191,7 +5191,12 @@ const getGlobalSectionTypes = async (autoLoad) => {
         })
 
         if (autoLoad === true) {
-          if (allSections.value.length === 0 && globalTypes.value && globalTypes.value.length > 0) {
+          if (
+            allSections.value &&
+            allSections.value.length === 0 &&
+            globalTypes.value &&
+            globalTypes.value.length > 0
+          ) {
             for (const gt of globalTypes.value.filter((gt) => gt.auto_insertion === true)) {
               loading.value = true
               await new Promise((resolve) => setTimeout(resolve, 100)) // Keep delay if needed
@@ -7687,6 +7692,8 @@ button .save-icon svg {
 
 .section-delete {
   text-align: -webkit-right;
+  display: inline-flex;
+  justify-content: flex-end;
 }
 
 .section-creation {
@@ -7861,6 +7868,7 @@ span.handle {
   text-overflow: ellipsis;
   width: 100%;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .modalContainer .section-item-box {
