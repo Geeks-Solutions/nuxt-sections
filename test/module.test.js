@@ -23,6 +23,7 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import { ref } from 'vue'
 import { useNuxtApp } from '#app'
 import * as vt from 'vue-toastification'
 import draggable from '@marshallswain/vuedraggable'
