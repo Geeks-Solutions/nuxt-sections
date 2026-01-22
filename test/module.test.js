@@ -34,10 +34,27 @@ const mockedSectionsConfig = {
   projectId: 'test-project',
   queryStringSupport: 'enabled',
   projectLocales: '',
+  views: [
+    {
+      id: 'view-1',
+      name: 'Default View',
+      weight: 1,
+    },
+  ],
 }
 
 useNuxtApp().provide('toast', vt.useToast())
 useNuxtApp().provide('sections', mockedSectionsConfig)
+
+// Provide default page metadata
+const pageMetadata = {
+  project_metadata: {
+    languages: ['en'],
+  },
+  languages: ['en'],
+  defaultLocale: 'en',
+}
+useNuxtApp().provide('pageMetadata', pageMetadata)
 
 import {
   importJs,

@@ -78,8 +78,14 @@ function getSectionProjectIdentity() {
   return 'test-project-id'
 }
 
+function loadScript() {}
+
+function fire_js(event, data) {}
+
 // Register globally
 globalThis.importJs = importJs
 globalThis.abstractPathLanguage = abstractPathLanguage
 globalThis.parsePath = parsePath
 globalThis.getSectionProjectIdentity = getSectionProjectIdentity
+globalThis.loadScript = loadScript
+globalThis.fire_js = fire_js

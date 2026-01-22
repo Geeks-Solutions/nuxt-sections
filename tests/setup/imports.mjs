@@ -271,8 +271,22 @@ function defineNuxtRouteMiddleware(fn) {
 const nuxtAppInstance = {
   provide: vi.fn((key, value) => {
     nuxtAppInstance[`$${key}`] = value
+    return value
   }),
   callHook: vi.fn(() => Promise.resolve()),
+  ssrContext: {
+    event: {
+      req: {
+        headers: {
+          host: 'localhost:3000',
+          'x-forwarded-proto': 'http',
+        },
+      },
+      res: {
+        statusCode: 200,
+      },
+    },
+  },
 }
 
 // Initialize with defaults (can be overridden by tests)
@@ -285,6 +299,18 @@ nuxtAppInstance.$sections = {
 }
 
 nuxtAppInstance.$toast = vi.fn()
+
+// Default page metadata (can be overridden by tests)
+nuxtAppInstance.$pageMetadata = {
+  project_metadata: {
+    languages: ['en'],
+  },
+  languages: ['en'],
+  defaultLocale: 'en',
+}
+
+// Mock process.env
+globalThis.process = globalThis.process || { env: { NODE_ENV: 'test' } }
 
 function useNuxtApp() {
   return nuxtAppInstance
