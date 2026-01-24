@@ -32,7 +32,7 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
 })
 
 // Import component AFTER mocks are set up
-import SectionsPage from '../src/runtime/components/Sections/admin.vue'
+import SectionsPage from '../../src/runtime/components/Sections/admin.vue'
 
 const mockedSectionsConfig = {
   cname: true,

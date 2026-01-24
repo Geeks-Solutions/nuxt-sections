@@ -46,7 +46,7 @@ vi.mock('#app', () => ({
 
 // Mock Pinia store
 const mockUseSectionsDataStore = vi.fn(() => mockStore)
-vi.mock('../stores/sectionsDataStore', () => ({
+vi.mock('../../src/runtime/stores/sectionsDataStore', () => ({
   useSectionsDataStore: mockUseSectionsDataStore,
 }))
 
@@ -56,7 +56,7 @@ const getSectionProjectIdentity = vi.fn(() => 'test-project-id')
 const parseQS = vi.fn((path, hasQuery, query) => ({ path, hasQuery, query }))
 const mockUseApiRequest = vi.fn()
 
-vi.mock('./helpers', () => ({
+vi.mock('../../src/runtime/utils/helpers', () => ({
   sectionHeader,
   getSectionProjectIdentity,
   parseQS,
@@ -68,6 +68,39 @@ global.sectionHeader = sectionHeader
 global.getSectionProjectIdentity = getSectionProjectIdentity
 global.parseQS = parseQS
 global.useApiRequest = mockUseApiRequest
+global.abstractPathLanguage = (finalPath) => {
+  const locales = ['en', 'de', 'fr', 'es']
+  const decoded = decodeURIComponent(finalPath)
+  const matchedLocale = locales.find(
+    (locale) => decoded === `${locale}` || decoded.startsWith(`${locale}/`)
+  )
+
+  if (!matchedLocale) {
+    return { path: decoded, matchedLocale: undefined }
+  }
+
+  let nextPath = decoded.slice(matchedLocale.length)
+  if (nextPath.startsWith('/')) {
+    nextPath = nextPath.slice(1)
+  }
+  if (!nextPath) {
+    nextPath = '/'
+  }
+
+  return { path: encodeURIComponent(nextPath), matchedLocale }
+}
+
+global.parsePath = (path) => {
+  const decoded = decodeURIComponent(path)
+  if (decoded.includes('=')) {
+    const parsed0 = decoded.substring(0, decoded.indexOf('='))
+    const parsed1 = parsed0.substring(0, parsed0.lastIndexOf('/'))
+    return parsed1 ? encodeURIComponent(parsed1) : encodeURIComponent('/')
+  }
+
+  return global.abstractPathLanguage(decoded).path
+}
+global.importJs = vi.fn(() => ({}))
 
 // Mock fetch
 global.fetch = vi.fn()

@@ -6,7 +6,14 @@ export default defineConfig({
   plugins: [vue()],
   test: {
     globals: true,
-    include: ['tests/integration/**/*.test.ts', 'tests/integration/**/*.spec.ts'],
+    environment: 'happy-dom',
+    setupFiles: ['./tests/setup/integration.ts'],
+    include: [
+      'tests/integration/**/*.test.ts',
+      'tests/integration/**/*.spec.ts',
+      'tests/integration/**/*.test.js',
+      'tests/integration/**/*.spec.js',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/.nuxt/**',
@@ -28,6 +35,8 @@ export default defineConfig({
     alias: {
       '~': fileURLToPath(new URL('./', import.meta.url)),
       '@': fileURLToPath(new URL('./', import.meta.url)),
+      '#app': fileURLToPath(new URL('./tests/setup/mocks-app.ts', import.meta.url)),
+      '#imports': fileURLToPath(new URL('./tests/setup/mocks-app.ts', import.meta.url)),
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
