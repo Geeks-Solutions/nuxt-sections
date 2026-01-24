@@ -1,13 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-
-// Mock #app
-vi.mock('#app', () => ({
-  defineNuxtPlugin: (plugin) => plugin,
-}))
-
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import mediaTransformerPlugin from '../media-transformer'
 
-// Mock helpers
 vi.mock('../../utils/helpers', () => ({
   importJs: vi.fn(),
 }))
@@ -15,22 +8,27 @@ vi.mock('../../utils/helpers', () => ({
 import { importJs } from '../../utils/helpers'
 
 describe('media-transformer plugin', () => {
-  it('provides mediaURLTransformer if hook exists', async () => {
-    const mockTransformer = vi.fn()
-    vi.mocked(importJs).mockReturnValue({
-      media_transform: mockTransformer,
-    })
+  let mockTransformer: any
+  let mockNuxtApp: any
 
-    const nuxtApp = {
+  beforeEach(() => {
+    mockTransformer = vi.fn((url: string) => url)
+    mockNuxtApp = {
       vueApp: {
         provide: vi.fn(),
       },
     }
+  })
 
-    await mediaTransformerPlugin(nuxtApp)
+  it('provides mediaURLTransformer if hook exists', async () => {
+    vi.mocked(importJs).mockReturnValue({
+      media_transform: mockTransformer,
+    })
+
+    await mediaTransformerPlugin(mockNuxtApp)
 
     expect(importJs).toHaveBeenCalledWith('/js/global-hooks')
-    expect(nuxtApp.vueApp.provide).toHaveBeenCalledWith(
+    expect(mockNuxtApp.vueApp.provide).toHaveBeenCalledWith(
       Symbol.for('mediaURLTransformer'),
       mockTransformer
     )
@@ -39,15 +37,34 @@ describe('media-transformer plugin', () => {
   it('does not provide anything if hook is missing', async () => {
     vi.mocked(importJs).mockReturnValue({})
 
-    const nuxtApp = {
-      vueApp: {
-        provide: vi.fn(),
-      },
-    }
-
-    await mediaTransformerPlugin(nuxtApp)
+    await mediaTransformerPlugin(mockNuxtApp)
 
     expect(importJs).toHaveBeenCalledWith('/js/global-hooks')
-    expect(nuxtApp.vueApp.provide).not.toHaveBeenCalled()
+    expect(mockNuxtApp.vueApp.provide).not.toHaveBeenCalled()
+  })
+
+  it('handles errors gracefully if importJs fails', async () => {
+    vi.mocked(importJs).mockImplementation(() => {
+      throw new Error('Failed to load hooks')
+    })
+
+    await expect(mediaTransformerPlugin(mockNuxtApp)).resolves.not.toThrow()
+    expect(mockNuxtApp.vueApp.provide).not.toHaveBeenCalled()
+  })
+
+  it('provides the actual transformer function, not a wrapper', async () => {
+    const customTransformer = (url: string) => url + '?transformed=true'
+    vi.mocked(importJs).mockReturnValue({
+      media_transform: customTransformer,
+    })
+
+    await mediaTransformerPlugin(mockNuxtApp)
+
+    const calls = mockNuxtApp.vueApp.provide.mock.calls
+    const transformerSymbol = calls[0][0]
+    const transformerFunction = calls[0][1]
+
+    expect(transformerFunction).toBe(customTransformer)
+    expect(transformerFunction('test.jpg')).toBe('test.jpg?transformed=true')
   })
 })

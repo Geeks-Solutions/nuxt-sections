@@ -73,6 +73,7 @@ describe('Sidebar Options Tests', () => {
   let pinia
 
   beforeEach(async () => {
+    globalThis.clearStateCache && globalThis.clearStateCache()
     pinia = createPinia()
     setActivePinia(pinia)
     clearSidebarRefs()

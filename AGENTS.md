@@ -18,18 +18,20 @@ This repository contains a Nuxt 3 module for the Sections CMS. Follow these guid
 
 ### Testing
 
-- `npm run test` - Run all tests (Vitest)
-- `npm run test:watch` - Run tests in watch mode
+- `npm run test` - Run all tests (unit + integration)
+- `npm run test:unit` - Run unit tests (happy-dom, fast)
+- `npm run test:integration` - Run integration tests (@nuxt/test-utils)
+- `npm run test:watch` - Run tests in watch mode (unit tests only)
 - `npm run test:coverage` - Run tests with coverage report (thresholds: 80%)
 
 **Run a single test:**
 
 ```bash
-# Run specific test file
-vitest run path/to/test.spec.ts
+# Run specific unit test file
+vitest run --config vitest.config.ts path/to/test.spec.ts
 
 # Run tests matching pattern
-vitest run --pattern "media-transformer"
+vitest run --config vitest.config.ts --pattern "media-transformer"
 ```
 
 ## Code Style Guidelines
@@ -89,17 +91,26 @@ vitest run --pattern "media-transformer"
 - `src/runtime/utils/` - Helper functions (auto-imported)
 - `src/runtime/middleware/` - Route middleware
 - `src/runtime/pages/` - Custom pages
-- `tests/setup/mocks.js` - Global test mocks (register functions on globalThis)
+- `tests/setup/unit.ts` - Global setup for unit tests
+- `tests/unit/` - Unit tests (happy-dom, pure functions, isolated logic)
+- `tests/integration/` - Integration tests (@nuxt/test-utils, plugins, module config)
 
 ### Testing
 
-- Framework: Vitest with happy-dom
-- Test environment: `happy-dom` (not full Nuxt, avoids plugin loading)
-- Use `vi.mock()` for mocking
+- Framework: Vitest with hybrid testing approach
+- Unit Tests: happy-dom for fast, isolated testing of pure functions
+- Integration Tests: @nuxt/test-utils for plugins, modules, and components with full Nuxt context
+- Use `vi.mock()` for mocking when necessary (prefer testing real implementations)
 - Use `vi.fn()` for spy/mock functions
-- Register mocks on `globalThis` in `tests/setup/mocks.js`
 - Write descriptive test names
 - Coverage target: 80% across lines, functions, branches, statements
+
+**Testing Philosophy:**
+
+- Test real implementations whenever possible
+- Minimize mocking - only mock what absolutely needs to be mocked
+- Unit tests for pure functions and utilities
+- Integration tests for Nuxt-specific code (plugins, middleware, components)
 
 ### Imports
 

@@ -7,8 +7,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
-    setupFiles: ['./tests/setup/mocks.js'],
-    include: ['**/*.test.js', '**/*.test.ts'],
+    setupFiles: ['./tests/setup/unit.ts'],
+    include: [
+      'tests/unit/**/*.test.ts',
+      'tests/unit/**/*.spec.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.test.ts',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/.nuxt/**',
@@ -16,6 +21,7 @@ export default defineConfig({
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/playground/**',
+      'tests/integration/**',
     ],
     coverage: {
       provider: 'v8',
@@ -31,7 +37,6 @@ export default defineConfig({
         '**/playground/**',
         '**/coverage/**',
         '**/*.config.*',
-        '**/mocks.js',
       ],
       include: ['src/**/*.{js,ts,vue}'],
       all: true,
@@ -53,8 +58,8 @@ export default defineConfig({
     alias: {
       '~': fileURLToPath(new URL('./', import.meta.url)),
       '@': fileURLToPath(new URL('./', import.meta.url)),
-      '#app': fileURLToPath(new URL('./tests/setup/imports.mjs', import.meta.url)),
-      '#imports': fileURLToPath(new URL('./tests/setup/imports.mjs', import.meta.url)),
+      '#app': fileURLToPath(new URL('./tests/setup/mocks-app.ts', import.meta.url)),
+      '#imports': fileURLToPath(new URL('./tests/setup/mocks-app.ts', import.meta.url)),
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
