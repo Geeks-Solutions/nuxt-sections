@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { useNuxtApp } from '#app'
 import {
   formatName,
   formatTexts,
+  getMySectionsPages,
   validatePagePath,
   validateQS,
   dummyDataPresets,
@@ -297,5 +299,49 @@ describe('sectionHeader', () => {
     const key2 = Object.keys(header2)[0]
 
     expect(key1).not.toBe(key2)
+  })
+})
+
+describe('getMySectionsPages', () => {
+  let originalFetch: any
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    if (originalFetch) {
+      global.fetch = originalFetch
+    }
+  })
+
+  it('uses section project identity when cname is active', async () => {
+    const nuxtApp: any = useNuxtApp()
+    vi.mocked(useNuxtApp).mockReturnValue(nuxtApp)
+    nuxtApp.$sections.serverUrl = 'https://sections.test'
+    nuxtApp.$sections.projectId = 'bo-project'
+    nuxtApp.$sections.cname = 'active'
+
+    const originalHref = window.location.href
+    window.location.href = 'https://current-project.example/'
+
+    const header = sectionHeader({ token: 'test-token' })
+    originalFetch = global.fetch
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(['Page A']),
+    })
+    global.fetch = fetchSpy
+
+    const result = await getMySectionsPages(header)
+
+    const [, options] = fetchSpy.mock.calls[0]
+    expect(options.headers.get('token')).toBe('test-token')
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://sections.test/project/current-project.example/pages',
+      expect.objectContaining({ method: 'GET' })
+    )
+    expect(result).toEqual(['Page A'])
+
+    window.location.href = originalHref
   })
 })
