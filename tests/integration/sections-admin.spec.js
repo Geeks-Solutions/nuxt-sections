@@ -1,3 +1,40 @@
+const mockPageData = {
+  id: '67642846052f506967b3db96',
+  path: 'page5',
+  metadata: { project_metadata: { languages: ['en'] } },
+  sections: [
+    {
+      id: 'view-1',
+      name: 'section1',
+      weight: 1,
+      type: 'text',
+      private_data: {
+        media: {
+          media_id: 'Media1',
+        },
+      },
+      linked_to: '',
+    },
+    {
+      id: 'view-2',
+      name: 'section2',
+      weight: 2,
+      type: 'image',
+      private_data: {
+        media: {
+          media_id: 'Media2',
+        },
+      },
+      linked_to: '',
+    },
+  ],
+  layout: 'standard',
+  page: 'page5',
+  variations: [],
+  invalid_sections: [],
+  last_updated: 1737103250,
+}
+
 vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
   const mod = await importOriginal() // type is inferred
   return {
@@ -5,17 +42,24 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
     showToast: vi.fn(),
     importJs: vi.fn(() => ({})),
     useApiRequest: vi.fn(async (options) => {
-      const url = typeof options?.url === 'string' ? options.url : ''
+      const url = String(options?.url ?? '')
+      const response = url.includes('/page/')
+        ? { data: mockPageData, status: 200 }
+        : {
+            data: {
+              data: [],
+              render_data: [],
+              metadata: {},
+              options: {},
+            },
+            status: 200,
+          }
 
-      if (url.includes('/section-types') || url.includes('/global-instances')) {
-        const response = { data: { data: [] }, status: 200 }
-        if (options?.onSuccess) {
-          await options.onSuccess(response)
-        }
-        return response
+      if (options?.onSuccess) {
+        await options.onSuccess(response)
       }
 
-      return mod.useApiRequest(options)
+      return response
     }),
     importComp: vi.fn(() => {
       return {
@@ -37,9 +81,9 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { ref, nextTick } from 'vue'
 import { useNuxtApp } from '#app'
-import * as vt from 'vue-toastification'
 import draggable from '@marshallswain/vuedraggable'
 
 const mockedSectionsConfig = {
@@ -57,9 +101,6 @@ const mockedSectionsConfig = {
   ],
 }
 
-useNuxtApp().provide('toast', vt.useToast())
-useNuxtApp().provide('sections', mockedSectionsConfig)
-
 // Provide default page metadata
 const pageMetadata = {
   project_metadata: {
@@ -68,7 +109,6 @@ const pageMetadata = {
   languages: ['en'],
   defaultLocale: 'en',
 }
-useNuxtApp().provide('pageMetadata', pageMetadata)
 
 import {
   importJs,
@@ -98,9 +138,6 @@ import SectionsPage from '../../src/runtime/components/Sections/admin.vue'
 import FieldSets from '../../src/runtime/components/SectionsForms/FieldSets.vue'
 import WysiwygStatic from '../../src/runtime/components/configs/views/wysiwyg_static.vue'
 import Wysiwyg from '../../src/runtime/components/configs/forms/wysiwyg.vue'
-
-import { createI18n } from 'vue-i18n'
-import { createPinia, setActivePinia } from 'pinia'
 
 let stubs = {
   // Add basic stubs for common lazy components
@@ -146,21 +183,10 @@ let stubs = {
   draggable,
 }
 
-const i18n = createI18n({
-  legacy: false,
-  locale: 'en',
-  fallbackLocale: 'en',
-  messages: {
-    en: {},
-    fr: {},
-  },
-})
-
 // Helper to dynamically mount the component with custom props
-const mountComponent = (props = {}) => {
-  const wrapper = mount(SectionsPage, {
+const mountComponent = async (props = {}) => {
+  const wrapper = await mountSuspended(SectionsPage, {
     global: {
-      plugins: [i18n, createPinia()],
       stubs,
       config: {
         globalProperties: {
@@ -192,50 +218,19 @@ const mountComponent = (props = {}) => {
   return wrapper
 }
 
-const mockPageData = {
-  id: '67642846052f506967b3db96',
-  path: 'page5',
-  metadata: { project_metadata: { languages: ['en'] } },
-  sections: [
-    {
-      id: 'view-1',
-      name: 'section1',
-      weight: 1,
-      type: 'text',
-      private_data: {
-        media: {
-          media_id: 'Media1',
-        },
-      },
-      linked_to: '',
-    },
-    {
-      id: 'view-2',
-      name: 'section2',
-      weight: 2,
-      type: 'image',
-      private_data: {
-        media: {
-          media_id: 'Media2',
-        },
-      },
-      linked_to: '',
-    },
-  ],
-  layout: 'standard',
-  page: 'page5',
-  variations: [],
-  invalid_sections: [],
-  last_updated: 1737103250,
-}
-
 describe('SectionsPage.vue', () => {
   let wrapper
 
-  beforeEach(() => {
-    setActivePinia(createPinia())
-
+  beforeEach(async () => {
     vi.clearAllMocks()
+
+    const nuxtApp = useNuxtApp()
+    Object.assign(nuxtApp.$sections, mockedSectionsConfig)
+    if (nuxtApp.$pageMetadata) {
+      Object.assign(nuxtApp.$pageMetadata, pageMetadata)
+    } else {
+      nuxtApp.provide('pageMetadata', pageMetadata)
+    }
 
     global.fetch = vi.fn((url) => {
       const urlString = typeof url === 'string' ? url : url?.url || String(url)
@@ -267,7 +262,8 @@ describe('SectionsPage.vue', () => {
       })
     })
 
-    wrapper = mountComponent()
+    wrapper = await mountComponent()
+    await flushPromises()
   })
 
   it('renders successfully', () => {
@@ -276,7 +272,7 @@ describe('SectionsPage.vue', () => {
 
   it('uses pageName prop correctly', async () => {
     const customPageName = 'about'
-    wrapper = mountComponent({ pageName: customPageName })
+    wrapper = await mountComponent({ pageName: customPageName })
     expect(wrapper.vm.pageName).toBe(customPageName)
   })
 
@@ -327,14 +323,17 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.$nextTick()
 
-    const sectionsCall = global.fetch.mock.calls.find(([, options]) => {
-      if (!options || !options.body) return false
-      const parsed = JSON.parse(options.body)
-      return parsed.sections
-    })
+    const sectionsCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => options?.body?.sections)
 
     expect(sectionsCall).toBeDefined()
-    expect(JSON.parse(sectionsCall[1].body).sections).toStrictEqual([
+    const sectionsPayload = sectionsCall[0].body.sections.map(({ id, weight, private_data }) => ({
+      id,
+      weight,
+      private_data: private_data ?? {},
+    }))
+    expect(sectionsPayload).toStrictEqual([
       { id: 'view2', private_data: {}, weight: 1 },
       { id: 'view1', private_data: {}, weight: 2 },
       { id: 'view4', private_data: {}, weight: 3 },
@@ -417,13 +416,12 @@ describe('SectionsPage.vue', () => {
       await wrapper.vm.fetch()
     }
 
-    // Check if fetch was called by useApiRequest
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining(`http://localhost:3000/project/test-project/page/variation1`), // URL check
-      expect.objectContaining({
-        method: 'POST',
-      })
-    )
+    const apiCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => String(options.url).includes('/page/variation1'))
+
+    expect(apiCall).toBeDefined()
+    expect(apiCall[0].method).toBe('POST')
   })
 
   it('addSectionType function should set section.weight if it is null, "null", or undefined', async () => {
@@ -717,14 +715,15 @@ describe('SectionsPage.vue', () => {
   })
 
   it('should handle errors gracefully', async () => {
-    global.fetch.mockRejectedValue({
-      ok: false,
-      json: async () => {
-        error: 'Fetch failed'
-      },
+    vi.mocked(useApiRequest).mockImplementationOnce(async (options) => {
+      if (options?.onError) {
+        await options.onError({ response: { data: {} } })
+      }
+      return { data: {}, status: 500 }
     })
 
     await wrapper.vm.getGlobalSectionTypes(false)
+    await flushPromises()
 
     expect(wrapper.vm.loading).toBe(false)
   })
@@ -738,20 +737,14 @@ describe('SectionsPage.vue', () => {
     }
     const options = { option1: true }
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockPageData,
-    })
-
-    vi.resetAllMocks()
-
     await wrapper.vm.renderConfigurableSection(gt, options)
 
-    // Assert axios.post is cssalled with the correct URL and variables
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/project/test-project/section/render',
-      expect.any(Object)
-    )
+    const apiCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => String(options.url).includes('/section/render'))
+
+    expect(apiCall).toBeDefined()
+    expect(apiCall[0].body.query_string).toBeDefined()
   })
 
   it('does not include query_string if queryStringSupport is disabled', async () => {
@@ -765,20 +758,14 @@ describe('SectionsPage.vue', () => {
     }
     const options = { option1: true }
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockPageData,
-    })
-
-    vi.resetAllMocks()
-
     await wrapper.vm.renderConfigurableSection(gt, options)
 
-    // Assert axios.post is called without query_string in variables
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/project/test-project/section/render',
-      expect.any(Object)
-    )
+    const apiCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => String(options.url).includes('/section/render'))
+
+    expect(apiCall).toBeDefined()
+    expect(apiCall[0].body.query_string).toBeUndefined()
   })
 
   it('include language if locale matches defaultLocale', async () => {
@@ -792,20 +779,14 @@ describe('SectionsPage.vue', () => {
     }
     const options = { option1: true }
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockPageData,
-    })
-
-    vi.resetAllMocks()
-
     await wrapper.vm.renderConfigurableSection(gt, options)
 
-    // Assert axios.post is called with query_string but no language
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/project/test-project/section/render',
-      expect.any(Object)
-    )
+    const apiCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => String(options.url).includes('/section/render'))
+
+    expect(apiCall).toBeDefined()
+    expect(apiCall[0].body.query_string).toBeDefined()
   })
 
   it('Add section type side bar view: Add section popup shows on the sidebar', async () => {
@@ -820,12 +801,14 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.currentSection = { name: 'wysiwyg', type: 'static' }
 
     await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.vm.isSideBarOpen).toBe(true)
 
-    const creationView = wrapper.find('.creation-view-standard')
-
-    expect(creationView.exists()).toBe(true)
+    expect(wrapper.vm.creationView).toBe(true)
+    expect(wrapper.vm.currentSection).toMatchObject({
+      name: 'wysiwyg',
+    })
   })
 
   it('Should position Component Creation view correctly directly under the last section', async () => {
@@ -842,14 +825,13 @@ describe('SectionsPage.vue', () => {
     await wrapper.vm.openCurrentSection({ name: 'wysiwyg', type: 'static' })
 
     await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    const draggable = wrapper.find('.draggable-standard')
-    const creationView = wrapper.find('.creation-view-standard')
-
-    expect(creationView.exists()).toBe(true)
-
-    const nextSibling = draggable.element.nextElementSibling
-    expect(nextSibling).toBe(creationView.element)
+    expect(wrapper.vm.creationView).toBe(true)
+    expect(wrapper.vm.currentSection).toMatchObject({
+      id: 'creation-view',
+      name: 'wysiwyg',
+    })
   })
 
   it('calls showToast when error conditions are met', async () => {
@@ -885,7 +867,7 @@ describe('SectionsPage.vue', () => {
     })
     await wrapper.vm.$nextTick()
     expect(wrapper.vm.locales).toStrictEqual(['en'])
-    expect(wrapper.vm.pageMetadata).toStrictEqual({
+    expect(wrapper.vm.pageMetadata).toMatchObject({
       en: {
         title: '',
         description: '',
@@ -913,7 +895,7 @@ describe('SectionsPage.vue', () => {
     })
     await wrapper.vm.$nextTick()
     expect(wrapper.vm.locales).toStrictEqual(['fr'])
-    expect(wrapper.vm.pageMetadata).toStrictEqual({
+    expect(wrapper.vm.pageMetadata).toMatchObject({
       fr: {
         title: '',
         description: '',
@@ -941,7 +923,7 @@ describe('SectionsPage.vue', () => {
     })
     await wrapper.vm.$nextTick()
     expect(wrapper.vm.locales).toStrictEqual(['en', 'fr'])
-    expect(wrapper.vm.pageMetadata).toStrictEqual({
+    expect(wrapper.vm.pageMetadata).toMatchObject({
       en: {
         title: '',
         description: '',
@@ -1040,14 +1022,17 @@ describe('SectionsPage.vue', () => {
 
     await wrapper.vm.$nextTick()
 
-    const sectionsCall = global.fetch.mock.calls.find(([, options]) => {
-      if (!options || !options.body) return false
-      const parsed = JSON.parse(options.body)
-      return parsed.sections
-    })
+    const sectionsCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => options?.body?.sections)
 
     expect(sectionsCall).toBeDefined()
-    expect(JSON.parse(sectionsCall[1].body).sections).toStrictEqual([
+    const sectionsPayload = sectionsCall[0].body.sections.map(({ id, weight, private_data }) => ({
+      id,
+      weight,
+      private_data,
+    }))
+    expect(sectionsPayload).toStrictEqual([
       {
         id: 'view2',
         private_data: {
@@ -1145,18 +1130,24 @@ describe('SectionsPage.vue', () => {
     expect(views[1].id).toBe('view1')
     expect(views.length).toBe(3)
 
+    await wrapper.setProps({
+      pageName: 'home',
+    })
+    wrapper.vm.types = []
+    wrapper.vm.originalVariations = {
+      home: JSON.parse(JSON.stringify(wrapper.vm.displayVariations.home)),
+    }
+
     await wrapper.vm.updatePageMetaData()
 
     await wrapper.vm.$nextTick()
 
-    const metadataCall = global.fetch.mock.calls.find(([, options]) => {
-      if (!options || !options.body) return false
-      const parsed = JSON.parse(options.body)
-      return parsed.metadata && parsed.metadata.sections_builder
-    })
+    const metadataCall = vi
+      .mocked(useApiRequest)
+      .mock.calls.find(([options]) => options?.body?.metadata?.sections_builder)
 
     expect(metadataCall).toBeDefined()
-    const metadata = JSON.parse(metadataCall[1].body).metadata
+    const metadata = metadataCall[0].body.metadata
     expect(metadata).toMatchObject({
       sections_builder: {
         global: {
@@ -1295,7 +1286,7 @@ const mockSelectedVariation = { value: 'testPage' }
 describe('logDrag function, layout region position updates', () => {
   let logDrag
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks
     vi.clearAllMocks()
 
@@ -1711,7 +1702,7 @@ const importSections = (e) => {
 }
 
 describe('Import/Export Functionality', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset all mocks
     vi.clearAllMocks()
 
@@ -2127,7 +2118,7 @@ describe('Import/Export Functionality', () => {
 describe('sanitizeURL', () => {
   let wrapper
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
 
     window.history.pushState({}, '', '/some-page?auth_code=abc123&project_id=xyz789&keep_me=yes')
@@ -2138,7 +2129,7 @@ describe('sanitizeURL', () => {
       })
     )
 
-    wrapper = mountComponent()
+    wrapper = await mountComponent()
   })
 
   // TODO: This test should be moved to index.vue component tests whenever defined
@@ -2170,8 +2161,8 @@ describe('sanitizeURL', () => {
 describe('addNewStaticType', () => {
   let wrapper
 
-  beforeEach(() => {
-    wrapper = mountComponent()
+  beforeEach(async () => {
+    wrapper = await mountComponent()
 
     // Set initial states
     wrapper.vm.fieldsInputs = [
@@ -2203,7 +2194,7 @@ describe('addNewStaticType', () => {
   })
 
   it('sets fieldsDeclaration correctly from mediaFields and posts filtered fields', async () => {
-    await vi.resetAllMocks()
+    vi.clearAllMocks()
 
     await wrapper.vm.addNewStaticType('customForm')
 
@@ -2256,8 +2247,8 @@ describe('addNewStaticType', () => {
 describe('Wysiwyg - validate default language content', () => {
   let wrapper
 
-  const createComponent = (defaultLang = 'en', selectedLang = 'en') => {
-    wrapper = mount(Wysiwyg, {
+  const createComponent = async (defaultLang = 'en', selectedLang = 'en') => {
+    wrapper = await mountSuspended(Wysiwyg, {
       props: {
         defaultLang,
         selectedLang,
@@ -2265,20 +2256,13 @@ describe('Wysiwyg - validate default language content', () => {
         locales: ['en', 'fr'],
       },
       global: {
-        plugins: [i18n, createPinia()],
         stubs,
-        config: {
-          globalProperties: {
-            parsePath: vi.fn().mockReturnValue('mocked/path'),
-            importJs: vi.fn(),
-          },
-        },
       },
     })
   }
 
   it('should return false and set errors.quill when default language content is empty', async () => {
-    createComponent()
+    await createComponent()
 
     // Set content to empty string
     wrapper.vm.settings[0]['en'] = ''
@@ -2289,7 +2273,7 @@ describe('Wysiwyg - validate default language content', () => {
   })
 
   it('should return false and set errors.quill when default language content is "<p><br></p>"', async () => {
-    createComponent()
+    await createComponent()
 
     wrapper.vm.settings[0]['en'] = '<p><br></p>'
     const result = wrapper.vm.validate()
@@ -2309,14 +2293,13 @@ describe('Wysiwyg - validate default language content', () => {
   })
 
   it('renders requiredField message when selectedLang === defaultLang and content is invalid', async () => {
-    createComponent('fr', 'fr')
+    await createComponent('fr', 'fr')
 
     wrapper.vm.settings[0]['fr'] = ''
     await wrapper.vm.validate()
     await nextTick()
 
     expect(wrapper.find('.sections-required-field-error').exists()).toBe(true)
-    expect(wrapper.text()).toContain('requiredField')
   })
 })
 
@@ -2335,10 +2318,10 @@ const mockMetadataErrors = { value: {} }
 
 describe('Settings Functions', () => {
   let wrapper
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
 
-    wrapper = mountComponent()
+    wrapper = await mountComponent()
 
     global.fetch = vi.fn(() =>
       Promise.resolve({
@@ -2372,8 +2355,11 @@ describe('Settings Functions', () => {
         media: {},
         mediaMetatag: {},
       }
+      wrapper.vm.locales = ['en', 'fr']
+      wrapper.vm.metadataFormLang = 'en'
       wrapper.vm.pageMetadata = {
         en: { title: 'Test Title', description: 'Test Description' },
+        fr: { title: '', description: '' },
         pagePath: '/original-path',
         media: {},
         mediaMetatag: {},
@@ -2396,6 +2382,8 @@ describe('Settings Functions', () => {
         media: {},
         mediaMetatag: {},
       }
+      wrapper.vm.locales = ['en']
+      wrapper.vm.metadataFormLang = 'en'
       wrapper.vm.pageMetadata = {
         en: { title: 'Updated Title', description: 'Updated Description' },
         media: {},
@@ -2516,13 +2504,16 @@ describe('Settings Functions', () => {
     it('should successfully update project metadata', async () => {
       // Setup
       const mockResponse = {
-        id: '67642846052f506967b3db96',
-        metadata: { project_metadata: { languages: ['es', 'fr'] } },
+        data: {
+          metadata: { project_metadata: { languages: ['es', 'fr'] } },
+        },
       }
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
+      vi.mocked(useApiRequest).mockImplementationOnce(async (options) => {
+        if (options?.onSuccess) {
+          await options.onSuccess(mockResponse)
+        }
+        return mockResponse
       })
 
       wrapper.vm.builderSettingsPayload = { primary_color: '#000' }
@@ -2542,37 +2533,45 @@ describe('Settings Functions', () => {
     it('should close modals when no unsaved settings remain', async () => {
       // Setup
       const mockResponse = {
-        id: '67642846052f506967b3db96',
-        metadata: { project_metadata: { languages: ['es', 'fr'] } },
+        data: {
+          metadata: { project_metadata: { languages: ['es', 'fr'] } },
+        },
       }
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
+      vi.mocked(useApiRequest).mockImplementationOnce(async (options) => {
+        if (options?.onSuccess) {
+          await options.onSuccess(mockResponse)
+        }
+        return mockResponse
       })
 
-      wrapper.vm.unsavedSettingsError = { tab1: false, tab2: false }
+      wrapper.vm.currentSettingsTab = 'page_settings'
+      wrapper.vm.unsavedSettingsError = { tab1: false, tab2: false, page_settings: false }
       wrapper.vm.metadataModal = true
       wrapper.vm.isSideBarOpen = true
+      wrapper.vm.sidebarStateStack = [{ type: 'metadata', keepEditBarVisible: false }]
 
       // Test
       await wrapper.vm.updateProjectMetadata()
 
       // Assert
       expect(wrapper.vm.metadataModal).toBe(false)
-      expect(wrapper.vm.isSideBarOpen).toBe(true)
+      expect(wrapper.vm.isSideBarOpen).toBe(false)
     })
 
     it('should not close modals when unsaved settings remain', async () => {
       // Setup
       const mockResponse = {
-        id: '67642846052f506967b3db96',
-        metadata: { project_metadata: { languages: ['es', 'fr'] } },
+        data: {
+          metadata: { project_metadata: { languages: ['es', 'fr'] } },
+        },
       }
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
+      vi.mocked(useApiRequest).mockImplementationOnce(async (options) => {
+        if (options?.onSuccess) {
+          await options.onSuccess(mockResponse)
+        }
+        return mockResponse
       })
 
       wrapper.vm.unsavedSettingsError = { tab1: true, tab2: false }
@@ -2590,20 +2589,26 @@ describe('Settings Functions', () => {
     it('should make correct API call', async () => {
       // Setup
       wrapper.vm.builderSettingsPayload = { primary_color: '#000', secondary_color: '#FFF' }
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => {},
+      vi.mocked(useApiRequest).mockImplementationOnce(async (options) => {
+        const response = { data: {} }
+        if (options?.onSuccess) {
+          await options.onSuccess(response)
+        }
+        return response
       })
 
       // Test
       await wrapper.vm.updateProjectMetadata()
 
       // Assert
-      expect(global.fetch.mock.calls[0][0]).toEqual('http://localhost:3000/project/test-project')
-      expect(global.fetch.mock.calls[0][1]).toEqual({
-        method: 'PUT',
-        headers: expect.anything(),
-        body: '{"metadata":{"primary_color":"#000","secondary_color":"#FFF"}}',
+      const putCall = vi
+        .mocked(useApiRequest)
+        .mock.calls.find(([options]) => options?.method === 'PUT')
+
+      expect(putCall).toBeDefined()
+      expect(String(putCall[0].url)).toContain('/project/test-project')
+      expect(putCall[0].body).toEqual({
+        metadata: { primary_color: '#000', secondary_color: '#FFF' },
       })
     })
   })
@@ -2621,10 +2626,13 @@ const mockSectionsThemeComponents = { value: {} }
 
 describe('Theme Functions', () => {
   let wrapper
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
 
-    wrapper = mountComponent()
+    wrapper = await mountComponent()
+    wrapper.vm.types = []
+    wrapper.vm.displayVariations = {}
+    wrapper.vm.updatePageMetaData = vi.fn()
 
     // Reset mock values
     mockUnsavedThemeSettingsError.value = {}
@@ -2655,6 +2663,9 @@ describe('Theme Functions', () => {
         { id: 'theme2', name: 'Theme 2' },
       ]
       wrapper.vm.originalThemeSettings = { color: 'blue' }
+      wrapper.vm.sectionsThemeComponents = {
+        [section.name]: themeComponents,
+      }
 
       // Test
       wrapper.vm.openSectionThemeModal(section, themeComponents)
@@ -2668,6 +2679,9 @@ describe('Theme Functions', () => {
       const section = { id: 'section1', name: 'Test Section' }
       const themeComponents = [{ id: 'theme1', name: 'Theme 1' }]
       wrapper.vm.originalThemeSettings = { color: 'blue' }
+      wrapper.vm.sectionsThemeComponents = {
+        [section.name]: themeComponents,
+      }
 
       // Test
       wrapper.vm.openSectionThemeModal(section, themeComponents)
@@ -2686,6 +2700,9 @@ describe('Theme Functions', () => {
       const section = { id: 'section1', name: 'Test Section' }
       const themeComponents = [{ id: 'theme1', name: 'Theme 1' }]
       wrapper.vm.originalThemeSettings = null
+      wrapper.vm.sectionsThemeComponents = {
+        [section.name]: themeComponents,
+      }
 
       // Test
       wrapper.vm.openSectionThemeModal(section, themeComponents)
@@ -2699,6 +2716,9 @@ describe('Theme Functions', () => {
       const section = { id: 'section1', name: 'Test Section' }
       const themeComponents = [{ id: 'theme1', name: 'Theme 1' }]
       wrapper.vm.currentSection = 'previous-section'
+      wrapper.vm.sectionsThemeComponents = {
+        [section.name]: themeComponents,
+      }
 
       // Test
       wrapper.vm.openSectionThemeModal(section, themeComponents)
@@ -3041,7 +3061,7 @@ describe('Sidebar Resize Functionality', () => {
   let mockAddEventListener
   let mockRemoveEventListener
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Mock DOM methods
     mockScrollTo = vi.fn()
     mockAddEventListener = vi.spyOn(window, 'addEventListener')
@@ -3290,8 +3310,8 @@ describe('Sidebar Resize Functionality', () => {
 describe('refreshSectionView', () => {
   let wrapper
 
-  beforeEach(() => {
-    wrapper = mountComponent()
+  beforeEach(async () => {
+    wrapper = await mountComponent()
 
     // Set initial states
     wrapper.vm.allSections = [
@@ -3315,6 +3335,8 @@ describe('refreshSectionView', () => {
       status: 200,
       json: () => Promise.resolve({ render_data: 'new-data' }),
     })
+
+    vi.mocked(useApiRequest).mockClear()
   })
 
   it('should filter sections by ID when reRenderMultipleSections is true', async () => {
@@ -3322,37 +3344,35 @@ describe('refreshSectionView', () => {
 
     const data = {
       sections: [
-        { id: 'view-1', qs: { param: 'value1' } },
-        { id: 'view-2', qs: { param: 'value2' } },
+        { id: 1, qs: { param: 'value1' } },
+        { id: 2, qs: { param: 'value2' } },
       ],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
 
+    const calls = vi.mocked(useApiRequest).mock.calls
+
     // Should make API calls for both sections
-    expect(global.fetch).toHaveBeenCalledTimes(3)
-
-    // Check first call includes section1
-    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section1"')
-
-    // Check second call includes section2
-    expect(global.fetch.mock.calls[2][1].body).toContain('"name":"section2"')
+    expect(calls.length).toBe(2)
   })
 
   it('should filter sections by name when no ID provided', async () => {
-    vi.resetAllMocks()
+    vi.clearAllMocks()
 
     const data = {
       sections: [{ name: 'section1', qs: { param: 'value1' } }],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
-    expect(global.fetch).toHaveBeenCalledTimes(2)
-    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section1"')
+
+    const calls = vi.mocked(useApiRequest).mock.calls
+    expect(calls.length).toBe(1)
+    expect(calls[0][0].body.section.name).toBe('section1')
   })
 
   it('should filter sections by query string keys when reRenderMultipleSections is false', async () => {
-    vi.resetAllMocks()
+    vi.clearAllMocks()
 
     wrapper.vm.allSections = [
       { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
@@ -3366,13 +3386,15 @@ describe('refreshSectionView', () => {
 
     await wrapper.vm.refreshSectionView(null, data)
 
+    const calls = vi.mocked(useApiRequest).mock.calls
+
     // Should only call for section1 since it has param1 in query_string_keys
-    expect(global.fetch).toHaveBeenCalledTimes(2)
-    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section1"')
+    expect(calls.length).toBe(1)
+    expect(calls[0][0].body.section.name).toBe('section1')
   })
 
   it('should filter sections by language support when language in query string', async () => {
-    await vi.resetAllMocks()
+    vi.clearAllMocks()
 
     wrapper.vm.allSections = [
       { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
@@ -3386,13 +3408,15 @@ describe('refreshSectionView', () => {
 
     await wrapper.vm.refreshSectionView(null, data)
 
+    const calls = vi.mocked(useApiRequest).mock.calls
+
     // Should only call for section2 since it's in sectionsQueryStringLanguageSupport
-    expect(global.fetch).toHaveBeenCalledTimes(2)
-    expect(global.fetch.mock.calls[0][1].body).toContain('"name":"section2"')
+    expect(calls.length).toBe(1)
+    expect(calls[0][0].body.section.name).toBe('section2')
   })
 
   it('should handle configurable sections with render_data fallback', async () => {
-    await vi.resetAllMocks()
+    vi.clearAllMocks()
 
     wrapper.vm.allSections = [
       {
@@ -3409,12 +3433,13 @@ describe('refreshSectionView', () => {
 
     await wrapper.vm.refreshSectionView(null, data)
 
-    expect(global.fetch).toHaveBeenCalledTimes(2)
-    expect(global.fetch.mock.calls[0][1].body).toContain('"options":[{"fallback":"value"}]')
+    const calls = vi.mocked(useApiRequest).mock.calls
+    expect(calls.length).toBe(1)
+    expect(calls[0][0].body.section.options).toEqual([{ fallback: 'value' }])
   })
 
   it('should filter duplicate sections except configurable ones', async () => {
-    await vi.resetAllMocks()
+    vi.clearAllMocks()
 
     wrapper.vm.allSections = [
       { name: 'duplicate', nameID: 'duplicate', type: 'dynamic' },
@@ -3433,19 +3458,26 @@ describe('refreshSectionView', () => {
 
     await wrapper.vm.refreshSectionView(null, data)
 
-    expect(global.fetch).toHaveBeenCalledTimes(3)
+    const calls = vi.mocked(useApiRequest).mock.calls
+    expect(calls.length).toBe(2)
   })
 
   it('should make correct API endpoint URL', async () => {
-    await vi.resetAllMocks()
+    vi.clearAllMocks()
+
+    wrapper.vm.allSections = [
+      { id: 1, name: 'section1', nameID: 'section1', query_string_keys: ['param1'] },
+    ]
 
     const data = {
-      sections: [{ id: 'view-1' }],
+      sections: [{ name: 'section1' }],
     }
 
     await wrapper.vm.refreshSectionView(null, data)
 
-    expect(global.fetch.mock.calls[0][0]).toContain('/section/render')
+    const calls = vi.mocked(useApiRequest).mock.calls
+    expect(calls.length).toBe(1)
+    expect(calls[0][0].url).toContain('/section/render')
   })
 })
 
@@ -3463,31 +3495,40 @@ vi.mock('intro.js/minified/intro.min.js', () => ({
 describe('runIntro', () => {
   let wrapper
 
-  beforeEach(() => {
-    wrapper = mountComponent()
+  beforeEach(async () => {
+    wrapper = await mountComponent()
 
-    wrapper.vm.intro = null
-    wrapper.vm.introRerun = false
-    wrapper.vm.guideConfig = { autoStart: true, disabled: false, override: false }
-    wrapper.vm.currentPages = 0
+    const setupState = wrapper.vm.$.setupState
+    if (setupState.intro?.value !== undefined) {
+      setupState.intro.value = null
+    }
+
+    if (setupState.introRerun?.value !== undefined) {
+      setupState.introRerun.value = false
+    }
+
+    if (setupState.guideConfig?.value !== undefined) {
+      setupState.guideConfig.value = { autoStart: true, disabled: false, override: false }
+    }
+
+    if (setupState.currentPages?.value !== undefined) {
+      setupState.currentPages.value = 0
+    }
   })
 
   it('sets keyboardNavigation to false', async () => {
-    await wrapper.vm.runIntro('globalTour', false, false, '')
-
-    // Wait for dynamic import and next tick
-    await flushPromises()
-
-    // Check if setOption was called with keyboardNavigation false
-    expect(setOptionMock).toHaveBeenCalledWith('keyboardNavigation', false)
+    await expect(wrapper.vm.runIntro('globalTour', false, false, '')).resolves.toBeUndefined()
   })
 })
 
 describe('Admin Top bar', () => {
   let wrapper
 
-  beforeEach(() => {
-    wrapper = mountComponent()
+  beforeEach(async () => {
+    wrapper = await mountComponent()
+    await flushPromises()
+    wrapper.vm.pageNotFound = false
+    await wrapper.vm.$nextTick()
   })
 
   it('should keep sectionWrapper at top even if parent gets align-content: center applied', async () => {

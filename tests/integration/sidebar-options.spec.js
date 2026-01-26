@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
-import { useNuxtApp, registerSidebarRefs, clearSidebarRefs } from '#app'
-import * as vt from 'vue-toastification'
-import { createI18n } from 'vue-i18n'
-import { createPinia, setActivePinia } from 'pinia'
+import { flushPromises } from '@vue/test-utils'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { useNuxtApp } from '#app'
 
 // Mock showToast and useApiRequest - other utilities are handled by #imports virtual module
 vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
@@ -42,60 +40,34 @@ const mockedSectionsConfig = {
   projectLocales: '',
 }
 
-useNuxtApp().provide('toast', vt.useToast())
-useNuxtApp().provide('sections', mockedSectionsConfig)
-
-// Mock global functions that component uses
-global.importJs = vi.fn(() => ({}))
-global.loadScript = vi.fn()
-
-// Mock global fetch to prevent actual network requests
-global.fetch = vi.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () =>
-      Promise.resolve({
-        id: 'test-page-id',
-        path: 'test-page',
-        metadata: { project_metadata: { languages: ['en'] } },
-        sections: [],
-        layout: 'standard',
-        page: 'test-page',
-        variations: [],
-        invalid_sections: [],
-        last_updated: Date.now(),
-      }),
-  })
-)
-
 describe('Sidebar Options Tests', () => {
   let wrapper
-  let pinia
 
   beforeEach(async () => {
-    globalThis.clearStateCache && globalThis.clearStateCache()
-    pinia = createPinia()
-    setActivePinia(pinia)
-    clearSidebarRefs()
+    const nuxtApp = useNuxtApp()
+    Object.assign(nuxtApp.$sections, mockedSectionsConfig)
 
-    const i18n = createI18n({
-      legacy: false,
-      locale: 'en',
-      messages: {
-        en: {
-          'Edit page': 'Edit page',
-          'View page': 'View page',
-          'Create New Page': 'Create New Page',
-          Add: 'Add',
-          Save: 'Save',
-          Restore: 'Restore',
-        },
-      },
-    })
+    // Mock global fetch to prevent actual network requests
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            id: 'test-page-id',
+            path: 'test-page',
+            metadata: { project_metadata: { languages: ['en'] } },
+            sections: [],
+            layout: 'standard',
+            page: 'test-page',
+            variations: [],
+            invalid_sections: [],
+            last_updated: Date.now(),
+          }),
+      })
+    )
 
-    wrapper = mount(SectionsPage, {
+    wrapper = await mountSuspended(SectionsPage, {
       global: {
-        plugins: [pinia, i18n],
         stubs: {
           LazyBaseIconsBack: true,
           LazyBaseIconsClose: true,
@@ -155,18 +127,6 @@ describe('Sidebar Options Tests', () => {
     // Simulate edit mode on
     wrapper.vm.editMode = true
     await flushPromises()
-
-    // Register component refs with mock so it can update them
-    registerSidebarRefs({
-      isSideBarOpen: wrapper.vm.isSideBarOpen,
-      keepEditBarVisible: wrapper.vm.keepEditBarVisible,
-      dynamicSideComponent: wrapper.vm.dynamicSideComponent,
-      currentSection: wrapper.vm.currentSection,
-    })
-  })
-
-  afterEach(() => {
-    clearSidebarRefs()
   })
 
   it('Default Behavior: Edit bar is hidden when sidebar shows', async () => {
