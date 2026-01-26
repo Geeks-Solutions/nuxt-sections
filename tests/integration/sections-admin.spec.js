@@ -83,7 +83,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { ref, nextTick } from 'vue'
-import { useNuxtApp } from '#app'
+import { useNuxtApp, useRouter } from '#app'
 import draggable from '@marshallswain/vuedraggable'
 
 const mockedSectionsConfig = {
@@ -274,6 +274,42 @@ describe('SectionsPage.vue', () => {
     const customPageName = 'about'
     wrapper = await mountComponent({ pageName: customPageName })
     expect(wrapper.vm.pageName).toBe(customPageName)
+  })
+
+  it('navigates to root path when current route is nested', async () => {
+    const router = useRouter()
+    const pushSpy = vi.spyOn(router, 'push')
+    wrapper = await mountComponent()
+    await router.push('/blogs')
+    pushSpy.mockClear()
+
+    wrapper.vm.openMyPage({ path: 'about' })
+
+    expect(pushSpy).toHaveBeenCalledWith('/about')
+  })
+
+  it('navigates to root path when current route is root', async () => {
+    const router = useRouter()
+    const pushSpy = vi.spyOn(router, 'push')
+    wrapper = await mountComponent()
+    await router.push('/')
+    pushSpy.mockClear()
+
+    wrapper.vm.openMyPage({ path: 'about' })
+
+    expect(pushSpy).toHaveBeenCalledWith('/about')
+  })
+
+  it('preserves nested target paths', async () => {
+    const router = useRouter()
+    const pushSpy = vi.spyOn(router, 'push')
+    wrapper = await mountComponent()
+    await router.push('/blogs')
+    pushSpy.mockClear()
+
+    wrapper.vm.openMyPage({ path: '/blog/article/art-1' })
+
+    expect(pushSpy).toHaveBeenCalledWith('/blog/article/art-1')
   })
 
   it('computed activeVariation returns default when no active variation is found', () => {

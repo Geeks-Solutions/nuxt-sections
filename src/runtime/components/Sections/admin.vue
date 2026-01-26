@@ -7064,8 +7064,15 @@ const themeScrollToSection = () => {
   }
 }
 
+const normalizePagePath = (path) => {
+  if (!path) return '/'
+  const trimmedPath = String(path).trim()
+  if (trimmedPath === '' || trimmedPath === '/') return '/'
+  return `/${trimmedPath.replace(/^\/+/, '')}`
+}
+
 const openMyPage = (page) => {
-  router.push(page.path)
+  router.push(normalizePagePath(page.path))
 }
 
 const updateHeight = () => {
