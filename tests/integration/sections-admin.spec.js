@@ -178,6 +178,7 @@ let stubs = {
   LazyMediasMediaComponent: true,
   LazyBaseIconsCelebrate: true,
   LazyBaseIconsLoading: true,
+  LazyEditorWysiwyg: true,
   SettingsIcon: true, // If SettingsIcon is a separate component
   NuxtLink: { template: '<a><slot /></a>' }, // Stub NuxtLink,
   draggable,

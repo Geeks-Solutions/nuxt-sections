@@ -9,6 +9,10 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
   return {
     ...mod,
     showToast: vi.fn(),
+    importComp: vi.fn(() => ({
+      component: { template: '<div />' },
+      setup: Promise.resolve({ default: {} }),
+    })),
     useApiRequest: vi.fn((options) => {
       // Mock successful API response
       return Promise.resolve({
