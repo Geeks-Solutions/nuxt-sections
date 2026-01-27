@@ -179,6 +179,7 @@ let stubs = {
   LazyBaseIconsCelebrate: true,
   LazyBaseIconsLoading: true,
   LazyEditorWysiwyg: true,
+  SectionItem: true,
   SettingsIcon: true, // If SettingsIcon is a separate component
   NuxtLink: { template: '<a><slot /></a>' }, // Stub NuxtLink,
   draggable,

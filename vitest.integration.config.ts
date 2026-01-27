@@ -16,6 +16,7 @@ export default defineVitestConfig({
       'tests/integration/**/*.test.js',
       'tests/integration/**/*.spec.js',
     ],
+    setupFiles: [fileURLToPath(new URL('./tests/setup/integration.ts', import.meta.url))],
     exclude: [
       '**/node_modules/**',
       '**/.nuxt/**',
