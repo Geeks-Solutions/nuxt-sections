@@ -187,6 +187,12 @@ import {
   useScript,
 } from '#imports'
 import { loadScript } from '../../utils/helpers.js'
+import {
+  buildSectionsHeadConfig,
+  createHeadPreviewState,
+  mergeHeadPreviewState,
+  runHookWithHeadPreview,
+} from '../../utils/head-management.js'
 
 const { pageName, admin, variations, lang, viewsBgColor, sectionsPageData } = defineProps({
   pageName: {
@@ -303,6 +309,15 @@ const seoSectionsSupport = ref({})
 const sectionsQueryStringLanguageSupport = ref([])
 
 const originalThemeSettings = ref({})
+const headPreviewState = ref(createHeadPreviewState())
+
+const setHeadPreview = (payload = {}) => {
+  headPreviewState.value = mergeHeadPreviewState(headPreviewState.value, payload)
+}
+
+const resetHeadPreview = () => {
+  headPreviewState.value = createHeadPreviewState()
+}
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -405,7 +420,7 @@ const alteredViewsPerRegions = computed({
 
 // Head management
 useHead(() => {
-  const baseURL = process.server
+  const baseURL = import.meta.server
     ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') +
       '://' +
       nuxtApp.ssrContext.event.req?.headers.host
@@ -413,73 +428,14 @@ useHead(() => {
 
   const fullURL = baseURL + route.fullPath
 
-  return {
-    htmlAttrs: {
-      lang: i18n.locale.value,
-    },
-    title: computedSEO.value.title,
-    meta: [
-      computedSEO.value.description
-        ? {
-            hid: 'description',
-            name: 'description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      { hid: 'og:title', property: 'og:title', content: computedSEO.value.title },
-      computedSEO.value.description
-        ? {
-            hid: 'og:description',
-            property: 'og:description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      computedSEO.value.image
-        ? {
-            hid: 'og:image',
-            property: 'og:image',
-            content: computedSEO.value.image.url
-              ? computedSEO.value.image.url
-              : computedSEO.value.image,
-          }
-        : {},
-      { hid: 'og:url', property: 'og:url', content: fullURL },
-    ],
-    link: [
-      projectMetadata.value['selectedCSSPreset'] &&
-      projectMetadata.value['selectedCSSPreset'].name &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'Other' &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'None'
-        ? {
-            rel: 'stylesheet',
-            href: projectMetadata.value['selectedCSSPreset'].url,
-          }
-        : projectMetadata.value['selectedCSSPreset'] &&
-            projectMetadata.value['selectedCSSPreset'].name &&
-            projectMetadata.value['selectedCSSPreset'].name !== 'None' &&
-            projectMetadata.value['media'] &&
-            projectMetadata.value['media'].url
-          ? {
-              rel: 'stylesheet',
-              href: projectMetadata.value['media'].url,
-            }
-          : {},
-      pageMetadata.value['media'] && pageMetadata.value['media'].url
-        ? {
-            id: 'page-selected-css',
-            rel: 'stylesheet',
-            href: pageMetadata.value['media'].url,
-          }
-        : {},
-      projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url
-        ? {
-            rel: 'icon',
-            type: 'image/png',
-            href: projectMetadata.value['favicon'].url,
-          }
-        : {},
-    ],
-  }
+  return buildSectionsHeadConfig({
+    locale: i18n.locale.value,
+    computedSEO: computedSEO.value,
+    projectMetadata: projectMetadata.value,
+    pageMetadata: pageMetadata.value,
+    fullURL,
+    previewState: headPreviewState.value,
+  })
 })
 
 // Methods (now as regular functions)
@@ -494,6 +450,8 @@ const initializeSectionsCMSEvents = () => {
   }
 }
 const initializeSections = (res, skipHook) => {
+  resetHeadPreview()
+
   if (skipHook !== true) {
     nuxtApp.callHook('page_pre_render', res)
   }
@@ -585,13 +543,11 @@ const initializeSections = (res, skipHook) => {
     originalBuilderSettings.value = res.data.metadata.project_metadata
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
-      if (builderHooksJavascript['initialize_builder_settings']) {
-        builderHooksJavascript['initialize_builder_settings'](
-          originalBuilderSettings.value,
-          useHead,
-          currentSettingsTab.value
-        )
-      }
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_builder_settings'],
+        [originalBuilderSettings.value, useHead, currentSettingsTab.value],
+        setHeadPreview
+      )
     } catch {}
   }
 
@@ -599,9 +555,11 @@ const initializeSections = (res, skipHook) => {
     originalThemeSettings.value = { ...res.data.metadata.sections_builder }
     try {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`)
-      if (builderHooksJavascript['initialize_theme_settings']) {
-        builderHooksJavascript['initialize_theme_settings'](originalThemeSettings.value, useHead)
-      }
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_theme_settings'],
+        [originalThemeSettings.value, useHead],
+        setHeadPreview
+      )
     } catch {}
   }
 

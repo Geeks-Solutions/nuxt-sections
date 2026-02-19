@@ -125,20 +125,39 @@ Hooks for custom builder tabs in metadata/settings sidebar.
 
 ```js
 // sections/builder/settings/builder-hooks.js
-export const initialize_builder_settings = (originalBuilderSettings, useHead, currentTab) => {}
+export const initialize_builder_settings = (
+  originalBuilderSettings,
+  useHead,
+  currentTab,
+  setHeadPreview
+) => {}
 export const handle_unsaved_settings = (isEqual, originalBuilderSettings, updated, tab) => false
-export const builder_settings_payload = (originalBuilderSettings, settings, currentTab) => ({})
+export const builder_settings_payload = (
+  originalBuilderSettings,
+  settings,
+  currentTab,
+  setHeadPreview
+) => ({})
 export const update_tab_title = (tab) => tab
 export const reset_builder_settings = (originalBuilderSettings, tab) => ({})
 ```
 
 Supported hooks:
 
-- `initialize_builder_settings(originalBuilderSettings, useHead, currentSettingsTab)`
+- `initialize_builder_settings(originalBuilderSettings, useHead, currentSettingsTab[, setHeadPreview])`
 - `handle_unsaved_settings(isEqual, originalBuilderSettings, updatedSettings, tab)`
-- `builder_settings_payload(originalBuilderSettings, settings, currentSettingsTab)`
+- `builder_settings_payload(originalBuilderSettings, settings, currentSettingsTab[, setHeadPreview])`
 - `update_tab_title(tab)`
 - `reset_builder_settings(originalBuilderSettings, tab)`
+
+`setHeadPreview` is optional and only passed when the hook declares one extra argument.
+Use it to update head content client-side as a preview without saving to the API.
+It accepts one object with optional keys:
+
+- `projectMetadata`
+- `pageMetadata`
+- `computedSEO`
+- `head` (supports `title`, `titleTemplate`, `base`, `meta`, `link`, `style`, `script`, `noscript`, `htmlAttrs`, `bodyAttrs`)
 
 ## File: `sections/theme/theme-hooks.js`
 
@@ -146,7 +165,7 @@ Hooks for per-section theme settings tabs.
 
 ```js
 // sections/theme/theme-hooks.js
-export const initialize_theme_settings = (originalThemeSettings, useHead) => {}
+export const initialize_theme_settings = (originalThemeSettings, useHead, setHeadPreview) => {}
 export const section_removed = (originalThemeSettings, removedSectionId) => originalThemeSettings
 export const handle_unsaved_settings = (
   isEqual,
@@ -155,17 +174,26 @@ export const handle_unsaved_settings = (
   tab,
   section
 ) => false
-export const theme_settings_payload = (originalThemeSettings, settings, tabId, section) => ({})
+export const theme_settings_payload = (
+  originalThemeSettings,
+  settings,
+  tabId,
+  section,
+  setHeadPreview
+) => ({})
 export const reset_theme_settings = (originalThemeSettings, section, tabId) => ({})
 ```
 
 Supported hooks:
 
-- `initialize_theme_settings(originalThemeSettings, useHead)`
+- `initialize_theme_settings(originalThemeSettings, useHead[, setHeadPreview])`
 - `section_removed(originalThemeSettings, removedSectionId)`
 - `handle_unsaved_settings(isEqual, originalThemeSettings, currentTheme, tab, section)`
-- `theme_settings_payload(originalThemeSettings, settings, tabId, section)`
+- `theme_settings_payload(originalThemeSettings, settings, tabId, section[, setHeadPreview])`
 - `reset_theme_settings(originalThemeSettings, section, tabId)`
+
+`setHeadPreview` is optional and only passed when the hook declares one extra argument.
+Use it to update head content client-side as a preview without saving to the API.
 
 ## Practical Tips
 

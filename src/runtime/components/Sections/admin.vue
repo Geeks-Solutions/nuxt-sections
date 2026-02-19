@@ -2328,6 +2328,13 @@ import {
 } from '../../utils/SectionsCMSBridge/functions.js'
 import { camelCase, upperFirst, isEqual } from 'lodash-es'
 import { getMySectionsPages, loadScript, validatePagePath } from '../../utils/helpers.js'
+import {
+  buildSectionsHeadConfig,
+  buildSectionsLinksWithPreview,
+  createHeadPreviewState,
+  mergeHeadPreviewState,
+  runHookWithHeadPreview,
+} from '../../utils/head-management.js'
 
 const {
   pageName,
@@ -2547,6 +2554,15 @@ const computedSEO = useState('computedSEO', () => ({
   description: '',
   image: '',
 }))
+const headPreviewState = ref(createHeadPreviewState())
+
+const setHeadPreview = (payload = {}) => {
+  headPreviewState.value = mergeHeadPreviewState(headPreviewState.value, payload)
+}
+
+const resetHeadPreview = () => {
+  headPreviewState.value = createHeadPreviewState()
+}
 const sectionsUserId = useState('sectionsUserId', () => '')
 const displayedErrorFormat = ref('')
 const invalidSectionsErrors = ref({})
@@ -2891,73 +2907,14 @@ useHead(() => {
 
   const fullURL = baseURL + route.fullPath
 
-  return {
-    htmlAttrs: {
-      lang: i18n.locale.value,
-    },
-    title: computedSEO.value.title,
-    meta: [
-      computedSEO.value.description
-        ? {
-            hid: 'description',
-            name: 'description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      { hid: 'og:title', property: 'og:title', content: computedSEO.value.title },
-      computedSEO.value.description
-        ? {
-            hid: 'og:description',
-            property: 'og:description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      computedSEO.value.image
-        ? {
-            hid: 'og:image',
-            property: 'og:image',
-            content: computedSEO.value.image.url
-              ? computedSEO.value.image.url
-              : computedSEO.value.image,
-          }
-        : {},
-      { hid: 'og:url', property: 'og:url', content: fullURL },
-    ],
-    link: [
-      projectMetadata.value['selectedCSSPreset'] &&
-      projectMetadata.value['selectedCSSPreset'].name &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'Other' &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'None'
-        ? {
-            rel: 'stylesheet',
-            href: projectMetadata.value['selectedCSSPreset'].url,
-          }
-        : projectMetadata.value['selectedCSSPreset'] &&
-            projectMetadata.value['selectedCSSPreset'].name &&
-            projectMetadata.value['selectedCSSPreset'].name !== 'None' &&
-            projectMetadata.value['media'] &&
-            projectMetadata.value['media'].url
-          ? {
-              rel: 'stylesheet',
-              href: projectMetadata.value['media'].url,
-            }
-          : {},
-      pageMetadata.value['media'] && pageMetadata.value['media'].url
-        ? {
-            id: 'page-selected-css',
-            rel: 'stylesheet',
-            href: pageMetadata.value['media'].url,
-          }
-        : {},
-      projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url
-        ? {
-            rel: 'icon',
-            type: 'image/png',
-            href: projectMetadata.value['favicon'].url,
-          }
-        : {},
-    ],
-  }
+  return buildSectionsHeadConfig({
+    locale: i18n.locale.value,
+    computedSEO: computedSEO.value,
+    projectMetadata: projectMetadata.value,
+    pageMetadata: pageMetadata.value,
+    fullURL,
+    previewState: headPreviewState.value,
+  })
 })
 
 // Methods (now as regular functions)
@@ -3142,6 +3099,8 @@ const initializeSectionsCMSEvents = () => {
   }
 }
 const initializeSections = (res, skipHook) => {
+  resetHeadPreview()
+
   if (skipHook !== true) {
     nuxtApp.callHook('page_pre_render', res)
   }
@@ -3232,13 +3191,11 @@ const initializeSections = (res, skipHook) => {
     originalBuilderSettings.value = { ...res.data.metadata.project_metadata }
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
-      if (builderHooksJavascript['initialize_builder_settings']) {
-        builderHooksJavascript['initialize_builder_settings'](
-          originalBuilderSettings.value,
-          useHead,
-          currentSettingsTab.value
-        )
-      }
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_builder_settings'],
+        [originalBuilderSettings.value, useHead, currentSettingsTab.value],
+        setHeadPreview
+      )
     } catch {}
   }
 
@@ -3246,9 +3203,11 @@ const initializeSections = (res, skipHook) => {
     originalThemeSettings.value = { ...res.data.metadata.sections_builder }
     try {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`)
-      if (builderHooksJavascript['initialize_theme_settings']) {
-        builderHooksJavascript['initialize_theme_settings'](originalThemeSettings.value, useHead)
-      }
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_theme_settings'],
+        [originalThemeSettings.value, useHead],
+        setHeadPreview
+      )
     } catch {}
   }
 
@@ -3544,12 +3503,13 @@ const builderSettingUpdated = (settings) => {
 
   try {
     const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
-    if (builderHooksJavascript['builder_settings_payload']) {
-      builderSettingsPayload.value = builderHooksJavascript['builder_settings_payload'](
-        originalBuilderSettings.value,
-        settings,
-        currentSettingsTab.value
-      )
+    const payload = runHookWithHeadPreview(
+      builderHooksJavascript['builder_settings_payload'],
+      [originalBuilderSettings.value, settings, currentSettingsTab.value],
+      setHeadPreview
+    )
+    if (payload !== undefined) {
+      builderSettingsPayload.value = payload
     }
   } catch {}
 
@@ -3559,6 +3519,39 @@ const builderSettingUpdated = (settings) => {
 const updateBuilderSettingsMetaData = () => {
   updateProjectMetadata()
 }
+
+const syncProjectMetadataForHead = (metadata = {}) => {
+  if (!metadata || typeof metadata !== 'object') {
+    return
+  }
+
+  if (Object.prototype.hasOwnProperty.call(metadata, 'selectedCSSPreset')) {
+    projectMetadata.value.selectedCSSPreset = metadata.selectedCSSPreset
+  }
+  if (Object.prototype.hasOwnProperty.call(metadata, 'media')) {
+    projectMetadata.value.media = metadata.media
+  }
+  if (Object.prototype.hasOwnProperty.call(metadata, 'favicon')) {
+    projectMetadata.value.favicon = metadata.favicon
+  }
+}
+
+const syncPageMetadataForHead = (metadata = {}) => {
+  if (!metadata || typeof metadata !== 'object') {
+    return
+  }
+
+  if (Object.prototype.hasOwnProperty.call(metadata, 'media')) {
+    pageMetadata.value.media = metadata.media
+  }
+  if (Object.prototype.hasOwnProperty.call(metadata, 'seo')) {
+    pageMetadata.value.seo = metadata.seo
+  }
+  if (Object.prototype.hasOwnProperty.call(metadata, 'mediaMetatag')) {
+    pageMetadata.value.mediaMetatag = metadata.mediaMetatag
+  }
+}
+
 const updateProjectMetadata = async (payload, external_call) => {
   if (external_call !== true) {
     loading.value = true
@@ -3596,6 +3589,11 @@ const updateProjectMetadata = async (payload, external_call) => {
             return
           }
 
+          if (res.data && res.data.metadata) {
+            syncProjectMetadataForHead(res.data.metadata)
+            resetHeadPreview()
+          }
+
           unsavedSettingsError.value[currentSettingsTab.value] = false
 
           const hasUnsavedSettings = Object.values(unsavedSettingsError.value).includes(true)
@@ -3610,6 +3608,9 @@ const updateProjectMetadata = async (payload, external_call) => {
           }
 
           showToast('Success', 'success', i18n.t('successSettingsChanges'))
+        } else if (res.data && res.data.metadata) {
+          syncProjectMetadataForHead(res.data.metadata)
+          resetHeadPreview()
         }
       },
       onError: (error) => {
@@ -3756,8 +3757,12 @@ const updatePageMetaData = async (seo, themeData) => {
           return
         }
 
-        if (res.data.metadata.seo) {
-          pageMetadata.value.seo = res.data.metadata.seo
+        if (res.data && res.data.metadata) {
+          syncPageMetadataForHead(res.data.metadata)
+          if (res.data.metadata.project_metadata) {
+            syncProjectMetadataForHead(res.data.metadata.project_metadata)
+          }
+          resetHeadPreview()
         }
         originalMetaData.value = res.data.metadata
         originalMetaData.value.pagePath = res.data.path
@@ -6928,40 +6933,14 @@ const clearCookies = () => {
 }
 const logoutUser = () => {
   clearCookies()
-  emit('user-logged-out', [
-    projectMetadata.value['selectedCSSPreset'] &&
-    projectMetadata.value['selectedCSSPreset'].name &&
-    projectMetadata.value['selectedCSSPreset'].name !== 'Other' &&
-    projectMetadata.value['selectedCSSPreset'].name !== 'None'
-      ? {
-          rel: 'stylesheet',
-          href: projectMetadata.value['selectedCSSPreset'].url,
-        }
-      : projectMetadata.value['selectedCSSPreset'] &&
-          projectMetadata.value['selectedCSSPreset'].name &&
-          projectMetadata.value['selectedCSSPreset'].name !== 'None' &&
-          projectMetadata.value['media'] &&
-          projectMetadata.value['media'].url
-        ? {
-            rel: 'stylesheet',
-            href: projectMetadata.value['media'].url,
-          }
-        : {},
-    pageMetadata.value['media'] && pageMetadata.value['media'].url
-      ? {
-          id: 'page-selected-css',
-          rel: 'stylesheet',
-          href: pageMetadata.value['media'].url,
-        }
-      : {},
-    projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url
-      ? {
-          rel: 'icon',
-          type: 'image/png',
-          href: projectMetadata.value['favicon'].url,
-        }
-      : {},
-  ])
+  emit(
+    'user-logged-out',
+    buildSectionsLinksWithPreview({
+      projectMetadata: projectMetadata.value,
+      pageMetadata: pageMetadata.value,
+      previewState: headPreviewState.value,
+    })
+  )
   window.location.reload()
 }
 const checkIntroLastStep = (topic) => {
@@ -7035,13 +7014,18 @@ const switchThemeTab = (tab) => {
 const sectionThemeUpdated = (settings) => {
   try {
     const builderHooksJavascript = importJs(`/theme/theme-hooks`)
-    if (builderHooksJavascript['theme_settings_payload']) {
-      themeSettingsPayload.value = builderHooksJavascript['theme_settings_payload'](
+    const payload = runHookWithHeadPreview(
+      builderHooksJavascript['theme_settings_payload'],
+      [
         originalThemeSettings.value,
         settings,
         currentThemeTab.value.id,
-        currentSectionData.value.section
-      )
+        currentSectionData.value.section,
+      ],
+      setHeadPreview
+    )
+    if (payload !== undefined) {
+      themeSettingsPayload.value = payload
     }
   } catch {}
 
