@@ -14,8 +14,8 @@
         :class="{ 'sections-aside-z': introSectionFormStep === true }"
       >
         <div
-          class="step-back-aside"
           v-if="currentSection && creationView"
+          class="step-back-aside"
           @click="openRestoreModal('section', { backToAddSectionList: true })"
         >
           <LazyBaseIconsBack />
@@ -53,16 +53,8 @@
             <LazyBaseTypesStatic
               v-if="currentSection.type === 'static'"
               :props="currentSection"
-              @addSectionType="
-                (section) =>
-                  currentSection.instance === true
-                    ? currentSection.linked_to !== '' && currentSection.linked_to !== undefined
-                      ? updateGlobalType(section)
-                      : addNewGlobalType(section)
-                    : addSectionType(section)
-              "
-              :savedView="savedView"
-              :creationView="creationView"
+              :saved-view="savedView"
+              :creation-view="creationView"
               :locales="locales"
               :default-lang="defaultLang"
               :translation-component-support="translationComponentSupport"
@@ -70,14 +62,7 @@
               :instance="currentSection.instance === true"
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
               :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
-              @load="(value) => (loading = value)"
-              @promote-section="currentSection = { ...currentSection, instance: true }"
-              @creationViewLoaded="updateCreationView"
-            />
-            <LazyBaseTypesDynamic
-              v-if="currentSection.type === 'dynamic'"
-              :props="currentSection"
-              @addSectionType="
+              @add-section-type="
                 (section) =>
                   currentSection.instance === true
                     ? currentSection.linked_to !== '' && currentSection.linked_to !== undefined
@@ -85,19 +70,20 @@
                       : addNewGlobalType(section)
                     : addSectionType(section)
               "
-              @errorAddingSection="errorAddingSection"
-              :savedView="savedView"
+              @load="(value) => (loading = value)"
+              @promote-section="currentSection = { ...currentSection, instance: true }"
+              @creation-view-loaded="updateCreationView"
+            />
+            <LazyBaseTypesDynamic
+              v-if="currentSection.type === 'dynamic'"
+              :props="currentSection"
+              :saved-view="savedView"
               :headers="headers"
               :instance="currentSection.instance === true"
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
               :base-path="pagePath"
               :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
-              @load="(value) => (loading = value)"
-            />
-            <LazyBaseTypesConfigurable
-              v-if="currentSection.type === 'configurable'"
-              ref="sectionsConfigurableType"
-              @addSectionType="
+              @add-section-type="
                 (section) =>
                   currentSection.instance === true
                     ? currentSection.linked_to !== '' && currentSection.linked_to !== undefined
@@ -105,9 +91,14 @@
                       : addNewGlobalType(section)
                     : addSectionType(section)
               "
-              @errorAddingSection="errorAddingSection"
+              @error-adding-section="errorAddingSection"
+              @load="(value) => (loading = value)"
+            />
+            <LazyBaseTypesConfigurable
+              v-if="currentSection.type === 'configurable'"
+              ref="sectionsConfigurableType"
               :props="currentSection"
-              :savedView="savedView"
+              :saved-view="savedView"
               :headers="headers"
               :locales="locales"
               :default-lang="defaultLang"
@@ -118,17 +109,26 @@
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
               :base-path="pagePath"
               :is-side-bar-open="isSideBarOpen && !currentSidebarKeepEditBar"
-              @loadReference="sectionsConfigurableTypeReference.value = sectionsConfigurableType"
+              @add-section-type="
+                (section) =>
+                  currentSection.instance === true
+                    ? currentSection.linked_to !== '' && currentSection.linked_to !== undefined
+                      ? updateGlobalType(section)
+                      : addNewGlobalType(section)
+                    : addSectionType(section)
+              "
+              @error-adding-section="errorAddingSection"
+              @load-reference="sectionsConfigurableTypeReference.value = sectionsConfigurableType"
               @load="(value) => (loading = value)"
               @promote-section="currentSection = { ...currentSection, instance: true }"
             />
             <LazyBaseTypesLocal
               v-if="currentSection.type === 'local'"
               :props="currentSection"
-              :savedView="savedView"
+              :saved-view="savedView"
               :instance="currentSection.instance === true"
               :linked="currentSection.linked_to !== '' && currentSection.linked_to !== undefined"
-              @addSectionType="
+              @add-section-type="
                 (section) =>
                   currentSection.instance === true
                     ? currentSection.linked_to !== '' && currentSection.linked_to !== undefined
@@ -155,7 +155,7 @@
             "
             :locales="locales"
             :default-lang="defaultLang"
-            @setFormLang="(locale) => (metadataFormLang = locale)"
+            @set-form-lang="(locale) => (metadataFormLang = locale)"
           />
           <div
             v-if="currentSettingsTab === 'page_settings'"
@@ -175,11 +175,11 @@
                     {{ $t('pathFieldDesc') }}
                   </div>
                   <input
+                    v-model="pagePath"
                     class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                     type="text"
-                    v-model="pagePath"
                   />
-                  <span class="pagePathRequiredStyle" v-show="metadataErrors.path[0] !== ''">{{
+                  <span v-show="metadataErrors.path[0] !== ''" class="pagePathRequiredStyle">{{
                     metadataErrors.path[0]
                   }}</span>
                   <div class="flexSections metadataFields">
@@ -188,17 +188,17 @@
                         {{ $t('pageTitle') }}
                       </div>
                       <input
+                        v-model="pageMetadata[metadataFormLang].title"
                         class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata[metadataFormLang].title"
                       />
                       <div class="sections-mt-2 sectionsFieldsLabels">
                         {{ $t('pageSeoDesc') }}
                       </div>
                       <textarea
+                        v-model="pageMetadata[metadataFormLang].description"
                         class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none"
                         type="text"
-                        v-model="pageMetadata[metadataFormLang].description"
                       />
                     </div>
                   </div>
@@ -219,8 +219,8 @@
                           ? [pageMetadata['mediaMetatag']]
                           : []
                       "
-                      @uploadContainerClicked="handleMetadataMediaOpen('mediaMetatag')"
-                      @removeUploadedImage="removeMedia('mediaMetatag')"
+                      @upload-container-clicked="handleMetadataMediaOpen('mediaMetatag')"
+                      @remove-uploaded-image="removeMedia('mediaMetatag')"
                     />
                   </div>
                   <div>
@@ -228,6 +228,7 @@
                       {{ $t('CSS') }}
                     </div>
                     <LazyMediasUploadMedia
+                      id="page-css"
                       :is-document="true"
                       :media-label="''"
                       :upload-text="$t('mediaComponent.Upload')"
@@ -238,13 +239,13 @@
                           ? [pageMetadata['media']]
                           : []
                       "
-                      @uploadContainerClicked="handleMetadataMediaOpen('media', 'document')"
-                      @removeUploadedImage="removeMedia('media')"
+                      @upload-container-clicked="handleMetadataMediaOpen('media', 'document')"
+                      @remove-uploaded-image="removeMedia('media')"
                     />
                     <LazyMediasMediaComponent
                       ref="sectionsMediaComponent"
                       :sections-user-id="sectionsUserId"
-                      @emittedMedia="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"
+                      @emitted-media="(mediaObject) => selectedCSS(mediaObject, selectedMediaType)"
                     ></LazyMediasMediaComponent>
                   </div>
                 </div>
@@ -376,30 +377,30 @@
           (admin && isSideBarOpen === true && dynamicSideComponent === true)
         "
         class="sections-resize-handle--x"
-        @mousedown="startTracking"
         data-target="aside"
+        @mousedown="startTracking"
       ></div>
       <main ref="sectionsMainTarget" class="sections-main">
         <div class="sections-config sections-justify-center">
           <div v-if="!pageNotFound">
             <!-- This is the Admin page section when admin user can edit/move/delete/create/add/import/export/restore sections to the page -->
             <button
-              :ref="!editMode ? 'intro-edit-page' : undefined"
-              @click="openEditMode()"
               v-if="admin && (!isSideBarOpen || currentSidebarKeepEditBar)"
+              :ref="!editMode ? 'intro-edit-page' : undefined"
               class="intro-edit-page sections-bg-blue control-button hide-mobile btn-text edit-page"
               :title="!editMode ? $t('Edit page') : $t('View page')"
+              @click="openEditMode()"
             >
               <LazyBaseIconsEdit v-if="!editMode" />
               <LazyBaseIconsEye v-else />
             </button>
             <div
-              class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper"
               ref="sectionWrapper"
+              class="bg-light-grey-hp hide-mobile section-wrapper config-wrapper"
             >
               <div
-                class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
                 v-if="admin && editMode && (!isSideBarOpen || currentSidebarKeepEditBar)"
+                class="flexSections sections-flex-row sections-justify-center hide-mobile edit-mode-wrapper"
               >
                 <div class="flexSections sections-flex-row sections-justify-center top-bar-wrapper">
                   <div class="flexSections top-bar-page-content-wrapper">
@@ -428,9 +429,10 @@
                       </div>
                     </button>
 
-                    <LazyBaseHelperComponentsBurgerMenu>
+                    <LazyBaseHelperComponentsBurgerMenu id="page-menu">
                       <template #content>
                         <button
+                          id="import-page"
                           class="hp-button"
                           :class="selectedVariation === pageName ? 'danger' : 'grey'"
                           data-toggle="tooltip"
@@ -446,10 +448,11 @@
                         <input
                           ref="jsonFilePick"
                           type="file"
-                          @change="(e) => importSections(e)"
                           style="display: none"
+                          @change="(e) => importSections(e)"
                         />
                         <button
+                          id="export-page"
                           class="hp-button"
                           :class="selectedVariation === pageName ? 'danger' : 'grey'"
                           data-toggle="tooltip"
@@ -464,6 +467,7 @@
                         </button>
                         <a id="downloadAnchorElem" style="display: none"></a>
                         <button
+                          id="page-settings"
                           class="hp-button"
                           :class="selectedVariation === pageName ? 'danger' : 'grey'"
                           data-toggle="tooltip"
@@ -502,8 +506,8 @@
                             <div class="layoutSelect-container">
                               <div class="layoutSelect-select-wrapper">
                                 <select
-                                  v-model="selectedLayout"
                                   id="select"
+                                  v-model="selectedLayout"
                                   name="select"
                                   class="layoutSelect-select"
                                   @change="computeLayoutData"
@@ -528,9 +532,9 @@
                               <span class="mainmsg">{{ $t('highlightRegions') }}</span>
                               <label class="switch">
                                 <input
-                                  type="checkbox"
                                   id="highlightRegions"
                                   v-model="highlightRegions"
+                                  type="checkbox"
                                 />
                                 <span class="slider round"></span>
                               </label>
@@ -587,7 +591,7 @@
                       </div>
                     </button>
 
-                    <LazyBaseHelperComponentsBurgerMenu>
+                    <LazyBaseHelperComponentsBurgerMenu id="content-menu">
                       <template #content>
                         <div class="flexSections">
                           <button
@@ -631,7 +635,7 @@
                       <div class="btn-text intro">?</div>
                     </button>
 
-                    <LazyBaseHelperComponentsBurgerMenu class="settings">
+                    <LazyBaseHelperComponentsBurgerMenu id="global-settings" class="settings">
                       <template #trigger>
                         <button class="hp-button" type="button">
                           <div class="save-icon">
@@ -644,6 +648,7 @@
                           v-for="tab in updatedPageSettingsTabs
                             .filter((tab) => tab !== 'page_settings')
                             .reverse()"
+                          :id="tab"
                           :key="`page-settings-tab-${tab}`"
                           class="hp-button"
                           :class="selectedVariation === pageName ? 'danger' : 'grey'"
@@ -711,15 +716,15 @@
                       >
                         <div>{{ $t('filterBy') }}</div>
                         <input
+                          v-model="sectionsFilterName"
                           class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-w-full focus:outline-none sectionsFilterName"
                           type="text"
                           :placeholder="$t('filterName')"
-                          v-model="sectionsFilterName"
                         />
                         <div v-if="typesTab !== 'inventoryTypes'" class="relativeSections">
                           <select
-                            v-model="sectionsFilterAppName"
                             id="select"
+                            v-model="sectionsFilterAppName"
                             name="select"
                             class="layoutSelect-select"
                           >
@@ -763,7 +768,7 @@
                       <LazyBaseIconsClose />
                     </div>
                   </div>
-                  <div class="step-back" v-if="currentSection" @click="currentSection = null">
+                  <div v-if="currentSection" class="step-back" @click="currentSection = null">
                     <LazyBaseIconsBack />
                   </div>
 
@@ -1016,11 +1021,11 @@
                       </button>
                     </div>
                     <div
-                      class="section-item section-item-box"
                       v-for="(type, index) in isCreateInstance === true
                         ? filteredGlobalTypes.filter((gt) => gt.notCreated === true)
                         : filteredGlobalTypes.filter((gt) => gt.id !== undefined)"
                       :key="`${type.name}-${index}`"
+                      class="section-item section-item-box"
                     >
                       <div
                         v-if="
@@ -1121,17 +1126,8 @@
                       <LazyBaseTypesStatic
                         v-if="currentSection.type === 'static'"
                         :props="currentSection"
-                        @addSectionType="
-                          (section) =>
-                            currentSection.instance === true
-                              ? currentSection.linked_to !== '' &&
-                                currentSection.linked_to !== undefined
-                                ? updateGlobalType(section)
-                                : addNewGlobalType(section)
-                              : addSectionType(section)
-                        "
-                        :savedView="savedView"
-                        :creationView="creationView"
+                        :saved-view="savedView"
+                        :creation-view="creationView"
                         :locales="locales"
                         :default-lang="defaultLang"
                         :translation-component-support="translationComponentSupport"
@@ -1140,14 +1136,7 @@
                         :linked="
                           currentSection.linked_to !== '' && currentSection.linked_to !== undefined
                         "
-                        @load="(value) => (loading = value)"
-                        @promote-section="currentSection = { ...currentSection, instance: true }"
-                        @creationViewLoaded="updateCreationView"
-                      />
-                      <LazyBaseTypesDynamic
-                        v-if="currentSection.type === 'dynamic'"
-                        :props="currentSection"
-                        @addSectionType="
+                        @add-section-type="
                           (section) =>
                             currentSection.instance === true
                               ? currentSection.linked_to !== '' &&
@@ -1156,20 +1145,21 @@
                                 : addNewGlobalType(section)
                               : addSectionType(section)
                         "
-                        @errorAddingSection="errorAddingSection"
-                        :savedView="savedView"
+                        @load="(value) => (loading = value)"
+                        @promote-section="currentSection = { ...currentSection, instance: true }"
+                        @creation-view-loaded="updateCreationView"
+                      />
+                      <LazyBaseTypesDynamic
+                        v-if="currentSection.type === 'dynamic'"
+                        :props="currentSection"
+                        :saved-view="savedView"
                         :headers="headers"
                         :instance="currentSection.instance === true"
                         :linked="
                           currentSection.linked_to !== '' && currentSection.linked_to !== undefined
                         "
                         :base-path="pagePath"
-                        @load="(value) => (loading = value)"
-                      />
-                      <LazyBaseTypesConfigurable
-                        v-if="currentSection.type === 'configurable'"
-                        ref="sectionsConfigurableType"
-                        @addSectionType="
+                        @add-section-type="
                           (section) =>
                             currentSection.instance === true
                               ? currentSection.linked_to !== '' &&
@@ -1178,9 +1168,14 @@
                                 : addNewGlobalType(section)
                               : addSectionType(section)
                         "
-                        @errorAddingSection="errorAddingSection"
+                        @error-adding-section="errorAddingSection"
+                        @load="(value) => (loading = value)"
+                      />
+                      <LazyBaseTypesConfigurable
+                        v-if="currentSection.type === 'configurable'"
+                        ref="sectionsConfigurableType"
                         :props="currentSection"
-                        :savedView="savedView"
+                        :saved-view="savedView"
                         :headers="headers"
                         :locales="locales"
                         :default-lang="defaultLang"
@@ -1192,7 +1187,17 @@
                           currentSection.linked_to !== '' && currentSection.linked_to !== undefined
                         "
                         :base-path="pagePath"
-                        @loadReference="
+                        @add-section-type="
+                          (section) =>
+                            currentSection.instance === true
+                              ? currentSection.linked_to !== '' &&
+                                currentSection.linked_to !== undefined
+                                ? updateGlobalType(section)
+                                : addNewGlobalType(section)
+                              : addSectionType(section)
+                        "
+                        @error-adding-section="errorAddingSection"
+                        @load-reference="
                           sectionsConfigurableTypeReference.value = sectionsConfigurableType
                         "
                         @load="(value) => (loading = value)"
@@ -1201,12 +1206,12 @@
                       <LazyBaseTypesLocal
                         v-if="currentSection.type === 'local'"
                         :props="currentSection"
-                        :savedView="savedView"
+                        :saved-view="savedView"
                         :instance="currentSection.instance === true"
                         :linked="
                           currentSection.linked_to !== '' && currentSection.linked_to !== undefined
                         "
-                        @addSectionType="
+                        @add-section-type="
                           (section) =>
                             currentSection.instance === true
                               ? currentSection.linked_to !== '' &&
@@ -1443,10 +1448,10 @@
                   <div class="flexSections sections-flex-col sections-gap-4">
                     <div v-for="requiredInput in selectedSectionRequirements">
                       <input
+                        v-model="requirementsInputs[requiredInput]"
                         class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                         type="text"
                         :placeholder="requiredInput"
-                        v-model="requirementsInputs[requiredInput]"
                       />
                     </div>
 
@@ -1546,22 +1551,22 @@
                       {{ $t('pageName') }}
                     </div>
                     <input
+                      v-model="createPageName"
                       class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                       type="text"
-                      v-model="createPageName"
                     />
-                    <span class="pagePathRequiredStyle" v-show="createPageNameError !== ''">{{
+                    <span v-show="createPageNameError !== ''" class="pagePathRequiredStyle">{{
                       createPageNameError
                     }}</span>
                     <div class="sectionsFieldsLabels sections-pt-3">
                       {{ $t('pageUrl') }}
                     </div>
                     <input
+                      v-model="createPagePath"
                       class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                       type="text"
-                      v-model="createPagePath"
                     />
-                    <span class="pagePathRequiredStyle" v-show="createPagePathError !== ''">{{
+                    <span v-show="createPagePathError !== ''" class="pagePathRequiredStyle">{{
                       createPagePathError
                     }}</span>
 
@@ -1613,27 +1618,26 @@
               <draggable
                 v-model="alteredViews"
                 group="people"
-                @start="drag = true"
-                @end="drag = false"
                 handle=".handle"
                 item-key="id"
                 class="draggable-standard"
+                @start="drag = true"
+                @end="drag = false"
               >
                 <!-- <transition-group> -->
                 <template #item="{ element: view, index }">
                   <section
-                    :key="index"
-                    :section-id="view.id"
                     :id="
                       view.linked_to !== '' && view.linked_to !== undefined
                         ? `${view.linked_to}-${view.id}`
                         : `${view.name}-${view.id}`
                     "
+                    :key="index"
+                    :section-id="view.id"
                     :class="{ [view.name]: true, 'view-in-edit-mode': editMode }"
                   >
                     <div class="section-view relativeSections">
                       <div
-                        class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
                         v-if="
                           admin &&
                           editMode &&
@@ -1641,6 +1645,7 @@
                           sectionOptions[view.id] === true &&
                           view.altered !== true
                         "
+                        class="controls flexSections sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute hide-mobile"
                       >
                         <div
                           v-if="
@@ -1652,11 +1657,11 @@
                           <LazyBaseIconsAlert />
                         </div>
                         <div
-                          @click="handleSectionAction('edit', view)"
                           v-if="
                             editable(view.type) ||
                             (view.linked_to !== '' && view.linked_to !== undefined)
                           "
+                          @click="handleSectionAction('edit', view)"
                         >
                           <LazyBaseIconsEdit
                             :color="
@@ -1724,9 +1729,9 @@
                             ? `${view.linked_to} (${view.id})`
                             : `${view.name} (${view.id})`
                         "
-                        @click="toggleSectionsOptions(view.id)"
                         class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer"
                         :class="{ flexSections: !isSideBarOpen }"
+                        @click="toggleSectionsOptions(view.id)"
                       >
                         <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon" />
                       </div>
@@ -1765,8 +1770,8 @@
                           class="error-section-loaded error-section-empty"
                         ></div>
                         <component
-                          v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                           :is="getComponent(view.name, view.type, view)"
+                          v-if="view.settings || view.type === 'local' || view.type === 'dynamic'"
                           :section="view"
                           :lang="lang"
                           :locales="locales"
@@ -1788,11 +1793,11 @@
               >
                 <component
                   :is="getCreationComponent"
+                  ref="creationComponent"
                   :section="createdView"
                   :lang="lang"
                   :locales="locales"
                   :default-lang="defaultLang"
-                  ref="creationComponent"
                 />
               </section>
             </div>
@@ -1809,7 +1814,7 @@
                   (section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])
                 "
               >
-                <template v-for="(slotName, slotIdx) in layoutSlotNames" v-slot:[slotName]>
+                <template v-for="(slotName, slotIdx) in layoutSlotNames" #[slotName]>
                   <!-- Empty div injected to verify the slots              -->
                   <div class="flexSections flex-col">
                     <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
@@ -1847,7 +1852,6 @@
                       </div>
                       <div class="relativeSections">
                         <div
-                          class="controls region region-control flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                           v-if="
                             admin &&
                             editMode &&
@@ -1855,6 +1859,7 @@
                             regionsOptions[slotName] === true &&
                             sectionsThemeComponents[slotName]
                           "
+                          class="controls region region-control flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                         >
                           <div @click="handleRegionTheme(slotName)">
                             <LazyBaseIconsPaintBursh />
@@ -1868,9 +1873,9 @@
                             sectionsThemeComponents[slotName]
                           "
                           :title="'line-1'"
-                          @click="toggleRegionsOptions(slotName)"
                           class="controls region regionOptionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer z-50"
                           :class="{ flexSections: !isSideBarOpen }"
+                          @click="toggleRegionsOptions(slotName)"
                         >
                           <LazyBaseIconsSettings :color="'currentColor'" class="settings-icon" />
                         </div>
@@ -1880,27 +1885,27 @@
                       <draggable
                         v-model="alteredViewsPerRegions[slotName]"
                         group="people"
-                        @start="handleDragState(true)"
-                        @end="handleDragState(false)"
-                        @change="(evt) => logDrag(evt, slotName)"
                         handle=".handle"
                         item-key="id"
                         :class="{
                           'highlighted-regions-plus':
                             alteredViewsPerRegions[slotName].length === 0 && highlightRegions,
                         }"
+                        @start="handleDragState(true)"
+                        @end="handleDragState(false)"
+                        @change="(evt) => logDrag(evt, slotName)"
                       >
                         <!-- <transition-group> -->
                         <template #item="{ element: view, index }">
                           <section
                             v-if="view.region[selectedLayout].slot === slotName"
-                            :key="index"
-                            :section-id="view.id"
                             :id="
                               view.linked_to !== '' && view.linked_to !== undefined
                                 ? `${view.linked_to}-${view.id}`
                                 : `${view.name}-${view.id}`
                             "
+                            :key="index"
+                            :section-id="view.id"
                             :class="{
                               [view.name]: true,
                               'view-in-edit-mode': editMode,
@@ -1909,7 +1914,6 @@
                           >
                             <div class="section-view relativeSections">
                               <div
-                                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                                 v-if="
                                   admin &&
                                   editMode &&
@@ -1917,6 +1921,7 @@
                                   sectionOptions[view.id] === true &&
                                   view.altered !== true
                                 "
+                                class="controls flexSections flex-row justify-center p-1 rounded-xl top-0 right-2 absolute z-9 hide-mobile"
                               >
                                 <div
                                   v-if="
@@ -1928,11 +1933,11 @@
                                   <LazyBaseIconsAlert />
                                 </div>
                                 <div
-                                  @click="handleSectionAction('edit', view, slotName)"
                                   v-if="
                                     editable(view.type) ||
                                     (view.linked_to !== '' && view.linked_to !== undefined)
                                   "
+                                  @click="handleSectionAction('edit', view, slotName)"
                                 >
                                   <LazyBaseIconsEdit
                                     :color="
@@ -2006,9 +2011,9 @@
                                     ? `${view.linked_to} (${view.id})`
                                     : `${view.name} (${view.id})`
                                 "
-                                @click="toggleSectionsOptions(view.id)"
                                 class="controls optionsSettings sections-flex-row sections-justify-center sections-p-1 rounded-xl sections-top-0 sections-right-2 sections-absolute settings-icon-wrapper sections-cursor-pointer"
                                 :class="{ flexSections: !isSideBarOpen }"
+                                @click="toggleSectionsOptions(view.id)"
                               >
                                 <LazyBaseIconsSettings
                                   :color="'currentColor'"
@@ -2046,12 +2051,12 @@
                                   }}
                                 </div>
                                 <component
+                                  :is="getComponent(view.name, view.type, view)"
                                   v-if="
                                     view.settings ||
                                     view.type === 'local' ||
                                     view.type === 'dynamic'
                                   "
-                                  :is="getComponent(view.name, view.type, view)"
                                   :section="view"
                                   :lang="lang"
                                   :locales="locales"
@@ -2080,11 +2085,11 @@
                     >
                       <component
                         :is="getCreationComponent"
+                        ref="creationComponent"
                         :section="createdView"
                         :lang="lang"
                         :locales="locales"
                         :default-lang="defaultLang"
-                        ref="creationComponent"
                       />
                     </section>
                   </div>
@@ -2097,8 +2102,8 @@
             <!-- This is the popup to create a new static section type     -->
             <div
               v-if="staticModal && admin && editMode"
-              :modal-class="'section-modal-main-wrapper'"
               ref="modal"
+              :modal-class="'section-modal-main-wrapper'"
               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
               aria-labelledby="modal-title"
               role="dialog"
@@ -2123,9 +2128,9 @@
                           {{ $t('section-input-title') }}
                         </div>
                         <input
+                          v-model="sectionTypeName"
                           class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
                           type="text"
-                          v-model="sectionTypeName"
                         />
                         <div class="sections-mt-2 sectionsFieldsLabels">
                           {{ $t('fieldNames') }}
@@ -2183,8 +2188,8 @@
             <!-- This is popup to show the successfully created new static section message      -->
             <div
               v-if="staticSuccess && admin && editMode"
-              :modal-class="'section-modal-main-wrapper'"
               ref="modal"
+              :modal-class="'section-modal-main-wrapper'"
               class="sections-fixed sections-z-200 sections-overflow-hidden bg-grey sections-bg-opacity-25 sections-inset-0 sections-p-8 sections-overflow-y-auto modalContainer"
               aria-labelledby="modal-title"
               role="dialog"
@@ -2234,8 +2239,8 @@
           <div v-else>
             <!-- This is to show the create a new page button when the page requested is not found     -->
             <button
-              ref="intro-create-page"
               v-if="admin && errorResponseStatus !== 401"
+              ref="intro-create-page"
               class="intro-create-page hp-button btn-text"
               @click="createNewPage"
             >
@@ -2524,7 +2529,7 @@ const sectionsPageName = ref('')
 const pageMetadata = useState('pageMetadata', () => ({}))
 const projectMetadata = ref({})
 const builderSettingsPayload = ref({})
-let metadataErrors = ref({
+const metadataErrors = ref({
   path: [''],
 })
 const sectionsError = useState('sectionsError', () => '')
@@ -2740,7 +2745,7 @@ const currentViews = computed({
 const alteredViews = computed({
   get: () => {
     let alteredSections = null
-    let hooksJs = importJs(`/js/global-hooks`)
+    const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['page_pre_render'] && pageData.value) {
       if (typeof hooksJs['page_pre_render'] === 'function') {
         alteredSections = hooksJs['page_pre_render'](
@@ -2768,7 +2773,7 @@ const alteredViews = computed({
 const alteredViewsPerRegions = computed({
   get: () => {
     let alteredSections = null
-    let hooksJs = importJs(`/js/global-hooks`)
+    const hooksJs = importJs(`/js/global-hooks`)
     if (
       hooksJs &&
       hooksJs['page_pre_render'] &&
@@ -2878,7 +2883,7 @@ const getCreationComponent = computed(() => {
 
 // Head management
 useHead(() => {
-  const baseURL = process.server
+  const baseURL = import.meta.server
     ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') +
       '://' +
       nuxtApp.ssrContext.event.req?.headers.host
@@ -3454,7 +3459,7 @@ const removeMedia = (media) => {
 const unsavedSettings = (tab) => {
   if (tab === 'page_settings') {
     try {
-      let originalSettings = {}
+      const originalSettings = {}
       locales.value.forEach((locale) => {
         if (originalMetaData.value[locale]) {
           originalSettings[locale] = originalMetaData.value[locale]
@@ -3896,7 +3901,7 @@ const importSections = (e) => {
     const parsedImport = JSON.parse(jsonFileResult)
     const sections = parsedImport.sections
     selectedLayout.value = parsedImport.layout
-    let sectionsNames = []
+    const sectionsNames = []
 
     sections.forEach((section) => {
       sectionsNames.push(section.name)
@@ -4242,13 +4247,13 @@ const getComponentPath = (sectionName, sectionType) => {
   return path
 }
 const componentsSetupData = (sectionName, sectionType) => {
-  let path = getComponentPath(sectionName, sectionType)
+  const path = getComponentPath(sectionName, sectionType)
   if (componentsSetup.value[path]) {
     return componentsSetup.value[path]
   } else return {}
 }
 const getComponentSetup = async (sectionName, sectionType) => {
-  let path = getComponentPath(sectionName, sectionType)
+  const path = getComponentPath(sectionName, sectionType)
   const moduleData = await importComp(path).setup?.then((d) => d.default)
   if (
     moduleData &&
@@ -4355,7 +4360,7 @@ const getAvailableLayouts = () => {
   }
 }
 const getSelectedLayout = () => {
-  let path = `/layouts/${selectedLayout.value}`
+  const path = `/layouts/${selectedLayout.value}`
   if (selectedLayout.value === 'standard') {
     return 'div'
   } else return importComp(path).component
@@ -4367,10 +4372,10 @@ const computeLayoutData = async () => {
   if (selectedLayout.value !== 'standard') {
     sectionsMainErrors.value = []
     sectionsLayoutErrors.value = []
-    let path = `/layouts/${selectedLayout.value}`
+    const path = `/layouts/${selectedLayout.value}`
     layoutSlotNames.value = []
 
-    let layoutComp = await importComp(path).setup?.then((d) => d.default)
+    const layoutComp = await importComp(path).setup?.then((d) => d.default)
     if (!layoutComp?.props) {
       errorInLayout.value = true
       sectionsMainErrors.value.push(i18n.t('layoutErrors.missingComp'))
@@ -4435,7 +4440,7 @@ const computeLayoutData = async () => {
         }
       })
 
-      let selectedLay = selectedLayout.value
+      const selectedLay = selectedLayout.value
       viewsPerRegions.value[slotName] = viewsPerRegions.value[slotName].sort(function (a, b) {
         return a.region[selectedLay].weight - b.region[selectedLay].weight
       })
@@ -4544,7 +4549,7 @@ const logDrag = (evt, slotName) => {
  * Helper function to validate page path against language prefixes
  * Gets available locales from global-hooks and validates the path
  * @param {string} path - The page path to validate
- * @returns {Object} Validation result with valid boolean and error message
+ * @returns {object} Validation result with valid boolean and error message
  */
 const validatePagePathWithLocales = (path) => {
   let availableLocales = []
@@ -5336,7 +5341,7 @@ const addSystemTypes = () => {
   return [...new Set(staticTypes)]
 }
 const buildComp = (staticTypes, views, compType, path) => {
-  let names = staticTypes.map((obj) => {
+  const names = staticTypes.map((obj) => {
     return obj.name
   })
 
@@ -5426,7 +5431,7 @@ const openEditMode = async () => {
       nuxtApp.$sections.queryStringSupport &&
       nuxtApp.$sections.queryStringSupport === 'enabled'
     ) {
-      let query_string = parseQS(
+      const query_string = parseQS(
         encodeURIComponent(pathMatch ? pathMatch : '/'),
         Object.keys(route.query).length !== 0,
         route.query
@@ -6016,7 +6021,7 @@ const mutateVariation = async (variationName) => {
       headers: sectionHeader(header),
     }
 
-    let variables = {
+    const variables = {
       page: sectionsPageName.value,
       path: pagePath.value && pagePath.value !== '' ? pagePath.value.trim() : undefined,
       metadata: {
@@ -6474,9 +6479,9 @@ const authorizeSectionType = async (sectionAppId, index) => {
 
   const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/authorization_fields/${sectionAppId}`
 
-  let authorization_fields = {}
+  const authorization_fields = {}
 
-  for (let requiredItem of selectedSectionRequirements.value) {
+  for (const requiredItem of selectedSectionRequirements.value) {
     authorization_fields[requiredItem] = requirementsInputs.value[requiredItem]
   }
 
@@ -6542,7 +6547,7 @@ const unAuthorizeSectionType = async (sectionAppId, index) => {
 
   const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}`
 
-  let data = {
+  const data = {
     configured_fields: {
       [sectionAppId]: {
         app_status: 'disabled',
@@ -6894,7 +6899,7 @@ const restoreSection = () => {
   currentViews.value = displayVariations.value[selectedVariation.value].views
 }
 const registeredPage = (type) => {
-  let path = `/page_components/${type}`
+  const path = `/page_components/${type}`
   // Assuming importComp is a global function or defined elsewhere
   // In Nuxt 3, you might use defineAsyncComponent instead
   return importComp(path).component
@@ -6904,7 +6909,7 @@ const clearSectionsFilters = () => {
   sectionsFilterAppName.value = ''
 }
 const fire_js = (event_name, event_data) => {
-  if (process.client) {
+  if (import.meta.client) {
     const event = new CustomEvent(event_name, { detail: event_data })
     window.dispatchEvent(event)
   }
@@ -7167,7 +7172,7 @@ if (serverPageData) {
 // Fetch data (initial data loading)
 const fetchData = async () => {
   try {
-    let hooksJavascript = importJs(`/js/global-hooks`)
+    const hooksJavascript = importJs(`/js/global-hooks`)
     if (hooksJavascript['init_params']) {
       const paramsUpdate = hooksJavascript['init_params'](nuxtApp.$sections, {
         qs: route.query,
@@ -7214,10 +7219,10 @@ const fetchData = async () => {
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
-  const inBrowser = process.client
+  const inBrowser = import.meta.client
 
   let websiteDomain = ''
-  const isServer = process.server
+  const isServer = import.meta.server
 
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
@@ -7240,7 +7245,7 @@ const fetchData = async () => {
     ),
   }
 
-  let URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
   let payload = {}
 
@@ -7250,7 +7255,7 @@ const fetchData = async () => {
   } catch {}
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
-    let query_string = parseQS(
+    const query_string = parseQS(
       encodeURIComponent(pathMatch ? pathMatch : '/'),
       Object.keys(route.query).length !== 0,
       route.query
@@ -7263,7 +7268,7 @@ const fetchData = async () => {
     }
   }
 
-  let hooksJs = importJs(`/js/global-hooks`)
+  const hooksJs = importJs(`/js/global-hooks`)
   if (hooksJs && hooksJs['page_pre_load']) {
     // Call only once and check the result
     const hookResult = hooksJs['page_pre_load'](payload)
