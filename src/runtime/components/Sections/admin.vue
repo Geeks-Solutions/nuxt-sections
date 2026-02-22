@@ -2309,7 +2309,6 @@ import {
   showToast,
   useApiRequest,
   useCookie,
-  useHead,
   useI18n,
   useLocalePath,
   useNuxtApp,
@@ -2328,13 +2327,8 @@ import {
 } from '../../utils/SectionsCMSBridge/functions.js'
 import { camelCase, upperFirst, isEqual } from 'lodash-es'
 import { getMySectionsPages, loadScript, validatePagePath } from '../../utils/helpers.js'
-import {
-  buildSectionsHeadConfig,
-  buildSectionsLinksWithPreview,
-  createHeadPreviewState,
-  mergeHeadPreviewState,
-  runHookWithHeadPreview,
-} from '../../utils/head-management.js'
+import { useSectionsHeadManager } from '../../composables/useSectionsHeadManager.js'
+import { runHookWithHeadPreview } from '../../utils/head-management.js'
 
 const {
   pageName,
@@ -2554,15 +2548,15 @@ const computedSEO = useState('computedSEO', () => ({
   description: '',
   image: '',
 }))
-const headPreviewState = ref(createHeadPreviewState())
-
-const setHeadPreview = (payload = {}) => {
-  headPreviewState.value = mergeHeadPreviewState(headPreviewState.value, payload)
-}
-
-const resetHeadPreview = () => {
-  headPreviewState.value = createHeadPreviewState()
-}
+const { applyHead, setHeadPreview, resetHeadPreview, buildLogoutLinks } = useSectionsHeadManager({
+  projectMetadata,
+  pageMetadata,
+  computedSEO,
+  i18n,
+  route,
+  nuxtApp,
+  isHeadOwner: true,
+})
 const sectionsUserId = useState('sectionsUserId', () => '')
 const displayedErrorFormat = ref('')
 const invalidSectionsErrors = ref({})
@@ -2897,26 +2891,6 @@ const getCreationComponent = computed(() => {
   }
 })
 
-// Head management
-useHead(() => {
-  const baseURL = import.meta.server
-    ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') +
-      '://' +
-      nuxtApp.ssrContext.event.req?.headers.host
-    : window.location.origin
-
-  const fullURL = baseURL + route.fullPath
-
-  return buildSectionsHeadConfig({
-    locale: i18n.locale.value,
-    computedSEO: computedSEO.value,
-    projectMetadata: projectMetadata.value,
-    pageMetadata: pageMetadata.value,
-    fullURL,
-    previewState: headPreviewState.value,
-  })
-})
-
 // Methods (now as regular functions)
 
 /* --- Smart DRY Helpers for Multiline template expressions --- */
@@ -3193,7 +3167,7 @@ const initializeSections = (res, skipHook) => {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
       runHookWithHeadPreview(
         builderHooksJavascript['initialize_builder_settings'],
-        [originalBuilderSettings.value, useHead, currentSettingsTab.value],
+        [originalBuilderSettings.value, applyHead, currentSettingsTab.value],
         setHeadPreview
       )
     } catch {}
@@ -3205,7 +3179,7 @@ const initializeSections = (res, skipHook) => {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`)
       runHookWithHeadPreview(
         builderHooksJavascript['initialize_theme_settings'],
-        [originalThemeSettings.value, useHead],
+        [originalThemeSettings.value, applyHead],
         setHeadPreview
       )
     } catch {}
@@ -6933,14 +6907,7 @@ const clearCookies = () => {
 }
 const logoutUser = () => {
   clearCookies()
-  emit(
-    'user-logged-out',
-    buildSectionsLinksWithPreview({
-      projectMetadata: projectMetadata.value,
-      pageMetadata: pageMetadata.value,
-      previewState: headPreviewState.value,
-    })
-  )
+  emit('user-logged-out', buildLogoutLinks())
   window.location.reload()
 }
 const checkIntroLastStep = (topic) => {

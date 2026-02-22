@@ -175,7 +175,6 @@ import {
   showToast,
   useApiRequest,
   useCookie,
-  useHead,
   useI18n,
   useLocalePath,
   useNuxtApp,
@@ -187,12 +186,8 @@ import {
   useScript,
 } from '#imports'
 import { loadScript } from '../../utils/helpers.js'
-import {
-  buildSectionsHeadConfig,
-  createHeadPreviewState,
-  mergeHeadPreviewState,
-  runHookWithHeadPreview,
-} from '../../utils/head-management.js'
+import { useSectionsHeadManager } from '../../composables/useSectionsHeadManager.js'
+import { runHookWithHeadPreview } from '../../utils/head-management.js'
 
 const { pageName, admin, variations, lang, viewsBgColor, sectionsPageData } = defineProps({
   pageName: {
@@ -309,15 +304,15 @@ const seoSectionsSupport = ref({})
 const sectionsQueryStringLanguageSupport = ref([])
 
 const originalThemeSettings = ref({})
-const headPreviewState = ref(createHeadPreviewState())
-
-const setHeadPreview = (payload = {}) => {
-  headPreviewState.value = mergeHeadPreviewState(headPreviewState.value, payload)
-}
-
-const resetHeadPreview = () => {
-  headPreviewState.value = createHeadPreviewState()
-}
+const { applyHead, setHeadPreview, resetHeadPreview } = useSectionsHeadManager({
+  projectMetadata,
+  pageMetadata,
+  computedSEO,
+  i18n,
+  route,
+  nuxtApp,
+  isHeadOwner: computed(() => !admin),
+})
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -416,26 +411,6 @@ const alteredViewsPerRegions = computed({
   set: (newValue) => {
     viewsPerRegions.value = newValue
   },
-})
-
-// Head management
-useHead(() => {
-  const baseURL = import.meta.server
-    ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') +
-      '://' +
-      nuxtApp.ssrContext.event.req?.headers.host
-    : window.location.origin
-
-  const fullURL = baseURL + route.fullPath
-
-  return buildSectionsHeadConfig({
-    locale: i18n.locale.value,
-    computedSEO: computedSEO.value,
-    projectMetadata: projectMetadata.value,
-    pageMetadata: pageMetadata.value,
-    fullURL,
-    previewState: headPreviewState.value,
-  })
 })
 
 // Methods (now as regular functions)
@@ -545,7 +520,7 @@ const initializeSections = (res, skipHook) => {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
       runHookWithHeadPreview(
         builderHooksJavascript['initialize_builder_settings'],
-        [originalBuilderSettings.value, useHead, currentSettingsTab.value],
+        [originalBuilderSettings.value, applyHead, currentSettingsTab.value],
         setHeadPreview
       )
     } catch {}
@@ -557,7 +532,7 @@ const initializeSections = (res, skipHook) => {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`)
       runHookWithHeadPreview(
         builderHooksJavascript['initialize_theme_settings'],
-        [originalThemeSettings.value, useHead],
+        [originalThemeSettings.value, applyHead],
         setHeadPreview
       )
     } catch {}
@@ -1188,7 +1163,7 @@ const fire_js = (event_name, event_data) => {
 }
 
 const userLoggedOut = (links) => {
-  useHead({
+  applyHead({
     link: links,
   })
 }

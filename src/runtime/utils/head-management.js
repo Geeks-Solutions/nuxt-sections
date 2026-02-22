@@ -1,6 +1,18 @@
 const HEAD_ARRAY_KEYS = ['meta', 'link', 'style', 'script', 'noscript']
 const HEAD_OBJECT_KEYS = ['htmlAttrs', 'bodyAttrs']
 const ROOT_HEAD_KEYS = ['title', 'titleTemplate', 'base', ...HEAD_ARRAY_KEYS, ...HEAD_OBJECT_KEYS]
+const PROJECT_CSS_PRIORITY = 59
+const PAGE_CSS_PRIORITY = 60
+const MANAGED_LINK_SLOT_BY_KEY = {
+  'sections-project-css': 'project-css',
+  'sections-page-css': 'page-css',
+  'sections-page-css-with-project': 'page-css',
+  'sections-favicon': 'favicon',
+}
+const MANAGED_LINK_SLOT_BY_ID = {
+  'project-css-stylesheet': 'project-css',
+  'page-selected-css': 'page-css',
+}
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -10,6 +22,32 @@ const mergeObject = (baseValue, updateValue) => ({
   ...(isObject(baseValue) ? baseValue : {}),
   ...(isObject(updateValue) ? updateValue : {}),
 })
+
+const getManagedLinkSlot = (link = {}) => {
+  if (!isObject(link)) {
+    return ''
+  }
+
+  if (link.key && MANAGED_LINK_SLOT_BY_KEY[link.key]) {
+    return MANAGED_LINK_SLOT_BY_KEY[link.key]
+  }
+
+  if (link.id && MANAGED_LINK_SLOT_BY_ID[link.id]) {
+    return MANAGED_LINK_SLOT_BY_ID[link.id]
+  }
+
+  return ''
+}
+
+const getLinkSignature = (link = {}) =>
+  [
+    link.rel || '',
+    link.href || '',
+    link.media || '',
+    link.type || '',
+    link.as || '',
+    link.crossorigin || '',
+  ].join('|')
 
 const mergeMetadata = (baseValue = {}, updateValue = {}) => {
   const mergedValue = { ...(isObject(baseValue) ? baseValue : {}) }
@@ -47,7 +85,39 @@ export const sanitizeHeadLinks = (links = []) => {
     return []
   }
 
-  return links.filter((link) => isObject(link) && isNonEmptyString(link.href))
+  const sanitizedLinks = []
+  const seenManagedSlots = new Set()
+  const seenManagedSignatures = new Set()
+  const seenGenericSignatures = new Set()
+
+  for (const link of links) {
+    if (!isObject(link) || !isNonEmptyString(link.href)) {
+      continue
+    }
+
+    const managedSlot = getManagedLinkSlot(link)
+    const signature = getLinkSignature(link)
+
+    if (managedSlot) {
+      if (seenManagedSlots.has(managedSlot)) {
+        continue
+      }
+
+      seenManagedSlots.add(managedSlot)
+      seenManagedSignatures.add(signature)
+      sanitizedLinks.push(link)
+      continue
+    }
+
+    if (seenManagedSignatures.has(signature) || seenGenericSignatures.has(signature)) {
+      continue
+    }
+
+    seenGenericSignatures.add(signature)
+    sanitizedLinks.push(link)
+  }
+
+  return sanitizedLinks
 }
 
 export const getProjectCSSHref = (projectMetadata = {}) => {
@@ -83,21 +153,30 @@ export const buildProjectStylesheetLink = (projectMetadata = {}) => {
   }
 
   return {
+    key: 'sections-project-css',
     id: 'project-css-stylesheet',
     rel: 'stylesheet',
+    tagPriority: PROJECT_CSS_PRIORITY,
+    tagDuplicateStrategy: 'replace',
     href,
   }
 }
 
-export const buildPageStylesheetLink = (pageMetadata = {}) => {
+const getPageStylesheetKey = (projectMetadata = {}) =>
+  getProjectCSSHref(projectMetadata) ? 'sections-page-css-with-project' : 'sections-page-css'
+
+export const buildPageStylesheetLink = (pageMetadata = {}, projectMetadata = {}) => {
   const href = pageMetadata?.media?.url
   if (!isNonEmptyString(href)) {
     return null
   }
 
   return {
+    key: getPageStylesheetKey(projectMetadata),
     id: 'page-selected-css',
     rel: 'stylesheet',
+    tagPriority: PAGE_CSS_PRIORITY,
+    tagDuplicateStrategy: 'replace',
     href,
   }
 }
@@ -109,28 +188,45 @@ export const buildFaviconLink = (projectMetadata = {}) => {
   }
 
   return {
+    key: 'sections-favicon',
     rel: 'icon',
     type: 'image/png',
+    tagDuplicateStrategy: 'replace',
     href,
   }
 }
 
-export const buildSectionsLinks = (projectMetadata = {}, pageMetadata = {}, customLinks = []) => {
+export const buildSectionsLinks = (
+  projectMetadata = {},
+  pageMetadata = {},
+  customLinks = [],
+  options = {}
+) => {
+  const includeProjectStylesheet = options.includeProjectStylesheet !== false
+  const includePageStylesheet = options.includePageStylesheet !== false
+  const includeFavicon = options.includeFavicon !== false
+
   const links = []
 
-  const projectStylesheet = buildProjectStylesheetLink(projectMetadata)
-  if (projectStylesheet) {
-    links.push(projectStylesheet)
+  if (includeProjectStylesheet) {
+    const projectStylesheet = buildProjectStylesheetLink(projectMetadata)
+    if (projectStylesheet) {
+      links.push(projectStylesheet)
+    }
   }
 
-  const pageStylesheet = buildPageStylesheetLink(pageMetadata)
-  if (pageStylesheet) {
-    links.push(pageStylesheet)
+  if (includePageStylesheet) {
+    const pageStylesheet = buildPageStylesheetLink(pageMetadata, projectMetadata)
+    if (pageStylesheet) {
+      links.push(pageStylesheet)
+    }
   }
 
-  const favicon = buildFaviconLink(projectMetadata)
-  if (favicon) {
-    links.push(favicon)
+  if (includeFavicon) {
+    const favicon = buildFaviconLink(projectMetadata)
+    if (favicon) {
+      links.push(favicon)
+    }
   }
 
   if (Array.isArray(customLinks)) {
@@ -321,6 +417,9 @@ export const buildSectionsLinksWithPreview = ({
   projectMetadata = {},
   pageMetadata = {},
   previewState = {},
+  includeProjectStylesheet = true,
+  includePageStylesheet = true,
+  includeFavicon = true,
 } = {}) => {
   const effectiveMetadata = buildEffectiveMetadata(projectMetadata, pageMetadata, {}, previewState)
   const previewLinks = Array.isArray(effectiveMetadata.head?.link)
@@ -330,7 +429,12 @@ export const buildSectionsLinksWithPreview = ({
   return buildSectionsLinks(
     effectiveMetadata.projectMetadata,
     effectiveMetadata.pageMetadata,
-    previewLinks
+    previewLinks,
+    {
+      includeProjectStylesheet,
+      includePageStylesheet,
+      includeFavicon,
+    }
   )
 }
 
@@ -341,6 +445,9 @@ export const buildSectionsHeadConfig = ({
   pageMetadata = {},
   fullURL = '',
   previewState = {},
+  includeProjectStylesheet = true,
+  includePageStylesheet = true,
+  includeFavicon = true,
 } = {}) => {
   const effectiveMetadata = buildEffectiveMetadata(
     projectMetadata,
@@ -358,7 +465,12 @@ export const buildSectionsHeadConfig = ({
     link: buildSectionsLinks(
       effectiveMetadata.projectMetadata,
       effectiveMetadata.pageMetadata,
-      Array.isArray(effectiveMetadata.head?.link) ? effectiveMetadata.head.link : []
+      Array.isArray(effectiveMetadata.head?.link) ? effectiveMetadata.head.link : [],
+      {
+        includeProjectStylesheet,
+        includePageStylesheet,
+        includeFavicon,
+      }
     ),
   }
 

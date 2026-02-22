@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Updated
 
 - Refactor head management into shared utilities for Sections admin and view components
+- Centralize `useHead` orchestration in a dedicated `useSectionsHeadManager` composable with a single owner strategy between admin and view runtime
 - Extend builder/theme hooks with optional `setHeadPreview` callback (arity-based) for client-side head preview without API persistence
 
 ### [3.0.19] - 2026-01-06
