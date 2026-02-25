@@ -25,6 +25,12 @@ Emitted with `nuxtApp.callHook(...)`.
 | `sectionViewRefreshed` | section render response or `{ error }`                  |
 | `start-guide`          | `(topic, action)` when guide override flow is triggered |
 
+When you implement `start-guide` override logic, keep runtime guide semantics aligned with core behavior:
+
+- Persist top bar walkthrough completion so edit mode does not auto-show it repeatedly.
+- Treat manual relaunch as explicit force behavior only.
+- Do not couple onboarding eligibility to `current_pages` for `topBar`.
+
 Listen from app/plugin code:
 
 ```ts

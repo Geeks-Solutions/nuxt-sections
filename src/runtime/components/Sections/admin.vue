@@ -2611,6 +2611,7 @@ const intro = ref(null)
 const currentPages = useState('currentPages', () => null)
 const introRerun = reactive({ value: false })
 const introSectionFormStep = ref(false)
+const TOP_BAR_INTRO_COMPLETED_COOKIE_PREFIX = 'intro-topbar-completed'
 const creationView = ref(false)
 const drag = ref(false)
 const fetchedOnServer = useState('fetchedOnServer', () => false)
@@ -4696,6 +4697,27 @@ const getAvailableSections = () => {
     console.warn(i18n.t('noFormsFolder'))
   }
 }
+const getTopBarIntroCompletedCookie = () => {
+  return useCookie(`${TOP_BAR_INTRO_COMPLETED_COOKIE_PREFIX}-${getSectionProjectIdentity()}`)
+}
+const isTopBarGuideSeen = () => {
+  const cookieValue = getTopBarIntroCompletedCookie().value
+  return cookieValue === true || cookieValue === 'true'
+}
+const markTopBarGuideSeen = () => {
+  getTopBarIntroCompletedCookie().value = true
+}
+const shouldAutoRunIntro = (topic, rerun) => {
+  if (rerun === true) {
+    return true
+  }
+
+  if (topic === 'topBar') {
+    return !isTopBarGuideSeen()
+  }
+
+  return currentPages.value !== null && currentPages.value === 0
+}
 const initiateIntroJs = async () => {
   try {
     const token = useCookie('sections-auth-token').value
@@ -4744,11 +4766,6 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
     action !== 'relaunch-guide-btn'
   ) {
     return
-  } else if (
-    guideConfig.value.autoStart === false &&
-    (action === 'global-content-guide-btn' || action === 'relaunch-guide-btn')
-  ) {
-    guideConfig.value.autoStart = true
   }
   if (intro.value && topic === 'globalTour') {
     intro.value.setDontShowAgain(true)
@@ -4761,7 +4778,7 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
     introRerun.value = false
   }
 
-  if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
+  if (shouldAutoRunIntro(topic, rerun)) {
     if (topic && lastSavedTopic !== true) {
       useCookie('intro-last-step').value = topic
     }
@@ -4782,6 +4799,22 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
     intro.value.setOption('prevLabel', i18n.t('intro.prevLabel'))
     intro.value.setOption('doneLabel', i18n.t('intro.doneLabel'))
     intro.value.setOption('dontShowAgainLabel', i18n.t('intro.dontShowAgainLabel'))
+
+    if (topic === 'topBar') {
+      intro.value.oncomplete(() => {
+        markTopBarGuideSeen()
+        if (useCookie('intro-last-step').value === 'topBar') {
+          useCookie('intro-last-step').value = null
+        }
+      })
+      intro.value.onexit(() => {
+        markTopBarGuideSeen()
+        introRerun.value = false
+        if (useCookie('intro-last-step').value === 'topBar') {
+          useCookie('intro-last-step').value = null
+        }
+      })
+    }
 
     if (rerun === true) {
       if (topic === 'globalTour') {
@@ -4829,7 +4862,7 @@ const runIntro = async (topic, rerun, lastSavedTopic, action) => {
   }, 200)
 }
 const addIntroSteps = (topic, rerun) => {
-  if ((currentPages.value !== null && currentPages.value === 0) || rerun === true) {
+  if (shouldAutoRunIntro(topic, rerun)) {
     intro.value.setOptions({
       steps: introSteps(topic),
     })
@@ -5378,11 +5411,18 @@ const openEditMode = async () => {
   editMode.value = !editMode.value
 
   if (editMode.value === true) {
+    const openTopBarGuide = async () => {
+      const lastIntroStep = useCookie('intro-last-step').value
+      checkIntroLastStep('topBar')
+      if (lastIntroStep !== 'topBar' && !isTopBarGuideSeen()) {
+        await runIntro('topBar', false)
+      }
+    }
+
     if (selectedLayout.value === 'standard') {
       setTimeout(async () => {
         await nextTick()
-        checkIntroLastStep('topBar')
-        await runIntro('topBar', introRerun.value)
+        await openTopBarGuide()
       }, 900)
     }
 
@@ -5457,8 +5497,7 @@ const openEditMode = async () => {
           if (selectedLayout.value !== 'standard') {
             setTimeout(async () => {
               await nextTick()
-              checkIntroLastStep('topBar')
-              await runIntro('topBar', introRerun.value)
+              await openTopBarGuide()
             }, 900)
           }
         },
@@ -6911,6 +6950,10 @@ const logoutUser = () => {
   window.location.reload()
 }
 const checkIntroLastStep = (topic) => {
+  if (topic === 'topBar' && isTopBarGuideSeen()) {
+    return
+  }
+
   if (
     useCookie('intro-last-step').value &&
     useCookie('introjs-dontShowAgain').value !== true &&

@@ -83,7 +83,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { ref, nextTick } from 'vue'
-import { useNuxtApp, useRouter } from '#app'
+import { useNuxtApp, useRouter, useCookie } from '#app'
 import draggable from '@marshallswain/vuedraggable'
 
 const mockedSectionsConfig = {
@@ -3521,12 +3521,26 @@ describe('refreshSectionView', () => {
 
 // Mock intro.js module
 const setOptionMock = vi.fn()
+const setOptionsMock = vi.fn()
+const introStartMock = vi.fn()
+const introRefreshMock = vi.fn()
+let introOnCompleteMock = null
+let introOnExitMock = null
+
 vi.mock('intro.js/minified/intro.min.js', () => ({
   default: () => ({
     setOption: setOptionMock,
+    setOptions: setOptionsMock,
+    refresh: introRefreshMock,
+    start: introStartMock,
     setDontShowAgain: vi.fn(),
     exit: vi.fn(),
-    onexit: vi.fn(),
+    oncomplete: vi.fn((callback) => {
+      introOnCompleteMock = callback
+    }),
+    onexit: vi.fn((callback) => {
+      introOnExitMock = callback
+    }),
   }),
 }))
 
@@ -3535,6 +3549,17 @@ describe('runIntro', () => {
 
   beforeEach(async () => {
     wrapper = await mountComponent()
+    setOptionMock.mockClear()
+    setOptionsMock.mockClear()
+    introStartMock.mockClear()
+    introRefreshMock.mockClear()
+    introOnCompleteMock = null
+    introOnExitMock = null
+
+    const nuxtApp = useNuxtApp()
+    useCookie(`intro-topbar-completed-${nuxtApp.$sections.projectId}`).value = null
+    useCookie('intro-last-step').value = null
+    useCookie('introjs-dontShowAgain').value = null
 
     const setupState = wrapper.vm.$.setupState
     if (setupState.intro?.value !== undefined) {
@@ -3556,6 +3581,72 @@ describe('runIntro', () => {
 
   it('sets keyboardNavigation to false', async () => {
     await expect(wrapper.vm.runIntro('globalTour', false, false, '')).resolves.toBeUndefined()
+  })
+
+  it('auto-runs top bar intro on first edit session when not completed', async () => {
+    const setupState = wrapper.vm.$.setupState
+    if (setupState.currentPages?.value !== undefined) {
+      setupState.currentPages.value = 1
+    }
+
+    await wrapper.vm.runIntro('topBar', false, false, '')
+
+    expect(introStartMock).toHaveBeenCalledTimes(1)
+    expect(typeof introOnExitMock).toBe('function')
+  })
+
+  it('does not auto-run top bar intro after completion', async () => {
+    const setupState = wrapper.vm.$.setupState
+    if (setupState.currentPages?.value !== undefined) {
+      setupState.currentPages.value = 1
+    }
+
+    await wrapper.vm.runIntro('topBar', false, false, '')
+    expect(introStartMock).toHaveBeenCalledTimes(1)
+
+    if (introOnCompleteMock) {
+      introOnCompleteMock()
+    }
+
+    await wrapper.vm.runIntro('topBar', false, false, '')
+
+    expect(introStartMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not auto-run top bar intro after exit path marks it as seen', async () => {
+    const setupState = wrapper.vm.$.setupState
+    if (setupState.currentPages?.value !== undefined) {
+      setupState.currentPages.value = 1
+    }
+
+    await wrapper.vm.runIntro('topBar', false, false, '')
+    expect(introStartMock).toHaveBeenCalledTimes(1)
+
+    if (introOnExitMock) {
+      introOnExitMock()
+    }
+
+    await wrapper.vm.runIntro('topBar', false, false, '')
+
+    expect(introStartMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('still allows manual top bar relaunch after completion', async () => {
+    const setupState = wrapper.vm.$.setupState
+    if (setupState.currentPages?.value !== undefined) {
+      setupState.currentPages.value = 1
+    }
+
+    await wrapper.vm.runIntro('topBar', false, false, '')
+    expect(introStartMock).toHaveBeenCalledTimes(1)
+
+    if (introOnCompleteMock) {
+      introOnCompleteMock()
+    }
+
+    await wrapper.vm.runIntro('topBar', true, false, 'relaunch-guide-btn')
+
+    expect(introStartMock).toHaveBeenCalledTimes(2)
   })
 })
 

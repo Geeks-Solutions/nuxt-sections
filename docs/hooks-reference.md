@@ -64,6 +64,29 @@ export const page_pre_load = (payload) => payload
 | `guide_config`                      | `()`      | return `{ disabled, autoStart, override }`         |
 | `library_sections_theme_components` | `(t)`     | return array: `[{ sectionName, themeComponents }]` |
 
+### Guide Runtime Behavior
+
+The admin walkthrough uses two different eligibility mechanisms depending on guide topic:
+
+- `topBar` guide uses a dedicated persisted completion flag cookie.
+- Other built-in onboarding topics continue to use first-project-page eligibility (`current_pages === 0`).
+
+Top bar completion cookie details:
+
+- Cookie name format: `intro-topbar-completed-<projectIdentity>`
+- `<projectIdentity>` resolves the same way as API project identity (`projectId` or hostname in cname mode).
+- The cookie is set when top bar intro completes and also when the user exits it.
+
+Manual relaunch contract:
+
+- `rerun === true` is explicit force mode and always launches the guide.
+- Force mode does not re-enable global auto-start behavior for future sessions.
+
+Resume behavior:
+
+- `intro-last-step` can still resume in-progress guide flows.
+- For `topBar`, once completion cookie is set, auto-reopen is suppressed.
+
 ## File: `sections/js/hooks.js`
 
 Used only by the default dynamic catch-all page (`src/runtime/pages/[...pathMatch].vue`).

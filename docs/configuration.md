@@ -44,6 +44,12 @@ export default defineNuxtConfig({
 - `@geeks.solutions/vue-components` is installed by the module.
 - Catch-all and admin/health routes are always injected.
 
+## Guide Configuration Notes
+
+- Guide switches (`disabled`, `autoStart`, `override`) are provided by `guide_config` in `sections/js/global-hooks.js`.
+- Walkthrough state persistence (for example top bar completion) is runtime-managed and not exposed as a `runtimeConfig.public.sections` key.
+- See `docs/hooks-reference.md` for guide state and rerun behavior details.
+
 ## Environment URL Mapping
 
 - `environment === 'testing'` -> `https://api.sections-saas.k8s-dev.geeks.solutions/api/v1`
