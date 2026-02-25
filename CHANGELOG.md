@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [3.0.20] - 2026-
+
+### Fixed
+
+- Authcode management on server side #251
+- Uninstall section types from project #250
+- Ensure project CSS is injected before page CSS in page head
+- Avoid emitting empty `<link>` tags when CSS/media URLs are missing
+
+### Updated
+
+- Refactor head management into shared utilities for Sections admin and view components
+- Centralize `useHead` orchestration in a dedicated `useSectionsHeadManager` composable with a single owner strategy between admin and view runtime
+- Extend builder/theme hooks with optional `setHeadPreview` callback (arity-based) for client-side head preview without API persistence
+
 ### [3.0.19] - 2026-01-06
 
 ### Updated

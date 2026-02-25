@@ -1,18 +1,27 @@
-import { defineVitestConfig } from '@nuxt/test-utils/config'
+import { defineConfig } from 'vitest/config'
 import { fileURLToPath } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 
-export default defineVitestConfig({
-  plugins: [],
+export default defineConfig({
+  plugins: [vue()],
   test: {
     globals: true,
-    environment: 'happy-dom', // Using happy-dom instead of nuxt to avoid plugin loading
-    setupFiles: ['./tests/setup/mocks.js'],
+    environment: 'happy-dom',
+    setupFiles: ['./tests/setup/unit.ts'],
+    include: [
+      'tests/unit/**/*.test.ts',
+      'tests/unit/**/*.spec.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.test.ts',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/.nuxt/**',
       '**/dist/**',
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
+      '**/playground/**',
+      'tests/integration/**',
     ],
     coverage: {
       provider: 'v8',
@@ -28,7 +37,6 @@ export default defineVitestConfig({
         '**/playground/**',
         '**/coverage/**',
         '**/*.config.*',
-        '**/mocks.js',
       ],
       include: ['src/**/*.{js,ts,vue}'],
       all: true,
@@ -50,7 +58,8 @@ export default defineVitestConfig({
     alias: {
       '~': fileURLToPath(new URL('./', import.meta.url)),
       '@': fileURLToPath(new URL('./', import.meta.url)),
-      '#app': fileURLToPath(new URL('./node_modules/nuxt/dist/app', import.meta.url)),
+      '#app': fileURLToPath(new URL('./tests/setup/mocks-app.ts', import.meta.url)),
+      '#imports': fileURLToPath(new URL('./tests/setup/mocks-app.ts', import.meta.url)),
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },

@@ -175,7 +175,6 @@ import {
   showToast,
   useApiRequest,
   useCookie,
-  useHead,
   useI18n,
   useLocalePath,
   useNuxtApp,
@@ -187,6 +186,8 @@ import {
   useScript,
 } from '#imports'
 import { loadScript } from '../../utils/helpers.js'
+import { useSectionsHeadManager } from '../../composables/useSectionsHeadManager.js'
+import { runHookWithHeadPreview } from '../../utils/head-management.js'
 
 const { pageName, admin, variations, lang, viewsBgColor, sectionsPageData } = defineProps({
   pageName: {
@@ -303,6 +304,15 @@ const seoSectionsSupport = ref({})
 const sectionsQueryStringLanguageSupport = ref([])
 
 const originalThemeSettings = ref({})
+const { applyHead, setHeadPreview, resetHeadPreview } = useSectionsHeadManager({
+  projectMetadata,
+  pageMetadata,
+  computedSEO,
+  i18n,
+  route,
+  nuxtApp,
+  isHeadOwner: computed(() => !admin),
+})
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -403,85 +413,6 @@ const alteredViewsPerRegions = computed({
   },
 })
 
-// Head management
-useHead(() => {
-  const baseURL = process.server
-    ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') +
-      '://' +
-      nuxtApp.ssrContext.event.req?.headers.host
-    : window.location.origin
-
-  const fullURL = baseURL + route.fullPath
-
-  return {
-    htmlAttrs: {
-      lang: i18n.locale.value,
-    },
-    title: computedSEO.value.title,
-    meta: [
-      computedSEO.value.description
-        ? {
-            hid: 'description',
-            name: 'description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      { hid: 'og:title', property: 'og:title', content: computedSEO.value.title },
-      computedSEO.value.description
-        ? {
-            hid: 'og:description',
-            property: 'og:description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      computedSEO.value.image
-        ? {
-            hid: 'og:image',
-            property: 'og:image',
-            content: computedSEO.value.image.url
-              ? computedSEO.value.image.url
-              : computedSEO.value.image,
-          }
-        : {},
-      { hid: 'og:url', property: 'og:url', content: fullURL },
-    ],
-    link: [
-      projectMetadata.value['selectedCSSPreset'] &&
-      projectMetadata.value['selectedCSSPreset'].name &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'Other' &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'None'
-        ? {
-            rel: 'stylesheet',
-            href: projectMetadata.value['selectedCSSPreset'].url,
-          }
-        : projectMetadata.value['selectedCSSPreset'] &&
-            projectMetadata.value['selectedCSSPreset'].name &&
-            projectMetadata.value['selectedCSSPreset'].name !== 'None' &&
-            projectMetadata.value['media'] &&
-            projectMetadata.value['media'].url
-          ? {
-              rel: 'stylesheet',
-              href: projectMetadata.value['media'].url,
-            }
-          : {},
-      pageMetadata.value['media'] && pageMetadata.value['media'].url
-        ? {
-            id: 'page-selected-css',
-            rel: 'stylesheet',
-            href: pageMetadata.value['media'].url,
-          }
-        : {},
-      projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url
-        ? {
-            rel: 'icon',
-            type: 'image/png',
-            href: projectMetadata.value['favicon'].url,
-          }
-        : {},
-    ],
-  }
-})
-
 // Methods (now as regular functions)
 function handleDragState(starting) {
   drag.value = starting
@@ -494,6 +425,8 @@ const initializeSectionsCMSEvents = () => {
   }
 }
 const initializeSections = (res, skipHook) => {
+  resetHeadPreview()
+
   if (skipHook !== true) {
     nuxtApp.callHook('page_pre_render', res)
   }
@@ -585,13 +518,11 @@ const initializeSections = (res, skipHook) => {
     originalBuilderSettings.value = res.data.metadata.project_metadata
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
-      if (builderHooksJavascript['initialize_builder_settings']) {
-        builderHooksJavascript['initialize_builder_settings'](
-          originalBuilderSettings.value,
-          useHead,
-          currentSettingsTab.value
-        )
-      }
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_builder_settings'],
+        [originalBuilderSettings.value, applyHead, currentSettingsTab.value],
+        setHeadPreview
+      )
     } catch {}
   }
 
@@ -599,9 +530,11 @@ const initializeSections = (res, skipHook) => {
     originalThemeSettings.value = { ...res.data.metadata.sections_builder }
     try {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`)
-      if (builderHooksJavascript['initialize_theme_settings']) {
-        builderHooksJavascript['initialize_theme_settings'](originalThemeSettings.value, useHead)
-      }
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_theme_settings'],
+        [originalThemeSettings.value, applyHead],
+        setHeadPreview
+      )
     } catch {}
   }
 
@@ -1230,7 +1163,7 @@ const fire_js = (event_name, event_data) => {
 }
 
 const userLoggedOut = (links) => {
-  useHead({
+  applyHead({
     link: links,
   })
 }
@@ -1326,17 +1259,13 @@ const fetchData = async () => {
   const inBrowser = process.client
 
   let websiteDomain = ''
-  const isServer = process.server
 
-  if (isServer && !admin) {
-    await checkToken()
-  } else {
-    const auth_code = route.query.auth_code
-    if (auth_code) {
-      await sanitizeURL()
-    }
+  const auth_code = route.query.auth_code
+  if (auth_code) {
+    await sanitizeURL()
   }
 
+  const isServer = process.server
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
     : window.location.protocol.replace(':', '')
@@ -1459,6 +1388,11 @@ const fetchData = async () => {
 
 onServerPrefetch(async () => {
   try {
+    // Processing the Auth code should be done server side only
+    // and regardless of host `fetch_on_server` resolve
+    if (!admin) {
+      await checkToken()
+    }
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['fetch_on_server']) {
       if (hooksJs['fetch_on_server'](useCookie)) {
@@ -1467,7 +1401,8 @@ onServerPrefetch(async () => {
     } else {
       await fetchData()
     }
-  } catch {
+  } catch (error) {
+    console.error(error)
     await fetchData()
   }
 })

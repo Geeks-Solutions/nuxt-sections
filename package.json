@@ -1,6 +1,6 @@
 {
   "name": "@geeks.solutions/nuxt-sections",
-  "version": "3.0.19",
+  "version": "3.0.20",
   "author": "Geeks Solutions info@geeks.solutions (https://www.geeks.solutions)",
   "repository": {
     "type": "git",
@@ -40,12 +40,15 @@
     "dev": "nuxi dev playground",
     "dev:build": "nuxi build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
-    "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:watch": "vitest watch --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit",
     "link": "npm link"
   },
@@ -68,7 +71,12 @@
     "@types/node": "latest",
     "@vitest/coverage-v8": "^3.1.2",
     "@vue/test-utils": "^2.4.6",
-    "changelogen": "^0.6.1",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.6",
+    "@semantic-release/npm": "^12.0.2",
+    "@semantic-release/release-notes-generator": "^14.1.0",
     "eslint": "^9.25.1",
     "eslint-config-prettier": "^10.1.8",
     "happy-dom": "^17.4.6",
@@ -77,7 +85,8 @@
     "typescript": "~5.8.3",
     "vitest": "^3.1.2",
     "vue-tsc": "^2.2.10",
-    "prettier": "^3.7.4"
+    "prettier": "^3.7.4",
+    "semantic-release": "^24.2.3"
   },
   "peerDependencies": {
     "@marshallswain/vuedraggable": "^4.2.0",

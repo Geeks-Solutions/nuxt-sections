@@ -873,7 +873,7 @@ export const getMySectionsPages = async (sectionHeader: any) => {
   const app: any = useNuxtApp()
   try {
     const pagesResponse: any = await useApiRequest({
-      url: `${app.$sections.serverUrl}/project/${app.$sections.projectId}/pages`,
+      url: `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/pages`,
       method: 'GET',
       headers: sectionHeader,
     })
