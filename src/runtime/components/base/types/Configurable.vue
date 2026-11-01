@@ -551,8 +551,8 @@ async function changeFieldValue(e, idx, type, fieldname) {
   } else if (type === 'integer') {
     // Ensure optionsData structure exists
     if (!optionsData[name]) optionsData[name] = null // Or appropriate default
-    optionsData[name] = parseInt(value) // Store in optionsData
-    options[0][name] = parseInt(value) // Also update legacy options structure if needed elsewhere
+    optionsData[name] = Number.parseInt(value) // Store in optionsData
+    options[0][name] = Number.parseInt(value) // Also update legacy options structure if needed elsewhere
   } else if (type === 'textarea') {
     if (!optionsData[name]) optionsData[name] = {}
     optionsData[name][formLang.value] = value
@@ -922,11 +922,11 @@ function updateWhitelistId(id) {
 function isSelected(id, name) {
   const data = optionsData[name]
   // Check if data is an array and includes the id
-  return Array.isArray(data) && data.includes(parseInt(id))
+  return Array.isArray(data) && data.includes(Number.parseInt(id))
 }
 
 function selectOption(value, name) {
-  const intValue = parseInt(value)
+  const intValue = Number.parseInt(value)
   if (!optionsData[name]) {
     optionsData[name] = [] // Initialize as array if not exists
   }
@@ -962,7 +962,7 @@ function importHooks(hook, params) {
 async function loadRegisteredComponent(type, key) {
   const componentKey = `${type}_${key}`
   if (!registeredComponents[componentKey]) {
-    let path = `/configurable_components/${type}_${key}`
+    const path = `/configurable_components/${type}_${key}`
     try {
       const comp = await importComp(path).component
       if (comp) {
@@ -1002,7 +1002,7 @@ function computedComponentValue(field) {
 }
 
 function changeFieldLabel(field) {
-  let importedHook = importHooks('updateFieldLabel', field)
+  const importedHook = importHooks('updateFieldLabel', field)
   if (importedHook) {
     return importedHook
   } else if (isFieldRequired(field)) {

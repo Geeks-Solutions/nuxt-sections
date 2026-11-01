@@ -354,7 +354,7 @@ const currentViews = computed({
 const alteredViews = computed({
   get: () => {
     let alteredSections = null
-    let hooksJs = importJs(`/js/global-hooks`)
+    const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['page_pre_render'] && pageData.value) {
       if (typeof hooksJs['page_pre_render'] === 'function') {
         alteredSections = hooksJs['page_pre_render'](
@@ -382,7 +382,7 @@ const alteredViews = computed({
 const alteredViewsPerRegions = computed({
   get: () => {
     let alteredSections = null
-    let hooksJs = importJs(`/js/global-hooks`)
+    const hooksJs = importJs(`/js/global-hooks`)
     if (
       hooksJs &&
       hooksJs['page_pre_render'] &&
@@ -850,7 +850,7 @@ const getComponent = (sectionName, sectionType, view) => {
   }
 }
 const getSelectedLayout = () => {
-  let path = `/layouts/${selectedLayout.value}`
+  const path = `/layouts/${selectedLayout.value}`
   if (selectedLayout.value === 'standard') {
     return 'div'
   } else return importComp(path).component
@@ -862,10 +862,10 @@ const computeLayoutData = async () => {
   if (selectedLayout.value !== 'standard') {
     sectionsMainErrors.value = []
     sectionsLayoutErrors.value = []
-    let path = `/layouts/${selectedLayout.value}`
+    const path = `/layouts/${selectedLayout.value}`
     layoutSlotNames.value = []
 
-    let layoutComp = await importComp(path).setup?.then((d) => d.default)
+    const layoutComp = await importComp(path).setup?.then((d) => d.default)
     if (!layoutComp?.props) {
       errorInLayout.value = true
       sectionsMainErrors.value.push(i18n.t('layoutErrors.missingComp'))
@@ -929,7 +929,7 @@ const computeLayoutData = async () => {
         }
       })
 
-      let selectedLay = selectedLayout.value
+      const selectedLay = selectedLayout.value
       viewsPerRegions.value[slotName] = viewsPerRegions.value[slotName].sort(function (a, b) {
         return a.region[selectedLay].weight - b.region[selectedLay].weight
       })
@@ -1150,7 +1150,7 @@ const refreshSectionView = async (sectionView, data) => {
   await computeLayoutData()
 }
 const registeredPage = (type) => {
-  let path = `/page_components/${type}`
+  const path = `/page_components/${type}`
   // Assuming importComp is a global function or defined elsewhere
   // In Nuxt 3, you might use defineAsyncComponent instead
   return importComp(path).component
@@ -1215,7 +1215,7 @@ if (serverPageData) {
 // Fetch data (initial data loading)
 const fetchData = async () => {
   try {
-    let hooksJavascript = importJs(`/js/global-hooks`)
+    const hooksJavascript = importJs(`/js/global-hooks`)
     if (hooksJavascript['init_params']) {
       const paramsUpdate = hooksJavascript['init_params'](nuxtApp.$sections, {
         qs: route.query,
@@ -1283,7 +1283,7 @@ const fetchData = async () => {
     headers: sectionHeader(inBrowser ? {} : { origin: `${scheme}://${websiteDomain}` }),
   }
 
-  let URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
   let payload = {}
 
@@ -1293,7 +1293,7 @@ const fetchData = async () => {
   } catch {}
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
-    let query_string = parseQS(
+    const query_string = parseQS(
       encodeURIComponent(pathMatch ? pathMatch : '/'),
       Object.keys(route.query).length !== 0,
       route.query
@@ -1306,7 +1306,7 @@ const fetchData = async () => {
     }
   }
 
-  let hooksJs = importJs(`/js/global-hooks`)
+  const hooksJs = importJs(`/js/global-hooks`)
   if (hooksJs && hooksJs['page_pre_load']) {
     // Call only once and check the result
     const hookResult = hooksJs['page_pre_load'](payload)

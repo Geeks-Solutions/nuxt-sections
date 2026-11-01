@@ -247,7 +247,7 @@ export const validatePagePath = (
   }
 
   // Normalize the path: remove leading/trailing slashes and collapse multiple slashes
-  let cleanPath = path
+  const cleanPath = path
     .trim()
     .replace(/^\/+/, '') // Remove leading slashes
     .replace(/\/+$/, '') // Remove trailing slashes
@@ -284,10 +284,10 @@ export const validatePagePath = (
 export const parsePath = (path: string): string => {
   let finalPath = path
 
-  let decodedPath = decodeURIComponent(path)
+  const decodedPath = decodeURIComponent(path)
   if (decodedPath && decodedPath.includes('=')) {
-    let parsed0 = decodedPath.substring(0, decodedPath.indexOf('='))
-    let parsed1 = parsed0.substring(0, parsed0.lastIndexOf('/'))
+    const parsed0 = decodedPath.substring(0, decodedPath.indexOf('='))
+    const parsed1 = parsed0.substring(0, parsed0.lastIndexOf('/'))
     if (parsed1) {
       finalPath = encodeURIComponent(parsed1)
     } else finalPath = encodeURIComponent('/')
@@ -301,7 +301,7 @@ export const parsePath = (path: string): string => {
 }
 
 export const parseQS = (path: string, routeQueries: boolean, queries: any): Record<string, any> => {
-  let queryStringObject: Record<string, any> = {}
+  const queryStringObject: Record<string, any> = {}
   if (routeQueries === true) {
     Object.keys(queries).map((queryKey) => {
       if (queryKey.includes('[]')) {
@@ -326,8 +326,8 @@ export const parseQS = (path: string, routeQueries: boolean, queries: any): Reco
     })
   }
   try {
-    let decodedPath = decodeURIComponent(path)
-    let pagePath = decodeURIComponent(parsePath(path))
+    const decodedPath = decodeURIComponent(path)
+    const pagePath = decodeURIComponent(parsePath(path))
     let fullQS = ''
     if (pagePath === '/') {
       fullQS = `/${`/${decodedPath}`.substring(pagePath.length, `/${decodedPath}`.length)}`
@@ -335,16 +335,16 @@ export const parseQS = (path: string, routeQueries: boolean, queries: any): Reco
       fullQS = decodedPath.substring(pagePath.length, decodedPath.length)
     }
 
-    let query_string: Record<string, any> = {}
-    let parsedArray: string[] = []
+    const query_string: Record<string, any> = {}
+    const parsedArray: string[] = []
 
     fullQS = fullQS.substring(1) + '/'
-    let parsedStr = fullQS.split('=')
+    const parsedStr = fullQS.split('=')
 
     parsedStr.forEach((item) => {
       if (item.includes('/')) {
-        var split1 = item.substring(0, item.lastIndexOf('/'))
-        var split2 = item.substring(item.lastIndexOf('/') + 1)
+        const split1 = item.substring(0, item.lastIndexOf('/'))
+        const split2 = item.substring(item.lastIndexOf('/') + 1)
         parsedArray.push(split1)
         if (split2) parsedArray.push(split2)
       } else parsedArray.push(item)
@@ -425,7 +425,7 @@ export const validateQS = (
   editMode: boolean
 ): Record<string, any> | undefined => {
   if (editMode) {
-    let qsObjectNA: Record<string, string> = {}
+    const qsObjectNA: Record<string, string> = {}
     qsKeys.forEach((qsKey) => {
       if (qsObject[qsKey] === null || qsObject[qsKey] === undefined) {
         qsObjectNA[qsKey] = 'n/a'
@@ -620,7 +620,7 @@ export const renderPageData = async () => {
     ? route.params.pathMatch.join('/')
     : route.params.pathMatch || ''
 
-  let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`
+  const URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pathMatch ? pathMatch : '/'))}`
 
   let payload: any = {}
 
@@ -832,8 +832,7 @@ export const useApiRequest = async <T = any>({
       }
       throw error
     } else {
-      let res: { data: T; status: number }
-      res = {
+      const res: { data: T; status: number } = {
         data: (await response.json()) as T,
         status: response.status,
       }

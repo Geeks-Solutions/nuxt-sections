@@ -19,6 +19,8 @@
 - `npm run prepack` builds the published library into `dist/`; `npm run dev:build` builds the
   playground. Package exports point to `dist/`.
 - `npm run test:types` checks both the root and playground. Run it before committing code changes.
+- Before every commit, run `npm run check` and require it to pass. It checks formatting, runs
+  ESLint, then runs unit and integration tests, stopping at the first failure.
 - CI runs `npx prettier --check .`, `npm run lint`, then `npm run test`.
   Release on pushes to `main`/`master` depends on that checks job and does not rerun tests.
   `npm run format` rewrites the whole repository;

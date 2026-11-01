@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import mediaTransformerPlugin from '../media-transformer'
+import { importJs } from '../../utils/helpers'
 
 vi.mock('../../utils/helpers', () => ({
   importJs: vi.fn(),
 }))
-
-import { importJs } from '../../utils/helpers'
 
 describe('media-transformer plugin', () => {
   let mockTransformer: any

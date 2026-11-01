@@ -1,3 +1,25 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { ref, nextTick } from 'vue'
+import { useNuxtApp, useRouter, useCookie } from '#app'
+import draggable from '@marshallswain/vuedraggable'
+import {
+  importJs,
+  sectionHeader,
+  getSectionProjectIdentity,
+  parsePath,
+  parseQS,
+  useApiRequest,
+  showToast,
+  importComp,
+  validateQS,
+} from '~/src/runtime/utils/helpers.js'
+import SectionsPage from '../../src/runtime/components/Sections/admin.vue'
+import FieldSets from '../../src/runtime/components/SectionsForms/FieldSets.vue'
+import WysiwygStatic from '../../src/runtime/components/configs/views/wysiwyg_static.vue'
+import Wysiwyg from '../../src/runtime/components/configs/forms/wysiwyg.vue'
+
 const mockPageData = {
   id: '67642846052f506967b3db96',
   path: 'page5',
@@ -79,13 +101,6 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
   }
 })
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { flushPromises, mount, shallowMount } from '@vue/test-utils'
-import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { ref, nextTick } from 'vue'
-import { useNuxtApp, useRouter, useCookie } from '#app'
-import draggable from '@marshallswain/vuedraggable'
-
 const mockedSectionsConfig = {
   cname: true,
   serverUrl: 'http://localhost:3000',
@@ -110,18 +125,6 @@ const pageMetadata = {
   defaultLocale: 'en',
 }
 
-import {
-  importJs,
-  sectionHeader,
-  getSectionProjectIdentity,
-  parsePath,
-  parseQS,
-  useApiRequest,
-  showToast,
-  importComp,
-  validateQS,
-} from '~/src/runtime/utils/helpers.js'
-
 global.importJs = importJs
 global.sectionHeader = sectionHeader
 global.getSectionProjectIdentity = getSectionProjectIdentity
@@ -133,11 +136,6 @@ global.showToast = showToast
 global.validateQS = validateQS
 
 const showToastMock = vi.fn()
-
-import SectionsPage from '../../src/runtime/components/Sections/admin.vue'
-import FieldSets from '../../src/runtime/components/SectionsForms/FieldSets.vue'
-import WysiwygStatic from '../../src/runtime/components/configs/views/wysiwyg_static.vue'
-import Wysiwyg from '../../src/runtime/components/configs/forms/wysiwyg.vue'
 
 let stubs = {
   // Add basic stubs for common lazy components
@@ -471,7 +469,7 @@ describe('SectionsPage.vue', () => {
     wrapper.vm.selectedVariation = 'variation1'
 
     const testCases = [null, 'null', undefined]
-    testCases.forEach((initialWeight, idx) => {
+    testCases.forEach((initialWeight) => {
       wrapper.vm.displayVariations = {
         variation1: {
           views: { view1: {}, view2: {}, view3: {} },
@@ -1339,7 +1337,6 @@ describe('logDrag function, layout region position updates', () => {
     mockDisplayVariations.value.testPage.altered = false
 
     // Define the function (normally this would be imported from your component/composable)
-    const pageName = 'testPage'
     const selectedLayout = mockSelectedLayout
     const displayVariations = mockDisplayVariations
     const selectedVariation = mockSelectedVariation
@@ -1604,7 +1601,7 @@ describe('Z-index Test', () => {
 
 describe('WysiwygStatic', () => {
   it('renders the .ql-snow .ql-editor class when html exists', () => {
-    const wrapper = shallowMount(WysiwygStatic, {
+    shallowMount(WysiwygStatic, {
       propsData: {
         section: {
           settings: [{ en: '<p>Test content</p>' }],
@@ -3096,14 +3093,12 @@ const SidebarComponent = {
 describe('Sidebar Resize Functionality', () => {
   let wrapper
   let mockScrollTo
-  let mockAddEventListener
-  let mockRemoveEventListener
 
   beforeEach(async () => {
     // Mock DOM methods
     mockScrollTo = vi.fn()
-    mockAddEventListener = vi.spyOn(window, 'addEventListener')
-    mockRemoveEventListener = vi.spyOn(window, 'removeEventListener')
+    vi.spyOn(window, 'addEventListener')
+    vi.spyOn(window, 'removeEventListener')
 
     // Mock scrollTo method
     Element.prototype.scrollTo = mockScrollTo
@@ -3193,7 +3188,7 @@ describe('Sidebar Resize Functionality', () => {
     it('should calculate max width correctly based on parent container size', async () => {
       await nextTick()
 
-      const aside = wrapper.find('.sections-aside')
+      wrapper.find('.sections-aside')
       const container = wrapper.find('.sections-container')
       const vm = wrapper.vm
 
@@ -3243,7 +3238,7 @@ describe('Sidebar Resize Functionality', () => {
       await nextTick()
 
       const aside = wrapper.find('.sections-aside')
-      const resizeHandle = wrapper.find('.sections-resize-handle--x')
+      wrapper.find('.sections-resize-handle--x')
       const container = wrapper.find('.sections-container')
       const vm = wrapper.vm
 
@@ -3276,7 +3271,7 @@ describe('Sidebar Resize Functionality', () => {
         const mouseMoveEvent = new MouseEvent('mousemove', { screenX })
         vm.onMouseMove(mouseMoveEvent)
 
-        const currentWidth = parseInt(aside.element.style.width)
+        const currentWidth = Number.parseInt(aside.element.style.width)
         expect(currentWidth).toBeLessThanOrEqual(expectedMaxWidth)
         expect(currentWidth).toBe(expectedMaxWidth)
       }

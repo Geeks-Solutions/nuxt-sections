@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { useNuxtApp } from '#app'
+import SectionsPage from '../../src/runtime/components/Sections/admin.vue'
 
 // Mock showToast and useApiRequest - other utilities are handled by #imports virtual module
 vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
@@ -13,7 +14,7 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
       component: { template: '<div />' },
       setup: Promise.resolve({ default: {} }),
     })),
-    useApiRequest: vi.fn((options) => {
+    useApiRequest: vi.fn(() => {
       // Mock successful API response
       return Promise.resolve({
         data: {
@@ -32,9 +33,6 @@ vi.mock('~/src/runtime/utils/helpers.js', async (importOriginal) => {
     }),
   }
 })
-
-// Import component AFTER mocks are set up
-import SectionsPage from '../../src/runtime/components/Sections/admin.vue'
 
 const mockedSectionsConfig = {
   cname: true,

@@ -96,7 +96,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
 
     // Construct the endpoint URL to load section page data
-    let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
+    const URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
     let payload: any = {}
 

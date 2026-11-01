@@ -42,6 +42,7 @@
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
+    "check": "prettier --check . && npm run lint && npm run test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "npm run test:unit && npm run test:integration",
