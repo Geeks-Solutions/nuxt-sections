@@ -1,143 +1,66 @@
-# Agent Guidelines for @geeks.solutions/nuxt-sections
+# @geeks.solutions/nuxt-sections
 
-This repository contains a Nuxt 3 module for the Sections CMS. Follow these guidelines when contributing.
+## Agent tooling
 
-## Build/Lint/Test Commands
+- Serena configuration is in `.serena/project.yml` (Vue and TypeScript). Start with `mem:core`;
+  keep memories focused on durable discoveries. Cache and local overrides are gitignored.
+  Run `serena memories check` after changing memory references.
+- Run `bw prime` when starting or resuming work. Beadwork stores issues on the separate
+  `beadwork` branch with prefix `nuxt-sections`; use `bw ready` to find unblocked work and
+  `bw show <id>` for context. Record progress with `bw comment <id> "..."`.
+- For tracked work, use `bw start <id>` and `bw close <id>` to maintain status.
+  `bw sync` fetches/replays/pushes issue storage; it is not a local-only save.
 
-### Development
+## Setup and verification
 
-- `npm run dev` - Start development server (runs playground)
-- `npm run dev:build` - Build playground for production
-- `npm run dev:prepare` - Build stub module and prepare playground
+- Use `nvm use` before Node commands (`.nvmrc`: 22.16.0; CI uses Node 22), then `npm ci`.
+- Run `npm run dev:prepare` before development: it builds module stubs and prepares Nuxt types,
+  including the playground. Root and playground tsconfigs extend generated `.nuxt/tsconfig.json`.
+- `npm run prepack` builds the published library into `dist/`; `npm run dev:build` builds the
+  playground. Package exports point to `dist/`.
+- `npm run test:types` checks both the root and playground. Run it before committing code changes.
+- CI runs `npx prettier --check .` then `npm run test`; its lint step is commented out.
+  Run `npm run lint` explicitly when needed. `npm run format` rewrites the whole repository;
+  use `npx prettier --write <files>` for focused formatting.
 
-### Code Quality
+## Tests
 
-- `npm run lint` - Run ESLint on the codebase
-- `npm run format` - Format code with Prettier
-- `npm run test:types` - Run TypeScript type checking (vue-tsc)
+- `npm run test` runs unit tests followed by integration tests, with separate Vitest configs.
+- Focus a file with `npm run test:unit -- tests/unit/<file>.spec.ts` or
+  `npm run test:integration -- tests/integration/<file>.spec.ts`.
+  Filter test names with `npm run test:unit -- -t "test name"` (not `--pattern`).
+- Unit tests use happy-dom; `#app` and `#imports` resolve to `tests/setup/mocks-app.ts`, with
+  additional mocks in `tests/setup/unit.ts`. They do not exercise real Nuxt injection behavior.
+- Integration tests use the Nuxt environment and `tests/fixtures/basic` app, which loads
+  `src/module.ts`; shared stubs and console filters live in `tests/setup/integration.ts`.
+- `npm run test:watch` and `npm run test:coverage` are unit-only. Coverage thresholds are 80%
+  for lines, functions, branches, and statements.
 
-### Testing
+## Runtime wiring
 
-- `npm run test` - Run all tests (unit + integration)
-- `npm run test:unit` - Run unit tests (happy-dom, fast)
-- `npm run test:integration` - Run integration tests (@nuxt/test-utils)
-- `npm run test:watch` - Run tests in watch mode (unit tests only)
-- `npm run test:coverage` - Run tests with coverage report (thresholds: 80%)
+- `src/module.ts` registers routes, components, middleware, plugins, and explicit `addImports`
+  entries. Exporting a new helper from `src/runtime/utils/helpers.ts` alone does not auto-import it.
+- Runtime config under `runtimeConfig.public.sections` becomes `$sections` in
+  `src/runtime/plugin.ts`. This plugin is separate from `src/runtime/plugins/media-transformer.ts`.
+- The module adds a catch-all renderer, `/admin`, `/health`, and prefixed admin/health routes.
+  Main rendering and editing logic lives in `src/runtime/components/Sections/index.vue` and
+  `admin.vue`; preserve the route registration contract when changing routing.
+- Helpers discover host-app components via `/sections/**/*.vue` and eagerly load JavaScript
+  hooks under `/sections/`. These paths refer to the consuming app, not this module's components.
+- Query-string support requires the literal value `'enabled'`, not a boolean.
 
-**Run a single test:**
+## Repo-specific constraints
 
-```bash
-# Run specific unit test file
-vitest run --config vitest.config.ts path/to/test.spec.ts
-
-# Run tests matching pattern
-vitest run --config vitest.config.ts --pattern "media-transformer"
-```
-
-## Code Style Guidelines
-
-### Formatting (Prettier)
-
-- **No semicolons**
-- Single quotes only
-- 2-space indentation (tabs: 2)
-- ES5 trailing commas
-- 100 character line width
-
-### ESLint Rules
-
-- `no-console` and `no-debugger` are errors
-- `@typescript-eslint/no-explicit-any` is disabled
-- `@typescript-eslint/no-unused-vars` is disabled
-- `vue/multi-word-component-names` is disabled
-- `vue/no-v-html` is allowed
-
-**Critical:** Multiline v-on handlers are only allowed when containing a single statement. Move complex logic to methods to avoid build crashes.
-
-### Vue Components
-
-- Use `<script setup>` syntax exclusively
-- Use Composition API with imports from `#imports`
-- Define props with `defineProps({ prop: { type, default } })`
-- Define emits with `defineEmits(['event1', 'event2'])`
-- Use `ref()` for reactive primitives, `computed()` for derived values
-- Use async/await for async operations
-- Import composables from `#app` or `#imports`
-- Use `@ts-ignore` sparingly when needed for type bypasses
-
-### TypeScript
-
-- Type checking is minimal (explicit any allowed)
-- Define interfaces for module options (e.g., `ModuleOptions`)
-- Use type annotations in `src/` but avoid over-typing runtime code
-- Type check with `npm run test:types` before committing
-
-### Naming Conventions
-
-- **Component files:** PascalCase (e.g., `MediaViewer.vue`, `wysiwyg_static.vue`)
-- **Type component files:** PascalCase based on type (e.g., `Static.vue`, `Dynamic.vue`, `Configurable.vue`)
-- **Helper components:** PascalCase in CamelCase dirs (e.g., `base/icons/upload.vue`, `base/SubTypes/sectionItem.vue`)
-- **Utility files:** lowercase with hyphens for shared utils
-- **Config components:** Organized in subdirectories (e.g., `configs/views/`, `configs/forms/`, `configs/type-icons/`)
-- **Icons:** lowercase (e.g., `upload.vue`, `save.vue`)
-- **Test files:** `.spec.ts` suffix in `__tests__/` subdirectories
-- **Functions:** camelCase (e.g., `formatName`, `importComp`, `renderPageData`)
-
-### File Structure
-
-- `src/module.ts` - Nuxt module definition
-- `src/runtime/components/` - Vue components (auto-registered)
-- `src/runtime/plugins/` - Nuxt plugins
-- `src/runtime/utils/` - Helper functions (auto-imported)
-- `src/runtime/middleware/` - Route middleware
-- `src/runtime/pages/` - Custom pages
-- `tests/setup/unit.ts` - Global setup for unit tests
-- `tests/unit/` - Unit tests (happy-dom, pure functions, isolated logic)
-- `tests/integration/` - Integration tests (@nuxt/test-utils, plugins, module config)
-
-### Testing
-
-- Framework: Vitest with hybrid testing approach
-- Unit Tests: happy-dom for fast, isolated testing of pure functions
-- Integration Tests: @nuxt/test-utils for plugins, modules, and components with full Nuxt context
-- Use `vi.mock()` for mocking when necessary (prefer testing real implementations)
-- Use `vi.fn()` for spy/mock functions
-- Write descriptive test names
-- Coverage target: 80% across lines, functions, branches, statements
-
-**Testing Philosophy:**
-
-- Test real implementations whenever possible
-- Minimize mocking - only mock what absolutely needs to be mocked
-- Unit tests for pure functions and utilities
-- Integration tests for Nuxt-specific code (plugins, middleware, components)
-
-### Imports
-
-- Import Nuxt composables from `#app` or `#imports`
-- Import local modules with relative paths from current file
-- Use `import.meta.glob()` for dynamic imports
-- Import Vue utilities like `defineAsyncComponent` from 'vue'
-
-### Error Handling
-
-- Wrap API calls in try-catch blocks
-- Return error objects: `{ data, success: boolean, error: any }`
-- Use `console.warn()` for non-critical issues (no-console rule can be overridden)
-- Handle missing data gracefully (empty strings, empty arrays, null checks)
-
-### Module Development
-
-- Extend pages with `extendPages()` helper from `@nuxt/kit`
-- Register components with `addComponentsDir()`
-- Auto-import utilities with `addImports()`
-- Use `createResolver(import.meta.url)` for file paths
-- Hook into vite config for optimization when needed
-
-### Important Notes
-
-- The module auto-registers `@pinia/nuxt` and `@nuxtjs/i18n` if not present
-- Component paths use `/sections/**/*.vue` pattern for dynamic loading
-- Support for query strings must be enabled via config (not default)
-- The module provides a `/health` endpoint for health checks
-- Always test in playground (`npm run dev`) before committing changes
+- `eslint.config.mjs` is the ESLint 9 configuration; do not treat the legacy `.eslintrc` as active.
+- Move multi-statement event logic into methods. The local `no-multiline-v-on` rule prevents
+  multiline handler build crashes with `unplugin-vue-i18n`; single-expression handlers and arrow
+  functions are allowed.
+- Root and playground configs disable Nuxt auto-imports; import composables explicitly.
+- Before committing runtime/UI changes, validate the affected flow in the playground:
+  `npm run dev:prepare`, then `npm run dev`. It defaults to HTTPS on `0.0.0.0:443`, not port 3000.
+  Required CMS environment variables and smoke checks are in
+  [playground validation](docs/playground-and-manual-validation.md).
+- Consult [testing](docs/testing.md), [hook contracts](docs/hooks-reference.md), and the
+  [agent playbook](docs/ai-agent-playbook.md) for detailed workflows; verify contracts at call sites.
+- Releases on `main`/`master` use semantic-release with Conventional Commits; it updates the
+  changelog, package version, and lockfile automatically.

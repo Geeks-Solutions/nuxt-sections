@@ -17,7 +17,7 @@ export default defineNuxtPlugin((_nuxtApp) => {
     projectUrl: sectionsConfig.projectUrl,
     serverUrl:
       sectionsConfig.environment === 'testing'
-        ? 'https://api.sections-saas.k8s-dev.geeks.solutions/api/v1'
+        ? 'https://sections-dev.geeks.solutions/api/v1'
         : 'https://sections.geeks.solutions/api/v1',
     queryStringSupport: sectionsConfig.queryStringSupport,
     projectLocales: sectionsConfig.projectLocales,
@@ -42,7 +42,7 @@ export default defineNuxtPlugin((_nuxtApp) => {
 
   const emitter = mitt<Events>()
 
-  if (process.client) {
+  if (import.meta.client) {
     // @ts-ignore
     import('vue-toastification/dist/index.css')
   }

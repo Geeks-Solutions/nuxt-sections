@@ -52,7 +52,7 @@ export default defineNuxtConfig({
 
 ## Environment URL Mapping
 
-- `environment === 'testing'` -> `https://api.sections-saas.k8s-dev.geeks.solutions/api/v1`
+- `environment === 'testing'` -> `https://sections-dev.geeks.solutions/api/v1`
 - otherwise -> `https://sections.geeks.solutions/api/v1`
 
 ## About `sections-cms` Module Options
