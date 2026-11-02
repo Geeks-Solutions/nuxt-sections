@@ -3,6 +3,12 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  esbuild: {
+    define: {
+      'import.meta.client': 'true',
+      'import.meta.server': 'false',
+    },
+  },
   plugins: [vue()],
   test: {
     globals: true,

@@ -1,6 +1,7 @@
 import { sectionHeader, useCookie, useNuxtApp, getSectionProjectIdentity } from '#imports'
 import { useFetch } from '#app'
 
+// eslint-disable-next-line no-unused-vars -- Preserve the exported function's reserved argument and arity.
 export const createMedia = async (payload, external_call) => {
   const nuxtApp = useNuxtApp()
   const fileData = payload['files[1][file]']

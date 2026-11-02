@@ -193,6 +193,7 @@ async function getGlobalType() {
       instanceName.value = result.res.data.name
     } else if (result.error) {
       // Handle error - Use Nuxt 3 compatible toast/notification
+      // eslint-disable-next-line no-console -- Report a failed global-type response.
       console.error(
         'Error loading global type:',
         result.error?.response?.data?.message || 'Unknown error'
@@ -200,6 +201,7 @@ async function getGlobalType() {
       showToast('Error', 'error', result.error.response.data.message) // Replace if using a toast system
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- Retain request diagnostics alongside the error toast.
     console.error('Error fetching global type data:', error)
     showToast('Error', 'error', 'An unexpected error occurred.') // Replace if using a toast system
   } finally {

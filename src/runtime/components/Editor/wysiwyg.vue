@@ -75,14 +75,12 @@ function alterMediasServerUrl() {
   let updatedServerUrl
   try {
     const hooksJs = importJs(`/js/global-hooks`)
-    if (
-      hooksJs &&
-      hooksJs['medias_api_url'] &&
-      hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)
-    ) {
+    if (hooksJs && hooksJs['medias_api_url']) {
       updatedServerUrl = hooksJs['medias_api_url'](useCookie, sectionsConfig.projectId, true)
     }
-  } catch {}
+  } catch {
+    // Fall back to the configured media server if the optional URL hook fails.
+  }
 
   if (updatedServerUrl) {
     return updatedServerUrl
@@ -95,7 +93,9 @@ function alterErrorReceived(error) {
     if (hooksJs && hooksJs['medias_api_error_received']) {
       return hooksJs['medias_api_error_received'](useCookie, error)
     }
-  } catch {}
+  } catch {
+    // Undefined preserves the media library's default error message.
+  }
 }
 
 async function mediaResponseReceived(method, url, payload, response) {
@@ -110,7 +110,9 @@ async function mediaResponseReceived(method, url, payload, response) {
         response
       )
     }
-  } catch {}
+  } catch {
+    // Undefined preserves the media library's original response.
+  }
 }
 
 async function mediaRequestReceived(method, url, payload) {
@@ -119,7 +121,9 @@ async function mediaRequestReceived(method, url, payload) {
     if (hooksJs && hooksJs['medias_api_request_received']) {
       return await hooksJs['medias_api_request_received'](useCookie, method, url, payload)
     }
-  } catch {}
+  } catch {
+    // Continue with the default request when the optional decision hook fails.
+  }
 }
 
 const forwardMediaRequest = computed(() => {
@@ -128,7 +132,9 @@ const forwardMediaRequest = computed(() => {
     if (hooksJs && hooksJs['api_calls_traffic']) {
       return useFetchToApiRequest
     }
-  } catch {}
+  } catch {
+    // Null leaves requests with the media library's native transport.
+  }
   return null
 })
 

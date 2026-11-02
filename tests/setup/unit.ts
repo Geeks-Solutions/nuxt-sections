@@ -7,7 +7,6 @@ beforeEach(() => {
 
 global.window = global.window || {}
 global.process = global.process || { env: { NODE_ENV: 'test' } }
-global.process.client = true
 
 vi.mock('#app', () => ({
   defineNuxtPlugin: (plugin: any) => plugin,

@@ -128,6 +128,7 @@ function sendJsonData() {
   if (typeof formComponent.validate === 'function') {
     valid = formComponent.validate()
   } else {
+    // eslint-disable-next-line no-console -- Explain a missing host form contract.
     console.warn(`Dynamic form component for "${props.name}" does not have a 'validate' method.`)
   }
 
@@ -139,6 +140,7 @@ function sendJsonData() {
   if (formComponent.settings !== undefined) {
     settings = formComponent.settings
   } else {
+    // eslint-disable-next-line no-console -- Explain the empty-settings fallback.
     console.warn(`Dynamic form component for "${props.name}" does not have a 'settings' property.`)
     // Potentially try to gather data differently if 'settings' isn't exposed
     settings = {} // Default to empty object if settings cannot be retrieved
@@ -148,6 +150,7 @@ function sendJsonData() {
   if (formComponent.private_data !== undefined) {
     private_data = formComponent.private_data
   } else {
+    // eslint-disable-next-line no-console -- Explain missing host form private data.
     console.warn(
       `Dynamic form component for "${props.name}" does not have a 'private_data' property.`
     )

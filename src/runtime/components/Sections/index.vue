@@ -65,9 +65,9 @@
               :locales="locales"
               :default-lang="defaultLang"
             >
-              <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
+              <template v-for="slotName in layoutSlotNames" :key="slotName" v-slot:[slotName]>
                 <!-- Empty div injected to verify the slots              -->
-                <div class="flexSections flex-col">
+                <div :key="slotName" class="flexSections flex-col">
                   <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
                   <div class="views">
                     <draggable
@@ -188,6 +188,7 @@ import {
 import { loadScript } from '../../utils/helpers.js'
 import { useSectionsHeadManager } from '../../composables/useSectionsHeadManager.js'
 import { runHookWithHeadPreview } from '../../utils/head-management.js'
+import { toApiError } from '../../utils/api-errors'
 
 const { pageName, admin, variations, lang, viewsBgColor, sectionsPageData } = defineProps({
   pageName: {
@@ -523,7 +524,9 @@ const initializeSections = (res, skipHook) => {
         [originalBuilderSettings.value, applyHead, currentSettingsTab.value],
         setHeadPreview
       )
-    } catch {}
+    } catch {
+      // Keep the original builder metadata if its optional initialization hook fails.
+    }
   }
 
   if (res.data.metadata && res.data.metadata.sections_builder) {
@@ -535,7 +538,9 @@ const initializeSections = (res, skipHook) => {
         [originalThemeSettings.value, applyHead],
         setHeadPreview
       )
-    } catch {}
+    } catch {
+      // Keep the original theme metadata if its optional initialization hook fails.
+    }
   }
 
   if (!computedSEO.value.title && pageMetadata.value[lang]) {
@@ -616,6 +621,7 @@ const initializeSections = (res, skipHook) => {
   sectionsPageLastUpdated.value = res.data.last_updated
 }
 const sectionsPageErrorManagement = (error, server, skipHook) => {
+  error = toApiError(error)
   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`
   if (
     error.response &&
@@ -800,7 +806,9 @@ const seoManagement = (view, sectionHooksJs) => {
         })
       }
     }
-  } catch {}
+  } catch {
+    // Keep page/project SEO when the optional section SEO hook fails.
+  }
 }
 const parseSectionName = (sectionName) => {
   let parsedSectionName = ''
@@ -988,7 +996,9 @@ const refreshSectionView = async (sectionView, data) => {
   let language = undefined
   try {
     language = i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
     variables['query_string'] = parseQS(
@@ -1011,7 +1021,9 @@ const refreshSectionView = async (sectionView, data) => {
         // Ensure we only take serializable data
         try {
           variables = JSON.parse(JSON.stringify(hookResult))
-        } catch {}
+        } catch {
+          // Keep the current variables if the hook returns non-serializable data.
+        }
       }
     }
     if (data.qs) {
@@ -1109,13 +1121,15 @@ const refreshSectionView = async (sectionView, data) => {
             showToast('Error', 'error', renderSectionError.value)
           },
         })
-      } catch {}
+      } catch (error) {
+        // onError already emits/notifies; also retain state if that callback fails.
+        renderSectionError.value = `${sectionName}: ${toApiError(error).response.data.error}`
+      }
     } else {
       // Keep OPTIONS check separate as useApiRequest doesn't explicitly handle it
-      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-
-      if (optionsRes.status === 200) {
-        try {
+      try {
+        const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+        if (optionsRes.status === 200) {
           await useApiRequest({
             url: URL,
             method: 'POST',
@@ -1143,7 +1157,10 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${e.response.data.error}`
             },
           })
-        } catch {}
+        }
+      } catch (error) {
+        // Covers preflight failures too, without duplicating POST error notifications.
+        renderSectionError.value = `${sectionName}: ${toApiError(error).response.data.error}`
       }
     }
   }
@@ -1156,7 +1173,7 @@ const registeredPage = (type) => {
   return importComp(path).component
 }
 const fire_js = (event_name, event_data) => {
-  if (process.client) {
+  if (import.meta.client) {
     const event = new CustomEvent(event_name, { detail: event_data })
     window.dispatchEvent(event)
   }
@@ -1236,7 +1253,9 @@ const fetchData = async () => {
         nuxtApp.$sections = paramsUpdate
       }
     }
-  } catch {}
+  } catch {
+    // Keep the current Sections configuration if the optional override fails.
+  }
 
   if (
     nuxtApp.$sections.projectLocales &&
@@ -1256,7 +1275,7 @@ const fetchData = async () => {
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
-  const inBrowser = process.client
+  const inBrowser = import.meta.client
 
   let websiteDomain = ''
 
@@ -1265,7 +1284,7 @@ const fetchData = async () => {
     await sanitizeURL()
   }
 
-  const isServer = process.server
+  const isServer = import.meta.server
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
     : window.location.protocol.replace(':', '')
@@ -1290,7 +1309,9 @@ const fetchData = async () => {
   let language = undefined
   try {
     language = i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
     const query_string = parseQS(
@@ -1315,7 +1336,9 @@ const fetchData = async () => {
       // Ensure we only take serializable data
       try {
         payload = JSON.parse(JSON.stringify(hookResult))
-      } catch {}
+      } catch {
+        // Keep the current payload if the hook returns non-serializable data.
+      }
     }
   }
   if (sectionsPageData && !admin) {
@@ -1352,9 +1375,9 @@ const fetchData = async () => {
     sectionsError.value = ''
     sectionsMainErrors.value = []
     fetchedOnServer.value = true
-    const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-    if (optionsRes.status === 200) {
-      try {
+    try {
+      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+      if (optionsRes.status === 200) {
         await useApiRequest({
           url: URL,
           method: 'POST',
@@ -1367,7 +1390,14 @@ const fetchData = async () => {
             sectionsPageErrorManagement(error, true)
           },
         })
-      } catch {}
+      }
+    } catch (error) {
+      // Covers preflight failures and failures in page initialization/error handling.
+      if (!error?.response) sectionsError.value = toApiError(error).response.data.error
+      if (loading.value) {
+        loading.value = false
+        emit('load', false)
+      }
     }
   } else if (serverPageData) {
     if (serverPageData.res) {
@@ -1402,6 +1432,7 @@ onServerPrefetch(async () => {
       await fetchData()
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- Preserve diagnostics before SSR fallback.
     console.error(error)
     await fetchData()
   }

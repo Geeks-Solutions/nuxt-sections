@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onBeforeUnmount } from 'vue'
+import { createDomScheduler } from '../../src/runtime/utils/dom-updates'
 import { useNuxtApp, useRouter, useCookie } from '#app'
 import draggable from '@marshallswain/vuedraggable'
 import {
@@ -268,6 +269,184 @@ describe('SectionsPage.vue', () => {
 
   it('renders successfully', () => {
     expect(wrapper.exists()).toBe(true)
+  })
+
+  it('preserves requirement inputs when their order changes', async () => {
+    wrapper.vm.editMode = true
+    wrapper.vm.isAuthModalOpen = true
+    wrapper.vm.selectedSectionRequirements = ['first', 'second']
+    wrapper.vm.requirementsInputs = { first: 'one', second: 'two' }
+    await nextTick()
+    const first = wrapper.find('input[placeholder="first"]').element
+    const second = wrapper.find('input[placeholder="second"]').element
+    wrapper.vm.selectedSectionRequirements = ['second', 'first']
+    await nextTick()
+    expect(wrapper.find('input[placeholder="first"]').element).toBe(first)
+    expect(wrapper.find('input[placeholder="second"]').element).toBe(second)
+    expect(first.value).toBe('one')
+    expect(second.value).toBe('two')
+  })
+
+  it('blocks stale builder payload saves until generation recovers', async () => {
+    wrapper.vm.currentSettingsTab = 'colors'
+    const generate = vi.fn(() => ({ primary_color: '#000' }))
+    vi.mocked(importJs).mockReturnValue({ builder_settings_payload: generate })
+    try {
+      wrapper.vm.builderSettingUpdated({ color: '#000' })
+      generate.mockImplementationOnce(() => {
+        throw new Error('Payload failed')
+      })
+      wrapper.vm.builderSettingUpdated({ color: '#fff' })
+      expect(wrapper.vm.builderSettingsPayload).toEqual({ primary_color: '#000' })
+      vi.mocked(useApiRequest).mockClear()
+      await expect(wrapper.vm.updateBuilderSettingsMetaData()).resolves.toBe(false)
+      expect(useApiRequest).not.toHaveBeenCalled()
+
+      // A missing optional hook is not a successful regeneration of a failed payload.
+      vi.mocked(importJs).mockReturnValue({})
+      wrapper.vm.builderSettingUpdated({ color: '#fff' })
+      await expect(wrapper.vm.updateBuilderSettingsMetaData()).resolves.toBe(false)
+
+      vi.mocked(importJs).mockReturnValue({
+        builder_settings_payload: () => ({ primary_color: '#fff' }),
+      })
+      wrapper.vm.builderSettingUpdated({ color: '#fff' })
+      vi.mocked(useApiRequest).mockResolvedValueOnce({ data: {} })
+      await wrapper.vm.updateBuilderSettingsMetaData()
+      expect(useApiRequest).toHaveBeenCalledTimes(1)
+      expect(vi.mocked(useApiRequest).mock.calls[0][0].body.metadata).toEqual({
+        primary_color: '#fff',
+      })
+    } finally {
+      vi.mocked(importJs).mockReturnValue({})
+    }
+  })
+
+  it('blocks stale theme payload saves until the same section/tab recovers', async () => {
+    wrapper.vm.currentThemeTab = { id: 'colors' }
+    wrapper.vm.currentSectionData = { section: { id: 'section-a' }, currentTheme: {} }
+    wrapper.vm.originalVariations = { variation1: { views: {} } }
+    const generate = vi.fn(() => ({ color: '#000' }))
+    vi.mocked(importJs).mockReturnValue({ theme_settings_payload: generate })
+    try {
+      wrapper.vm.sectionThemeUpdated({ color: '#000' })
+      generate.mockImplementationOnce(() => {
+        throw new Error('Payload failed')
+      })
+      wrapper.vm.sectionThemeUpdated({ color: '#fff' })
+      expect(wrapper.vm.themeSettingsPayload).toEqual({ color: '#000' })
+      vi.mocked(useApiRequest).mockClear()
+      await expect(wrapper.vm.updateSectionsThemes()).resolves.toBe(false)
+      expect(useApiRequest).not.toHaveBeenCalled()
+
+      wrapper.vm.currentThemeTab = { id: 'spacing' }
+      wrapper.vm.sectionThemeUpdated({ padding: 10 })
+      await expect(wrapper.vm.updateSectionsThemes()).resolves.toBe(false)
+
+      wrapper.vm.currentThemeTab = { id: 'colors' }
+      vi.mocked(importJs).mockReturnValue({ theme_settings_payload: () => ({ color: '#fff' }) })
+      wrapper.vm.sectionThemeUpdated({ color: '#fff' })
+      vi.mocked(useApiRequest).mockResolvedValueOnce({ data: {} })
+      await wrapper.vm.updateSectionsThemes()
+      expect(useApiRequest).toHaveBeenCalledTimes(1)
+      expect(vi.mocked(useApiRequest).mock.calls[0][0].body.metadata.sections_builder).toEqual({
+        color: '#fff',
+      })
+    } finally {
+      vi.mocked(importJs).mockReturnValue({})
+    }
+  })
+
+  it('calls the edit-mode veto only once', async () => {
+    const veto = vi.fn(() => true)
+    vi.mocked(importJs).mockReturnValue({ pre_open_edit_mode: veto })
+    const before = wrapper.vm.editMode
+    try {
+      await wrapper.vm.openEditMode()
+      expect(veto).toHaveBeenCalledTimes(1)
+      expect(wrapper.vm.editMode).toBe(before)
+    } finally {
+      vi.mocked(importJs).mockReturnValue({})
+    }
+  })
+
+  it.each([true, false, 'throw'])(
+    'clears core cookies even when custom cleanup returns %s',
+    (result) => {
+      const cleanup = vi.fn(() => {
+        if (result === 'throw') throw new Error('Cleanup hook failed')
+        return result
+      })
+      vi.mocked(importJs).mockReturnValue({ clear_cookies: cleanup })
+      const token = useCookie('sections-auth-token').value
+      const project = useCookie('sections-project-id').value
+      const packageName = useCookie('package_name').value
+      useCookie('sections-auth-token').value = 'test-token'
+      try {
+        wrapper.vm.clearCookies()
+        expect(cleanup).toHaveBeenCalledTimes(1)
+        expect(useCookie('sections-auth-token').value).toBeFalsy()
+        expect(useCookie('sections-project-id').value).toBeFalsy()
+      } finally {
+        useCookie('sections-auth-token').value = token
+        useCookie('sections-project-id').value = project
+        useCookie('package_name').value = packageName
+        vi.mocked(importJs).mockReturnValue({})
+      }
+    }
+  )
+
+  it.each([false, true, 'throw'])(
+    'honors the path-update reload decision %s with one hook call',
+    async (reload) => {
+      const decide = vi.fn(() => {
+        if (reload === 'throw') throw new Error('Reload hook failed')
+        return reload
+      })
+      const replace = vi.spyOn(window.location, 'replace').mockImplementation(() => {})
+      vi.mocked(importJs).mockReturnValue({ reload_page_on_path_update: decide })
+      const pagePath = wrapper.vm.pagePath
+      wrapper.vm.originalVariations = { variation1: { views: {} } }
+      wrapper.vm.pagePath = 'updated-path'
+      wrapper.vm.sectionsPageName = 'old-path'
+      vi.mocked(useApiRequest).mockImplementationOnce(async ({ onSuccess }) => {
+        const response = { data: { metadata: {}, path: 'updated-path' } }
+        await onSuccess(response)
+        return response
+      })
+      try {
+        await wrapper.vm.updatePageMetaData(false)
+        expect(decide).toHaveBeenCalledTimes(1)
+        expect(replace).toHaveBeenCalledTimes(reload ? 1 : 0)
+      } finally {
+        replace.mockRestore()
+        wrapper.vm.pagePath = pagePath
+        vi.mocked(importJs).mockReturnValue({})
+      }
+    }
+  )
+
+  it('stores transport failures in page error state and clears loading', () => {
+    const previous = {
+      sectionsError: wrapper.vm.sectionsError,
+      errorResponseStatus: wrapper.vm.errorResponseStatus,
+      pageNotFound: wrapper.vm.pageNotFound,
+      loading: wrapper.vm.loading,
+    }
+    try {
+      wrapper.vm.loading = true
+      wrapper.vm.sectionsPageErrorManagement(new TypeError('Offline'), true)
+      expect(wrapper.vm.sectionsError).toBe('Offline')
+      expect(wrapper.vm.errorResponseStatus).toBe(0)
+      expect(wrapper.vm.loading).toBe(false)
+    } finally {
+      Object.assign(wrapper.vm, previous)
+    }
+  })
+
+  it('safely skips sidebar sizing when its DOM target is absent', async () => {
+    wrapper.vm.resizeTarget = null
+    await expect(wrapper.vm.sideBarSizeManagement()).resolves.toBeUndefined()
   })
 
   it('uses pageName prop correctly', async () => {
@@ -2997,40 +3176,47 @@ const SidebarComponent = {
     })
 
     // Mock functions
+    const domUpdates = createDomScheduler((error) => {
+      throw error
+    })
+    onBeforeUnmount(() => {
+      domUpdates.dispose()
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', stopTracking)
+    })
     const sideBarSizeManagement = () => {
-      try {
-        nextTick(() => {
-          resizeData.value.parentElement = resizeTarget.value.parentElement
-          resizeData.value.resizeTarget = resizeTarget.value
-          setTimeout(() => {
-            if (resizeTarget.value) {
-              resizeTarget.value.scrollTo({
-                top: 0,
+      return domUpdates.nextTick(() => {
+        if (!resizeTarget.value?.parentElement) return
+        resizeData.value.parentElement = resizeTarget.value.parentElement
+        resizeData.value.resizeTarget = resizeTarget.value
+        domUpdates.delay(() => {
+          if (resizeTarget.value) {
+            resizeTarget.value.scrollTo({
+              top: 0,
+            })
+          }
+          if (sectionsMainTarget.value && currentSection.value) {
+            const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`
+            const targetElement = sectionsMainTarget.value.querySelector(
+              `[id="${safeViewAnchor.substring(1)}"]`
+            )
+            if (targetElement) {
+              const targetPosition = targetElement.offsetTop
+              sectionsMainTarget.value.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth',
+              })
+            } else {
+              sectionsMainTarget.value.scrollTo({
+                top: sectionsMainTarget.value.scrollHeight,
+                behavior: 'smooth',
               })
             }
-            if (sectionsMainTarget.value && currentSection.value) {
-              const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`
-              const targetElement = sectionsMainTarget.value.querySelector(
-                `[id="${safeViewAnchor.substring(1)}"]`
-              )
-              if (targetElement) {
-                const targetPosition = targetElement.offsetTop
-                sectionsMainTarget.value.scrollTo({
-                  top: targetPosition,
-                  behavior: 'smooth',
-                })
-              } else {
-                sectionsMainTarget.value.scrollTo({
-                  top: sectionsMainTarget.value.scrollHeight,
-                  behavior: 'smooth',
-                })
-              }
-            }
-          }, 600)
-          window.addEventListener('mousemove', onMouseMove)
-          window.addEventListener('mouseup', stopTracking)
-        })
-      } catch {}
+          }
+        }, 600)
+        window.addEventListener('mousemove', onMouseMove)
+        window.addEventListener('mouseup', stopTracking)
+      })
     }
 
     const startTracking = (event) => {

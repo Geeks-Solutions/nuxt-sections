@@ -1,5 +1,7 @@
 import { useCookie, useNuxtApp, useRequestHeaders, useRoute } from '#app'
 import { defineAsyncComponent } from 'vue'
+import { toApiError } from './api-errors'
+import { prepareApiRequest, runApiErrorHook } from './request-hooks'
 
 export function formatName(name: string): string {
   switch (name) {
@@ -21,7 +23,6 @@ export const formatTexts = (text: string, sep: string = ' '): string => {
 }
 
 export const importJs = (path: string): any => {
-  // @ts-ignore
   const jsHooks = import.meta.glob(`/sections/**/!(*.spec).js`, { eager: true })
   try {
     return jsHooks[`/sections${path}.js`]
@@ -30,9 +31,7 @@ export const importJs = (path: string): any => {
   }
 }
 
-// @ts-ignore
 const sections = import.meta.glob('/sections/**/*.vue')
-// @ts-ignore
 const configs = import.meta.glob('../components/configs/**/*.vue')
 const importCache: any = {}
 
@@ -57,6 +56,7 @@ export const importComp = (path: string) => {
     setup = configs[configPath]()
     component = defineAsyncComponent(() => setup)
   } else {
+    // eslint-disable-next-line no-console -- Explain the null component fallback to host developers.
     console.warn(`Component not found at: ${sectionPath} or ${configPath}`)
     return { component: null, setup: null }
   }
@@ -570,8 +570,8 @@ export const getSectionProjectIdentity = (id?: any) => {
   if (id === true) {
     return nuxtApp.$sections.projectId
   } else if (nuxtApp.$sections.cname === 'active') {
-    // In Nuxt 3, process.client replaces typeof window !== 'undefined'
-    if (process.client) {
+    // Nuxt replaces this flag for the client/server build target.
+    if (import.meta.client) {
       // Used for local development with cname active
       // return 'csstest.k8s-dev.geeks.solutions'
       return window.location.hostname
@@ -604,7 +604,9 @@ export const renderPageData = async () => {
         app.$sections = paramsUpdate
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    // Keep the current Sections configuration if the optional override fails.
+  }
 
   let websiteDomain = ''
   const scheme = window.location.protocol.replace(':', '')
@@ -627,7 +629,9 @@ export const renderPageData = async () => {
   let language
   try {
     language = app.$i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (app.$sections.queryStringSupport === 'enabled') {
     const query_string = parseQS(
@@ -752,7 +756,7 @@ export const useApiRequest = async <T = any>({
     }
 
     // Configure request options
-    const options = {
+    let options = {
       method,
       body,
       headers: requestHeaders,
@@ -765,21 +769,24 @@ export const useApiRequest = async <T = any>({
         typeof body === 'object' && !(body instanceof FormData) ? JSON.stringify(body) : body
     }
 
-    let updatedURL = url
-    let updatedBody = body
-    let apiOff
+    let preRequestHook
     try {
       const hooksJs = importJs(`/js/global-hooks`)
-      if (hooksJs && hooksJs['api_pre_request']) {
-        const preRequest = await hooksJs['api_pre_request']($nuxt, method, url, body, options)
-        updatedURL = preRequest.url
-        updatedBody = preRequest.body
-        apiOff = preRequest.apiOff
-        if (updatedBody) {
-          options.body = updatedBody
-        }
-      }
-    } catch {}
+      preRequestHook = hooksJs?.['api_pre_request']
+    } catch {
+      // Missing/broken hook discovery must not prevent the original request.
+    }
+    const prepared = await prepareApiRequest({
+      hook: preRequestHook,
+      app: $nuxt,
+      method,
+      url,
+      body,
+      options,
+    })
+    const updatedURL = prepared.url
+    const apiOff = prepared.apiOff
+    options = prepared.options
 
     let response
     if (!apiOff) {
@@ -817,7 +824,7 @@ export const useApiRequest = async <T = any>({
 
     // Handle response
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
+      const errorData = (await response.json?.().catch(() => ({}))) || {}
       const error: ApiError = {
         data: errorData,
         response: {
@@ -825,10 +832,6 @@ export const useApiRequest = async <T = any>({
           status: response.status,
           statusText: response.statusText,
         },
-      }
-      // Call error callback if provided
-      if (onError && typeof onError === 'function') {
-        onError(error)
       }
       throw error
     } else {
@@ -850,21 +853,30 @@ export const useApiRequest = async <T = any>({
             onSuccess
           )
         }
-      } catch {}
+      } catch {
+        // An optional response transform must not discard the original response.
+      }
       // Call success callback if provided
       if (onSuccess && typeof onSuccess === 'function') {
-        onSuccess(updatedRes || res)
+        await onSuccess(updatedRes || res)
       }
       return res
     }
-  } catch (error: any) {
+  } catch (caughtError: any) {
+    let error = caughtError
+    // Notify once for HTTP, transport, parsing, or success-callback failures.
+    // Do not recursively call onError if the error callback itself fails.
     try {
-      const hooksJs = importJs(`/js/global-hooks`)
-      if (hooksJs && hooksJs['api_request_error']) {
-        return hooksJs['api_request_error']($nuxt, method, url, body, error, fetchOptions)
-      }
-    } catch {}
-    throw error
+      if (typeof onError === 'function') await onError(toApiError(error))
+    } catch (callbackError) {
+      error = callbackError
+    }
+    const hooksJs = importJs(`/js/global-hooks`)
+    return runApiErrorHook(
+      hooksJs?.['api_request_error'],
+      [$nuxt, method, url, body, error, fetchOptions],
+      error
+    )
   }
 }
 
@@ -927,6 +939,7 @@ export function loadScript(
     const { load } = useScript(src)
     scriptPromises[key] = load().catch(() => {
       // allow retry on failure
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- Evict a failed load so the next call can retry.
       delete scriptPromises[key]
     })
     return scriptPromises[key]

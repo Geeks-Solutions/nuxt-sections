@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- This setup intentionally intercepts and forwards test diagnostics. */
 import { config } from '@vue/test-utils'
 import { vi } from 'vitest'
 

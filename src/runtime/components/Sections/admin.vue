@@ -735,6 +735,7 @@
                               v-for="appName in appNames.filter(
                                 (item, index) => appNames.indexOf(item) === index
                               )"
+                              :key="appName"
                               :value="appName"
                             >
                               {{ appName }}
@@ -1446,7 +1447,7 @@
                     {{ $t('authorize-section-type') + selectedAppName }}
                   </div>
                   <div class="flexSections sections-flex-col sections-gap-4">
-                    <div v-for="requiredInput in selectedSectionRequirements">
+                    <div v-for="requiredInput in selectedSectionRequirements" :key="requiredInput">
                       <input
                         v-model="requirementsInputs[requiredInput]"
                         class="sections-py-4 sections-pl-6 sections-border rounded-xl sections-border-FieldGray sections-h-48px sections-w-full focus:outline-none"
@@ -1814,9 +1815,13 @@
                   (section) => openSectionThemeModal(section, sectionsThemeComponents[section.id])
                 "
               >
-                <template v-for="(slotName, slotIdx) in layoutSlotNames" #[slotName]>
+                <template
+                  v-for="(slotName, slotIdx) in layoutSlotNames"
+                  :key="slotName"
+                  #[slotName]
+                >
                   <!-- Empty div injected to verify the slots              -->
-                  <div class="flexSections flex-col">
+                  <div :key="slotName" class="flexSections flex-col">
                     <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
                     <div
                       v-if="admin && editMode && (!isSideBarOpen || currentSidebarKeepEditBar)"
@@ -2329,6 +2334,10 @@ import { camelCase, upperFirst, isEqual } from 'lodash-es'
 import { getMySectionsPages, loadScript, validatePagePath } from '../../utils/helpers.js'
 import { useSectionsHeadManager } from '../../composables/useSectionsHeadManager.js'
 import { runHookWithHeadPreview } from '../../utils/head-management.js'
+import { toApiError } from '../../utils/api-errors'
+import { createDomScheduler } from '../../utils/dom-updates'
+import { restoreSectionView } from '../../utils/restore-section'
+import { componentName } from '../../utils/component-name'
 
 const {
   pageName,
@@ -2466,9 +2475,11 @@ const updatedPageSettingsTabs = computed(() => {
   try {
     const builderSettingsFiles = import.meta.glob('/sections/builder/settings/*.vue')
     builderSettingsTabs = Object.keys(builderSettingsFiles).map((filename) => {
-      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+      return componentName(filename)
     })
-  } catch {}
+  } catch {
+    // No optional builder settings were discovered; keep the empty tab list.
+  }
   if (admin && editMode.value && builderSettingsTabs && builderSettingsTabs.length > 0) {
     return [...settingsTabs.value, ...builderSettingsTabs]
   } else {
@@ -2530,6 +2541,7 @@ const sectionsPageName = ref('')
 const pageMetadata = useState('pageMetadata', () => ({}))
 const projectMetadata = ref({})
 const builderSettingsPayload = ref({})
+const builderPayloadErrors = ref({})
 const metadataErrors = ref({
   path: [''],
 })
@@ -2628,6 +2640,7 @@ const unsavedThemeSettingsError = ref({})
 const originalThemeSettings = ref({})
 
 const themeSettingsPayload = ref({})
+const themePayloadErrors = ref({})
 
 const currentSectionData = ref({})
 
@@ -3044,6 +3057,7 @@ const seoBtnClicked = (id) => {
     pageMetadata.value.seo = {}
   }
   if (pageMetadata.value.seo[id] === true) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- Remove the reactive SEO flag, not merely its value.
     delete pageMetadata.value.seo[id]
   } else {
     pageMetadata.value.seo[id] = true
@@ -3171,7 +3185,9 @@ const initializeSections = (res, skipHook) => {
         [originalBuilderSettings.value, applyHead, currentSettingsTab.value],
         setHeadPreview
       )
-    } catch {}
+    } catch {
+      // Keep the original builder metadata if its optional initialization hook fails.
+    }
   }
 
   if (res.data.metadata && res.data.metadata.sections_builder) {
@@ -3183,7 +3199,9 @@ const initializeSections = (res, skipHook) => {
         [originalThemeSettings.value, applyHead],
         setHeadPreview
       )
-    } catch {}
+    } catch {
+      // Keep the original theme metadata if its optional initialization hook fails.
+    }
   }
 
   if (!computedSEO.value.title && pageMetadata.value[lang]) {
@@ -3277,6 +3295,7 @@ const initializeSections = (res, skipHook) => {
   }
 }
 const sectionsPageErrorManagement = (error, server, skipHook) => {
+  error = toApiError(error)
   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`
   if (
     error.response &&
@@ -3478,21 +3497,36 @@ const builderSettingUpdated = (settings) => {
 
   try {
     const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
+    const hook = builderHooksJavascript?.['builder_settings_payload']
     const payload = runHookWithHeadPreview(
-      builderHooksJavascript['builder_settings_payload'],
+      hook,
       [originalBuilderSettings.value, settings, currentSettingsTab.value],
       setHeadPreview
     )
-    if (payload !== undefined) {
+    if (typeof hook === 'function') {
+      // These hooks return metadata synchronously; observe unsupported async failures too.
+      if (payload && typeof payload.then === 'function')
+        void Promise.resolve(payload).catch(() => {})
+      if (
+        !payload ||
+        typeof payload !== 'object' ||
+        Array.isArray(payload) ||
+        typeof payload.then === 'function'
+      ) {
+        throw new Error('Builder settings payload generation did not return a metadata object.')
+      }
       builderSettingsPayload.value = payload
+      builderPayloadErrors.value[currentSettingsTab.value] = false
     }
-  } catch {}
+  } catch (error) {
+    builderPayloadErrors.value[currentSettingsTab.value] = true
+  }
 
   updatedBuilderSettings.value = settings
   updatedBuilderSettingsPerTab.value[currentSettingsTab.value] = settings
 }
 const updateBuilderSettingsMetaData = () => {
-  updateProjectMetadata()
+  return updateProjectMetadata()
 }
 
 const syncProjectMetadataForHead = (metadata = {}) => {
@@ -3528,6 +3562,14 @@ const syncPageMetadataForHead = (metadata = {}) => {
 }
 
 const updateProjectMetadata = async (payload, external_call) => {
+  if (external_call !== true && Object.values(builderPayloadErrors.value).some(Boolean)) {
+    showToast(
+      'Cannot save settings',
+      'error',
+      'Fix the builder settings payload hook before saving.'
+    )
+    return false
+  }
   if (external_call !== true) {
     loading.value = true
   }
@@ -3615,6 +3657,10 @@ const updateProjectMetadata = async (payload, external_call) => {
   }
 }
 const updatePageMetaData = async (seo, themeData) => {
+  if (themeData !== undefined && Object.values(themePayloadErrors.value).some(Boolean)) {
+    showToast('Cannot save settings', 'error', 'Fix the theme settings payload hook before saving.')
+    return false
+  }
   loading.value = true
   metadataErrors.value.path[0] = ''
 
@@ -3770,14 +3816,13 @@ const updatePageMetaData = async (seo, themeData) => {
         let reloadPage = true
         try {
           const hooksJs = importJs(`/js/global-hooks`)
-          if (
-            hooksJs &&
-            hooksJs['reload_page_on_path_update'] &&
-            hooksJs['reload_page_on_path_update'](useCookie)
-          ) {
-            reloadPage = hooksJs['reload_page_on_path_update'](useCookie)
+          if (hooksJs && hooksJs['reload_page_on_path_update']) {
+            const shouldReload = hooksJs['reload_page_on_path_update'](useCookie)
+            if (typeof shouldReload === 'boolean') reloadPage = shouldReload
           }
-        } catch {}
+        } catch {
+          // Keep the default reload policy if the optional hook fails.
+        }
 
         if (updatedPagePath !== sectionsPageName.value) {
           let baseURL = window.location.origin
@@ -4278,7 +4323,9 @@ const seoManagement = (view, sectionHooksJs) => {
         })
       }
     }
-  } catch {}
+  } catch {
+    // Keep page/project SEO when the optional section SEO hook fails.
+  }
 }
 const parseSectionName = (sectionName) => {
   let parsedSectionName = ''
@@ -4332,10 +4379,11 @@ const getAvailableLayouts = () => {
     // In Nuxt 3, you'd typically use import.meta.glob instead of require.context
     const layoutFiles = import.meta.glob('/sections/layouts/*.vue')
     const layoutNames = Object.keys(layoutFiles).map((filename) => {
-      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+      return componentName(filename)
     })
     availableLayouts.value.push(...layoutNames)
   } catch (error) {
+    // eslint-disable-next-line no-console -- Report failed host layout discovery.
     console.warn(i18n.t('noLayoutsFolder'))
   }
 }
@@ -4690,10 +4738,11 @@ const getAvailableSections = () => {
     // Use import.meta.glob instead of require.context
     const formSections = import.meta.glob('/sections/forms/*.vue')
     const formNames = Object.keys(formSections).map((filename) => {
-      return filename.replace(/^.*\/(.+)\.vue$/, '$1')
+      return componentName(filename)
     })
     availableSectionsForms.value.push(...formNames)
   } catch (error) {
+    // eslint-disable-next-line no-console -- Report failed host form discovery.
     console.warn(i18n.t('noFormsFolder'))
   }
 }
@@ -4750,7 +4799,9 @@ const initiateIntroJs = async () => {
       loading.value = false
       emit('load', false)
     }
-  } catch {} // Outer catch remains for potential errors before API call
+  } catch {
+    // The optional introductory tour must not prevent the editor from opening.
+  }
 }
 const runIntro = async (topic, rerun, lastSavedTopic, action) => {
   if (guideConfig.value.disabled === true) {
@@ -5383,6 +5434,7 @@ const buildComp = (staticTypes, views, compType, path) => {
       }
     } else {
       if (fileName.includes('.vue')) {
+        // eslint-disable-next-line no-console -- Report an unusable host component.
         console.error(
           `nuxt-sections: ${fileName} ${i18n.t('in')} ${path} ${i18n.t('cannotRegisterComp')}`
         )
@@ -5395,13 +5447,15 @@ const buildComp = (staticTypes, views, compType, path) => {
 const openEditMode = async () => {
   try {
     const hooksJs = importJs(`/js/global-hooks`)
-    if (hooksJs && hooksJs['pre_open_edit_mode'] && hooksJs['pre_open_edit_mode'](useCookie)) {
+    if (hooksJs && hooksJs['pre_open_edit_mode']) {
       const disableEditMode = hooksJs['pre_open_edit_mode'](useCookie)
       if (disableEditMode === true) {
         return
       }
     }
-  } catch {}
+  } catch {
+    // Keep the existing edit-mode fallback when the optional veto hook fails.
+  }
 
   await getSectionTypes(true)
   if (!originalVariations.value[selectedVariation.value]) {
@@ -5444,7 +5498,9 @@ const openEditMode = async () => {
     let language = undefined
     try {
       language = i18n.locale.value
-    } catch {}
+    } catch {
+      // No locale is available; leave the request language undefined.
+    }
 
     if (
       nuxtApp.$sections.queryStringSupport &&
@@ -5491,7 +5547,9 @@ const openEditMode = async () => {
             if (res) {
               myPages.value = res
             }
-          } catch {}
+          } catch {
+            // An auxiliary page-list refresh must not prevent entering edit mode.
+          }
           loading.value = false
           verifySlots() // Assuming this is synchronous or doesn't need awaiting
           if (selectedLayout.value !== 'standard') {
@@ -5702,7 +5760,9 @@ const refreshSectionView = async (sectionView, data) => {
   let language = undefined
   try {
     language = i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
     variables['query_string'] = parseQS(
@@ -5725,7 +5785,9 @@ const refreshSectionView = async (sectionView, data) => {
         // Ensure we only take serializable data
         try {
           variables = JSON.parse(JSON.stringify(hookResult))
-        } catch {}
+        } catch {
+          // Keep the current variables if the hook returns non-serializable data.
+        }
       }
     }
     if (data.qs) {
@@ -5823,13 +5885,15 @@ const refreshSectionView = async (sectionView, data) => {
             showToast('Error', 'error', renderSectionError.value)
           },
         })
-      } catch {}
+      } catch (error) {
+        // onError already emits/notifies; also retain state if that callback fails.
+        renderSectionError.value = `${sectionName}: ${toApiError(error).response.data.error}`
+      }
     } else {
       // Keep OPTIONS check separate as useApiRequest doesn't explicitly handle it
-      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-
-      if (optionsRes.status === 200) {
-        try {
+      try {
+        const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+        if (optionsRes.status === 200) {
           await useApiRequest({
             url: URL,
             method: 'POST',
@@ -5857,7 +5921,10 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${e.response.data.error}`
             },
           })
-        } catch {}
+        }
+      } catch (error) {
+        // Covers preflight failures too, without duplicating POST error notifications.
+        renderSectionError.value = `${sectionName}: ${toApiError(error).response.data.error}`
       }
     }
   }
@@ -6298,6 +6365,7 @@ const deleteView = (id) => {
     })
   }
   // Then we remove the variation we want to delete
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- Preserve actual view removal before the reactive refresh.
   delete displayVariations.value[selectedVariation.value].views[id]
   // Below 2 lines are added to refresh the section views and have the list reactive to the deletion update
   displayVariations.value[selectedVariation.value].views = {
@@ -6316,7 +6384,9 @@ const deleteView = (id) => {
         originalThemeSettings.value = updatedMetaData
       }
     }
-  } catch {}
+  } catch {
+    // Section deletion is complete; an optional theme hook must not undo it.
+  }
   showToast('Deleted', 'info', i18n.t('sectionRemoved'))
   computeLayoutData()
 }
@@ -6330,6 +6400,7 @@ const copyAnchor = (anchor, event) => {
     navigator.clipboard.writeText(anchor)
 
     const tooltip = document.createElement('div')
+    // eslint-disable-next-line unicorn/prefer-dom-node-text-content -- Preserve newline rendering in host translations.
     tooltip.innerText = i18n.t('anchorCopied')
     tooltip.className = 'anchor-copied-tooltip'
     document.body.appendChild(tooltip)
@@ -6726,40 +6797,43 @@ const updateCreationView = (settings) => {
   createdView.value.settings = settings
   createdView.value = { ...createdView.value }
 }
+const domUpdates = createDomScheduler((error) => {
+  // eslint-disable-next-line no-console -- Surface deferred DOM failures without unhandled rejections.
+  console.error('Error updating Sections editor layout:', error)
+})
 const sideBarSizeManagement = () => {
-  try {
-    nextTick(() => {
-      resizeData.value.parentElement = resizeTarget.value.parentElement
-      resizeData.value.resizeTarget = resizeTarget.value
-      setTimeout(() => {
-        if (resizeTarget.value) {
-          resizeTarget.value.scrollTo({
-            top: 0,
+  return domUpdates.nextTick(() => {
+    if (!resizeTarget.value?.parentElement) return
+    resizeData.value.parentElement = resizeTarget.value.parentElement
+    resizeData.value.resizeTarget = resizeTarget.value
+    domUpdates.delay(() => {
+      if (resizeTarget.value) {
+        resizeTarget.value.scrollTo({
+          top: 0,
+        })
+      }
+      if (sectionsMainTarget.value && currentSection.value) {
+        const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`
+        const targetElement = sectionsMainTarget.value.querySelector(
+          `[id="${safeViewAnchor.substring(1)}"]`
+        )
+        if (targetElement) {
+          const targetPosition = targetElement.offsetTop
+          sectionsMainTarget.value.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth',
+          })
+        } else {
+          sectionsMainTarget.value.scrollTo({
+            top: sectionsMainTarget.value.scrollHeight,
+            behavior: 'smooth',
           })
         }
-        if (sectionsMainTarget.value && currentSection.value) {
-          const safeViewAnchor = `#${`${currentSection.value.name}-${currentSection.value.id}`.replace(/ /g, '\\ ')}`
-          const targetElement = sectionsMainTarget.value.querySelector(
-            `[id="${safeViewAnchor.substring(1)}"]`
-          )
-          if (targetElement) {
-            const targetPosition = targetElement.offsetTop
-            sectionsMainTarget.value.scrollTo({
-              top: targetPosition,
-              behavior: 'smooth',
-            })
-          } else {
-            sectionsMainTarget.value.scrollTo({
-              top: sectionsMainTarget.value.scrollHeight,
-              behavior: 'smooth',
-            })
-          }
-        }
-      }, 600)
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', stopTracking)
-    })
-  } catch {}
+      }
+    }, 600)
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', stopTracking)
+  })
 }
 const startTracking = (event) => {
   if (event.button !== 0) return
@@ -6844,7 +6918,9 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
           updatedBuilderSettings.value = settingsReset
           updatedBuilderSettingsPerTab.value[tab] = settingsReset
         }
-      } catch {}
+      } catch {
+        // Keep existing builder settings if the optional reset hook fails.
+      }
     })
     metadataFormLang.value = i18n.locale.value.toString()
     unsavedSettingsError.value = {}
@@ -6869,7 +6945,9 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
           )
           currentSectionData.value.currentTheme[tab.id] = settingsReset
         }
-      } catch {}
+      } catch {
+        // Keep existing theme settings if the optional reset hook fails.
+      }
     })
     unsavedThemeSettingsError.value = {}
     currentThemeTab.value = {}
@@ -6896,22 +6974,18 @@ const restoreSectionContent = (metadataModalOpened, sectionsThemeModalOpened) =>
   popSidebarState()
 }
 const restoreSection = () => {
-  displayVariations.value[selectedVariation.value].altered = false
-
-  // In Nuxt 3, we don't need $set anymore, we can directly modify reactive objects
-  displayVariations.value[selectedVariation.value].views[currentSection.value.id] =
-    updatedVariations.value[selectedVariation.value].views[currentSection.value.id]
-
-  if (selectedLayout.value !== 'standard') {
-    try {
-      const index = viewsPerRegions.value[selectedSlotRegion.value].findIndex(
-        (view) => view.id === currentSection.value.id
-      )
-
-      viewsPerRegions.value[selectedSlotRegion.value][index] =
-        updatedVariations.value[selectedVariation.value].views[currentSection.value.id]
-    } catch {}
-  }
+  const variation = displayVariations.value[selectedVariation.value]
+  if (!currentSection.value || !variation) return
+  const restored = restoreSectionView({
+    views: variation.views,
+    savedViews: updatedVariations.value[selectedVariation.value]?.views,
+    id: currentSection.value.id,
+    regions: viewsPerRegions.value,
+    layout: selectedLayout.value,
+    fallbackSlot: selectedSlotRegion.value,
+  })
+  if (!restored) return
+  variation.altered = false
 
   updatedVariations.value = JSON.parse(JSON.stringify(displayVariations.value))
   currentViews.value = displayVariations.value[selectedVariation.value].views
@@ -6939,10 +7013,12 @@ const clearCookies = () => {
 
   try {
     const hooksJs = importJs(`/js/global-hooks`)
-    if (hooksJs && hooksJs['clear_cookies'] && hooksJs['clear_cookies'](useCookie)) {
+    if (hooksJs && hooksJs['clear_cookies']) {
       return hooksJs['clear_cookies'](useCookie)
     }
-  } catch {}
+  } catch {
+    // Core cookies are already cleared; optional host cleanup must not block logout.
+  }
 }
 const logoutUser = () => {
   clearCookies()
@@ -7022,10 +7098,15 @@ const switchThemeTab = (tab) => {
   currentThemeTab.value = tab
 }
 const sectionThemeUpdated = (settings) => {
+  const payloadKey = JSON.stringify([
+    currentSectionData.value.section?.id,
+    currentThemeTab.value.id,
+  ])
   try {
     const builderHooksJavascript = importJs(`/theme/theme-hooks`)
+    const hook = builderHooksJavascript?.['theme_settings_payload']
     const payload = runHookWithHeadPreview(
-      builderHooksJavascript['theme_settings_payload'],
+      hook,
       [
         originalThemeSettings.value,
         settings,
@@ -7034,10 +7115,24 @@ const sectionThemeUpdated = (settings) => {
       ],
       setHeadPreview
     )
-    if (payload !== undefined) {
+    if (typeof hook === 'function') {
+      // These hooks return metadata synchronously; observe unsupported async failures too.
+      if (payload && typeof payload.then === 'function')
+        void Promise.resolve(payload).catch(() => {})
+      if (
+        !payload ||
+        typeof payload !== 'object' ||
+        Array.isArray(payload) ||
+        typeof payload.then === 'function'
+      ) {
+        throw new Error('Theme settings payload generation did not return a metadata object.')
+      }
       themeSettingsPayload.value = payload
+      themePayloadErrors.value[payloadKey] = false
     }
-  } catch {}
+  } catch (error) {
+    themePayloadErrors.value[payloadKey] = true
+  }
 
   if (!currentSectionData.value.currentTheme[currentThemeTab.value.id]) {
     currentSectionData.value.currentTheme[currentThemeTab.value.id] = {}
@@ -7047,7 +7142,7 @@ const sectionThemeUpdated = (settings) => {
   ] = settings
 }
 const updateSectionsThemes = () => {
-  updatePageMetaData(false, themeSettingsPayload.value)
+  return updatePageMetaData(false, themeSettingsPayload.value)
 }
 const themeScrollToSection = () => {
   const section = currentSectionData.value.section
@@ -7075,14 +7170,12 @@ const openMyPage = (page) => {
 }
 
 const updateHeight = () => {
-  try {
-    nextTick(() => {
-      if (sectionWrapper.value) {
-        const height = sectionWrapper.value.offsetHeight
-        document.documentElement.style.setProperty('--section-height', `${height}px`)
-      }
-    })
-  } catch {}
+  return domUpdates.nextTick(() => {
+    if (sectionWrapper.value) {
+      const height = sectionWrapper.value.offsetHeight
+      document.documentElement.style.setProperty('--section-height', `${height}px`)
+    }
+  })
 }
 
 // Lifecycle hooks
@@ -7125,7 +7218,9 @@ onMounted(async () => {
         })
       }
     }
-  } catch {}
+  } catch {
+    // Keep the default theme-component registry if host registration fails.
+  }
 })
 
 onBeforeMount(() => {
@@ -7133,6 +7228,7 @@ onBeforeMount(() => {
 })
 
 onBeforeUnmount(() => {
+  domUpdates.dispose()
   fetchedOnServer.value = false
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', stopTracking)
@@ -7187,7 +7283,9 @@ const fetchData = async () => {
         nuxtApp.$sections = paramsUpdate
       }
     }
-  } catch {}
+  } catch {
+    // Keep the current Sections configuration if the optional override fails.
+  }
 
   if (admin === true) {
     getAvailableLayouts()
@@ -7246,7 +7344,9 @@ const fetchData = async () => {
   let language = undefined
   try {
     language = i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
     const query_string = parseQS(
@@ -7271,7 +7371,9 @@ const fetchData = async () => {
       // Ensure we only take serializable data
       try {
         payload = JSON.parse(JSON.stringify(hookResult))
-      } catch {}
+      } catch {
+        // Keep the current payload if the hook returns non-serializable data.
+      }
     }
   }
 
@@ -7314,9 +7416,9 @@ const fetchData = async () => {
     sectionsError.value = ''
     sectionsMainErrors.value = []
     fetchedOnServer.value = true
-    const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-    if (optionsRes.status === 200) {
-      try {
+    try {
+      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+      if (optionsRes.status === 200) {
         await useApiRequest({
           url: URL,
           method: 'POST',
@@ -7329,7 +7431,14 @@ const fetchData = async () => {
             sectionsPageErrorManagement(error, true)
           },
         })
-      } catch {}
+      }
+    } catch (error) {
+      // Covers preflight failures and failures in page initialization/error handling.
+      if (!error?.response) sectionsError.value = toApiError(error).response.data.error
+      if (loading.value) {
+        loading.value = false
+        emit('load', false)
+      }
     }
   } else if (serverPageData) {
     if (serverPageData.res) {
