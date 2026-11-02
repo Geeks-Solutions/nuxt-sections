@@ -65,9 +65,9 @@
               :locales="locales"
               :default-lang="defaultLang"
             >
-              <template v-for="slotName in layoutSlotNames" v-slot:[slotName]>
+              <template v-for="slotName in layoutSlotNames" :key="slotName" v-slot:[slotName]>
                 <!-- Empty div injected to verify the slots              -->
-                <div class="flexSections flex-col">
+                <div :key="slotName" class="flexSections flex-col">
                   <div :id="`sections-slot-region-${selectedLayout}-${slotName}`"></div>
                   <div class="views">
                     <draggable
@@ -175,7 +175,6 @@ import {
   showToast,
   useApiRequest,
   useCookie,
-  useHead,
   useI18n,
   useLocalePath,
   useNuxtApp,
@@ -187,6 +186,9 @@ import {
   useScript,
 } from '#imports'
 import { loadScript } from '../../utils/helpers.js'
+import { useSectionsHeadManager } from '../../composables/useSectionsHeadManager.js'
+import { runHookWithHeadPreview } from '../../utils/head-management.js'
+import { toApiError } from '../../utils/api-errors'
 
 const { pageName, admin, variations, lang, viewsBgColor, sectionsPageData } = defineProps({
   pageName: {
@@ -303,6 +305,15 @@ const seoSectionsSupport = ref({})
 const sectionsQueryStringLanguageSupport = ref([])
 
 const originalThemeSettings = ref({})
+const { applyHead, setHeadPreview, resetHeadPreview } = useSectionsHeadManager({
+  projectMetadata,
+  pageMetadata,
+  computedSEO,
+  i18n,
+  route,
+  nuxtApp,
+  isHeadOwner: computed(() => !admin),
+})
 
 // Computed properties
 const activeVariation = computed(() => {
@@ -344,7 +355,7 @@ const currentViews = computed({
 const alteredViews = computed({
   get: () => {
     let alteredSections = null
-    let hooksJs = importJs(`/js/global-hooks`)
+    const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['page_pre_render'] && pageData.value) {
       if (typeof hooksJs['page_pre_render'] === 'function') {
         alteredSections = hooksJs['page_pre_render'](
@@ -372,7 +383,7 @@ const alteredViews = computed({
 const alteredViewsPerRegions = computed({
   get: () => {
     let alteredSections = null
-    let hooksJs = importJs(`/js/global-hooks`)
+    const hooksJs = importJs(`/js/global-hooks`)
     if (
       hooksJs &&
       hooksJs['page_pre_render'] &&
@@ -403,85 +414,6 @@ const alteredViewsPerRegions = computed({
   },
 })
 
-// Head management
-useHead(() => {
-  const baseURL = process.server
-    ? (nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http') +
-      '://' +
-      nuxtApp.ssrContext.event.req?.headers.host
-    : window.location.origin
-
-  const fullURL = baseURL + route.fullPath
-
-  return {
-    htmlAttrs: {
-      lang: i18n.locale.value,
-    },
-    title: computedSEO.value.title,
-    meta: [
-      computedSEO.value.description
-        ? {
-            hid: 'description',
-            name: 'description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      { hid: 'og:title', property: 'og:title', content: computedSEO.value.title },
-      computedSEO.value.description
-        ? {
-            hid: 'og:description',
-            property: 'og:description',
-            content: computedSEO.value.description,
-          }
-        : {},
-      computedSEO.value.image
-        ? {
-            hid: 'og:image',
-            property: 'og:image',
-            content: computedSEO.value.image.url
-              ? computedSEO.value.image.url
-              : computedSEO.value.image,
-          }
-        : {},
-      { hid: 'og:url', property: 'og:url', content: fullURL },
-    ],
-    link: [
-      projectMetadata.value['selectedCSSPreset'] &&
-      projectMetadata.value['selectedCSSPreset'].name &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'Other' &&
-      projectMetadata.value['selectedCSSPreset'].name !== 'None'
-        ? {
-            rel: 'stylesheet',
-            href: projectMetadata.value['selectedCSSPreset'].url,
-          }
-        : projectMetadata.value['selectedCSSPreset'] &&
-            projectMetadata.value['selectedCSSPreset'].name &&
-            projectMetadata.value['selectedCSSPreset'].name !== 'None' &&
-            projectMetadata.value['media'] &&
-            projectMetadata.value['media'].url
-          ? {
-              rel: 'stylesheet',
-              href: projectMetadata.value['media'].url,
-            }
-          : {},
-      pageMetadata.value['media'] && pageMetadata.value['media'].url
-        ? {
-            id: 'page-selected-css',
-            rel: 'stylesheet',
-            href: pageMetadata.value['media'].url,
-          }
-        : {},
-      projectMetadata.value['favicon'] && projectMetadata.value['favicon'].url
-        ? {
-            rel: 'icon',
-            type: 'image/png',
-            href: projectMetadata.value['favicon'].url,
-          }
-        : {},
-    ],
-  }
-})
-
 // Methods (now as regular functions)
 function handleDragState(starting) {
   drag.value = starting
@@ -494,6 +426,8 @@ const initializeSectionsCMSEvents = () => {
   }
 }
 const initializeSections = (res, skipHook) => {
+  resetHeadPreview()
+
   if (skipHook !== true) {
     nuxtApp.callHook('page_pre_render', res)
   }
@@ -585,24 +519,28 @@ const initializeSections = (res, skipHook) => {
     originalBuilderSettings.value = res.data.metadata.project_metadata
     try {
       const builderHooksJavascript = importJs(`/builder/settings/builder-hooks`)
-      if (builderHooksJavascript['initialize_builder_settings']) {
-        builderHooksJavascript['initialize_builder_settings'](
-          originalBuilderSettings.value,
-          useHead,
-          currentSettingsTab.value
-        )
-      }
-    } catch {}
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_builder_settings'],
+        [originalBuilderSettings.value, applyHead, currentSettingsTab.value],
+        setHeadPreview
+      )
+    } catch {
+      // Keep the original builder metadata if its optional initialization hook fails.
+    }
   }
 
   if (res.data.metadata && res.data.metadata.sections_builder) {
     originalThemeSettings.value = { ...res.data.metadata.sections_builder }
     try {
       const builderHooksJavascript = importJs(`/theme/theme-hooks`)
-      if (builderHooksJavascript['initialize_theme_settings']) {
-        builderHooksJavascript['initialize_theme_settings'](originalThemeSettings.value, useHead)
-      }
-    } catch {}
+      runHookWithHeadPreview(
+        builderHooksJavascript['initialize_theme_settings'],
+        [originalThemeSettings.value, applyHead],
+        setHeadPreview
+      )
+    } catch {
+      // Keep the original theme metadata if its optional initialization hook fails.
+    }
   }
 
   if (!computedSEO.value.title && pageMetadata.value[lang]) {
@@ -683,6 +621,7 @@ const initializeSections = (res, skipHook) => {
   sectionsPageLastUpdated.value = res.data.last_updated
 }
 const sectionsPageErrorManagement = (error, server, skipHook) => {
+  error = toApiError(error)
   const pagePath = `/${decodeURIComponent(pathMatch ? pathMatch : '/')}`
   if (
     error.response &&
@@ -867,7 +806,9 @@ const seoManagement = (view, sectionHooksJs) => {
         })
       }
     }
-  } catch {}
+  } catch {
+    // Keep page/project SEO when the optional section SEO hook fails.
+  }
 }
 const parseSectionName = (sectionName) => {
   let parsedSectionName = ''
@@ -917,7 +858,7 @@ const getComponent = (sectionName, sectionType, view) => {
   }
 }
 const getSelectedLayout = () => {
-  let path = `/layouts/${selectedLayout.value}`
+  const path = `/layouts/${selectedLayout.value}`
   if (selectedLayout.value === 'standard') {
     return 'div'
   } else return importComp(path).component
@@ -929,10 +870,10 @@ const computeLayoutData = async () => {
   if (selectedLayout.value !== 'standard') {
     sectionsMainErrors.value = []
     sectionsLayoutErrors.value = []
-    let path = `/layouts/${selectedLayout.value}`
+    const path = `/layouts/${selectedLayout.value}`
     layoutSlotNames.value = []
 
-    let layoutComp = await importComp(path).setup?.then((d) => d.default)
+    const layoutComp = await importComp(path).setup?.then((d) => d.default)
     if (!layoutComp?.props) {
       errorInLayout.value = true
       sectionsMainErrors.value.push(i18n.t('layoutErrors.missingComp'))
@@ -996,7 +937,7 @@ const computeLayoutData = async () => {
         }
       })
 
-      let selectedLay = selectedLayout.value
+      const selectedLay = selectedLayout.value
       viewsPerRegions.value[slotName] = viewsPerRegions.value[slotName].sort(function (a, b) {
         return a.region[selectedLay].weight - b.region[selectedLay].weight
       })
@@ -1055,7 +996,9 @@ const refreshSectionView = async (sectionView, data) => {
   let language = undefined
   try {
     language = i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
     variables['query_string'] = parseQS(
@@ -1078,7 +1021,9 @@ const refreshSectionView = async (sectionView, data) => {
         // Ensure we only take serializable data
         try {
           variables = JSON.parse(JSON.stringify(hookResult))
-        } catch {}
+        } catch {
+          // Keep the current variables if the hook returns non-serializable data.
+        }
       }
     }
     if (data.qs) {
@@ -1176,13 +1121,15 @@ const refreshSectionView = async (sectionView, data) => {
             showToast('Error', 'error', renderSectionError.value)
           },
         })
-      } catch {}
+      } catch (error) {
+        // onError already emits/notifies; also retain state if that callback fails.
+        renderSectionError.value = `${sectionName}: ${toApiError(error).response.data.error}`
+      }
     } else {
       // Keep OPTIONS check separate as useApiRequest doesn't explicitly handle it
-      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-
-      if (optionsRes.status === 200) {
-        try {
+      try {
+        const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+        if (optionsRes.status === 200) {
           await useApiRequest({
             url: URL,
             method: 'POST',
@@ -1210,27 +1157,30 @@ const refreshSectionView = async (sectionView, data) => {
               renderSectionError.value = `${sectionName}: ${e.response.data.error}`
             },
           })
-        } catch {}
+        }
+      } catch (error) {
+        // Covers preflight failures too, without duplicating POST error notifications.
+        renderSectionError.value = `${sectionName}: ${toApiError(error).response.data.error}`
       }
     }
   }
   await computeLayoutData()
 }
 const registeredPage = (type) => {
-  let path = `/page_components/${type}`
+  const path = `/page_components/${type}`
   // Assuming importComp is a global function or defined elsewhere
   // In Nuxt 3, you might use defineAsyncComponent instead
   return importComp(path).component
 }
 const fire_js = (event_name, event_data) => {
-  if (process.client) {
+  if (import.meta.client) {
     const event = new CustomEvent(event_name, { detail: event_data })
     window.dispatchEvent(event)
   }
 }
 
 const userLoggedOut = (links) => {
-  useHead({
+  applyHead({
     link: links,
   })
 }
@@ -1282,7 +1232,7 @@ if (serverPageData) {
 // Fetch data (initial data loading)
 const fetchData = async () => {
   try {
-    let hooksJavascript = importJs(`/js/global-hooks`)
+    const hooksJavascript = importJs(`/js/global-hooks`)
     if (hooksJavascript['init_params']) {
       const paramsUpdate = hooksJavascript['init_params'](nuxtApp.$sections, {
         qs: route.query,
@@ -1303,7 +1253,9 @@ const fetchData = async () => {
         nuxtApp.$sections = paramsUpdate
       }
     }
-  } catch {}
+  } catch {
+    // Keep the current Sections configuration if the optional override fails.
+  }
 
   if (
     nuxtApp.$sections.projectLocales &&
@@ -1323,20 +1275,16 @@ const fetchData = async () => {
 
   // We check if this is running in the browser or not
   // because during SSR no cors preflight request is sent
-  const inBrowser = process.client
+  const inBrowser = import.meta.client
 
   let websiteDomain = ''
-  const isServer = process.server
 
-  if (isServer && !admin) {
-    await checkToken()
-  } else {
-    const auth_code = route.query.auth_code
-    if (auth_code) {
-      await sanitizeURL()
-    }
+  const auth_code = route.query.auth_code
+  if (auth_code) {
+    await sanitizeURL()
   }
 
+  const isServer = import.meta.server
   const scheme = isServer
     ? nuxtApp.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
     : window.location.protocol.replace(':', '')
@@ -1354,17 +1302,19 @@ const fetchData = async () => {
     headers: sectionHeader(inBrowser ? {} : { origin: `${scheme}://${websiteDomain}` }),
   }
 
-  let URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
+  const URL = `${nuxtApp.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
   let payload = {}
 
   let language = undefined
   try {
     language = i18n.locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport && nuxtApp.$sections.queryStringSupport === 'enabled') {
-    let query_string = parseQS(
+    const query_string = parseQS(
       encodeURIComponent(pathMatch ? pathMatch : '/'),
       Object.keys(route.query).length !== 0,
       route.query
@@ -1377,7 +1327,7 @@ const fetchData = async () => {
     }
   }
 
-  let hooksJs = importJs(`/js/global-hooks`)
+  const hooksJs = importJs(`/js/global-hooks`)
   if (hooksJs && hooksJs['page_pre_load']) {
     // Call only once and check the result
     const hookResult = hooksJs['page_pre_load'](payload)
@@ -1386,7 +1336,9 @@ const fetchData = async () => {
       // Ensure we only take serializable data
       try {
         payload = JSON.parse(JSON.stringify(hookResult))
-      } catch {}
+      } catch {
+        // Keep the current payload if the hook returns non-serializable data.
+      }
     }
   }
   if (sectionsPageData && !admin) {
@@ -1423,9 +1375,9 @@ const fetchData = async () => {
     sectionsError.value = ''
     sectionsMainErrors.value = []
     fetchedOnServer.value = true
-    const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-    if (optionsRes.status === 200) {
-      try {
+    try {
+      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+      if (optionsRes.status === 200) {
         await useApiRequest({
           url: URL,
           method: 'POST',
@@ -1438,7 +1390,14 @@ const fetchData = async () => {
             sectionsPageErrorManagement(error, true)
           },
         })
-      } catch {}
+      }
+    } catch (error) {
+      // Covers preflight failures and failures in page initialization/error handling.
+      if (!error?.response) sectionsError.value = toApiError(error).response.data.error
+      if (loading.value) {
+        loading.value = false
+        emit('load', false)
+      }
     }
   } else if (serverPageData) {
     if (serverPageData.res) {
@@ -1459,6 +1418,11 @@ const fetchData = async () => {
 
 onServerPrefetch(async () => {
   try {
+    // Processing the Auth code should be done server side only
+    // and regardless of host `fetch_on_server` resolve
+    if (!admin) {
+      await checkToken()
+    }
     const hooksJs = importJs(`/js/global-hooks`)
     if (hooksJs && hooksJs['fetch_on_server']) {
       if (hooksJs['fetch_on_server'](useCookie)) {
@@ -1467,7 +1431,9 @@ onServerPrefetch(async () => {
     } else {
       await fetchData()
     }
-  } catch {
+  } catch (error) {
+    // eslint-disable-next-line no-console -- Preserve diagnostics before SSR fallback.
+    console.error(error)
     await fetchData()
   }
 })

@@ -128,7 +128,7 @@ const validate = () => {
   }
 
   // 2. Add alt and loading attributes to images (Client-side only)
-  if (process.client && settings.value[0]) {
+  if (import.meta.client && settings.value[0]) {
     try {
       for (const lang of props.locales) {
         if (typeof settings.value[0][lang] === 'string') {
@@ -161,6 +161,7 @@ const validate = () => {
         }
       }
     } catch (e) {
+      // eslint-disable-next-line no-console -- Preserve diagnostics for malformed editor content.
       console.error('Error processing HTML content:', e)
       // Handle parsing error if necessary
     }

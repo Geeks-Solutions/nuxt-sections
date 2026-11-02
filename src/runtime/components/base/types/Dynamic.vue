@@ -133,7 +133,9 @@ async function renderSection(sectionName) {
   let currentLanguage = undefined
   try {
     currentLanguage = locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport === 'enabled') {
     const query_string = parseQS(
@@ -238,6 +240,7 @@ async function getGlobalType() {
       instanceName.value = result.res.data.name
     } else if (result.error) {
       // Use a Nuxt 3 compatible toast or notification system
+      // eslint-disable-next-line no-console -- Report a failed global-type response.
       console.error(
         'Error loading global type:',
         result.error?.response?.data?.message || 'Unknown error'
@@ -245,6 +248,7 @@ async function getGlobalType() {
       // showToast("Error", "error", result.error.response.data.message); // Replace with Nuxt 3 method
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- Retain diagnostics for unexpected request failures.
     console.error('Error fetching global type data:', error)
     // showToast("Error", "error", 'An unexpected error occurred.'); // Replace with Nuxt 3 method
   } finally {

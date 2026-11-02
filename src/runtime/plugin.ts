@@ -17,7 +17,7 @@ export default defineNuxtPlugin((_nuxtApp) => {
     projectUrl: sectionsConfig.projectUrl,
     serverUrl:
       sectionsConfig.environment === 'testing'
-        ? 'https://api.sections-saas.k8s-dev.geeks.solutions/api/v1'
+        ? 'https://sections-dev.geeks.solutions/api/v1'
         : 'https://sections.geeks.solutions/api/v1',
     queryStringSupport: sectionsConfig.queryStringSupport,
     projectLocales: sectionsConfig.projectLocales,
@@ -37,13 +37,13 @@ export default defineNuxtPlugin((_nuxtApp) => {
 
   _nuxtApp.vueApp.use(vt.default, options)
   _nuxtApp.vueApp.component('draggable', draggable)
-  // @ts-ignore
-  _nuxtApp.provide('toast', vt.useToast ? vt.useToast() : vt.default.useToast())
+  // Preserve the legacy default-export compatibility path without changing module loading.
+  const toastPlugin = vt.default as typeof vt.default & { useToast: typeof vt.useToast }
+  _nuxtApp.provide('toast', vt.useToast ? vt.useToast() : toastPlugin.useToast())
 
   const emitter = mitt<Events>()
 
-  if (process.client) {
-    // @ts-ignore
+  if (import.meta.client) {
     import('vue-toastification/dist/index.css')
   }
 

@@ -256,6 +256,7 @@
                     :multiple="optionValues.field === field.name && optionValues.option_values"
                     @input="changeFieldValue($event, idx, field.type, field.key)"
                   >
+                    <!-- eslint-disable unicorn/prefer-includes -- Preserve strict indexOf membership, including NaN handling. -->
                     <option
                       v-for="option in optionValues.option_values"
                       :key="option.id"
@@ -269,6 +270,7 @@
                     >
                       {{ option.title }}
                     </option>
+                    <!-- eslint-enable unicorn/prefer-includes -->
                   </component>
                 </div>
                 <span v-if="field.type === 'media'" class="flex text-error py-2 text-xs">{{
@@ -464,7 +466,6 @@ const getComponentForm = computed(() => {
   // Use shallowRef for components to avoid deep reactivity tracking
   const component = importComp(path).component
   if (component) {
-    showCustomFormTab.value = true
     return component
   } else return ''
 })
@@ -472,6 +473,14 @@ const getComponentForm = computed(() => {
 const globalSectionMode = computed(() => props.instance || props.linked)
 
 // Watchers
+watch(
+  getComponentForm,
+  (component) => {
+    if (component) showCustomFormTab.value = true
+  },
+  { immediate: true }
+)
+
 watch(
   settings,
   (newSettings) => {
@@ -551,8 +560,8 @@ async function changeFieldValue(e, idx, type, fieldname) {
   } else if (type === 'integer') {
     // Ensure optionsData structure exists
     if (!optionsData[name]) optionsData[name] = null // Or appropriate default
-    optionsData[name] = parseInt(value) // Store in optionsData
-    options[0][name] = parseInt(value) // Also update legacy options structure if needed elsewhere
+    optionsData[name] = Number.parseInt(value) // Store in optionsData
+    options[0][name] = Number.parseInt(value) // Also update legacy options structure if needed elsewhere
   } else if (type === 'textarea') {
     if (!optionsData[name]) optionsData[name] = {}
     optionsData[name][formLang.value] = value
@@ -591,6 +600,7 @@ async function mediaUpload(e, idx, name) {
       mediaError.value = `${result.error?.response?.data?.error || 'Upload failed'}. ${result.error?.response?.data?.message || ''}`
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- Retain upload failure diagnostics alongside UI errors.
     console.error('Media upload error:', error)
     mediaError.value = 'An unexpected error occurred during upload.'
   } finally {
@@ -607,6 +617,7 @@ async function removeImage(name) {
       try {
         await deleteMedia(mediaId) // Call delete helper
       } catch (error) {
+        // eslint-disable-next-line no-console -- Do not silently discard media deletion failures.
         console.error('Failed to delete media from server:', error)
         // Optionally show a toast message
       }
@@ -704,6 +715,7 @@ async function addConfigurable() {
       else if (
         fields.type === 'integer' &&
         !Array.isArray(options[0][key]) &&
+        // eslint-disable-next-line unicorn/prefer-number-properties -- Required-field validation intentionally coerces values.
         (options[0][key] === null || isNaN(options[0][key]))
       ) {
         validationError = t('fillRequiredFields') + ` (${key})`
@@ -788,7 +800,9 @@ async function addConfigurable() {
   let currentLanguage = undefined
   try {
     currentLanguage = locale.value
-  } catch {}
+  } catch {
+    // No locale is available; leave the request language undefined.
+  }
 
   if (nuxtApp.$sections.queryStringSupport === 'enabled') {
     const query_string = parseQS(
@@ -907,6 +921,7 @@ async function getGlobalType() {
       )
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- Retain request diagnostics alongside the error toast.
     console.error('Error fetching global type data:', error)
     showToast('Error', 'error', 'An unexpected error occurred.')
   } finally {
@@ -922,11 +937,11 @@ function updateWhitelistId(id) {
 function isSelected(id, name) {
   const data = optionsData[name]
   // Check if data is an array and includes the id
-  return Array.isArray(data) && data.includes(parseInt(id))
+  return Array.isArray(data) && data.includes(Number.parseInt(id))
 }
 
 function selectOption(value, name) {
-  const intValue = parseInt(value)
+  const intValue = Number.parseInt(value)
   if (!optionsData[name]) {
     optionsData[name] = [] // Initialize as array if not exists
   }
@@ -953,6 +968,7 @@ function importHooks(hook, params) {
       return hooksJs[hook](params)
     }
   } catch (e) {
+    // eslint-disable-next-line no-console -- Explain fallback after an optional host hook fails.
     console.warn(`Could not import or execute hook '${hook}':`, e)
   }
   return undefined // Return undefined if hook doesn't exist or fails
@@ -962,7 +978,7 @@ function importHooks(hook, params) {
 async function loadRegisteredComponent(type, key) {
   const componentKey = `${type}_${key}`
   if (!registeredComponents[componentKey]) {
-    let path = `/configurable_components/${type}_${key}`
+    const path = `/configurable_components/${type}_${key}`
     try {
       const comp = await importComp(path).component
       if (comp) {
@@ -1002,7 +1018,7 @@ function computedComponentValue(field) {
 }
 
 function changeFieldLabel(field) {
-  let importedHook = importHooks('updateFieldLabel', field)
+  const importedHook = importHooks('updateFieldLabel', field)
   if (importedHook) {
     return importedHook
   } else if (isFieldRequired(field)) {
@@ -1050,13 +1066,14 @@ onMounted(() => {
         )
       }
     } catch (e) {
+      // eslint-disable-next-line no-console -- Explain why original options are retained.
       console.warn('Error running configurable_pre_render hook:', e)
     }
 
     // Update optionsData with altered values if hook returned data
     if (alteredOptions && alteredOptions[0]) {
       Object.keys(alteredOptions[0]).forEach((key) => {
-        if (optionsData.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(optionsData, key)) {
           // Update only existing keys
           optionsData[key] = alteredOptions[0][key]
         }

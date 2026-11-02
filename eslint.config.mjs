@@ -43,9 +43,15 @@ export default createConfigForNuxt({
               schema: [],
             },
             create(context) {
-              const parserServices = context.sourceCode.parserServices || context.parserServices
+              const vueContext =
+                /** @type {import('eslint').Rule.RuleContext & { sourceCode: import('eslint').SourceCode, parserServices?: import('eslint').SourceCode['parserServices'] }} */ (
+                  context
+                )
+              const parserServices =
+                vueContext.sourceCode.parserServices || vueContext.parserServices
               if (!parserServices || !parserServices.defineTemplateBodyVisitor) return {}
 
+              /** @param {import('vue-eslint-parser').AST.VExpressionContainer['expression']} expr */
               const unwrap = (expr) => {
                 while (expr && expr.type === 'ChainExpression') expr = expr.expression
                 return expr
@@ -53,6 +59,7 @@ export default createConfigForNuxt({
 
               // Multiline is allowed if it's exactly ONE statement/expression (no "a(); b()")
               // and that expression is not a SequenceExpression (no "a(), b()")
+              /** @param {import('vue-eslint-parser').AST.VExpressionContainer['expression']} expr */
               const isSingleStatementHandler = (expr) => {
                 expr = unwrap(expr)
                 if (!expr) return false
@@ -71,6 +78,7 @@ export default createConfigForNuxt({
               }
 
               return parserServices.defineTemplateBodyVisitor({
+                /** @param {import('vue-eslint-parser').AST.VDirective} node */
                 "VAttribute[directive=true][key.name.name='on']"(node) {
                   if (!node.value) return
                   if (node.value.loc.start.line === node.value.loc.end.line) return

@@ -19,6 +19,7 @@ import {
 } from '#imports'
 
 import { useSectionsDataStore } from '../stores/sectionsDataStore' // Pinia store for managing page data
+import { toApiError } from '../utils/api-errors'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const app: any = useNuxtApp()
@@ -43,14 +44,18 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (hooksJs && hooksJs['fetch_on_server']) {
       fetchOnServer = hooksJs['fetch_on_server'](useCookie)
     }
-  } catch {}
+  } catch {
+    // Keep server fetching enabled if the optional policy hook fails.
+  }
 
   let updateLocalizationOnCSR = true
   try {
     if (hooksJs && hooksJs['localize_on_csr']) {
       updateLocalizationOnCSR = hooksJs['localize_on_csr'](useCookie)
     }
-  } catch {}
+  } catch {
+    // Keep client localization enabled if the optional policy hook fails.
+  }
 
   // Server-side logic
   if (
@@ -82,7 +87,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           app.$sections = paramsUpdate
         }
       }
-    } catch {}
+    } catch {
+      // Keep the current Sections configuration if the optional override fails.
+    }
 
     // Detect protocol and domain from headers
     const scheme = app.ssrContext.event.req.headers['x-forwarded-proto'] || 'http'
@@ -96,15 +103,12 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
 
     // Construct the endpoint URL to load section page data
-    let URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
+    const URL = `${app.$sections.serverUrl}/project/${getSectionProjectIdentity()}/page/${parsePath(encodeURIComponent(pageName))}`
 
     let payload: any = {}
 
     // Add detected language to the payload if available
-    let language
-    try {
-      language = abstractedDefaultLocale ? abstractedDefaultLocale : undefined
-    } catch {}
+    const language = abstractedDefaultLocale ? abstractedDefaultLocale : undefined
 
     // If query string support is enabled, prepare it for the request payload
     if (app.$sections.queryStringSupport === 'enabled') {
@@ -128,7 +132,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       if (hookResult && typeof hookResult === 'object') {
         try {
           payload = JSON.parse(JSON.stringify(hookResult)) // Ensure payload is serializable
-        } catch {}
+        } catch {
+          // Keep the current payload if the hook returns non-serializable data.
+        }
       }
     }
 
@@ -150,9 +156,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
 
     // Perform preflight check using OPTIONS method
-    const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
-    if (optionsRes.status === 200) {
-      try {
+    try {
+      const optionsRes = await fetch(URL, { method: 'OPTIONS', ...config })
+      if (optionsRes.status === 200) {
         // Load page data using POST with the constructed payload
         await useApiRequest({
           url: URL,
@@ -191,7 +197,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             })
           },
         })
-      } catch {}
+      }
+    } catch (error) {
+      // Covers preflight failures and failures during asynchronous localization.
+      if (!store.getPageData) store.setPageData({ error: toApiError(error) })
     }
   } else {
     // Client-side locale setup (based on abstracted or default locale)

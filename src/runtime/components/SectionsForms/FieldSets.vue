@@ -93,7 +93,7 @@ const drag = ref(false)
 
 // --- Computed ---
 // Handles getting/setting the array for v-model on draggable
-let arrayData = computed({
+const arrayData = computed({
   get() {
     // Ensure every item has a unique ID for draggable and keys
     return props.arrayDataPop

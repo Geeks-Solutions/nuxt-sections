@@ -10,6 +10,7 @@ import {
 } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Public interface remains augmentable by consumers.
 export interface ModuleOptions {}
 
 export default defineNuxtModule<ModuleOptions>({
